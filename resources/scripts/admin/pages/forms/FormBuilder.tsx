@@ -51,7 +51,7 @@ const FormBuilder = () => {
 						size="sm"
 						onClick={() => router.history.back()}
 					>
-						<ArrowLeft className="size-3.5" />
+						<ArrowLeft />
 						{__('Back', 'all-feedback')}
 					</Button>
 

@@ -11,15 +11,6 @@ const STATS = [
 const Dashboard = () => {
 	return (
 		<div className="p-5 md:p-6">
-			<div className="mb-6">
-				<h1 className="text-lg font-semibold text-foreground">
-					{__('Dashboard', 'all-feedback')}
-				</h1>
-				<p className="mt-0.5 text-sm text-muted-foreground">
-					{__("Overview of your feedback forms.", 'all-feedback')}
-				</p>
-			</div>
-
 			<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
 				{STATS.map(({ label, value, icon: Icon, color }) => (
 					<div key={label} className="rounded-xl border border-border bg-card p-5 shadow-sm">

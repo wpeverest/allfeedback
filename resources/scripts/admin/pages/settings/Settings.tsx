@@ -30,15 +30,6 @@ const Settings = () => {
 	return (
 		<div className="p-5 md:p-6">
 			<div className="mx-auto max-w-6xl">
-				<div className="mb-5">
-					<h1 className="text-lg font-semibold text-foreground">
-						{__('Settings', 'all-feedback')}
-					</h1>
-					<p className="text-sm text-muted-foreground">
-						{__('Configure AllFeedback to fit your workflow.', 'all-feedback')}
-					</p>
-				</div>
-
 				<div className="flex flex-col gap-5 lg:flex-row lg:items-start">
 
 					<nav

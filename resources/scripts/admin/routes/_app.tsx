@@ -47,7 +47,7 @@ function PendingLayout() {
 							<Skeleton className="h-6 w-40" />
 							<Skeleton className="h-4 w-64" />
 						</div>
-						<Skeleton className="h-8 w-28" />
+						<Skeleton className="h-10 w-28" />
 					</div>
 					{/* Stat cards skeleton */}
 					<div className="grid grid-cols-2 gap-4 sm:grid-cols-4">

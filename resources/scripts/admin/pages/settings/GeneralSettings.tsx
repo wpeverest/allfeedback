@@ -19,16 +19,10 @@ function SectionHeader({ title, description }: { title: string; description: str
 	);
 }
 
-/* ── Field group ─────────────────────────────────────────────────────────── */
-
-function FieldGroup({ label, hint, children }: {
-	label:    string;
-	hint?:    string;
-	children: React.ReactNode;
-}) {
+function FieldGroup({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
 	return (
 		<div className="grid gap-1.5 sm:grid-cols-[200px_1fr] sm:items-start">
-			<div className="pt-1">
+			<div className="pt-2">
 				<Label className="text-sm font-medium text-foreground">{label}</Label>
 				{hint && <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>}
 			</div>
@@ -36,8 +30,6 @@ function FieldGroup({ label, hint, children }: {
 		</div>
 	);
 }
-
-/* ── Component ───────────────────────────────────────────────────────────── */
 
 const GeneralSettings = () => {
 	const queryClient = useQueryClient();
@@ -74,7 +66,7 @@ const GeneralSettings = () => {
 					{[1, 2].map((i) => (
 						<div key={i} className="grid gap-1.5 sm:grid-cols-[200px_1fr]">
 							<Skeleton className="h-4 w-28" />
-							<Skeleton className="h-9 w-full" />
+							<Skeleton className="h-10 max-w-sm" />
 						</div>
 					))}
 				</div>
@@ -116,9 +108,8 @@ const GeneralSettings = () => {
 					/>
 				</FieldGroup>
 
-				{/* Divider + save */}
 				<div className="border-t border-border pt-4">
-					<Button type="submit" disabled={isSaving} size="sm">
+					<Button type="submit" disabled={isSaving}>
 						{isSaving ? (
 							<>
 								<span className="animate-spin">⟳</span>
@@ -126,7 +117,7 @@ const GeneralSettings = () => {
 							</>
 						) : (
 							<>
-								<Save className="size-3.5" />
+								<Save />
 								{__('Save Changes', 'all-feedback')}
 							</>
 						)}
