@@ -112,7 +112,7 @@ const TextFieldConfig = ({
 			value={field.label}
 			onChange={(e) => onChange({ ...field, label: e.target.value })}
 			placeholder="Question"
-			className="w-full border-b border-transparent bg-transparent text-[14px] font-semibold text-foreground placeholder:text-muted-foreground/45 transition-colors hover:border-border/60 focus:border-primary/60 focus:outline-none"
+			className="w-full border-b border-transparent bg-transparent px-1.5 py-1 text-[14px] font-semibold text-foreground placeholder:text-muted-foreground/45 transition-colors hover:border-border/60 focus:border-primary/60 focus:outline-none"
 		/>
 		<input
 			value={field.placeholder ?? ''}
@@ -174,7 +174,7 @@ const MultiSelectConfig = ({
 				value={field.label}
 				onChange={(e) => onChange({ ...field, label: e.target.value })}
 				placeholder="Question"
-				className="w-full border-b border-transparent bg-transparent text-[14px] font-semibold text-foreground placeholder:text-muted-foreground/45 transition-colors hover:border-border/60 focus:border-primary/60 focus:outline-none"
+				className="w-full border-b border-transparent bg-transparent px-1.5 py-1 text-[14px] font-semibold text-foreground placeholder:text-muted-foreground/45 transition-colors hover:border-border/60 focus:border-primary/60 focus:outline-none"
 			/>
 			<div className="overflow-hidden rounded-xl border border-border/70">
 				{options.map((opt, i) => (
@@ -211,7 +211,7 @@ const DefaultFieldConfig = ({
 			value={field.label}
 			onChange={(e) => onChange({ ...field, label: e.target.value })}
 			placeholder="Question"
-			className="w-full border-b border-transparent bg-transparent text-[14px] font-semibold text-foreground placeholder:text-muted-foreground/45 transition-colors hover:border-border/60 focus:border-primary/60 focus:outline-none"
+			className="w-full border-b border-transparent bg-transparent px-1.5 py-1 text-[14px] font-semibold text-foreground placeholder:text-muted-foreground/45 transition-colors hover:border-border/60 focus:border-primary/60 focus:outline-none"
 		/>
 		<RequiredToggle value={field.required} onChange={(v) => onChange({ ...field, required: v })} />
 	</div>
@@ -266,7 +266,7 @@ const FieldEditor = ({
 			onDragEnd={(e) => { e.stopPropagation(); onDragEnd(); }}
 			onDrop={(e) => { e.stopPropagation(); e.preventDefault(); onDrop(e, index); }}
 			className={cn(
-				'group relative cursor-pointer rounded-xl border border-border/60 bg-background p-4 transition-all',
+				'group relative cursor-pointer rounded-xl border border-border/60 bg-background p-5 transition-all',
 				isDragging && 'opacity-40 scale-[0.99]',
 				isDragOver && !isDragging && 'border-primary/40 ring-1 ring-primary/15',
 			)}

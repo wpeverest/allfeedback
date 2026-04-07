@@ -133,7 +133,7 @@ const SectionCard = ({
 				draggable
 				onDragStart={(e) => { e.stopPropagation(); onDragStart(index); }}
 				onDragEnd={(e) => { e.stopPropagation(); onDragEnd(); }}
-				className="flex items-center gap-3 border-b border-border/50 bg-gradient-to-r from-primary/[0.05] to-transparent px-4 py-3"
+				className="flex items-center gap-3 border-b border-border/50 bg-gradient-to-r from-primary/[0.05] to-transparent px-5 py-3.5"
 			>
 				<span className="cursor-grab text-primary/30 transition-colors hover:text-primary/60 active:cursor-grabbing">
 					<GripVertical className="size-4 shrink-0" />
@@ -149,7 +149,7 @@ const SectionCard = ({
 					placeholder="Section title"
 					onClick={(e) => e.stopPropagation()}
 					onMouseDown={(e) => e.stopPropagation()}
-					className="min-w-[120px] flex-1 cursor-text border-b border-transparent bg-transparent text-[13px] font-semibold text-foreground placeholder:text-muted-foreground/40 transition-colors hover:border-border/60 focus:border-primary/60 focus:outline-none"
+					className="min-w-[120px] flex-1 cursor-text border-b border-transparent bg-transparent px-1.5 py-0.5 text-[13px] font-semibold text-foreground placeholder:text-muted-foreground/40 transition-colors hover:border-border/60 focus:border-primary/60 focus:outline-none"
 				/>
 
 				<button
@@ -161,7 +161,7 @@ const SectionCard = ({
 				</button>
 			</div>
 
-			<div className="p-4">
+			<div className="p-5">
 				{section.fields.length > 0 && (
 					<div className="mb-3 space-y-2">
 						{section.fields.map((field, fieldIdx) => (

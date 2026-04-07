@@ -136,7 +136,7 @@ const FormBuilder = () => {
 					<span className="h-5 w-px bg-border" />
 
 					{isEditingTitle ? (
-						<div className="flex min-w-0 flex-1 items-center gap-1.5">
+						<div className="flex items-center gap-1.5">
 							<input
 								ref={titleInputRef}
 								type="text"
@@ -146,7 +146,8 @@ const FormBuilder = () => {
 									if (e.key === 'Enter') commitTitle();
 									if (e.key === 'Escape') cancelTitle();
 								}}
-								className="min-w-[240px] flex-1 rounded-lg border border-border/70 bg-transparent px-2.5 py-1.5 text-[14px] font-semibold text-foreground outline-none focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/10"
+								style={{ fontSize: '18px', fontWeight: 700 }}
+								className="w-[300px] rounded-lg border border-border/70 bg-transparent px-3.5 py-2 text-foreground outline-none focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/10"
 							/>
 							<button
 								type="button"
@@ -166,7 +167,8 @@ const FormBuilder = () => {
 					) : (
 						<button
 							type="button"
-							className="group flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[14px] font-semibold text-foreground transition-colors hover:bg-muted/50"
+							style={{ fontSize: '18px', fontWeight: 700 }}
+							className="group flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-foreground transition-colors hover:bg-muted/50"
 							onDoubleClick={startEditingTitle}
 							title={__('Double-click to edit', 'all-feedback')}
 						>
