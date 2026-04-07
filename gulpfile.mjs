@@ -84,12 +84,14 @@ export const release = series(
         return exec(`cd ${BUILD_DIR} && composer install --no-dev --optimize-autoloader`);
     },
     function compress() {
-        return src(
-            ['./build/**/*', '!./build/**/composer.json', '!./build/**/composer.lock'],
-            { encoding: false },
-        )
-            .pipe(zip(`${PLUGIN_SLUG}.zip`))
-            .pipe(dest('./release/'));
+       return src(
+         ['./build/**/*', '!./build/**/composer.lock', '!./build/**/*.sh'],
+         {
+           encoding: false,
+         },
+       )
+         .pipe(zip(`${PLUGIN_SLUG}.zip`))
+         .pipe(dest('./release/'));
     },
     function cleanup()  { return exec('rm -rf build/'); },
 );
