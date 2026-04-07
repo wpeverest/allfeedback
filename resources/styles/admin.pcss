@@ -1,42 +1,54 @@
 /**
  * admin.pcss — Admin SPA styles
  *
- * Imported by resources/scripts/admin/index.tsx
+ * Imported by resources/scripts/admin/index.tsx.
  * All rules are scoped under #ALLFB-Admin-Root where possible
  * to prevent WordPress admin CSS from leaking in.
  */
 
 @import './app.pcss';
 
-/* ── WP admin page background ────────────────────────────────────── */
-.toplevel_page_all-feedback {
-	background: #f4f6f8;
+/* ── WP admin page background ────────────────────────────────────────────── */
+.toplevel_page_all-feedback,
+[class*="_page_all-feedback"] {
+	background: var(--background) !important;
 }
 
-/* ── Remove WP default content padding so our SPA fills edge-to-edge */
-.toplevel_page_all-feedback #wpcontent {
+/* ── Remove WP default content padding so our SPA fills edge-to-edge ─────── */
+.toplevel_page_all-feedback #wpcontent,
+[class*="_page_all-feedback"] #wpcontent {
 	padding-left:  0 !important;
 	padding-right: 0 !important;
 }
 
-/* ── Reset WP global link styles inside the React root ──────────── */
+/* ── Neutralise WP admin margins on the React mount point ────────────────── */
+#ALLFB-Admin-Root {
+	min-height: calc(100vh - var(--wp-admin--admin-bar--height, 32px));
+}
+
+/* ── Reset WP global link styles inside the React root ───────────────────── */
 #ALLFB-Admin-Root a {
 	color:           inherit;
 	text-decoration: none;
 	box-shadow:      none;
 }
 
-/* ── Override WP admin form styles leaking into shadcn inputs ────── */
+/* ── Override WP admin form styles leaking into shadcn inputs ────────────── */
 #ALLFB-Admin-Root [data-slot='input'],
 #ALLFB-Admin-Root [data-slot='textarea'],
-#ALLFB-Admin-Root [data-slot='select-trigger'] {
-	background-color: white;
-	color:            inherit;
-	border-color:     inherit;
+#ALLFB-Admin-Root [data-slot='select-trigger'],
+#ALLFB-Admin-Root input:not([type='checkbox']):not([type='radio']),
+#ALLFB-Admin-Root select,
+#ALLFB-Admin-Root textarea {
+	background-color: var(--card);
+	color:            var(--foreground);
+	border-color:     var(--border);
 	box-shadow:       none;
+	font-size:        inherit;
+	line-height:      inherit;
 }
 
-/* ── Fix WP styles leaking into Radix portals ────────────────────── */
+/* ── Fix WP styles leaking into Radix portals ────────────────────────────── */
 [data-slot='popover-content'] a,
 [data-slot='select-content'] a {
 	color:           inherit;
@@ -46,8 +58,8 @@
 
 [data-slot='select-content'],
 [data-slot='select-item'] {
-	color:            inherit;
-	background-color: white;
+	color:            var(--foreground);
+	background-color: var(--card);
 	box-shadow:       none;
 }
 
@@ -58,7 +70,12 @@
 	outline:          none;
 }
 
-/* ── Loading cursor while async operations run ───────────────────── */
+/* ── Remove WP's default button styling inside the SPA ───────────────────── */
+#ALLFB-Admin-Root button {
+	border-radius: inherit;
+}
+
+/* ── Loading cursor while async operations run ───────────────────────────── */
 body[data-wait] {
 	cursor: wait !important;
 
