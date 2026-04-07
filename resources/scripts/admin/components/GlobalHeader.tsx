@@ -5,6 +5,7 @@
  * Design: logo left, nav centred, version badge right.
  */
 
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Link } from '@tanstack/react-router';
 import { __ } from '@wordpress/i18n';
@@ -84,9 +85,9 @@ const GlobalHeader = () => {
 								key={item.to}
 								to={item.to}
 								className={cn(
-									'rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition-colors',
+									'rounded-full border-[1.5px] px-3.5 py-1.5 text-[13px] font-medium transition-colors',
 									active
-										? 'border-brand-400 bg-primary/[0.06] text-primary'
+										? 'border-[1.5px] border-brand-400 bg-primary/[0.06] text-primary'
 										: 'border-transparent text-muted-foreground hover:text-foreground',
 								)}
 							>
@@ -96,17 +97,17 @@ const GlobalHeader = () => {
 					})}
 				</nav>
 
-				{/* ── Right — version + hamburger ───────────────────────────── */}
+				{/* ── Right — version badge + hamburger ────────────────────────── */}
 				<div className="ml-auto flex shrink-0 items-center gap-2">
-					<span className="hidden rounded-full border border-border px-3 py-1 text-[12px] font-medium text-muted-foreground sm:inline-flex">
+					<Badge variant="secondary" className="border-[1.5px] border-brand-400 bg-white px-2.5 py-1 text-[13px] font-medium">
 						v{__ALLFB_ADMIN__.version}
-					</span>
+					</Badge>
 					<button
 						type="button"
 						aria-label={menuOpen ? __('Close menu', 'all-feedback') : __('Open menu', 'all-feedback')}
 						aria-expanded={menuOpen}
 						onClick={() => setMenuOpen((o) => !o)}
-						className="flex size-8 items-center justify-center rounded-md text-muted-foreground hover:text-foreground md:hidden"
+						className="flex size-8 items-center justify-center rounded-full border-[1.5px] border-border text-muted-foreground transition-colors hover:border-brand-400 hover:text-foreground md:hidden"
 					>
 						{menuOpen ? <X className="size-4" /> : <Menu className="size-4" />}
 					</button>
@@ -115,13 +116,13 @@ const GlobalHeader = () => {
 
 			{/* ── Mobile dropdown ───────────────────────────────────────────── */}
 			{menuOpen && (
-				<nav className="border-t border-border bg-white px-3 py-2 md:hidden">
+				<nav className="border-t border-border bg-white py-1 md:hidden">
 					{NAV_ITEMS.map((item) => {
 						if ('disabled' in item) {
 							return (
 								<span
 									key={item.label}
-									className="flex cursor-default items-center px-3 py-2.5 text-[13px] font-medium text-muted-foreground/50"
+									className="flex cursor-default items-center px-5 py-3 text-[13px] font-medium text-muted-foreground/40"
 								>
 									{item.label}
 								</span>
@@ -133,21 +134,19 @@ const GlobalHeader = () => {
 								key={item.to}
 								to={item.to}
 								className={cn(
-									'flex items-center rounded-lg px-3 py-2.5 text-[13px] font-medium transition-colors',
+									'flex w-full items-center px-5 py-3 text-[13px] transition-colors',
 									active
-										? 'text-foreground'
-										: 'text-muted-foreground hover:text-foreground',
+										? 'bg-primary/[0.06] font-semibold text-foreground'
+										: 'font-medium text-muted-foreground hover:bg-muted hover:text-foreground',
 								)}
 							>
 								{item.label}
 							</Link>
 						);
 					})}
-					<div className="mt-2 border-t border-border pt-2 px-3">
-						<span className="text-[11px] text-muted-foreground">
-							v{__ALLFB_ADMIN__.version}
-						</span>
-					</div>
+					<p className="px-5 pb-3 pt-2 text-[12px] text-muted-foreground">
+						v{__ALLFB_ADMIN__.version}
+					</p>
 				</nav>
 			)}
 		</header>
