@@ -90,6 +90,42 @@ class AdminServiceProvider implements ServiceProvider {
 			callback:    $mountPoint,
 		);
 
+		add_submenu_page(
+			parent_slug: self::MENU_SLUG,
+			page_title:  __( 'Analytics', 'all-feedback' ),
+			menu_title:  __( 'Analytics', 'all-feedback' ),
+			capability:  'manage_options',
+			menu_slug:   self::MENU_SLUG . '#/analytics',
+			callback:    $mountPoint,
+		);
+
+		add_submenu_page(
+			parent_slug: self::MENU_SLUG,
+			page_title:  __( 'All Forms', 'all-feedback' ),
+			menu_title:  __( 'All Forms', 'all-feedback' ),
+			capability:  'manage_options',
+			menu_slug:   self::MENU_SLUG . '#/forms',
+			callback:    $mountPoint,
+		);
+
+		add_submenu_page(
+			parent_slug: self::MENU_SLUG,
+			page_title:  __( 'Responses', 'all-feedback' ),
+			menu_title:  __( 'Responses', 'all-feedback' ),
+			capability:  'manage_options',
+			menu_slug:   self::MENU_SLUG . '#/responses',
+			callback:    $mountPoint,
+		);
+
+		add_submenu_page(
+			parent_slug: self::MENU_SLUG,
+			page_title:  __( 'Settings', 'all-feedback' ),
+			menu_title:  __( 'Settings', 'all-feedback' ),
+			capability:  'manage_options',
+			menu_slug:   self::MENU_SLUG . '#/settings',
+			callback:    $mountPoint,
+		);
+
 		// Remove the auto-generated duplicate of the top-level entry.
 		remove_submenu_page( self::MENU_SLUG, self::MENU_SLUG );
 	}
