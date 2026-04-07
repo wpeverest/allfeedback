@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 import { useNavigate } from '@tanstack/react-router';
 import { __ } from '@wordpress/i18n';
 import { FileText, Plus } from 'lucide-react';
@@ -23,16 +24,18 @@ const AllForms = () => {
 				</Button>
 			</div>
 
-			<div className="flex flex-col items-center justify-center rounded-xl border border-border bg-card py-20 text-center">
-				<div className="mb-3 flex size-12 items-center justify-center rounded-xl bg-muted">
-					<FileText className="size-5 text-muted-foreground" />
-				</div>
-				<p className="text-sm font-medium text-foreground">{__('No forms yet', 'all-feedback')}</p>
-				<p className="mt-1 mb-4 text-xs text-muted-foreground">{__('Your feedback forms will appear here.', 'all-feedback')}</p>
-				<Button size="lg" variant="secondary" onClick={() => navigate({ to: '/builder/' })}>
-					<Plus className="size-3.5" />
-					{__('Create your first form', 'all-feedback')}
-				</Button>
+			<div className="rounded-xl border border-border bg-card">
+				<EmptyState
+					icon={FileText}
+					title={__('No forms yet', 'all-feedback')}
+					description={__('Create your first feedback form to start collecting responses.', 'all-feedback')}
+					action={
+						<Button onClick={() => navigate({ to: '/builder/' })}>
+							<Plus />
+							{__('Add New Form', 'all-feedback')}
+						</Button>
+					}
+				/>
 			</div>
 		</div>
 	);
