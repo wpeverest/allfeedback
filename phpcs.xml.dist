@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<ruleset name="ReadymadeBoilerplate">
+    <description>Readymade Boilerplate WordPress Plugin Coding Standards</description>
+
+    <!-- What to scan -->
+    <file>.</file>
+
+    <!-- Exclusions -->
+    <exclude-pattern>*/vendor/*</exclude-pattern>
+    <exclude-pattern>*/node_modules/*</exclude-pattern>
+    <exclude-pattern>*/resources/build/*</exclude-pattern>
+    <exclude-pattern>*.js</exclude-pattern>
+    <exclude-pattern>*.css</exclude-pattern>
+
+    <!-- Output settings -->
+    <arg value="ps"/>
+    <arg name="parallel" value="20"/>
+    <arg name="colors"/>
+    <arg name="basepath" value="./"/>
+
+    <!-- Base standard -->
+    <rule ref="WordPress-Extra">
+        <!-- Allow short array syntax [] -->
+        <exclude name="Generic.Arrays.DisallowShortArraySyntax"/>
+        <!-- Allow modern alignment -->
+        <exclude name="WordPress.Arrays.MultipleStatementAlignment"/>
+        <!-- Don't require Yoda conditions -->
+        <exclude name="WordPress.PHP.YodaConditions"/>
+    </rule>
+
+    <!-- Documentation standard -->
+    <rule ref="WordPress-Docs"/>
+    <rule ref="Squiz.Commenting.FunctionComment"/>
+    <rule ref="Squiz.Commenting.ClassComment"/>
+
+    <!-- Enforce the plugin's text domain -->
+    <rule ref="WordPress.WP.I18n">
+        <properties>
+            <property name="text_domain" type="array">
+                <element value="readymade-boilerplate"/>
+            </property>
+        </properties>
+    </rule>
+
+    <!-- Enforce the plugin's global prefix -->
+    <rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+        <properties>
+            <property name="prefixes" type="array">
+                <element value="rmb"/>
+                <element value="ReadymadeBoilerplate"/>
+            </property>
+        </properties>
+    </rule>
+
+    <!-- Relaxed file-name rules (PSR-4 class names differ from WP convention) -->
+    <rule ref="WordPress.Files.FileName">
+        <properties>
+            <property name="strict_class_file_names" value="false"/>
+        </properties>
+    </rule>
+</ruleset>

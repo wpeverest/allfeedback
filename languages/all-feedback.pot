@@ -1,0 +1,135 @@
+# Copyright (C) 2024 Your Name
+# This file is distributed under the GPL v3.0 or later.
+msgid ""
+msgstr ""
+"Project-Id-Version: All Feedback 1.0.0\n"
+"Report-Msgid-Bugs-To: https://example.com\n"
+"POT-Creation-Date: 2024-01-01 00:00+0000\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"X-Generator: WP-CLI 2.x\n"
+"X-Domain: all-feedback\n"
+
+#. Plugin Name of the plugin
+msgid "All Feedback"
+msgstr ""
+
+#. Plugin URI of the plugin
+msgid "https://example.com"
+msgstr ""
+
+#. Description of the plugin
+msgid "A ready-made WordPress plugin boilerplate following AllCoach architecture."
+msgstr ""
+
+#. Author of the plugin
+msgid "Your Name"
+msgstr ""
+
+#: all-feedback.php
+msgid "All Feedback: Composer dependencies not found. Please run \"composer install\"."
+msgstr ""
+
+#: src/Plugin.php
+msgid "All Feedback requires PHP %1$s or higher. You are running PHP %2$s."
+msgstr ""
+
+#: src/Plugin.php
+msgid "All Feedback requires WordPress %1$s or higher. You are running WordPress %2$s."
+msgstr ""
+
+#: src/Plugin.php
+msgid "Activation Error"
+msgstr ""
+
+#: src/Admin/AdminServiceProvider.php
+msgid "All Feedback"
+msgstr ""
+
+#: src/Admin/AdminServiceProvider.php
+msgid "RMB Plugin"
+msgstr ""
+
+#: src/Admin/AdminServiceProvider.php
+msgid "Dashboard"
+msgstr ""
+
+#: src/Admin/AdminServiceProvider.php
+msgid "Settings"
+msgstr ""
+
+#: src/Admin/AdminServiceProvider.php
+msgid "You do not have permission to access this page."
+msgstr ""
+
+#: src/Admin/AdminServiceProvider.php
+msgid "Welcome to All Feedback"
+msgstr ""
+
+#: src/Admin/AdminServiceProvider.php
+msgid "This is the admin dashboard page for the All Feedback plugin. Replace this markup with your own views or mount a React/Vue application here."
+msgstr ""
+
+#: src/Admin/AdminServiceProvider.php
+msgid "Go to Settings"
+msgstr ""
+
+#: src/Admin/AdminServiceProvider.php
+msgid "Settings saved."
+msgstr ""
+
+#: src/Admin/AdminServiceProvider.php
+msgid "Sample Option"
+msgstr ""
+
+#: src/Admin/AdminServiceProvider.php
+msgid "A sample text option. Replace this with your real settings."
+msgstr ""
+
+#: src/Admin/AdminServiceProvider.php
+msgid "Save Settings"
+msgstr ""
+
+#: src/Frontend/FrontendServiceProvider.php
+msgid "Hello from All Feedback!"
+msgstr ""
+
+#: src/Frontend/FrontendServiceProvider.php
+msgid "Replace this shortcode renderer in FrontendServiceProvider::renderSampleShortcode()."
+msgstr ""
+
+#: src/API/Controllers/V1/SampleController.php
+msgid "Unique identifier for the item."
+msgstr ""
+
+#: src/API/Controllers/V1/SampleController.php
+msgid "Current page number (1-based)."
+msgstr ""
+
+#: src/API/Controllers/V1/SampleController.php
+msgid "Items to return per page."
+msgstr ""
+
+#: src/API/Controllers/V1/SampleController.php
+msgid "Name of the new item."
+msgstr ""
+
+#: src/API/Controllers/V1/SampleController.php
+msgid "Sample Item One"
+msgstr ""
+
+#: src/API/Controllers/V1/SampleController.php
+msgid "Sample Item Two"
+msgstr ""
+
+#: src/API/Controllers/V1/SampleController.php
+msgid "Sample Item #%d"
+msgstr ""
+
+#: src/API/Controllers/V1/SampleController.php
+msgid "Item not found."
+msgstr ""

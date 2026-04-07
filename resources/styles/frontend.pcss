@@ -1,0 +1,26 @@
+/**
+ * frontend.pcss — Public-facing styles
+ *
+ * Imported by resources/scripts/frontend/index.ts
+ * Keep this lean — only load what the shortcode/frontend actually needs.
+ */
+
+@import './app.pcss';
+
+/* ── Shortcode widget ─────────────────────────────────────────────── */
+.allfb-sample-widget {
+	border-radius: var(--radius-lg);
+	padding:       1.25rem;
+	font-family:   inherit;
+
+	&__title {
+		font-size:     1.1rem;
+		font-weight:   600;
+		margin-bottom: 0.5rem;
+	}
+
+	&__content {
+		font-size:   0.9rem;
+		line-height: 1.6;
+	}
+}

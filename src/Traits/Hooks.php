@@ -1,0 +1,109 @@
+<?php
+
+declare(strict_types=1);
+
+namespace AllFeedback\Traits;
+
+/**
+ * Trait Hooks
+ *
+ * Thin wrappers around WordPress action/filter functions so that classes using
+ * this trait can register hooks without calling global functions directly.
+ * This makes unit-testing and method-level documentation easier.
+ */
+trait Hooks {
+
+	// ------------------------------------------------------------------
+	// Actions
+	// ------------------------------------------------------------------
+
+	/**
+	 * Register a callback on an action hook.
+	 *
+	 * @param string                 $hookName     Name of the action.
+	 * @param callable|string|array  $callback     Callable to run.
+	 * @param int                    $priority     Optional. Default 10.
+	 * @param int                    $acceptedArgs Optional. Default 1.
+	 */
+	public function addAction(
+		string $hookName,
+		callable|string|array $callback,
+		int $priority = 10,
+		int $acceptedArgs = 1
+	): bool {
+		return add_action( $hookName, $callback, $priority, $acceptedArgs );
+	}
+
+	/**
+	 * Remove a callback from an action hook.
+	 *
+	 * @param string                $hookName Name of the action.
+	 * @param callable|string|array $callback The callback to remove.
+	 * @param int                   $priority Optional. Default 10.
+	 */
+	public function removeAction(
+		string $hookName,
+		callable|string|array $callback,
+		int $priority = 10
+	): bool {
+		return remove_action( $hookName, $callback, $priority );
+	}
+
+	/**
+	 * Execute all callbacks registered to an action hook.
+	 *
+	 * @param string $hookName The action hook to fire.
+	 * @param mixed  ...$args  Additional arguments passed to each callback.
+	 */
+	public function doAction( string $hookName, mixed ...$args ): void {
+		do_action_ref_array( $hookName, $args );
+	}
+
+	// ------------------------------------------------------------------
+	// Filters
+	// ------------------------------------------------------------------
+
+	/**
+	 * Register a callback on a filter hook.
+	 *
+	 * @param string                 $hookName     Name of the filter.
+	 * @param callable|string|array  $callback     Callable to run.
+	 * @param int                    $priority     Optional. Default 10.
+	 * @param int                    $acceptedArgs Optional. Default 1.
+	 */
+	public function addFilter(
+		string $hookName,
+		callable|string|array $callback,
+		int $priority = 10,
+		int $acceptedArgs = 1
+	): bool {
+		return add_filter( $hookName, $callback, $priority, $acceptedArgs );
+	}
+
+	/**
+	 * Remove a callback from a filter hook.
+	 *
+	 * @param string                $hookName Name of the filter.
+	 * @param callable|string|array $callback The callback to remove.
+	 * @param int                   $priority Optional. Default 10.
+	 */
+	public function removeFilter(
+		string $hookName,
+		callable|string|array $callback,
+		int $priority = 10
+	): bool {
+		return remove_filter( $hookName, $callback, $priority );
+	}
+
+	/**
+	 * Apply all callbacks registered to a filter hook and return the result.
+	 *
+	 * @param string $hookName The filter hook name.
+	 * @param mixed  $value    The value to filter.
+	 * @param mixed  ...$args  Additional arguments passed to each callback.
+	 * @return mixed The filtered value.
+	 */
+	public function applyFilters( string $hookName, mixed $value, mixed ...$args ): mixed {
+		return apply_filters_ref_array( $hookName, array_merge( [ $value ], $args ) );
+	}
+}
