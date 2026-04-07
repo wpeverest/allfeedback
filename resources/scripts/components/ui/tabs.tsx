@@ -1,24 +1,5 @@
-/**
- * components/ui/tabs.tsx — Tab navigation component
- *
- * Lightweight, accessible tabs with keyboard support.
- * Uses React state (no Radix dependency) for simplicity.
- *
- * Usage:
- *   <Tabs defaultValue="general">
- *     <TabsList>
- *       <TabsTrigger value="general">General</TabsTrigger>
- *       <TabsTrigger value="advanced">Advanced</TabsTrigger>
- *     </TabsList>
- *     <TabsContent value="general">…</TabsContent>
- *     <TabsContent value="advanced">…</TabsContent>
- *   </Tabs>
- */
-
 import { cn } from '@/lib/utils';
 import * as React from 'react';
-
-/* ── Context ─────────────────────────────────────────────────────────────── */
 
 interface TabsContextValue {
 	value: string;
@@ -32,8 +13,6 @@ function useTabsContext(): TabsContextValue {
 	if (!ctx) throw new Error('<TabsTrigger> / <TabsContent> must be inside <Tabs>');
 	return ctx;
 }
-
-/* ── Tabs root ───────────────────────────────────────────────────────────── */
 
 interface TabsProps extends React.HTMLAttributes<HTMLDivElement> {
 	value?:         string;
@@ -64,8 +43,6 @@ const Tabs = React.forwardRef<HTMLDivElement, TabsProps>(
 );
 Tabs.displayName = 'Tabs';
 
-/* ── TabsList ────────────────────────────────────────────────────────────── */
-
 const TabsList = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
 	({ className, ...props }, ref) => (
 		<div
@@ -80,8 +57,6 @@ const TabsList = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEl
 	),
 );
 TabsList.displayName = 'TabsList';
-
-/* ── TabsTrigger ─────────────────────────────────────────────────────────── */
 
 interface TabsTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 	value: string;
@@ -123,8 +98,6 @@ const TabsTrigger = React.forwardRef<HTMLButtonElement, TabsTriggerProps>(
 	},
 );
 TabsTrigger.displayName = 'TabsTrigger';
-
-/* ── TabsContent ─────────────────────────────────────────────────────────── */
 
 interface TabsContentProps extends React.HTMLAttributes<HTMLDivElement> {
 	value: string;

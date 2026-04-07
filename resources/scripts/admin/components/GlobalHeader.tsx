@@ -1,10 +1,3 @@
-/**
- * admin/components/GlobalHeader.tsx
- *
- * Sticky top navigation bar for the AllFeedback admin SPA.
- * Design: logo left, nav centred, version badge right.
- */
-
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Link } from '@tanstack/react-router';
@@ -55,7 +48,6 @@ const GlobalHeader = () => {
 		<header className="sticky top-[var(--wp-admin--admin-bar--height,32px)] z-50 border-b border-border bg-white">
 			<div className="flex h-[54px] items-center px-5">
 
-				{/* ── Logo ────────────────────────────────────────────────── */}
 				<div className="flex shrink-0 items-center gap-2">
 					<div className="flex size-[30px] items-center justify-center rounded-md bg-primary">
 						<MessageSquare className="size-[15px] text-white" />
@@ -66,7 +58,6 @@ const GlobalHeader = () => {
 					</span>
 				</div>
 
-				{/* ── Desktop nav — absolutely centred ──────────────────────── */}
 				<nav className="absolute left-1/2 flex -translate-x-1/2 items-center gap-1 max-md:hidden">
 					{NAV_ITEMS.map((item) => {
 						if ('disabled' in item) {
@@ -97,7 +88,6 @@ const GlobalHeader = () => {
 					})}
 				</nav>
 
-				{/* ── Right — version badge + hamburger ────────────────────────── */}
 				<div className="ml-auto flex shrink-0 items-center gap-2">
 					<Badge variant="secondary" className="border-[1.5px] border-brand-400 bg-white px-2.5 py-1 text-[13px] font-medium">
 						v{__ALLFB_ADMIN__.version}
@@ -114,7 +104,6 @@ const GlobalHeader = () => {
 				</div>
 			</div>
 
-			{/* ── Mobile dropdown ───────────────────────────────────────────── */}
 			{menuOpen && (
 				<nav className="border-t border-border bg-white py-1 md:hidden">
 					{NAV_ITEMS.map((item) => {

@@ -1,7 +1,3 @@
-/**
- * pages/responses/Responses.tsx
- */
-
 import { __ } from '@wordpress/i18n';
 import { MessageSquare } from 'lucide-react';
 

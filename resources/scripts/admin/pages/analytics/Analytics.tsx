@@ -1,7 +1,3 @@
-/**
- * pages/analytics/Analytics.tsx
- */
-
 import { __ } from '@wordpress/i18n';
 import { BarChart2 } from 'lucide-react';
 

@@ -1,17 +1,3 @@
-/**
- * components/ui/table.tsx — Data table components
- *
- * Usage:
- *   <Table>
- *     <TableHeader>
- *       <TableRow><TableHead>Name</TableHead>…</TableRow>
- *     </TableHeader>
- *     <TableBody>
- *       <TableRow><TableCell>…</TableCell></TableRow>
- *     </TableBody>
- *   </Table>
- */
-
 import { cn } from '@/lib/utils';
 import * as React from 'react';
 

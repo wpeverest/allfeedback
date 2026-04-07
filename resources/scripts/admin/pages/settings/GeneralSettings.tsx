@@ -1,10 +1,3 @@
-/**
- * pages/settings/GeneralSettings.tsx — General settings tab
- *
- * Loads plugin settings via TanStack Query, lets the admin update them,
- * and persists changes via the REST API.
- */
-
 import { settingsApi } from '@/admin/api/settings';
 import type { Settings } from '@/admin/api/settings';
 import { settingsQuery } from '@/admin/queries/settings';
@@ -16,8 +9,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { __ } from '@wordpress/i18n';
 import { Save } from 'lucide-react';
 import { toast } from 'sonner';
-
-/* ── Section header ──────────────────────────────────────────────────────── */
 
 function SectionHeader({ title, description }: { title: string; description: string }) {
 	return (

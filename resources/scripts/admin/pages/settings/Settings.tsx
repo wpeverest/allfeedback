@@ -1,11 +1,3 @@
-/**
- * pages/settings/Settings.tsx — Settings page layout
- *
- * Renders a sidebar navigation and an <Outlet /> for nested settings tabs.
- * Add new settings sections by appending to NAV_ITEMS and creating
- * corresponding route files under routes/_app/settings.*.tsx.
- */
-
 import type { FileRoutesByFullPath } from '@/admin/routeTree.gen';
 import { Link, Outlet } from '@tanstack/react-router';
 import { __ } from '@wordpress/i18n';
@@ -30,41 +22,14 @@ const NAV_ITEMS: NavItem[] = [
 		icon:        Settings2,
 		to:          '/settings/general',
 	},
-	// Uncomment as you add more settings routes:
-	// {
-	// 	label:       __('Appearance',   'all-feedback'),
-	// 	description: __('Colors, typography', 'all-feedback'),
-	// 	icon:        Palette,
-	// 	to:          '/settings/appearance',
-	// },
-	// {
-	// 	label:       __('Notifications', 'all-feedback'),
-	// 	description: __('Email alerts', 'all-feedback'),
-	// 	icon:        Bell,
-	// 	to:          '/settings/notifications',
-	// },
-	// {
-	// 	label:       __('Integrations',  'all-feedback'),
-	// 	description: __('Third-party services', 'all-feedback'),
-	// 	icon:        Sliders,
-	// 	to:          '/settings/integrations',
-	// },
-	// {
-	// 	label:       __('API Keys',      'all-feedback'),
-	// 	description: __('Access & security', 'all-feedback'),
-	// 	icon:        Key,
-	// 	to:          '/settings/api',
-	// },
 ];
 
-// Suppress unused import warnings until the nav items are uncommented.
 void [Bell, Key, Palette, Sliders];
 
 const Settings = () => {
 	return (
 		<div className="p-5 md:p-6">
 			<div className="mx-auto max-w-6xl">
-				{/* Page title */}
 				<div className="mb-5">
 					<h1 className="text-lg font-semibold text-foreground">
 						{__('Settings', 'all-feedback')}
@@ -76,7 +41,6 @@ const Settings = () => {
 
 				<div className="flex flex-col gap-5 lg:flex-row lg:items-start">
 
-					{/* ── Sidebar ─────────────────────────────────────────── */}
 					<nav
 						aria-label={__('Settings navigation', 'all-feedback')}
 						className="flex gap-1 overflow-x-auto lg:w-56 lg:flex-col lg:shrink-0 lg:gap-0.5"
@@ -100,7 +64,6 @@ const Settings = () => {
 						))}
 					</nav>
 
-					{/* ── Content panel ───────────────────────────────────── */}
 					<div className="min-w-0 flex-1 rounded-xl border border-border bg-card">
 						<Outlet />
 					</div>

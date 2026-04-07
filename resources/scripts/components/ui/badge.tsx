@@ -1,9 +1,3 @@
-/**
- * components/ui/badge.tsx — Status badge / chip component
- *
- * Variants: default | secondary | success | warning | danger | outline | info
- */
-
 import { cn } from '@/lib/utils';
 import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';

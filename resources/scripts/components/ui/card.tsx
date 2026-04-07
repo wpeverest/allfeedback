@@ -1,17 +1,3 @@
-/**
- * components/ui/card.tsx — Card container components
- *
- * Usage:
- *   <Card>
- *     <CardHeader>
- *       <CardTitle>Title</CardTitle>
- *       <CardDescription>Subtitle</CardDescription>
- *     </CardHeader>
- *     <CardContent>…</CardContent>
- *     <CardFooter>…</CardFooter>
- *   </Card>
- */
-
 import { cn } from '@/lib/utils';
 import * as React from 'react';
 

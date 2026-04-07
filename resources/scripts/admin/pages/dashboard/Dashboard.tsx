@@ -1,7 +1,3 @@
-/**
- * pages/dashboard/Dashboard.tsx
- */
-
 import { __ } from '@wordpress/i18n';
 import { FileText, MessageSquare, Star, TrendingUp } from 'lucide-react';
 
