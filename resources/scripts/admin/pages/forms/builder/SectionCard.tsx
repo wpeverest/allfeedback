@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { __ } from '@wordpress/i18n';
-import { Check, ChevronDown, GripVertical, Pencil, Plus, Trash2, X } from 'lucide-react';
+import { Check, ChevronDown, Copy, GripVertical, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import FieldEditor from './FieldEditor';
 import FieldTypeMenu from './FieldTypeMenu';
@@ -17,6 +17,7 @@ interface SectionCardProps {
 	autoFocus?: boolean;
 	onSectionChange: (section: FormSection) => void;
 	onSectionDelete: () => void;
+	onSectionDuplicate: () => void;
 	onDragStart: (index: number) => void;
 	onDragOver: (e: React.DragEvent, index: number) => void;
 	onDragEnd: () => void;
@@ -31,13 +32,14 @@ const SectionCard = ({
 	autoFocus = false,
 	onSectionChange,
 	onSectionDelete,
+	onSectionDuplicate,
 	onDragStart,
 	onDragOver,
 	onDragEnd,
 	onDrop,
 }: SectionCardProps) => {
-	const [isCollapsed,   setIsCollapsed]   = useState(false);
-	const [menuAnchorRect, setMenuAnchorRect] = useState<DOMRect | null>(null);
+	const [isCollapsed,  setIsCollapsed]  = useState(false);
+	const [menuOpen,     setMenuOpen]     = useState(false);
 	const [fieldDragIdx, setFieldDragIdx] = useState<number | null>(null);
 	const [fieldDropIdx, setFieldDropIdx] = useState<number | null>(null);
 	const addFieldBtnRef = useRef<HTMLButtonElement>(null);
@@ -78,16 +80,8 @@ const SectionCard = ({
 	};
 
 	// ── Field type menu ────────────────────────────────────────────────────
-	const toggleMenu = () => {
-		if (menuAnchorRect) {
-			setMenuAnchorRect(null);
-			return;
-		}
-		if (!addFieldBtnRef.current) return;
-		setMenuAnchorRect(addFieldBtnRef.current.getBoundingClientRect());
-	};
-
-	const closeMenu = () => setMenuAnchorRect(null);
+	const toggleMenu = () => setMenuOpen((v) => !v);
+	const closeMenu  = () => setMenuOpen(false);
 
 	const addField = useCallback(
 		(type: FieldType) => {
@@ -164,7 +158,9 @@ const SectionCard = ({
 				isDragging && 'opacity-40 scale-[0.99]',
 				isDragOver && !isDragging
 					? 'border-primary/50 shadow-[0_0_0_3px_oklch(var(--primary)/0.10)]'
-					: 'border-border/60 shadow-card',
+					: !isCollapsed
+						? 'border-primary/40'
+						: 'border-border/60',
 			)}
 		>
 			{/* ── Section header ─────────────────────────────────────────── */}
@@ -238,7 +234,7 @@ const SectionCard = ({
 					)}
 				</div>
 
-				{/* Right actions: collapse toggle + delete — stop propagation so header click doesn't double-fire */}
+				{/* Right actions: collapse toggle + duplicate + delete */}
 				<div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
 					<Button
 						variant="ghost"
@@ -246,13 +242,21 @@ const SectionCard = ({
 						onClick={() => setIsCollapsed((v) => !v)}
 						aria-label={isCollapsed ? __('Expand section', 'all-feedback') : __('Collapse section', 'all-feedback')}
 					>
-						<ChevronDown className={cn('size-3.5 text-muted-foreground/50 transition-transform duration-200', isCollapsed && '-rotate-90')} />
+						<ChevronDown className={cn('size-3.5 transition-transform duration-200', isCollapsed && '-rotate-90')} />
+					</Button>
+					<Button
+						variant="ghost"
+						size="icon-xs"
+						onClick={onSectionDuplicate}
+						aria-label={__('Duplicate section', 'all-feedback')}
+					>
+						<Copy className="size-3.5" />
 					</Button>
 					<Button
 						variant="ghost"
 						size="icon-xs"
 						onClick={onSectionDelete}
-						className="shrink-0 text-muted-foreground/40 hover:bg-destructive/10 hover:text-destructive active:bg-destructive/15"
+						className="shrink-0 hover:bg-destructive/10 hover:text-destructive active:bg-destructive/15"
 						aria-label={__('Delete section', 'all-feedback')}
 					>
 						<Trash2 className="size-3.5" />
@@ -261,7 +265,8 @@ const SectionCard = ({
 			</div>
 
 			{/* ── Section body ───────────────────────────────────────────── */}
-			<div className={cn('p-5', isCollapsed && 'hidden')}>
+			<div className={cn('grid transition-[grid-template-rows] duration-200 ease-in-out', isCollapsed ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]')}>
+			<div className="overflow-hidden"><div className="p-5">
 				{section.fields.length > 0 && (
 					<div className="mb-3 space-y-2">
 						{section.fields.map((field, fieldIdx) => (
@@ -284,15 +289,15 @@ const SectionCard = ({
 				)}
 
 				<div className="flex">
-					<Button ref={addFieldBtnRef} size="sm" variant="secondary" onClick={toggleMenu}>
+					<Button ref={addFieldBtnRef} size="sm" variant="ghost" onClick={toggleMenu}>
 						<Plus className="size-3.5" />
 						{__('Add Field', 'all-feedback')}
 					</Button>
 				</div>
-			</div>
+			</div></div></div>
 
-			{menuAnchorRect && (
-				<FieldTypeMenu anchorRect={menuAnchorRect} triggerRef={addFieldBtnRef} onSelect={addField} onClose={closeMenu} />
+			{menuOpen && (
+				<FieldTypeMenu triggerRef={addFieldBtnRef} onSelect={addField} onClose={closeMenu} />
 			)}
 		</div>
 	);

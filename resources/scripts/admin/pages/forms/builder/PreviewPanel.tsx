@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils';
 import { Eye, Minus, Monitor, Smartphone, Tablet, X } from 'lucide-react';
 import type { FormField, FormSection, PreviewDevice } from './types';
+import { __ } from '@wordpress/i18n';
 
 interface PreviewPanelProps {
 	sections: FormSection[];
@@ -14,14 +15,23 @@ const DEVICES: { value: PreviewDevice; label: string; Icon: typeof Monitor }[] =
 	{ value: 'mobile', label: 'Mobile', Icon: Smartphone },
 ];
 
+/** Strip HTML tags to get plain text — safe for our own editor output */
+const htmlToText = (html: string): string => {
+	const div = document.createElement('div');
+	div.innerHTML = html;
+	return div.textContent ?? div.innerText ?? '';
+};
+
 const FieldPreview = ({ field }: { field: FormField }) => {
 	const inputBase =
 		'w-full rounded-lg border border-border/70 bg-muted/30 px-2.5 py-1.5 text-[11px] text-foreground/80 placeholder:text-muted-foreground/50 focus:outline-none';
 
+	const labelText = htmlToText(field.label) || 'Untitled';
+
 	return (
 		<div className="space-y-1">
 			<div className="flex items-center gap-1">
-				<p className="text-[10.5px] font-semibold text-foreground">{field.label || 'Untitled'}</p>
+				<p className="text-[10.5px] font-semibold text-foreground">{labelText}</p>
 				{field.required && <span className="text-[9px] font-bold text-destructive">*</span>}
 			</div>
 
@@ -69,8 +79,8 @@ const PreviewPanel = ({ sections, device, onDeviceChange }: PreviewPanelProps) =
 
 	return (
 		<div className="flex h-full flex-col bg-white">
-			<div className="flex shrink-0 items-center border-b border-border px-4 py-2.5">
-				<span className="text-[13px] font-semibold text-foreground">Preview changes</span>
+			<div className="flex shrink-0 items-center border-b border-border px-6 py-5.5">
+				<span className="text-[13.5px] font-medium text-foreground">{__("Preview changes","all-feedback")}</span>
 			</div>
 
 			<div className="flex flex-1 flex-col overflow-hidden p-4">
@@ -114,7 +124,7 @@ const PreviewPanel = ({ sections, device, onDeviceChange }: PreviewPanelProps) =
 								{!hasFields ? (
 									<div className="flex flex-col items-center justify-center py-4">
 										<Eye className="mb-2 size-5 text-muted-foreground/25" />
-										<p className="text-[11px] text-muted-foreground/55">Add fields to preview</p>
+										<p className="text-[11px] text-muted-foreground/55">{__("Add fields to preview","all-feedback")}</p>
 									</div>
 								) : (
 									<div className="space-y-4">

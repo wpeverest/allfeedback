@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { __ } from '@wordpress/i18n';
-import { LayoutGrid, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
+import EmptyCanvasIllustration from './EmptyCanvasIllustration';
 import { useCallback, useState } from 'react';
 import SectionCard from './SectionCard';
 import type { FormSection } from './types';
@@ -41,6 +42,23 @@ const BuilderCanvas = ({ sections, onSectionsChange }: BuilderCanvasProps) => {
 		[sections, onSectionsChange],
 	);
 
+	const duplicateSection = useCallback(
+		(idx: number) => {
+			const copy: FormSection = {
+				...sections[idx],
+				id:     `section-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+				fields: sections[idx].fields.map((f) => ({
+					...f,
+					id: `field-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+				})),
+			};
+			const next = [...sections];
+			next.splice(idx + 1, 0, copy);
+			onSectionsChange(next);
+		},
+		[sections, onSectionsChange],
+	);
+
 	const handleSectionDragStart = (idx: number) => setSectionDragIdx(idx);
 
 	const handleSectionDragOver = (e: React.DragEvent, idx: number) => {
@@ -70,18 +88,23 @@ const BuilderCanvas = ({ sections, onSectionsChange }: BuilderCanvasProps) => {
 
 	if (sections.length === 0) {
 		return (
-			<div className="flex flex-1 items-center justify-center bg-white">
-				<div className="flex flex-col items-center gap-3 text-center">
-					<div className="flex size-14 items-center justify-center rounded-2xl bg-primary/8">
-						<LayoutGrid className="size-6 text-primary" />
-					</div>
-					<span className="block text-[15px] font-semibold text-foreground">
+			<div className="flex flex-1 items-center justify-center bg-background">
+				<div className="flex flex-col items-center text-center">
+					{/* Title + description above the illustration */}
+					<span className="block text-[17px] font-semibold text-foreground">
 						{__('No sections yet', 'all-feedback')}
 					</span>
-					<span className="block max-w-[340px] text-[13px] leading-relaxed text-muted-foreground">
+					<span className="mt-2 block max-w-[320px] text-[13px] leading-relaxed text-muted-foreground">
 						{__('Sections help you group related questions. Add your first one to get started.', 'all-feedback')}
 					</span>
-					<Button onClick={addSection}>
+
+					{/* Illustration with arrow pointing straight down at the button */}
+					<div className="mt-5">
+						<EmptyCanvasIllustration />
+					</div>
+
+					{/* Button placed immediately after SVG — arrow tip lands here */}
+					<Button onClick={addSection} className="-mt-1">
 						<Plus className="size-4" />
 						{__('Add a Section', 'all-feedback')}
 					</Button>
@@ -91,7 +114,7 @@ const BuilderCanvas = ({ sections, onSectionsChange }: BuilderCanvasProps) => {
 	}
 
 	return (
-		<div className="flex-1 overflow-y-auto bg-white p-5">
+		<div className="flex-1 overflow-y-auto bg-background p-5">
 			<div className="w-full space-y-4">
 				{sections.map((section, idx) => (
 					<SectionCard
@@ -104,6 +127,7 @@ const BuilderCanvas = ({ sections, onSectionsChange }: BuilderCanvasProps) => {
 						isDragOver={sectionDropIdx === idx && sectionDragIdx !== idx}
 						onSectionChange={(s) => handleSectionChange(idx, s)}
 						onSectionDelete={() => deleteSection(idx)}
+						onSectionDuplicate={() => duplicateSection(idx)}
 						onDragStart={handleSectionDragStart}
 						onDragOver={handleSectionDragOver}
 						onDragEnd={handleSectionDragEnd}
@@ -111,8 +135,8 @@ const BuilderCanvas = ({ sections, onSectionsChange }: BuilderCanvasProps) => {
 					/>
 				))}
 
-				<div className="flex py-1">
-					<Button size="sm" variant="secondary" onClick={addSection}>
+				<div className="flex justify-center py-2">
+					<Button size="sm" variant="outline" onClick={addSection} className="border-dashed">
 						<Plus className="size-3.5" />
 						{__('Add Section', 'all-feedback')}
 					</Button>

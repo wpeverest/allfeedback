@@ -159,13 +159,16 @@
 .field-type-icon[data-type='scale']           { background-color: #ecfdf5; color: #10b981; }
 .field-type-icon[data-type='nps']             { background-color: #fff1f2; color: #e11d48; }
 
-/* ── Field type floating menu (dynamic top/left via CSS custom properties) ── */
+/* ── Field type floating menu (positioned by @floating-ui/dom) ────────────── */
+/* top/left are set via JS — visibility:hidden until positioned prevents flash */
 .field-type-menu {
-	position:      fixed;
-	top:           var(--menu-top, 0px);
-	left:          var(--menu-left, 0px);
-	z-index:       100000;
-	width:         248px;
+	position:   fixed;
+	top:        0;
+	left:       0;
+	z-index:    100000;
+	width:      248px;
+	max-height: calc(100vh - 16px);
+	overflow-y: auto;
 }
 
 /* ── Preview panel container (dynamic width via CSS custom property) ─────── */
@@ -177,7 +180,7 @@
 #ALLFB-Admin-Root input[type='checkbox'].field-required-checkbox {
 	width:        14px;
 	height:       14px;
-	accent-color: var(--primary);
+	accent-color: #6366f1 !important; /* --brand-500; !important beats WP admin override */
 	cursor:       pointer;
 	flex-shrink:  0;
 }
@@ -198,6 +201,35 @@
 #ALLFB-Admin-Root td {
 	font-size:   13px; /* text-sm  */
 	line-height: 1.5;
+}
+
+/* ── Tiptap question editor ──────────────────────────────────────────────── */
+/* Scope tightly to avoid WP admin global p/strong/em margin/style conflicts  */
+#ALLFB-Admin-Root .question-editor-field .tiptap {
+	font-size:   15px;
+	font-weight: 600;
+	color:       var(--foreground);
+	outline:     none;
+	min-height:  1.75rem;
+	line-height: 1.5;
+	padding:     0.4rem 0.625rem;
+	cursor:      text;
+}
+
+/* Strip WP admin's default paragraph margin inside the editor */
+#ALLFB-Admin-Root .question-editor-field .tiptap p {
+	margin: 0;
+}
+
+/* Placeholder text (Tiptap adds .is-editor-empty + data-placeholder) */
+#ALLFB-Admin-Root .question-editor-field .tiptap p.is-editor-empty:first-child::before {
+	content:        attr(data-placeholder);
+	float:          left;
+	height:         0;
+	pointer-events: none;
+	color:          var(--muted-foreground);
+	opacity:        0.40;
+	font-weight:    600;
 }
 
 /* ── Loading cursor while async operations run ───────────────────────────── */

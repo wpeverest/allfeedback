@@ -6,7 +6,7 @@ import { useRouter } from '@tanstack/react-router';
 import { Route } from '@/admin/routes/builder.index';
 import { __ } from '@wordpress/i18n';
 import { ArrowLeft, Check, ChevronDown, LayoutGrid, Palette, Pencil, Settings2, X } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import BuilderCanvas from './builder/BuilderCanvas';
 import PreviewPanel from './builder/PreviewPanel';
 import type { BuilderTab, FormSection, PreviewDevice } from './builder/types';
@@ -68,6 +68,8 @@ const FormBuilder = () => {
 		};
 
 		resetProp('html',      'marginTop',   '0');
+		resetProp('html',      'overflow',    'hidden');
+		resetProp('body',      'overflow',    'hidden');
 		resetProp('#wpbody',   'paddingTop',  '0');
 		resetProp('#wpcontent','marginLeft',  '0');
 		resetProp('#wpwrap',   'paddingTop',  '0');
@@ -279,28 +281,50 @@ const FormBuilder = () => {
 
  			<div className="flex flex-1 overflow-hidden">
  				<div className="flex flex-1 flex-col overflow-hidden">
- 					<div className="flex shrink-0 border-b border-border bg-white">
-						{TABS.map(({ value, label, Icon, pro }) => (
-							<button
-								key={value}
-								type="button"
-								onClick={() => setActiveTab(value)}
-								className={cn(
-									'relative flex flex-1 items-center justify-center gap-2 py-4 text-[14px] font-semibold transition-colors',
-									activeTab === value
-										? 'text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2.5px] after:bg-primary'
-										: 'text-muted-foreground hover:text-foreground',
-								)}
-							>
-								<Icon className="size-4" />
-								{label}
-								{pro && (
-									<span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold uppercase leading-none text-amber-600">
-										PRO
-									</span>
-								)}
-							</button>
-						))}
+ 					{/* Stepper nav */}
+					<div className="flex shrink-0 items-center justify-center bg-white px-8 py-4">
+						{TABS.map(({ value, label, Icon, pro }, idx) => {
+							const activeIdx = TABS.findIndex((t) => t.value === activeTab);
+							const isActive  = activeTab === value;
+							const isPast    = idx < activeIdx;
+							return (
+								<Fragment key={value}>
+									{idx > 0 && (
+										<div className={cn(
+											'mx-4 h-px w-12 shrink-0 transition-colors',
+											isPast ? 'bg-primary/35' : 'bg-border/70',
+										)} />
+									)}
+									<button
+										type="button"
+										onClick={() => setActiveTab(value)}
+										className={cn(
+											'group flex items-center gap-2.5 text-[13.5px] font-medium transition-colors',
+											isActive
+												? 'text-primary'
+												: 'text-muted-foreground hover:text-foreground',
+										)}
+									>
+										{/* Circle with icon inside */}
+										<span className={cn(
+											'flex size-10 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-200',
+											isActive ? 'border-primary bg-primary' : 'border-border bg-white group-hover:border-border/80 group-hover:bg-muted/40',
+										)}>
+											<Icon className={cn(
+												'size-4 transition-colors',
+												isActive ? 'text-white' : 'text-muted-foreground/60',
+											)} />
+										</span>
+										{label}
+										{pro && (
+											<span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold uppercase leading-none text-amber-600">
+												PRO
+											</span>
+										)}
+									</button>
+								</Fragment>
+							);
+						})}
 					</div>
 
 					<div className="flex flex-1 overflow-hidden">
