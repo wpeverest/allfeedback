@@ -1,9 +1,8 @@
 export type FieldType =
 	| 'short_text'
 	| 'long_text'
-	| 'multi_select'
+	| 'radio'
 	| 'checkboxes'
-	| 'multiple_choice'
 	| 'star_rating'
 	| 'scale'
 	| 'nps';

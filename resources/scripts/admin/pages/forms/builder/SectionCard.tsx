@@ -38,9 +38,10 @@ const SectionCard = ({
 	onDragEnd,
 	onDrop,
 }: SectionCardProps) => {
-	const [isCollapsed,  setIsCollapsed]  = useState(false);
-	const [menuOpen,     setMenuOpen]     = useState(false);
-	const [fieldDragIdx, setFieldDragIdx] = useState<number | null>(null);
+	const [isCollapsed,    setIsCollapsed]    = useState(false);
+	const [menuOpen,       setMenuOpen]       = useState(false);
+	const [newFieldId,     setNewFieldId]     = useState<string | null>(null);
+	const [fieldDragIdx,   setFieldDragIdx]   = useState<number | null>(null);
 	const [fieldDropIdx, setFieldDropIdx] = useState<number | null>(null);
 	const addFieldBtnRef = useRef<HTMLButtonElement>(null);
 
@@ -86,15 +87,17 @@ const SectionCard = ({
 	const addField = useCallback(
 		(type: FieldType) => {
 			const typeConfig = FIELD_TYPES.find((t) => t.type === type)!;
+			const id = `field-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 			const newField: FormField = {
-				id: `field-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+				id,
 				type,
 				label: typeConfig.defaultLabel,
 				required: false,
-				...(type === 'multi_select' ? { options: ['Option 1', 'Option 2', 'Option 3'] } : {}),
+				...(type === 'radio' || type === 'checkboxes' ? { options: ['Option 1', 'Option 2', 'Option 3'] } : {}),
 				...(type === 'short_text' || type === 'long_text' ? { placeholder: '' } : {}),
 			};
 			onSectionChange({ ...section, fields: [...section.fields, newField] });
+			setNewFieldId(id);
 		},
 		[section, onSectionChange],
 	);
@@ -220,15 +223,13 @@ const SectionCard = ({
 						<button
 							type="button"
 							className="section-title-btn group flex w-[260px] items-center gap-2 rounded-md border border-transparent px-2 py-1 text-left text-[15px] font-semibold text-foreground transition-colors hover:border-border/50 hover:bg-black/[0.04]"
-							onDoubleClick={(e) => { e.stopPropagation(); startEditingTitle(); }}
-							title={__('Click the pencil or double-click to edit', 'all-feedback')}
-							onClick={(e) => e.stopPropagation()}
+							onClick={(e) => { e.stopPropagation(); startEditingTitle(); }}
+							title={__('Click to edit', 'all-feedback')}
 							onMouseDown={(e) => e.stopPropagation()}
 						>
 							<span className="min-w-0 flex-1 truncate">{section.title}</span>
 							<Pencil
 								className="size-3 shrink-0 text-muted-foreground/40 opacity-0 transition-opacity group-hover:opacity-100"
-								onClick={(e) => { e.stopPropagation(); startEditingTitle(); }}
 							/>
 						</button>
 					)}
@@ -276,6 +277,7 @@ const SectionCard = ({
 								index={fieldIdx}
 								isDragging={fieldDragIdx === fieldIdx}
 								isDragOver={fieldDropIdx === fieldIdx && fieldDragIdx !== fieldIdx}
+								autoFocus={newFieldId === field.id}
 								onChange={(f) => handleFieldChange(fieldIdx, f)}
 								onDelete={() => deleteField(fieldIdx)}
 								onDuplicate={() => duplicateField(fieldIdx)}

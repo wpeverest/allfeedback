@@ -52,18 +52,21 @@ const FieldPreview = ({ field }: { field: FormField }) => {
 				/>
 			)}
 
-			{field.type === 'multi_select' && (
-				<div className="space-y-1">
+			{(field.type === 'checkboxes' || field.type === 'radio') && (
+				<div className="space-y-1.5">
 					{(field.options ?? []).map((opt, i) => (
 						<label key={i} className="flex items-center gap-2">
-							<span className="flex size-3.5 shrink-0 items-center justify-center rounded border border-border/80 bg-white" />
-							<span className="text-[10.5px] text-foreground/80">{opt || `Option ${i + 1}`}</span>
+							<span className={cn(
+								'flex shrink-0 items-center justify-center border border-border/70 bg-white',
+								field.type === 'radio' ? 'size-3 rounded-full' : 'size-3 rounded-[2px]',
+							)} />
+							<span className="text-[10.5px] text-foreground/75">{opt || `Option ${i + 1}`}</span>
 						</label>
 					))}
 				</div>
 			)}
 
-			{!['short_text', 'long_text', 'multi_select'].includes(field.type) && (
+			{!['short_text', 'long_text', 'checkboxes', 'radio'].includes(field.type) && (
 				<div className="h-5 rounded-md border border-border/60 bg-muted/40" />
 			)}
 		</div>

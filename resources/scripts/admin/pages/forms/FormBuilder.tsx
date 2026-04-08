@@ -201,7 +201,7 @@ const FormBuilder = () => {
 									if (e.key === 'Enter') commitTitle();
 									if (e.key === 'Escape') cancelTitle();
 								}}
-								className="builder-title w-[380px] rounded-lg border border-border/70 bg-transparent text-foreground outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/10"
+								className="builder-title w-[520px] rounded-lg border border-border/70 bg-transparent text-foreground outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/10"
 							/>
 							<Button
 								variant="ghost"
@@ -224,24 +224,28 @@ const FormBuilder = () => {
 					) : (
 						<button
 							type="button"
-							className="builder-title group flex items-center gap-2 rounded-lg text-foreground transition-colors hover:bg-muted/50"
-							onDoubleClick={startEditingTitle}
-							title={__('Click the pencil or double-click to edit', 'all-feedback')}
+							className="builder-title group flex w-[520px] items-center gap-2 rounded-lg text-foreground transition-colors hover:bg-muted/50"
+							onClick={startEditingTitle}
+							title={__('Click to edit', 'all-feedback')}
 						>
-							{title}
-							{isDirty && (
-								<span
-									className="size-1.5 rounded-full bg-amber-400"
-									title={__('Unsaved changes', 'all-feedback')}
-								/>
-							)}
+							<span className="min-w-0 flex-1 truncate">{title}</span>
 							<Pencil
-								className="size-3.5 text-muted-foreground/50 opacity-0 transition-opacity group-hover:opacity-100"
+								className="size-3.5 shrink-0 text-muted-foreground/50 opacity-0 transition-opacity group-hover:opacity-100"
 								onClick={(e) => { e.stopPropagation(); startEditingTitle(); }}
 							/>
 						</button>
 					)}
 				</div>
+
+				<div className="flex items-center gap-3">
+				{isDirty && (
+					<div className="flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1">
+						<span className="size-1.5 animate-pulse rounded-full bg-amber-400" />
+						<span className="text-[12px] font-medium text-amber-600">
+							{__('Unsaved changes', 'all-feedback')}
+						</span>
+					</div>
+				)}
 
  				<div ref={publishMenuRef} className="relative">
 					<div className="publish-split flex items-stretch overflow-hidden rounded-lg shadow-sm">
@@ -277,6 +281,7 @@ const FormBuilder = () => {
 						</div>
 					)}
 				</div>
+			</div>
 			</header>
 
  			<div className="flex flex-1 overflow-hidden">

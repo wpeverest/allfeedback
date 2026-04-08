@@ -1,11 +1,25 @@
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import HighlightExtension from '@tiptap/extension-highlight';
 import UnderlineExtension from '@tiptap/extension-underline';
 import PlaceholderExtension from '@tiptap/extension-placeholder';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { __ } from '@wordpress/i18n';
-import { ChevronDown, Copy, GripVertical, Plus, Trash2 } from 'lucide-react';
+import {
+	Bold as BoldIcon,
+	ChevronDown,
+	Code as CodeIcon,
+	Copy,
+	GripVertical,
+	Highlighter as HighlighterIcon,
+	Italic as ItalicIcon,
+	Plus,
+	Strikethrough as StrikethroughIcon,
+	Trash2,
+	Underline as UnderlineIcon,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { FIELD_TYPES } from './fieldTypes';
 import type { FormField } from './types';
@@ -37,6 +51,7 @@ const RequiredCheckbox = ({ fieldId, value, onChange }: RequiredCheckboxProps) =
 
 /* ── Option row (multi-select / checkboxes) ────────────────────────────── */
 interface OptionRowProps {
+	fieldType: 'radio' | 'checkboxes';
 	value: string;
 	index: number;
 	isDragging: boolean;
@@ -51,6 +66,7 @@ interface OptionRowProps {
 }
 
 const OptionRow = ({
+	fieldType,
 	value,
 	index,
 	isDragging,
@@ -70,35 +86,51 @@ const OptionRow = ({
 		onDragEnd={(e) => { e.stopPropagation(); onDragEnd(); }}
 		onDrop={(e) => { e.stopPropagation(); e.preventDefault(); onDrop(e, index); }}
 		className={cn(
-			'flex items-center border-b border-border/60 last:border-0 transition-colors',
+			'flex items-center gap-2 transition-opacity',
 			isDragging && 'opacity-40',
-			isDragOver && !isDragging && 'bg-primary/[0.03]',
 		)}
 	>
-		<span className="cursor-grab px-2.5 text-muted-foreground/30 hover:text-muted-foreground/60">
-			<GripVertical className="size-4" />
+		{/* Drag handle */}
+		<span className="cursor-grab text-muted-foreground/25 transition-colors hover:text-muted-foreground/60">
+			<GripVertical className="size-3.5" />
 		</span>
-		<input
-			value={value}
-			onChange={(e) => onChange(e.target.value)}
-			placeholder={`Option ${index + 1}`}
-			className="flex-1 border-0 bg-transparent py-2.5 text-[13px] text-foreground placeholder:text-muted-foreground/45 focus:outline-none"
-		/>
-		<div className="flex items-stretch border-l border-border/60">
+
+		{/* Dashed-border input — same visual language as QuestionEditor */}
+		<div className={cn(
+			'flex flex-1 items-center gap-2 rounded-lg border border-dashed px-2.5 py-2 transition-colors',
+			isDragOver && !isDragging
+				? 'border-primary/50 bg-primary/[0.015]'
+				: 'border-border/50 hover:border-border/80 hover:bg-muted/20 focus-within:border-primary/50 focus-within:bg-primary/[0.015]',
+		)}>
+			{/* Type indicator */}
+			<span className={cn(
+				'flex shrink-0 items-center justify-center border border-border/60 bg-white',
+				fieldType === 'radio' ? 'size-3.5 rounded-full' : 'size-3.5 rounded-[3px]',
+			)} />
+
+			<input
+				value={value}
+				onChange={(e) => onChange(e.target.value)}
+				placeholder={`Option ${index + 1}`}
+				className="option-row-input flex-1 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none"
+			/>
+		</div>
+
+		{/* Actions */}
+		<div className="flex items-center gap-0.5">
 			<button
 				type="button"
 				onClick={onDelete}
-				className="flex items-center justify-center px-3 py-2 text-muted-foreground/40 transition-colors hover:bg-destructive/5 hover:text-destructive"
+				className="flex size-6 items-center justify-center rounded text-muted-foreground/40 transition-colors hover:bg-destructive/10 hover:text-destructive"
 			>
-				<Trash2 className="size-3.5" />
+				<Trash2 className="size-3" />
 			</button>
-			<div className="w-px self-stretch bg-border/60" />
 			<button
 				type="button"
 				onClick={onAddAfter}
-				className="flex items-center justify-center px-3 py-2 text-muted-foreground/40 transition-colors hover:bg-muted/60 hover:text-foreground"
+				className="flex size-6 items-center justify-center rounded text-muted-foreground/40 transition-colors hover:bg-muted hover:text-foreground"
 			>
-				<Plus className="size-3.5" />
+				<Plus className="size-3" />
 			</button>
 		</div>
 	</div>
@@ -108,11 +140,13 @@ const OptionRow = ({
 interface QuestionEditorProps {
 	value: string;
 	onChange: (html: string) => void;
+	autoFocus?: boolean;
 }
 
-const QuestionEditor = ({ value, onChange }: QuestionEditorProps) => {
+const QuestionEditor = ({ value, onChange, autoFocus }: QuestionEditorProps) => {
 	const [isFocused, setIsFocused] = useState(false);
-	const onChangeRef = useRef(onChange);
+	const onChangeRef   = useRef(onChange);
+	const didFocusRef   = useRef(false);
 	onChangeRef.current = onChange;
 
 	const editor = useEditor({
@@ -122,11 +156,11 @@ const QuestionEditor = ({ value, onChange }: QuestionEditorProps) => {
 				bulletList:     false,
 				orderedList:    false,
 				blockquote:     false,
-				code:           false,
 				codeBlock:      false,
 				horizontalRule: false,
 			}),
 			UnderlineExtension,
+			HighlightExtension.configure({ multicolor: false }),
 			PlaceholderExtension.configure({
 				placeholder: __('Write a question…', 'all-feedback'),
 			}),
@@ -144,7 +178,15 @@ const QuestionEditor = ({ value, onChange }: QuestionEditorProps) => {
 		}
 	}, [value, editor]);
 
-	type FormatMark = 'bold' | 'italic' | 'underline' | 'strike';
+	/* Auto-focus when a new field is added */
+	useEffect(() => {
+		if (autoFocus && editor && !didFocusRef.current) {
+			didFocusRef.current = true;
+			editor.commands.focus('end');
+		}
+	}, [autoFocus, editor]);
+
+	type FormatMark = 'bold' | 'italic' | 'underline' | 'strike' | 'code' | 'highlight';
 
 	const toggleFormat = (fmt: FormatMark) => {
 		if (!editor) return;
@@ -153,15 +195,24 @@ const QuestionEditor = ({ value, onChange }: QuestionEditorProps) => {
 		if (fmt === 'italic')    chain.toggleItalic().run();
 		if (fmt === 'underline') chain.toggleUnderline().run();
 		if (fmt === 'strike')    chain.toggleStrike().run();
+		if (fmt === 'code')      chain.toggleCode().run();
+		if (fmt === 'highlight') chain.toggleHighlight().run();
 	};
 
 	const clearAllMarks = () => editor?.chain().focus().unsetAllMarks().run();
 
-	const TOOLBAR_MARKS: { fmt: FormatMark; label: string; className?: string }[] = [
-		{ fmt: 'bold',      label: 'B',  className: 'font-bold' },
-		{ fmt: 'italic',    label: 'I',  className: 'italic' },
-		{ fmt: 'underline', label: 'U',  className: 'underline underline-offset-[2px]' },
-		{ fmt: 'strike',    label: 'S',  className: 'line-through' },
+	/* Two groups separated by a divider */
+	const TOOLBAR_GROUPS: { fmt: FormatMark; Icon: LucideIcon; title: string }[][] = [
+		[
+			{ fmt: 'bold',      Icon: BoldIcon,          title: __('Bold', 'all-feedback') },
+			{ fmt: 'italic',    Icon: ItalicIcon,        title: __('Italic', 'all-feedback') },
+			{ fmt: 'underline', Icon: UnderlineIcon,     title: __('Underline', 'all-feedback') },
+			{ fmt: 'strike',    Icon: StrikethroughIcon, title: __('Strikethrough', 'all-feedback') },
+		],
+		[
+			{ fmt: 'code',      Icon: CodeIcon,          title: __('Inline code', 'all-feedback') },
+			{ fmt: 'highlight', Icon: HighlighterIcon,   title: __('Highlight', 'all-feedback') },
+		],
 	];
 
 	return (
@@ -173,43 +224,46 @@ const QuestionEditor = ({ value, onChange }: QuestionEditorProps) => {
 					isFocused ? 'max-h-7 opacity-100' : 'max-h-0 opacity-0 pointer-events-none',
 				)}
 			>
-				{TOOLBAR_MARKS.map(({ fmt, label, className }) => {
-					const active = editor?.isActive(fmt) ?? false;
-					return (
-						<button
-							key={fmt}
-							type="button"
-							title={fmt.charAt(0).toUpperCase() + fmt.slice(1)}
-							onMouseDown={(e) => { e.preventDefault(); toggleFormat(fmt); }}
-							className={cn(
-								'flex size-[22px] items-center justify-center rounded text-[11.5px] leading-none transition-colors',
-								className,
-								active
-									? 'bg-primary/10 text-primary'
-									: 'text-muted-foreground/50 hover:bg-muted hover:text-foreground',
-							)}
-						>
-							{label}
-						</button>
-					);
-				})}
+				{TOOLBAR_GROUPS.map((group, gi) => (
+					<>
+						{gi > 0 && <span key={`sep-${gi}`} className="mx-1 h-3.5 w-px bg-border/70" />}
+						{group.map(({ fmt, Icon, title }) => {
+							const active = editor?.isActive(fmt) ?? false;
+							return (
+								<button
+									key={fmt}
+									type="button"
+									title={title}
+									onMouseDown={(e) => { e.preventDefault(); toggleFormat(fmt); }}
+									className={cn(
+										'flex size-[22px] items-center justify-center rounded transition-colors',
+										active
+											? 'bg-primary/10 text-primary'
+											: 'text-muted-foreground/50 hover:bg-muted hover:text-foreground',
+									)}
+								>
+									<Icon className="size-3.5" />
+								</button>
+							);
+						})}
+					</>
+				))}
 
-				{/* Separator */}
+				{/* Separator + clear */}
 				<span className="mx-1 h-3.5 w-px bg-border/70" />
-
-				{/* Clear formatting */}
 				<button
 					type="button"
 					title={__('Clear formatting', 'all-feedback')}
 					onMouseDown={(e) => { e.preventDefault(); clearAllMarks(); }}
-					className="flex size-[22px] items-center justify-center rounded text-[9px] font-bold leading-none text-muted-foreground/50 transition-colors hover:bg-muted hover:text-foreground"
+					className="flex size-[22px] items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-muted hover:text-foreground"
 				>
-					T<span className="text-[7px]">✕</span>
+					<span className="text-[10px] font-bold leading-none">T<span className="text-[8px]">✕</span></span>
 				</button>
 			</div>
 
 			{/* Tiptap editor — dashed border always visible to signal editability */}
 			<div
+				data-focused={isFocused}
 				className={cn(
 					'question-editor-field rounded-lg border border-dashed transition-colors',
 					isFocused
@@ -227,14 +281,17 @@ const QuestionEditor = ({ value, onChange }: QuestionEditorProps) => {
 const TextFieldConfig = ({
 	field,
 	onChange,
+	autoFocus,
 }: {
 	field: FormField;
 	onChange: (f: FormField) => void;
+	autoFocus?: boolean;
 }) => (
 	<div className="space-y-4">
 		<QuestionEditor
 			value={field.label}
 			onChange={(html) => onChange({ ...field, label: html })}
+			autoFocus={autoFocus}
 		/>
 
 		<div className="space-y-1.5 border-t border-border/40 pt-4">
@@ -251,13 +308,15 @@ const TextFieldConfig = ({
 	</div>
 );
 
-/* ── Multi-select config ───────────────────────────────────────────────── */
-const MultiSelectConfig = ({
+/* ── Options config (radio + checkboxes) ───────────────────────────────── */
+const OptionsConfig = ({
 	field,
 	onChange,
+	autoFocus,
 }: {
 	field: FormField;
 	onChange: (f: FormField) => void;
+	autoFocus?: boolean;
 }) => {
 	const options = field.options ?? ['Option 1', 'Option 2', 'Option 3'];
 	const [optDragIdx, setOptDragIdx] = useState<number | null>(null);
@@ -296,16 +355,20 @@ const MultiSelectConfig = ({
 		setOptDropIdx(null);
 	};
 
+	const fieldType = field.type as 'radio' | 'checkboxes';
+
 	return (
 		<div className="space-y-4">
 			<QuestionEditor
 				value={field.label}
 				onChange={(html) => onChange({ ...field, label: html })}
+				autoFocus={autoFocus}
 			/>
-			<div className="overflow-hidden rounded-xl border border-border/70">
+			<div className="space-y-2">
 				{options.map((opt, i) => (
 					<OptionRow
 						key={i}
+						fieldType={fieldType}
 						value={opt}
 						index={i}
 						isDragging={optDragIdx === i}
@@ -319,6 +382,14 @@ const MultiSelectConfig = ({
 						onDrop={handleOptDrop}
 					/>
 				))}
+				<button
+					type="button"
+					onClick={() => addOptionAfter(options.length - 1)}
+					className="flex items-center gap-1.5 pl-[22px] text-[12.5px] text-muted-foreground/60 transition-colors hover:text-primary"
+				>
+					<Plus className="size-3.5" />
+					{__('Add option', 'all-feedback')}
+				</button>
 			</div>
 		</div>
 	);
@@ -328,14 +399,17 @@ const MultiSelectConfig = ({
 const DefaultFieldConfig = ({
 	field,
 	onChange,
+	autoFocus,
 }: {
 	field: FormField;
 	onChange: (f: FormField) => void;
+	autoFocus?: boolean;
 }) => (
 	<div className="space-y-4">
 		<QuestionEditor
 			value={field.label}
 			onChange={(html) => onChange({ ...field, label: html })}
+			autoFocus={autoFocus}
 		/>
 	</div>
 );
@@ -346,6 +420,7 @@ export interface FieldEditorProps {
 	index: number;
 	isDragging: boolean;
 	isDragOver: boolean;
+	autoFocus?: boolean;
 	onChange: (field: FormField) => void;
 	onDelete: () => void;
 	onDuplicate: () => void;
@@ -360,6 +435,7 @@ const FieldEditor = ({
 	index,
 	isDragging,
 	isDragOver,
+	autoFocus,
 	onChange,
 	onDelete,
 	onDuplicate,
@@ -375,11 +451,12 @@ const FieldEditor = ({
 		switch (field.type) {
 			case 'short_text':
 			case 'long_text':
-				return <TextFieldConfig field={field} onChange={onChange} />;
-			case 'multi_select':
-				return <MultiSelectConfig field={field} onChange={onChange} />;
+				return <TextFieldConfig field={field} onChange={onChange} autoFocus={autoFocus} />;
+			case 'radio':
+			case 'checkboxes':
+				return <OptionsConfig field={field} onChange={onChange} autoFocus={autoFocus} />;
 			default:
-				return <DefaultFieldConfig field={field} onChange={onChange} />;
+				return <DefaultFieldConfig field={field} onChange={onChange} autoFocus={autoFocus} />;
 		}
 	};
 
