@@ -1,6 +1,9 @@
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useForm } from '@tanstack/react-form';
+import { useStore } from '@tanstack/react-store';
 import { useRouter } from '@tanstack/react-router';
+import { Route } from '@/admin/routes/builder.index';
 import { __ } from '@wordpress/i18n';
 import { ArrowLeft, Check, ChevronDown, LayoutGrid, Palette, Pencil, Settings2, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -11,26 +14,43 @@ import type { BuilderTab, FormSection, PreviewDevice } from './builder/types';
 const WP_ELEMENTS = ['#wpadminbar', '#adminmenuwrap', '#adminmenuback'] as const;
 
 const TABS: { value: BuilderTab; label: string; Icon: typeof LayoutGrid; pro?: boolean }[] = [
-	{ value: 'builder', label: 'Builder', Icon: LayoutGrid },
-	{ value: 'settings', label: 'Settings', Icon: Settings2 },
-	{ value: 'styling', label: 'Styling', Icon: Palette, pro: true },
+	{ value: 'builder', label: __('Builder', 'all-feedback'), Icon: LayoutGrid },
+	{ value: 'settings', label: __('Settings', 'all-feedback'), Icon: Settings2 },
+	{ value: 'styling', label: __('Styling', 'all-feedback'), Icon: Palette, pro: true },
 ];
 
 const FormBuilder = () => {
-	const router = useRouter();
-	const [formTitle, setFormTitle] = useState('Untitled Feedback Form');
-	const [titleDraft, setTitleDraft] = useState('Untitled Feedback Form');
-	const [isEditingTitle, setIsEditingTitle] = useState(false);
-	const [activeTab, setActiveTab] = useState<BuilderTab>('builder');
-	const [sections, setSections] = useState<FormSection[]>([]);
-	const [previewDevice, setPreviewDevice] = useState<PreviewDevice>('desktop');
-	const [previewWidth, setPreviewWidth] = useState(() => Math.round(window.innerWidth * 0.4));
+	const router    = useRouter();
+	const { new: isNewForm } = Route.useSearch();
+
+ 	const form = useForm({
+		defaultValues: {
+			title:    __('Untitled Feedback Form', 'all-feedback') as string,
+			sections: [] as FormSection[],
+		},
+		onSubmit: async ({ value }) => {
+			// TODO: persist via WP REST API
+			console.log('Saving form:', value);
+			form.reset(value); // clear dirty state after successful save
+		},
+	});
+
+	const title    = useStore(form.store, (s) => s.values.title);
+	const sections = useStore(form.store, (s) => s.values.sections);
+	const isDirty  = useStore(form.store, (s) => s.isDirty);
+
+ 	const [isEditingTitle, setIsEditingTitle] = useState(false);
+	const titleSnapshotRef                    = useRef('');
+	const titleInputRef                       = useRef<HTMLInputElement>(null);
+
+	const [activeTab,       setActiveTab]       = useState<BuilderTab>('builder');
+	const [previewDevice,   setPreviewDevice]   = useState<PreviewDevice>('desktop');
+	const [previewWidth,    setPreviewWidth]    = useState(() => Math.round(window.innerWidth * 0.45));
 	const [publishMenuOpen, setPublishMenuOpen] = useState(false);
 
-	const titleInputRef = useRef<HTMLInputElement>(null);
 	const publishMenuRef = useRef<HTMLDivElement>(null);
 
-	useEffect(() => {
+ 	useEffect(() => {
 		const hidden: { el: HTMLElement; display: string }[] = [];
 		WP_ELEMENTS.forEach((selector) => {
 			const el = document.querySelector<HTMLElement>(selector);
@@ -40,21 +60,17 @@ const FormBuilder = () => {
 		});
 
 		const resets: { el: HTMLElement; prop: string; prev: string }[] = [];
-		const reset = (selector: string, prop: keyof CSSStyleDeclaration, value: string) => {
+		const resetProp = (selector: string, prop: keyof CSSStyleDeclaration, value: string) => {
 			const el = document.querySelector<HTMLElement>(selector);
 			if (!el) return;
-			resets.push({
-				el,
-				prop: prop as string,
-				prev: (el.style as Record<string, string>)[prop as string] ?? '',
-			});
+			resets.push({ el, prop: prop as string, prev: (el.style as Record<string, string>)[prop as string] ?? '' });
 			(el.style as Record<string, string>)[prop as string] = value;
 		};
 
-		reset('html', 'marginTop', '0');
-		reset('#wpbody', 'paddingTop', '0');
-		reset('#wpcontent', 'marginLeft', '0');
-		reset('#wpwrap', 'paddingTop', '0');
+		resetProp('html',      'marginTop',   '0');
+		resetProp('#wpbody',   'paddingTop',  '0');
+		resetProp('#wpcontent','marginLeft',  '0');
+		resetProp('#wpwrap',   'paddingTop',  '0');
 
 		return () => {
 			hidden.forEach(({ el, display }) => (el.style.display = display));
@@ -62,14 +78,19 @@ const FormBuilder = () => {
 		};
 	}, []);
 
-	useEffect(() => {
+ 	useEffect(() => {
 		if (isEditingTitle) {
 			titleInputRef.current?.focus();
 			titleInputRef.current?.select();
 		}
 	}, [isEditingTitle]);
 
-	useEffect(() => {
+ 	useEffect(() => {
+		if (isNewForm) startEditingTitle();
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
+
+ 	useEffect(() => {
 		if (!publishMenuOpen) return;
 		const handle = (e: MouseEvent) => {
 			if (publishMenuRef.current && !publishMenuRef.current.contains(e.target as Node)) {
@@ -80,24 +101,34 @@ const FormBuilder = () => {
 		return () => document.removeEventListener('mousedown', handle);
 	}, [publishMenuOpen]);
 
-	const startResize = useCallback(
+ 	useEffect(() => {
+		const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+			if (!isDirty) return;
+			e.preventDefault();
+			e.returnValue = '';
+		};
+		window.addEventListener('beforeunload', handleBeforeUnload);
+		return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+	}, [isDirty]);
+
+ 	const startResize = useCallback(
 		(e: React.MouseEvent) => {
 			e.preventDefault();
-			const startX = e.clientX;
+			const startX     = e.clientX;
 			const startWidth = previewWidth;
 
 			const onMove = (ev: MouseEvent) => {
 				const delta = startX - ev.clientX;
-				setPreviewWidth(Math.max(320, Math.min(720, startWidth + delta)));
+				setPreviewWidth(Math.max(280, Math.min(Math.round(window.innerWidth * 0.72), startWidth + delta)));
 			};
 			const onUp = () => {
 				document.removeEventListener('mousemove', onMove);
 				document.removeEventListener('mouseup', onUp);
-				document.body.style.cursor = '';
+				document.body.style.cursor     = '';
 				document.body.style.userSelect = '';
 			};
 
-			document.body.style.cursor = 'col-resize';
+			document.body.style.cursor     = 'col-resize';
 			document.body.style.userSelect = 'none';
 			document.addEventListener('mousemove', onMove);
 			document.addEventListener('mouseup', onUp);
@@ -105,29 +136,46 @@ const FormBuilder = () => {
 		[previewWidth],
 	);
 
-	const startEditingTitle = () => {
-		setTitleDraft(formTitle);
+ 	const startEditingTitle = () => {
+		titleSnapshotRef.current = title;
 		setIsEditingTitle(true);
 	};
 
 	const commitTitle = () => {
-		setFormTitle(titleDraft.trim() || formTitle);
+		if (!form.state.values.title.trim()) {
+			form.setFieldValue('title', titleSnapshotRef.current);
+		}
 		setIsEditingTitle(false);
 	};
 
 	const cancelTitle = () => {
-		setTitleDraft(formTitle);
+		form.setFieldValue('title', titleSnapshotRef.current);
 		setIsEditingTitle(false);
 	};
 
+ 	const handleBack = () => {
+		if (isDirty) {
+			const confirmed = window.confirm(
+				__('You have unsaved changes. Are you sure you want to leave?', 'all-feedback'),
+			);
+			if (!confirmed) return;
+		}
+		router.history.back();
+	};
+
+	const handlePublish = () => {
+		void form.handleSubmit();
+		setPublishMenuOpen(false);
+	};
+
 	return (
-		<div className="fixed inset-0 z-[99999] flex flex-col bg-background">
-			<header className="flex h-[54px] shrink-0 items-center justify-between border-b border-border bg-white px-5">
+		<div className="allfb-builder fixed inset-0 z-[99999] flex flex-col bg-background">
+ 			<header className="flex h-[68px] shrink-0 items-center justify-between border-b border-border bg-white px-6">
 				<div className="flex min-w-0 flex-1 items-center gap-2">
 					<Button
 						variant="ghost"
 						size="icon-sm"
-						onClick={() => router.history.back()}
+						onClick={handleBack}
 						aria-label={__('Back', 'all-feedback')}
 					>
 						<ArrowLeft className="size-4" />
@@ -136,62 +184,76 @@ const FormBuilder = () => {
 					<span className="h-5 w-px bg-border" />
 
 					{isEditingTitle ? (
-						<div className="flex items-center gap-1.5">
+						<div
+							className="flex items-center gap-1.5"
+							onBlur={(e) => {
+								if (!e.currentTarget.contains(e.relatedTarget as Node)) commitTitle();
+							}}
+						>
 							<input
 								ref={titleInputRef}
 								type="text"
-								value={titleDraft}
-								onChange={(e) => setTitleDraft(e.target.value)}
+								value={title}
+								onChange={(e) => form.setFieldValue('title', e.target.value)}
 								onKeyDown={(e) => {
 									if (e.key === 'Enter') commitTitle();
 									if (e.key === 'Escape') cancelTitle();
 								}}
-								style={{ fontSize: '18px', fontWeight: 700 }}
-								className="w-[300px] rounded-lg border border-border/70 bg-transparent px-3.5 py-2 text-foreground outline-none focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/10"
+								className="builder-title w-[380px] rounded-lg border border-border/70 bg-transparent text-foreground outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/10"
 							/>
-							<button
-								type="button"
+							<Button
+								variant="ghost"
+								size="icon-xs"
 								onClick={commitTitle}
-								className="flex size-7 items-center justify-center rounded-md text-success transition-colors hover:bg-success/10"
+								className="text-success hover:bg-success/10 active:bg-success/15"
+								aria-label={__('Confirm', 'all-feedback')}
 							>
 								<Check className="size-3.5" />
-							</button>
-							<button
-								type="button"
+							</Button>
+							<Button
+								variant="ghost"
+								size="icon-xs"
 								onClick={cancelTitle}
-								className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+								aria-label={__('Cancel', 'all-feedback')}
 							>
 								<X className="size-3.5" />
-							</button>
+							</Button>
 						</div>
 					) : (
 						<button
 							type="button"
-							style={{ fontSize: '18px', fontWeight: 700 }}
-							className="group flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-foreground transition-colors hover:bg-muted/50"
+							className="builder-title group flex items-center gap-2 rounded-lg text-foreground transition-colors hover:bg-muted/50"
 							onDoubleClick={startEditingTitle}
-							title={__('Double-click to edit', 'all-feedback')}
+							title={__('Click the pencil or double-click to edit', 'all-feedback')}
 						>
-							{formTitle}
-							<Pencil className="size-3.5 text-muted-foreground/50 opacity-0 transition-opacity group-hover:opacity-100" />
+							{title}
+							{isDirty && (
+								<span
+									className="size-1.5 rounded-full bg-amber-400"
+									title={__('Unsaved changes', 'all-feedback')}
+								/>
+							)}
+							<Pencil
+								className="size-3.5 text-muted-foreground/50 opacity-0 transition-opacity group-hover:opacity-100"
+								onClick={(e) => { e.stopPropagation(); startEditingTitle(); }}
+							/>
 						</button>
 					)}
 				</div>
 
-				<div ref={publishMenuRef} className="relative">
-					<div className="flex items-stretch overflow-hidden rounded-lg shadow-sm" style={{ gap: 0 }}>
+ 				<div ref={publishMenuRef} className="relative">
+					<div className="publish-split flex items-stretch overflow-hidden rounded-lg shadow-sm">
 						<button
 							type="button"
-							style={{ margin: 0, border: 'none' }}
+							onClick={handlePublish}
 							className="h-10 bg-primary px-5 text-[14px] font-medium text-primary-foreground transition-colors hover:bg-brand-600 active:bg-brand-700"
 						>
 							{__('Publish', 'all-feedback')}
 						</button>
 						<button
 							type="button"
-							style={{ margin: 0, border: 'none', borderLeft: '1px solid rgba(255,255,255,0.2)' }}
 							onClick={() => setPublishMenuOpen((v) => !v)}
-							className="flex h-10 items-center bg-primary px-3 text-primary-foreground transition-colors hover:bg-brand-600 active:bg-brand-700"
+							className="publish-split__arrow flex h-10 items-center bg-primary px-3 text-primary-foreground transition-colors hover:bg-brand-600 active:bg-brand-700"
 							aria-label={__('More publish options', 'all-feedback')}
 						>
 							<ChevronDown className="size-4" />
@@ -199,10 +261,13 @@ const FormBuilder = () => {
 					</div>
 
 					{publishMenuOpen && (
-						<div className="absolute right-0 top-full z-10 mt-1.5 w-44 overflow-hidden rounded-xl border border-border bg-white py-1 shadow-[0_4px_16px_oklch(0_0_0/0.10),0_1px_4px_oklch(0_0_0/0.06)]">
+						<div className="absolute right-0 top-full z-10 mt-1.5 w-44 overflow-hidden rounded-xl border border-border bg-white py-1 shadow-dropdown">
 							<button
 								type="button"
-								onClick={() => setPublishMenuOpen(false)}
+								onClick={() => {
+									// TODO: save as draft API call
+									setPublishMenuOpen(false);
+								}}
 								className="flex w-full items-center px-4 py-2.5 text-[13px] text-foreground transition-colors hover:bg-muted/60"
 							>
 								{__('Save as Draft', 'all-feedback')}
@@ -212,25 +277,25 @@ const FormBuilder = () => {
 				</div>
 			</header>
 
-			<div className="flex flex-1 overflow-hidden">
-				<div className="flex flex-1 flex-col overflow-hidden">
-					<div className="flex shrink-0 border-b border-border bg-white">
+ 			<div className="flex flex-1 overflow-hidden">
+ 				<div className="flex flex-1 flex-col overflow-hidden">
+ 					<div className="flex shrink-0 border-b border-border bg-white">
 						{TABS.map(({ value, label, Icon, pro }) => (
 							<button
 								key={value}
 								type="button"
 								onClick={() => setActiveTab(value)}
 								className={cn(
-									'relative flex flex-1 items-center justify-center gap-2 py-3 text-[13px] font-medium transition-colors cursor-pointer',
+									'relative flex flex-1 items-center justify-center gap-2 py-4 text-[14px] font-semibold transition-colors',
 									activeTab === value
-										? 'text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-primary'
+										? 'text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2.5px] after:bg-primary'
 										: 'text-muted-foreground hover:text-foreground',
 								)}
 							>
 								<Icon className="size-4" />
 								{label}
 								{pro && (
-									<span className="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase leading-none bg-amber-100 text-amber-600">
+									<span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold uppercase leading-none text-amber-600">
 										PRO
 									</span>
 								)}
@@ -240,15 +305,22 @@ const FormBuilder = () => {
 
 					<div className="flex flex-1 overflow-hidden">
 						{activeTab === 'builder' && (
-							<BuilderCanvas sections={sections} onSectionsChange={setSections} />
+							<BuilderCanvas
+								sections={sections}
+								onSectionsChange={(next) => form.setFieldValue('sections', next)}
+							/>
 						)}
 
 						{activeTab === 'settings' && (
 							<div className="flex flex-1 items-center justify-center">
 								<div className="text-center">
 									<Settings2 className="mx-auto mb-3 size-8 text-muted-foreground/30" />
-									<p className="text-[14px] font-medium text-foreground">Form Settings</p>
-									<p className="mt-1 text-[13px] text-muted-foreground">Coming soon</p>
+									<p className="text-[14px] font-medium text-foreground">
+										{__('Form Settings', 'all-feedback')}
+									</p>
+									<p className="mt-1 text-[13px] text-muted-foreground">
+										{__('Coming soon', 'all-feedback')}
+									</p>
 								</div>
 							</div>
 						)}
@@ -257,9 +329,11 @@ const FormBuilder = () => {
 							<div className="flex flex-1 items-center justify-center">
 								<div className="text-center">
 									<Palette className="mx-auto mb-3 size-8 text-muted-foreground/30" />
-									<p className="text-[14px] font-medium text-foreground">Form Styling</p>
+									<p className="text-[14px] font-medium text-foreground">
+										{__('Form Styling', 'all-feedback')}
+									</p>
 									<p className="mt-1 text-[13px] text-muted-foreground">
-										Available in{' '}
+										{__('Available in', 'all-feedback')}{' '}
 										<span className="font-semibold text-amber-600">PRO</span>
 									</p>
 								</div>
@@ -268,7 +342,7 @@ const FormBuilder = () => {
 					</div>
 				</div>
 
-				<div
+ 				<div
 					className="group relative flex w-3 shrink-0 cursor-col-resize items-center justify-center border-x border-border bg-white transition-colors hover:bg-muted/40"
 					onMouseDown={startResize}
 				>
@@ -278,7 +352,10 @@ const FormBuilder = () => {
 					</div>
 				</div>
 
-				<div style={{ width: previewWidth }} className="shrink-0 overflow-hidden">
+ 				<div
+					className="preview-panel-wrapper shrink-0 overflow-hidden"
+					style={{ '--preview-width': `${previewWidth}px` } as React.CSSProperties}
+				>
 					<PreviewPanel
 						sections={sections}
 						device={previewDevice}

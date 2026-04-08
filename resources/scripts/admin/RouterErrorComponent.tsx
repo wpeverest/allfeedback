@@ -5,6 +5,7 @@
  * crashes. Provides a "Go back" action and shows the error detail.
  */
 
+import { Button } from '@/components/ui/button';
 import { __ } from '@wordpress/i18n';
 import { AlertTriangle, ArrowLeft } from 'lucide-react';
 
@@ -34,13 +35,10 @@ export function RouterErrorComponent({ error }: Props) {
 				)}
 
 				<div className="flex justify-center">
-					<button
-						className="inline-flex cursor-pointer items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-[13px] font-medium text-primary-foreground hover:opacity-90"
-						onClick={() => window.history.back()}
-					>
+					<Button size="sm" onClick={() => window.history.back()}>
 						<ArrowLeft className="size-3.5" />
 						{__('Go back', 'all-feedback')}
-					</button>
+					</Button>
 				</div>
 			</div>
 		</div>

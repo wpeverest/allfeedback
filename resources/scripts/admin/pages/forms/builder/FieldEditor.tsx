@@ -1,34 +1,32 @@
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { __ } from '@wordpress/i18n';
 import { Copy, GripVertical, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { FIELD_TYPES } from './fieldTypes';
 import type { FormField } from './types';
 
-interface RequiredToggleProps {
+interface RequiredCheckboxProps {
+	fieldId: string;
 	value: boolean;
 	onChange: (v: boolean) => void;
 }
 
-const RequiredToggle = ({ value, onChange }: RequiredToggleProps) => (
-	<div className="flex items-center justify-between">
-		<span className="text-[12px] font-medium text-muted-foreground">Required</span>
-		<button
-			type="button"
-			role="switch"
-			aria-checked={value}
-			onClick={() => onChange(!value)}
-			className={cn(
-				'relative inline-flex h-[18px] w-8 shrink-0 cursor-pointer rounded-full transition-colors focus-visible:outline-none',
-				value ? 'bg-primary' : 'bg-border',
-			)}
+const RequiredCheckbox = ({ fieldId, value, onChange }: RequiredCheckboxProps) => (
+	<div className="flex items-center gap-2">
+		<input
+			type="checkbox"
+			id={`required-${fieldId}`}
+			checked={value}
+			onChange={(e) => onChange(e.target.checked)}
+			className="field-required-checkbox"
+		/>
+		<label
+			htmlFor={`required-${fieldId}`}
+			className="cursor-pointer select-none text-[12px] font-medium text-muted-foreground"
 		>
-			<span
-				className={cn(
-					'absolute top-[2px] inline-block size-[14px] rounded-full bg-white shadow-[0_1px_2px_rgba(0,0,0,0.2)] transition-transform',
-					value ? 'translate-x-[14px]' : 'translate-x-[2px]',
-				)}
-			/>
-		</button>
+			{__('Required', 'all-feedback')}
+		</label>
 	</div>
 );
 
@@ -107,20 +105,25 @@ const TextFieldConfig = ({
 	field: FormField;
 	onChange: (f: FormField) => void;
 }) => (
-	<div className="space-y-3">
+	<div className="space-y-4">
 		<input
 			value={field.label}
 			onChange={(e) => onChange({ ...field, label: e.target.value })}
-			placeholder="Question"
-			className="w-full border-b border-transparent bg-transparent px-1.5 py-1 text-[14px] font-semibold text-foreground placeholder:text-muted-foreground/45 transition-colors hover:border-border/60 focus:border-primary/60 focus:outline-none"
+			placeholder="Write a question…"
+			className="w-full cursor-text border-b-2 border-transparent bg-transparent px-1.5 py-1 text-[15px] font-semibold text-foreground placeholder:text-muted-foreground/40 transition-colors hover:border-border/50 focus:border-primary/50 focus:outline-none"
 		/>
-		<input
-			value={field.placeholder ?? ''}
-			onChange={(e) => onChange({ ...field, placeholder: e.target.value })}
-			placeholder="Placeholder text (optional)"
-			className="w-full rounded-lg border border-border/70 bg-transparent px-3 py-2 text-[12.5px] text-muted-foreground placeholder:text-muted-foreground/45 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/10"
-		/>
-		<RequiredToggle value={field.required} onChange={(v) => onChange({ ...field, required: v })} />
+		<div className="space-y-1.5">
+			<label className="block text-[11.5px] font-medium text-muted-foreground/70">
+				{__('Placeholder', 'all-feedback')}
+			</label>
+			<input
+				value={field.placeholder ?? ''}
+				onChange={(e) => onChange({ ...field, placeholder: e.target.value })}
+				placeholder="e.g. Enter your answer…"
+				className="w-full rounded-lg border border-border/70 bg-transparent px-3 py-2 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/10"
+			/>
+		</div>
+		<RequiredCheckbox fieldId={field.id} value={field.required} onChange={(v) => onChange({ ...field, required: v })} />
 	</div>
 );
 
@@ -169,12 +172,12 @@ const MultiSelectConfig = ({
 	};
 
 	return (
-		<div className="space-y-3">
+		<div className="space-y-4">
 			<input
 				value={field.label}
 				onChange={(e) => onChange({ ...field, label: e.target.value })}
-				placeholder="Question"
-				className="w-full border-b border-transparent bg-transparent px-1.5 py-1 text-[14px] font-semibold text-foreground placeholder:text-muted-foreground/45 transition-colors hover:border-border/60 focus:border-primary/60 focus:outline-none"
+				placeholder="Write a question…"
+				className="w-full cursor-text border-b-2 border-transparent bg-transparent px-1.5 py-1 text-[15px] font-semibold text-foreground placeholder:text-muted-foreground/40 transition-colors hover:border-border/50 focus:border-primary/50 focus:outline-none"
 			/>
 			<div className="overflow-hidden rounded-xl border border-border/70">
 				{options.map((opt, i) => (
@@ -194,7 +197,7 @@ const MultiSelectConfig = ({
 					/>
 				))}
 			</div>
-			<RequiredToggle value={field.required} onChange={(v) => onChange({ ...field, required: v })} />
+			<RequiredCheckbox fieldId={field.id} value={field.required} onChange={(v) => onChange({ ...field, required: v })} />
 		</div>
 	);
 };
@@ -206,14 +209,14 @@ const DefaultFieldConfig = ({
 	field: FormField;
 	onChange: (f: FormField) => void;
 }) => (
-	<div className="space-y-3">
+	<div className="space-y-4">
 		<input
 			value={field.label}
 			onChange={(e) => onChange({ ...field, label: e.target.value })}
-			placeholder="Question"
-			className="w-full border-b border-transparent bg-transparent px-1.5 py-1 text-[14px] font-semibold text-foreground placeholder:text-muted-foreground/45 transition-colors hover:border-border/60 focus:border-primary/60 focus:outline-none"
+			placeholder="Write a question…"
+			className="w-full cursor-text border-b-2 border-transparent bg-transparent px-1.5 py-1 text-[15px] font-semibold text-foreground placeholder:text-muted-foreground/40 transition-colors hover:border-border/50 focus:border-primary/50 focus:outline-none"
 		/>
-		<RequiredToggle value={field.required} onChange={(v) => onChange({ ...field, required: v })} />
+		<RequiredCheckbox fieldId={field.id} value={field.required} onChange={(v) => onChange({ ...field, required: v })} />
 	</div>
 );
 
@@ -266,7 +269,7 @@ const FieldEditor = ({
 			onDragEnd={(e) => { e.stopPropagation(); onDragEnd(); }}
 			onDrop={(e) => { e.stopPropagation(); e.preventDefault(); onDrop(e, index); }}
 			className={cn(
-				'group relative cursor-pointer rounded-xl border border-border/60 bg-background p-5 transition-all',
+				'group relative cursor-pointer rounded-xl border border-border/60 bg-background p-10 transition-all',
 				isDragging && 'opacity-40 scale-[0.99]',
 				isDragOver && !isDragging && 'border-primary/40 ring-1 ring-primary/15',
 			)}
@@ -276,31 +279,31 @@ const FieldEditor = ({
 					<GripVertical className="size-4" />
 				</span>
 				{typeConfig && (
-					<span
-						className="flex size-6 shrink-0 items-center justify-center rounded-md"
-						style={{ backgroundColor: typeConfig.iconBg }}
-					>
-						<typeConfig.Icon className="size-3.5" style={{ color: typeConfig.iconColor }} />
+					<span className="field-type-icon size-6" data-type={field.type}>
+						<typeConfig.Icon className="size-3.5" />
 					</span>
 				)}
 				<span className="text-[11.5px] font-medium text-muted-foreground">
 					{typeConfig?.label}
 				</span>
 				<div className="ml-auto flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-					<button
-						type="button"
+					<Button
+						variant="ghost"
+						size="icon-xs"
 						onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
-						className="flex size-6 items-center justify-center rounded-md text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
+						aria-label={__('Duplicate field', 'all-feedback')}
 					>
 						<Copy className="size-3" />
-					</button>
-					<button
-						type="button"
+					</Button>
+					<Button
+						variant="ghost"
+						size="icon-xs"
 						onClick={(e) => { e.stopPropagation(); onDelete(); }}
-						className="flex size-6 items-center justify-center rounded-md text-muted-foreground/60 transition-colors hover:bg-destructive/10 hover:text-destructive"
+						className="hover:bg-destructive/10 hover:text-destructive active:bg-destructive/15"
+						aria-label={__('Delete field', 'all-feedback')}
 					>
 						<Trash2 className="size-3" />
-					</button>
+					</Button>
 				</div>
 			</div>
 

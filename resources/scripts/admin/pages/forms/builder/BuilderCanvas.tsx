@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { __ } from '@wordpress/i18n';
 import { LayoutGrid, Plus } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import SectionCard from './SectionCard';
@@ -13,6 +13,7 @@ interface BuilderCanvasProps {
 const BuilderCanvas = ({ sections, onSectionsChange }: BuilderCanvasProps) => {
 	const [sectionDragIdx, setSectionDragIdx] = useState<number | null>(null);
 	const [sectionDropIdx, setSectionDropIdx] = useState<number | null>(null);
+	const [newSectionId,   setNewSectionId]   = useState<string | null>(null);
 
 	const addSection = useCallback(() => {
 		const newSection: FormSection = {
@@ -20,6 +21,7 @@ const BuilderCanvas = ({ sections, onSectionsChange }: BuilderCanvasProps) => {
 			title: `Section ${sections.length + 1}`,
 			fields: [],
 		};
+		setNewSectionId(newSection.id);
 		onSectionsChange([...sections, newSection]);
 	}, [sections, onSectionsChange]);
 
@@ -68,18 +70,20 @@ const BuilderCanvas = ({ sections, onSectionsChange }: BuilderCanvasProps) => {
 
 	if (sections.length === 0) {
 		return (
-			<div className="flex flex-1 cursor-pointer items-center justify-center overflow-y-auto bg-muted/25 p-6">
-				<div className="flex w-full flex-col items-center rounded-2xl border-2 border-dashed border-border/50 bg-white px-8 py-14 text-center">
-					<div className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-muted">
-						<LayoutGrid className="size-6 text-muted-foreground/60" />
+			<div className="flex flex-1 items-center justify-center bg-white">
+				<div className="flex flex-col items-center gap-3 text-center">
+					<div className="flex size-14 items-center justify-center rounded-2xl bg-primary/8">
+						<LayoutGrid className="size-6 text-primary" />
 					</div>
-					<h3 className="text-[15px] font-semibold text-foreground">Start with a section</h3>
-					<p className="mt-1.5 max-w-[230px] text-center text-[13px] leading-relaxed text-muted-foreground">
-						Sections help you organize your form fields into groups
-					</p>
-					<Button onClick={addSection} className="mt-6 gap-1.5 px-5">
+					<span className="block text-[15px] font-semibold text-foreground">
+						{__('No sections yet', 'all-feedback')}
+					</span>
+					<span className="block max-w-[340px] text-[13px] leading-relaxed text-muted-foreground">
+						{__('Sections help you group related questions. Add your first one to get started.', 'all-feedback')}
+					</span>
+					<Button onClick={addSection}>
 						<Plus className="size-4" />
-						Add a Section
+						{__('Add a Section', 'all-feedback')}
 					</Button>
 				</div>
 			</div>
@@ -87,7 +91,7 @@ const BuilderCanvas = ({ sections, onSectionsChange }: BuilderCanvasProps) => {
 	}
 
 	return (
-		<div className="flex-1 cursor-pointer overflow-y-auto bg-muted/25 p-5">
+		<div className="flex-1 overflow-y-auto bg-white p-5">
 			<div className="w-full space-y-4">
 				{sections.map((section, idx) => (
 					<SectionCard
@@ -95,6 +99,7 @@ const BuilderCanvas = ({ sections, onSectionsChange }: BuilderCanvasProps) => {
 						section={section}
 						index={idx}
 						sectionCount={sections.length}
+						autoFocus={section.id === newSectionId}
 						isDragging={sectionDragIdx === idx}
 						isDragOver={sectionDropIdx === idx && sectionDragIdx !== idx}
 						onSectionChange={(s) => handleSectionChange(idx, s)}
@@ -107,14 +112,9 @@ const BuilderCanvas = ({ sections, onSectionsChange }: BuilderCanvasProps) => {
 				))}
 
 				<div className="flex py-1">
-					<Button
-						size="sm"
-						variant="secondary"
-						onClick={addSection}
-						className="cursor-pointer"
-					>
+					<Button size="sm" variant="secondary" onClick={addSection}>
 						<Plus className="size-3.5" />
-						Add Section
+						{__('Add Section', 'all-feedback')}
 					</Button>
 				</div>
 			</div>

@@ -1,7 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { GripVertical, Plus, Trash2 } from 'lucide-react';
-import { useCallback, useRef, useState } from 'react';
+import { __ } from '@wordpress/i18n';
+import { Check, ChevronDown, GripVertical, Pencil, Plus, Trash2, X } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import FieldEditor from './FieldEditor';
 import FieldTypeMenu from './FieldTypeMenu';
 import { FIELD_TYPES } from './fieldTypes';
@@ -13,6 +14,7 @@ interface SectionCardProps {
 	sectionCount: number;
 	isDragging: boolean;
 	isDragOver: boolean;
+	autoFocus?: boolean;
 	onSectionChange: (section: FormSection) => void;
 	onSectionDelete: () => void;
 	onDragStart: (index: number) => void;
@@ -26,6 +28,7 @@ const SectionCard = ({
 	index,
 	isDragging,
 	isDragOver,
+	autoFocus = false,
 	onSectionChange,
 	onSectionDelete,
 	onDragStart,
@@ -33,12 +36,53 @@ const SectionCard = ({
 	onDragEnd,
 	onDrop,
 }: SectionCardProps) => {
+	const [isCollapsed,   setIsCollapsed]   = useState(false);
 	const [menuAnchorRect, setMenuAnchorRect] = useState<DOMRect | null>(null);
 	const [fieldDragIdx, setFieldDragIdx] = useState<number | null>(null);
 	const [fieldDropIdx, setFieldDropIdx] = useState<number | null>(null);
 	const addFieldBtnRef = useRef<HTMLButtonElement>(null);
 
-	const openMenu = () => {
+	// ── Section title editing ──────────────────────────────────────────────
+	const [isEditingTitle, setIsEditingTitle] = useState(false);
+	const titleSnapshotRef                    = useRef('');
+	const titleInputRef                       = useRef<HTMLInputElement>(null);
+
+	useEffect(() => {
+		if (isEditingTitle) {
+			titleInputRef.current?.focus();
+			titleInputRef.current?.select();
+		}
+	}, [isEditingTitle]);
+
+	// Start in edit mode when section is freshly added
+	useEffect(() => {
+		if (autoFocus) startEditingTitle();
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
+
+	const startEditingTitle = () => {
+		titleSnapshotRef.current = section.title;
+		setIsEditingTitle(true);
+	};
+
+	const commitTitle = () => {
+		if (!section.title.trim()) {
+			onSectionChange({ ...section, title: titleSnapshotRef.current });
+		}
+		setIsEditingTitle(false);
+	};
+
+	const cancelTitle = () => {
+		onSectionChange({ ...section, title: titleSnapshotRef.current });
+		setIsEditingTitle(false);
+	};
+
+	// ── Field type menu ────────────────────────────────────────────────────
+	const toggleMenu = () => {
+		if (menuAnchorRect) {
+			setMenuAnchorRect(null);
+			return;
+		}
 		if (!addFieldBtnRef.current) return;
 		setMenuAnchorRect(addFieldBtnRef.current.getBoundingClientRect());
 	};
@@ -94,14 +138,8 @@ const SectionCard = ({
 	);
 
 	const handleFieldDragStart = (fieldIdx: number) => setFieldDragIdx(fieldIdx);
-
-	const handleFieldDragOver = (_e: React.DragEvent, fieldIdx: number) =>
-		setFieldDropIdx(fieldIdx);
-
-	const handleFieldDragEnd = () => {
-		setFieldDragIdx(null);
-		setFieldDropIdx(null);
-	};
+	const handleFieldDragOver  = (_e: React.DragEvent, fieldIdx: number) => setFieldDropIdx(fieldIdx);
+	const handleFieldDragEnd   = () => { setFieldDragIdx(null); setFieldDropIdx(null); };
 
 	const handleFieldDrop = (_e: React.DragEvent, targetIdx: number) => {
 		if (fieldDragIdx === null || fieldDragIdx === targetIdx) {
@@ -126,42 +164,104 @@ const SectionCard = ({
 				isDragging && 'opacity-40 scale-[0.99]',
 				isDragOver && !isDragging
 					? 'border-primary/50 shadow-[0_0_0_3px_oklch(var(--primary)/0.10)]'
-					: 'border-border/70 shadow-sm',
+					: 'border-border/60 shadow-card',
 			)}
 		>
+			{/* ── Section header ─────────────────────────────────────────── */}
 			<div
 				draggable
 				onDragStart={(e) => { e.stopPropagation(); onDragStart(index); }}
 				onDragEnd={(e) => { e.stopPropagation(); onDragEnd(); }}
-				className="flex items-center gap-3 border-b border-border/50 bg-gradient-to-r from-primary/[0.05] to-transparent px-5 py-3.5"
+				onClick={() => setIsCollapsed((v) => !v)}
+				className="flex cursor-pointer items-center border-b border-border/50 bg-white px-5 py-4 transition-colors hover:bg-muted/20"
 			>
-				<span className="cursor-grab text-primary/30 transition-colors hover:text-primary/60 active:cursor-grabbing">
-					<GripVertical className="size-4 shrink-0" />
-				</span>
+				{/* Left group (flex-1): grip + title */}
+				<div className="flex flex-1 items-center gap-2">
+					<span className="cursor-grab text-primary/30 transition-colors hover:text-primary/60 active:cursor-grabbing">
+						<GripVertical className="size-4 shrink-0" />
+					</span>
 
-				<span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary/15 px-1.5 text-[10px] font-bold tabular-nums text-primary">
-					{index + 1}
-				</span>
+					{isEditingTitle ? (
+						<div
+						className="flex items-center gap-1.5"
+						onClick={(e) => e.stopPropagation()}
+						onBlur={(e) => {
+							if (!e.currentTarget.contains(e.relatedTarget as Node)) commitTitle();
+						}}
+					>
+							<input
+								ref={titleInputRef}
+								type="text"
+								value={section.title}
+								onChange={(e) => onSectionChange({ ...section, title: e.target.value })}
+								onKeyDown={(e) => {
+									if (e.key === 'Enter') commitTitle();
+									if (e.key === 'Escape') cancelTitle();
+								}}
+								onMouseDown={(e) => e.stopPropagation()}
+								className="section-title-input w-[260px] rounded-md border border-border/70 bg-transparent px-2 py-1 text-[15px] font-semibold text-foreground outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/10"
+							/>
+							<Button
+								variant="ghost"
+								size="icon-xs"
+								onClick={commitTitle}
+								className="shrink-0 text-success hover:bg-success/10 active:bg-success/15"
+								aria-label={__('Confirm', 'all-feedback')}
+							>
+								<Check className="size-3.5" />
+							</Button>
+							<Button
+								variant="ghost"
+								size="icon-xs"
+								onClick={cancelTitle}
+								className="shrink-0"
+								aria-label={__('Cancel', 'all-feedback')}
+							>
+								<X className="size-3.5" />
+							</Button>
+						</div>
+					) : (
+						<button
+							type="button"
+							className="section-title-btn group flex w-[260px] items-center gap-2 rounded-md border border-transparent px-2 py-1 text-left text-[15px] font-semibold text-foreground transition-colors hover:border-border/50 hover:bg-black/[0.04]"
+							onDoubleClick={(e) => { e.stopPropagation(); startEditingTitle(); }}
+							title={__('Click the pencil or double-click to edit', 'all-feedback')}
+							onClick={(e) => e.stopPropagation()}
+							onMouseDown={(e) => e.stopPropagation()}
+						>
+							<span className="min-w-0 flex-1 truncate">{section.title}</span>
+							<Pencil
+								className="size-3 shrink-0 text-muted-foreground/40 opacity-0 transition-opacity group-hover:opacity-100"
+								onClick={(e) => { e.stopPropagation(); startEditingTitle(); }}
+							/>
+						</button>
+					)}
+				</div>
 
-				<input
-					value={section.title}
-					onChange={(e) => onSectionChange({ ...section, title: e.target.value })}
-					placeholder="Section title"
-					onClick={(e) => e.stopPropagation()}
-					onMouseDown={(e) => e.stopPropagation()}
-					className="min-w-[120px] flex-1 cursor-text border-b border-transparent bg-transparent px-1.5 py-0.5 text-[13px] font-semibold text-foreground placeholder:text-muted-foreground/40 transition-colors hover:border-border/60 focus:border-primary/60 focus:outline-none"
-				/>
-
-				<button
-					type="button"
-					onClick={onSectionDelete}
-					className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/35 transition-colors hover:bg-destructive/10 hover:text-destructive"
-				>
-					<Trash2 className="size-3.5" />
-				</button>
+				{/* Right actions: collapse toggle + delete — stop propagation so header click doesn't double-fire */}
+				<div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
+					<Button
+						variant="ghost"
+						size="icon-xs"
+						onClick={() => setIsCollapsed((v) => !v)}
+						aria-label={isCollapsed ? __('Expand section', 'all-feedback') : __('Collapse section', 'all-feedback')}
+					>
+						<ChevronDown className={cn('size-3.5 text-muted-foreground/50 transition-transform duration-200', isCollapsed && '-rotate-90')} />
+					</Button>
+					<Button
+						variant="ghost"
+						size="icon-xs"
+						onClick={onSectionDelete}
+						className="shrink-0 text-muted-foreground/40 hover:bg-destructive/10 hover:text-destructive active:bg-destructive/15"
+						aria-label={__('Delete section', 'all-feedback')}
+					>
+						<Trash2 className="size-3.5" />
+					</Button>
+				</div>
 			</div>
 
-			<div className="p-5">
+			{/* ── Section body ───────────────────────────────────────────── */}
+			<div className={cn('p-5', isCollapsed && 'hidden')}>
 				{section.fields.length > 0 && (
 					<div className="mb-3 space-y-2">
 						{section.fields.map((field, fieldIdx) => (
@@ -184,21 +284,15 @@ const SectionCard = ({
 				)}
 
 				<div className="flex">
-					<Button
-						ref={addFieldBtnRef}
-						size="sm"
-						variant="secondary"
-						onClick={openMenu}
-						className="cursor-pointer"
-					>
+					<Button ref={addFieldBtnRef} size="sm" variant="secondary" onClick={toggleMenu}>
 						<Plus className="size-3.5" />
-						Add Field
+						{__('Add Field', 'all-feedback')}
 					</Button>
 				</div>
 			</div>
 
 			{menuAnchorRect && (
-				<FieldTypeMenu anchorRect={menuAnchorRect} onSelect={addField} onClose={closeMenu} />
+				<FieldTypeMenu anchorRect={menuAnchorRect} triggerRef={addFieldBtnRef} onSelect={addField} onClose={closeMenu} />
 			)}
 		</div>
 	);
