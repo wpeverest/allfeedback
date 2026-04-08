@@ -1,38 +1,57 @@
+import { EditorContent, useEditor } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import HighlightExtension from '@tiptap/extension-highlight';
+import UnderlineExtension from '@tiptap/extension-underline';
+import PlaceholderExtension from '@tiptap/extension-placeholder';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Copy, GripVertical, Plus, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { __ } from '@wordpress/i18n';
+import {
+	Bold as BoldIcon,
+	ChevronDown,
+	Code as CodeIcon,
+	Copy,
+	GripVertical,
+	Highlighter as HighlighterIcon,
+	Italic as ItalicIcon,
+	Plus,
+	Strikethrough as StrikethroughIcon,
+	Trash2,
+	Underline as UnderlineIcon,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { FIELD_TYPES } from './fieldTypes';
 import type { FormField } from './types';
 
-interface RequiredToggleProps {
+/* ── Required checkbox ─────────────────────────────────────────────────── */
+interface RequiredCheckboxProps {
+	fieldId: string;
 	value: boolean;
 	onChange: (v: boolean) => void;
 }
 
-const RequiredToggle = ({ value, onChange }: RequiredToggleProps) => (
-	<div className="flex items-center justify-between">
-		<span className="text-[12px] font-medium text-muted-foreground">Required</span>
-		<button
-			type="button"
-			role="switch"
-			aria-checked={value}
-			onClick={() => onChange(!value)}
-			className={cn(
-				'relative inline-flex h-[18px] w-8 shrink-0 cursor-pointer rounded-full transition-colors focus-visible:outline-none',
-				value ? 'bg-primary' : 'bg-border',
-			)}
+const RequiredCheckbox = ({ fieldId, value, onChange }: RequiredCheckboxProps) => (
+	<div className="flex items-center gap-2">
+		<input
+			type="checkbox"
+			id={`required-${fieldId}`}
+			checked={value}
+			onChange={(e) => onChange(e.target.checked)}
+			className="field-required-checkbox"
+		/>
+		<label
+			htmlFor={`required-${fieldId}`}
+			className="cursor-pointer select-none text-[12px] font-medium text-muted-foreground"
 		>
-			<span
-				className={cn(
-					'absolute top-[2px] inline-block size-[14px] rounded-full bg-white shadow-[0_1px_2px_rgba(0,0,0,0.2)] transition-transform',
-					value ? 'translate-x-[14px]' : 'translate-x-[2px]',
-				)}
-			/>
-		</button>
+			{__('Required', 'all-feedback')}
+		</label>
 	</div>
 );
 
+/* ── Option row (multi-select / checkboxes) ────────────────────────────── */
 interface OptionRowProps {
+	fieldType: 'radio' | 'checkboxes';
 	value: string;
 	index: number;
 	isDragging: boolean;
@@ -47,6 +66,7 @@ interface OptionRowProps {
 }
 
 const OptionRow = ({
+	fieldType,
 	value,
 	index,
 	isDragging,
@@ -66,70 +86,237 @@ const OptionRow = ({
 		onDragEnd={(e) => { e.stopPropagation(); onDragEnd(); }}
 		onDrop={(e) => { e.stopPropagation(); e.preventDefault(); onDrop(e, index); }}
 		className={cn(
-			'flex items-center border-b border-border/60 last:border-0 transition-colors',
+			'flex items-center gap-2 transition-opacity',
 			isDragging && 'opacity-40',
-			isDragOver && !isDragging && 'bg-primary/[0.03]',
 		)}
 	>
-		<span className="cursor-grab px-2.5 text-muted-foreground/30 hover:text-muted-foreground/60">
-			<GripVertical className="size-4" />
+		{/* Drag handle */}
+		<span className="cursor-grab text-muted-foreground/25 transition-colors hover:text-muted-foreground/60">
+			<GripVertical className="size-3.5" />
 		</span>
-		<input
-			value={value}
-			onChange={(e) => onChange(e.target.value)}
-			placeholder={`Option ${index + 1}`}
-			className="flex-1 border-0 bg-transparent py-2.5 text-[13px] text-foreground placeholder:text-muted-foreground/45 focus:outline-none"
-		/>
-		<div className="flex items-stretch border-l border-border/60">
+
+		{/* Dashed-border input — same visual language as QuestionEditor */}
+		<div className={cn(
+			'flex flex-1 items-center gap-2 rounded-lg border border-dashed px-2.5 py-2 transition-colors',
+			isDragOver && !isDragging
+				? 'border-primary/50 bg-primary/[0.015]'
+				: 'border-border/50 hover:border-border/80 hover:bg-muted/20 focus-within:border-primary/50 focus-within:bg-primary/[0.015]',
+		)}>
+			{/* Type indicator */}
+			<span className={cn(
+				'flex shrink-0 items-center justify-center border border-border/60 bg-white',
+				fieldType === 'radio' ? 'size-3.5 rounded-full' : 'size-3.5 rounded-[3px]',
+			)} />
+
+			<input
+				value={value}
+				onChange={(e) => onChange(e.target.value)}
+				placeholder={`Option ${index + 1}`}
+				className="option-row-input flex-1 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none"
+			/>
+		</div>
+
+		{/* Actions */}
+		<div className="flex items-center gap-0.5">
 			<button
 				type="button"
 				onClick={onDelete}
-				className="flex items-center justify-center px-3 py-2 text-muted-foreground/40 transition-colors hover:bg-destructive/5 hover:text-destructive"
+				className="flex size-6 items-center justify-center rounded text-muted-foreground/40 transition-colors hover:bg-destructive/10 hover:text-destructive"
 			>
-				<Trash2 className="size-3.5" />
+				<Trash2 className="size-3" />
 			</button>
-			<div className="w-px self-stretch bg-border/60" />
 			<button
 				type="button"
 				onClick={onAddAfter}
-				className="flex items-center justify-center px-3 py-2 text-muted-foreground/40 transition-colors hover:bg-muted/60 hover:text-foreground"
+				className="flex size-6 items-center justify-center rounded text-muted-foreground/40 transition-colors hover:bg-muted hover:text-foreground"
 			>
-				<Plus className="size-3.5" />
+				<Plus className="size-3" />
 			</button>
 		</div>
 	</div>
 );
 
+/* ── Question rich-text editor (Tiptap) ────────────────────────────────── */
+interface QuestionEditorProps {
+	value: string;
+	onChange: (html: string) => void;
+	autoFocus?: boolean;
+}
+
+const QuestionEditor = ({ value, onChange, autoFocus }: QuestionEditorProps) => {
+	const [isFocused, setIsFocused] = useState(false);
+	const onChangeRef   = useRef(onChange);
+	const didFocusRef   = useRef(false);
+	onChangeRef.current = onChange;
+
+	const editor = useEditor({
+		extensions: [
+			StarterKit.configure({
+				heading:        false,
+				bulletList:     false,
+				orderedList:    false,
+				blockquote:     false,
+				codeBlock:      false,
+				horizontalRule: false,
+			}),
+			UnderlineExtension,
+			HighlightExtension.configure({ multicolor: false }),
+			PlaceholderExtension.configure({
+				placeholder: __('Write a question…', 'all-feedback'),
+			}),
+		],
+		content:  value || '',
+		onUpdate: ({ editor }) => onChangeRef.current(editor.getHTML()),
+		onFocus:  () => setIsFocused(true),
+		onBlur:   () => setIsFocused(false),
+	});
+
+	/* Sync external value changes (e.g. undo/redo from parent) */
+	useEffect(() => {
+		if (editor && !editor.isFocused && value !== editor.getHTML()) {
+			editor.commands.setContent(value || '', false);
+		}
+	}, [value, editor]);
+
+	/* Auto-focus when a new field is added */
+	useEffect(() => {
+		if (autoFocus && editor && !didFocusRef.current) {
+			didFocusRef.current = true;
+			editor.commands.focus('end');
+		}
+	}, [autoFocus, editor]);
+
+	type FormatMark = 'bold' | 'italic' | 'underline' | 'strike' | 'code' | 'highlight';
+
+	const toggleFormat = (fmt: FormatMark) => {
+		if (!editor) return;
+		const chain = editor.chain().focus();
+		if (fmt === 'bold')      chain.toggleBold().run();
+		if (fmt === 'italic')    chain.toggleItalic().run();
+		if (fmt === 'underline') chain.toggleUnderline().run();
+		if (fmt === 'strike')    chain.toggleStrike().run();
+		if (fmt === 'code')      chain.toggleCode().run();
+		if (fmt === 'highlight') chain.toggleHighlight().run();
+	};
+
+	const clearAllMarks = () => editor?.chain().focus().unsetAllMarks().run();
+
+	/* Two groups separated by a divider */
+	const TOOLBAR_GROUPS: { fmt: FormatMark; Icon: LucideIcon; title: string }[][] = [
+		[
+			{ fmt: 'bold',      Icon: BoldIcon,          title: __('Bold', 'all-feedback') },
+			{ fmt: 'italic',    Icon: ItalicIcon,        title: __('Italic', 'all-feedback') },
+			{ fmt: 'underline', Icon: UnderlineIcon,     title: __('Underline', 'all-feedback') },
+			{ fmt: 'strike',    Icon: StrikethroughIcon, title: __('Strikethrough', 'all-feedback') },
+		],
+		[
+			{ fmt: 'code',      Icon: CodeIcon,          title: __('Inline code', 'all-feedback') },
+			{ fmt: 'highlight', Icon: HighlighterIcon,   title: __('Highlight', 'all-feedback') },
+		],
+	];
+
+	return (
+		<div>
+			{/* Format toolbar — slides in when editor is focused */}
+			<div
+				className={cn(
+					'mb-2 flex items-center gap-px overflow-hidden transition-all duration-150',
+					isFocused ? 'max-h-7 opacity-100' : 'max-h-0 opacity-0 pointer-events-none',
+				)}
+			>
+				{TOOLBAR_GROUPS.map((group, gi) => (
+					<>
+						{gi > 0 && <span key={`sep-${gi}`} className="mx-1 h-3.5 w-px bg-border/70" />}
+						{group.map(({ fmt, Icon, title }) => {
+							const active = editor?.isActive(fmt) ?? false;
+							return (
+								<button
+									key={fmt}
+									type="button"
+									title={title}
+									onMouseDown={(e) => { e.preventDefault(); toggleFormat(fmt); }}
+									className={cn(
+										'flex size-[22px] items-center justify-center rounded transition-colors',
+										active
+											? 'bg-primary/10 text-primary'
+											: 'text-muted-foreground/50 hover:bg-muted hover:text-foreground',
+									)}
+								>
+									<Icon className="size-3.5" />
+								</button>
+							);
+						})}
+					</>
+				))}
+
+				{/* Separator + clear */}
+				<span className="mx-1 h-3.5 w-px bg-border/70" />
+				<button
+					type="button"
+					title={__('Clear formatting', 'all-feedback')}
+					onMouseDown={(e) => { e.preventDefault(); clearAllMarks(); }}
+					className="flex size-[22px] items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-muted hover:text-foreground"
+				>
+					<span className="text-[10px] font-bold leading-none">T<span className="text-[8px]">✕</span></span>
+				</button>
+			</div>
+
+			{/* Tiptap editor — dashed border always visible to signal editability */}
+			<div
+				data-focused={isFocused}
+				className={cn(
+					'question-editor-field rounded-lg border border-dashed transition-colors',
+					isFocused
+						? 'border-primary/50 bg-primary/[0.015]'
+						: 'border-border/50 hover:border-border/80 hover:bg-muted/20',
+				)}
+			>
+				<EditorContent editor={editor} />
+			</div>
+		</div>
+	);
+};
+
+/* ── Text field config (short_text / long_text) ────────────────────────── */
 const TextFieldConfig = ({
 	field,
 	onChange,
+	autoFocus,
 }: {
 	field: FormField;
 	onChange: (f: FormField) => void;
+	autoFocus?: boolean;
 }) => (
-	<div className="space-y-3">
-		<input
+	<div className="space-y-4">
+		<QuestionEditor
 			value={field.label}
-			onChange={(e) => onChange({ ...field, label: e.target.value })}
-			placeholder="Question"
-			className="w-full border-b border-transparent bg-transparent px-1.5 py-1 text-[14px] font-semibold text-foreground placeholder:text-muted-foreground/45 transition-colors hover:border-border/60 focus:border-primary/60 focus:outline-none"
+			onChange={(html) => onChange({ ...field, label: html })}
+			autoFocus={autoFocus}
 		/>
-		<input
-			value={field.placeholder ?? ''}
-			onChange={(e) => onChange({ ...field, placeholder: e.target.value })}
-			placeholder="Placeholder text (optional)"
-			className="w-full rounded-lg border border-border/70 bg-transparent px-3 py-2 text-[12.5px] text-muted-foreground placeholder:text-muted-foreground/45 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/10"
-		/>
-		<RequiredToggle value={field.required} onChange={(v) => onChange({ ...field, required: v })} />
+
+		<div className="space-y-1.5 border-t border-border/40 pt-4">
+			<label className="block text-[11.5px] font-medium text-muted-foreground/70">
+				{__('Placeholder', 'all-feedback')}
+			</label>
+			<input
+				value={field.placeholder ?? ''}
+				onChange={(e) => onChange({ ...field, placeholder: e.target.value })}
+				placeholder="e.g. Enter your answer…"
+				className="w-full rounded-lg border border-border/70 bg-transparent px-3 py-2 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/10"
+			/>
+		</div>
 	</div>
 );
 
-const MultiSelectConfig = ({
+/* ── Options config (radio + checkboxes) ───────────────────────────────── */
+const OptionsConfig = ({
 	field,
 	onChange,
+	autoFocus,
 }: {
 	field: FormField;
 	onChange: (f: FormField) => void;
+	autoFocus?: boolean;
 }) => {
 	const options = field.options ?? ['Option 1', 'Option 2', 'Option 3'];
 	const [optDragIdx, setOptDragIdx] = useState<number | null>(null);
@@ -168,18 +355,20 @@ const MultiSelectConfig = ({
 		setOptDropIdx(null);
 	};
 
+	const fieldType = field.type as 'radio' | 'checkboxes';
+
 	return (
-		<div className="space-y-3">
-			<input
+		<div className="space-y-4">
+			<QuestionEditor
 				value={field.label}
-				onChange={(e) => onChange({ ...field, label: e.target.value })}
-				placeholder="Question"
-				className="w-full border-b border-transparent bg-transparent px-1.5 py-1 text-[14px] font-semibold text-foreground placeholder:text-muted-foreground/45 transition-colors hover:border-border/60 focus:border-primary/60 focus:outline-none"
+				onChange={(html) => onChange({ ...field, label: html })}
+				autoFocus={autoFocus}
 			/>
-			<div className="overflow-hidden rounded-xl border border-border/70">
+			<div className="space-y-2">
 				{options.map((opt, i) => (
 					<OptionRow
 						key={i}
+						fieldType={fieldType}
 						value={opt}
 						index={i}
 						isDragging={optDragIdx === i}
@@ -193,35 +382,45 @@ const MultiSelectConfig = ({
 						onDrop={handleOptDrop}
 					/>
 				))}
+				<button
+					type="button"
+					onClick={() => addOptionAfter(options.length - 1)}
+					className="flex items-center gap-1.5 pl-[22px] text-[12.5px] text-muted-foreground/60 transition-colors hover:text-primary"
+				>
+					<Plus className="size-3.5" />
+					{__('Add option', 'all-feedback')}
+				</button>
 			</div>
-			<RequiredToggle value={field.required} onChange={(v) => onChange({ ...field, required: v })} />
 		</div>
 	);
 };
 
+/* ── Default field config (rating, scale, nps, etc.) ──────────────────── */
 const DefaultFieldConfig = ({
 	field,
 	onChange,
+	autoFocus,
 }: {
 	field: FormField;
 	onChange: (f: FormField) => void;
+	autoFocus?: boolean;
 }) => (
-	<div className="space-y-3">
-		<input
+	<div className="space-y-4">
+		<QuestionEditor
 			value={field.label}
-			onChange={(e) => onChange({ ...field, label: e.target.value })}
-			placeholder="Question"
-			className="w-full border-b border-transparent bg-transparent px-1.5 py-1 text-[14px] font-semibold text-foreground placeholder:text-muted-foreground/45 transition-colors hover:border-border/60 focus:border-primary/60 focus:outline-none"
+			onChange={(html) => onChange({ ...field, label: html })}
+			autoFocus={autoFocus}
 		/>
-		<RequiredToggle value={field.required} onChange={(v) => onChange({ ...field, required: v })} />
 	</div>
 );
 
+/* ── FieldEditor card ──────────────────────────────────────────────────── */
 export interface FieldEditorProps {
 	field: FormField;
 	index: number;
 	isDragging: boolean;
 	isDragOver: boolean;
+	autoFocus?: boolean;
 	onChange: (field: FormField) => void;
 	onDelete: () => void;
 	onDuplicate: () => void;
@@ -236,6 +435,7 @@ const FieldEditor = ({
 	index,
 	isDragging,
 	isDragOver,
+	autoFocus,
 	onChange,
 	onDelete,
 	onDuplicate,
@@ -244,17 +444,19 @@ const FieldEditor = ({
 	onDragEnd,
 	onDrop,
 }: FieldEditorProps) => {
-	const typeConfig = FIELD_TYPES.find((t) => t.type === field.type);
+	const typeConfig   = FIELD_TYPES.find((t) => t.type === field.type);
+	const [isCollapsed, setIsCollapsed] = useState(false);
 
 	const renderConfig = () => {
 		switch (field.type) {
 			case 'short_text':
 			case 'long_text':
-				return <TextFieldConfig field={field} onChange={onChange} />;
-			case 'multi_select':
-				return <MultiSelectConfig field={field} onChange={onChange} />;
+				return <TextFieldConfig field={field} onChange={onChange} autoFocus={autoFocus} />;
+			case 'radio':
+			case 'checkboxes':
+				return <OptionsConfig field={field} onChange={onChange} autoFocus={autoFocus} />;
 			default:
-				return <DefaultFieldConfig field={field} onChange={onChange} />;
+				return <DefaultFieldConfig field={field} onChange={onChange} autoFocus={autoFocus} />;
 		}
 	};
 
@@ -266,45 +468,88 @@ const FieldEditor = ({
 			onDragEnd={(e) => { e.stopPropagation(); onDragEnd(); }}
 			onDrop={(e) => { e.stopPropagation(); e.preventDefault(); onDrop(e, index); }}
 			className={cn(
-				'group relative cursor-pointer rounded-xl border border-border/60 bg-background p-5 transition-all',
+				'group relative overflow-hidden rounded-xl border border-border/60 bg-white transition-all',
 				isDragging && 'opacity-40 scale-[0.99]',
 				isDragOver && !isDragging && 'border-primary/40 ring-1 ring-primary/15',
 			)}
 		>
-			<div className="mb-3 flex items-center gap-2">
-				<span className="cursor-grab text-muted-foreground/25 hover:text-muted-foreground/60">
+			{/* ── Header bar — click to collapse ── */}
+			<div
+				className="flex cursor-pointer items-center gap-2 border-b border-border/50 bg-muted/25 px-4 py-2.5 transition-colors hover:bg-muted/40"
+				onClick={() => setIsCollapsed((v) => !v)}
+			>
+				<span
+					className="cursor-grab text-muted-foreground/25 hover:text-muted-foreground/60"
+					onClick={(e) => e.stopPropagation()}
+					onMouseDown={(e) => e.stopPropagation()}
+				>
 					<GripVertical className="size-4" />
 				</span>
+
 				{typeConfig && (
-					<span
-						className="flex size-6 shrink-0 items-center justify-center rounded-md"
-						style={{ backgroundColor: typeConfig.iconBg }}
-					>
-						<typeConfig.Icon className="size-3.5" style={{ color: typeConfig.iconColor }} />
+					<span className="field-type-icon size-[22px]" data-type={field.type}>
+						<typeConfig.Icon className="size-3" />
 					</span>
 				)}
+
 				<span className="text-[11.5px] font-medium text-muted-foreground">
 					{typeConfig?.label}
 				</span>
-				<div className="ml-auto flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-					<button
-						type="button"
-						onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
-						className="flex size-6 items-center justify-center rounded-md text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
+
+				<div className="ml-auto flex items-center gap-1">
+					{/* Chevron — always visible */}
+					<ChevronDown className={cn(
+						'size-3.5 transition-transform duration-200',
+						isCollapsed && '-rotate-90',
+					)} />
+
+					{/* Copy / delete — always visible */}
+					<div
+						className="flex items-center gap-0.5"
+						onClick={(e) => e.stopPropagation()}
 					>
-						<Copy className="size-3" />
-					</button>
-					<button
-						type="button"
-						onClick={(e) => { e.stopPropagation(); onDelete(); }}
-						className="flex size-6 items-center justify-center rounded-md text-muted-foreground/60 transition-colors hover:bg-destructive/10 hover:text-destructive"
-					>
-						<Trash2 className="size-3" />
-					</button>
+						<Button
+							variant="ghost"
+							size="icon-xs"
+							onClick={onDuplicate}
+							aria-label={__('Duplicate field', 'all-feedback')}
+						>
+							<Copy className="size-3" />
+						</Button>
+						<Button
+							variant="ghost"
+							size="icon-xs"
+							onClick={onDelete}
+							className="hover:bg-destructive/10 hover:text-destructive active:bg-destructive/15"
+							aria-label={__('Delete field', 'all-feedback')}
+						>
+							<Trash2 className="size-3" />
+						</Button>
+					</div>
 				</div>
 			</div>
 
-			{renderConfig()}
+			{/* ── Collapsible body ── */}
+			<div className={cn(
+				'grid transition-[grid-template-rows] duration-200 ease-in-out',
+				isCollapsed ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]',
+			)}>
+				<div className="overflow-hidden">
+					{/* Field config */}
+					<div className="px-5 py-4">
+						{renderConfig()}
+					</div>
+
+					{/* Footer: field properties */}
+					<div className="flex items-center border-t border-border/40 bg-muted/20 px-4 py-2.5">
+						<RequiredCheckbox
+							fieldId={field.id}
+							value={field.required}
+							onChange={(v) => onChange({ ...field, required: v })}
+						/>
+					</div>
+				</div>
+			</div>
 		</div>
 	);
 };

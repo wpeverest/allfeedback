@@ -90,7 +90,7 @@ const AllForms = () => {
 				</Select>
 
 				<div className="ml-auto">
-					<Button onClick={() => navigate({ to: '/builder/' })}>
+					<Button onClick={() => navigate({ to: '/builder/', search: { new: true } })}>
 						<Plus />
 						{__('Add New Form', 'all-feedback')}
 					</Button>
