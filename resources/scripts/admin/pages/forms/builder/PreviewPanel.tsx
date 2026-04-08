@@ -20,7 +20,7 @@ const DEVICES: { value: PreviewDevice; Icon: typeof Monitor; label: string }[] =
 const DEVICE_MAX_W: Record<PreviewDevice, string> = {
 	desktop: '420px',
 	tablet:  '360px',
-	mobile:  '300px',
+	mobile:  '100%',
 };
 
 /** Simulated page width per device — constrains the whole canvas */
