@@ -9,63 +9,79 @@ use AllFeedback\Infrastructure\Database\Migration;
 /**
  * Migration: CreateInitialTables
  *
- * Creates the initial database table(s) required by the plugin.
+ * Creates the af_surveys and af_responses custom tables.
  *
- * To add a new migration:
- *   1. Copy this file to 0002_YourMigrationName.php.
- *   2. Rename the class to match (YourMigrationName).
- *   3. Implement up() / down() with your schema changes.
+ * af_surveys  — survey definitions (form schema, settings, targeting, status).
+ * af_responses — individual submissions linked to a survey.
  *
- * Table naming convention: {prefix}allfb_{table}
- * e.g. wp_allfb_items
+ * @since 1.0.0
  */
 class CreateInitialTables extends Migration {
 
 	/**
-	 * Apply the migration — create all initial tables.
-	 * Uses dbDelta() which is safe to run on an existing schema.
+	 * Apply the migration.
+	 *
+	 * @since 1.0.0
 	 */
 	public function up(): void {
 		$charset = $this->charsetCollate();
 
-		// ------------------------------------------------------------------
-		// allfb_items  (sample table — replace with your real schema)
-		// ------------------------------------------------------------------
 		$this->dbDelta(
-			"CREATE TABLE IF NOT EXISTS {$this->table( 'allfb_items' )} (
-			id          bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-			user_id     bigint(20) unsigned NOT NULL,
-			title       varchar(255)        NOT NULL DEFAULT '',
-			status      varchar(20)         NOT NULL DEFAULT 'active',
-			meta        longtext                     DEFAULT NULL,
-			created_at  datetime            NOT NULL,
-			updated_at  datetime                     DEFAULT NULL,
+			"CREATE TABLE IF NOT EXISTS {$this->table( 'af_surveys' )} (
+			id             bigint(20) unsigned  NOT NULL AUTO_INCREMENT,
+			title          varchar(255)         NOT NULL DEFAULT '',
+			description    text                          DEFAULT NULL,
+			form_schema    longtext                      DEFAULT NULL,
+			settings       longtext                      DEFAULT NULL,
+			targeting      longtext                      DEFAULT NULL,
+			status         varchar(20)          NOT NULL DEFAULT 'draft',
+			response_count int unsigned         NOT NULL DEFAULT 0,
+			created_by     bigint(20) unsigned           DEFAULT NULL,
+			created_at     datetime             NOT NULL,
+			updated_at     datetime                      DEFAULT NULL,
 			PRIMARY KEY  (id),
-			KEY user_id  (user_id),
-			KEY status   (status)
+			KEY status     (status),
+			KEY created_by (created_by),
+			KEY created_at (created_at)
 		) {$charset};"
 		);
 
-		// Add more CREATE TABLE statements here for additional tables.
+		$this->dbDelta(
+			"CREATE TABLE IF NOT EXISTS {$this->table( 'af_responses' )} (
+			id            bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			survey_id     bigint(20) unsigned NOT NULL,
+			response_data longtext                     DEFAULT NULL,
+			score         smallint                     DEFAULT NULL,
+			page_url      varchar(2083)                DEFAULT NULL,
+			device_type   varchar(20)                  DEFAULT NULL,
+			ip_hash       varchar(64)                  DEFAULT NULL,
+			user_id       bigint(20) unsigned          DEFAULT NULL,
+			consent_given tinyint(1)          NOT NULL DEFAULT 0,
+			created_at    datetime            NOT NULL,
+			PRIMARY KEY  (id),
+			KEY survey_id  (survey_id),
+			KEY ip_hash    (ip_hash),
+			KEY user_id    (user_id),
+			KEY created_at (created_at)
+		) {$charset};"
+		);
 	}
 
 	/**
-	 * Roll back the migration — drop all tables created in up().
+	 * Roll back the migration.
 	 *
-	 * WARNING: this permanently destroys data.
-	 * Only called by Migrator::rollback() which is never triggered automatically.
+	 * @since 1.0.0
 	 */
 	public function down(): void {
 		global $wpdb;
 
 		$tables = [
-			$this->table( 'allfb_items' ),
-			// List additional tables in reverse order (child before parent).
+			$this->table( 'af_responses' ),
+			$this->table( 'af_surveys' ),
 		];
 
 		foreach ( $tables as $table ) {
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$wpdb->query( "DROP TABLE IF EXISTS {$table}" );
+			$wpdb->query( "DROP TABLE IF EXISTS {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, PluginCheck.Security.DirectDB.UnescapedDBParameter
 		}
 	}
 }

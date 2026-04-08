@@ -158,7 +158,7 @@ abstract class RestController {
 	 * @return bool
 	 * @since 1.0.0
 	 */
-	protected function publicPermission(): bool {
+	public function publicPermission(): bool {
 		return true;
 	}
 
@@ -168,7 +168,7 @@ abstract class RestController {
 	 * @return bool
 	 * @since 1.0.0
 	 */
-	protected function adminPermission(): bool {
+	public function adminPermission(): bool {
 		return current_user_can( 'manage_options' );
 	}
 
@@ -178,7 +178,7 @@ abstract class RestController {
 	 * @return bool
 	 * @since 1.0.0
 	 */
-	protected function authenticatedPermission(): bool {
+	public function authenticatedPermission(): bool {
 		return is_user_logged_in();
 	}
 

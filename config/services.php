@@ -13,7 +13,8 @@ declare(strict_types=1);
 
 use AllFeedback\Admin\AdminServiceProvider;
 use AllFeedback\API\ApiServiceProvider;
-use AllFeedback\API\Controllers\V1\SampleController;
+use AllFeedback\API\Controllers\V1\ResponsesController;
+use AllFeedback\API\Controllers\V1\SurveysController;
 use AllFeedback\Core\AppServiceProvider;
 use AllFeedback\Core\CoreServiceProvider;
 use AllFeedback\Core\Features\FeatureManager;
@@ -26,6 +27,7 @@ use AllFeedback\Modules\ModuleRegistry;
 use AllFeedback\Support\AssetManager;
 use AllFeedback\Support\Config;
 use AllFeedback\Support\Logger;
+use AllFeedback\Survey\Manager;
 
 use function DI\{autowire, create, factory, get};
 
@@ -61,11 +63,15 @@ return [
 	ModuleLoader::class            => autowire(),
 
 	// ------------------------------------------------------------------
+	// Survey
+	// ------------------------------------------------------------------
+	Manager::class                 => create( Manager::class ),
+
+	// ------------------------------------------------------------------
 	// REST API controllers
 	// ------------------------------------------------------------------
-	SampleController::class        => autowire(),
-	// Add more controllers here as you grow the API:
-	// ProductsController::class   => autowire(),
+	SurveysController::class       => autowire(),
+	ResponsesController::class     => autowire(),
 
 	// ------------------------------------------------------------------
 	// Service providers

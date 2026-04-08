@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace AllFeedback\API;
 
-use AllFeedback\API\Controllers\V1\FormFieldsController;
-use AllFeedback\API\Controllers\V1\FormSubmissionsController;
-use AllFeedback\API\Controllers\V1\FormsController;
-use AllFeedback\API\Controllers\V1\SampleController;
+use AllFeedback\API\Controllers\V1\ResponsesController;
+use AllFeedback\API\Controllers\V1\SurveysController;
 use AllFeedback\Core\Container;
 use AllFeedback\Core\ServiceProvider;
 use AllFeedback\Traits\Hooks;
@@ -65,10 +63,8 @@ class ApiServiceProvider implements ServiceProvider {
 	 */
 	public function registerRoutes(): void {
 		$controllers = [
-			SampleController::class,
-			FormsController::class,
-			FormFieldsController::class,
-			FormSubmissionsController::class,
+			SurveysController::class,
+			ResponsesController::class,
 		];
 
 		foreach ( $controllers as $class ) {
