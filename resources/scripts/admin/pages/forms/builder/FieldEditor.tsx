@@ -14,6 +14,7 @@ import {
 	GripVertical,
 	Highlighter as HighlighterIcon,
 	Italic as ItalicIcon,
+	Pencil,
 	Plus,
 	Strikethrough as StrikethroughIcon,
 	Trash2,
@@ -140,10 +141,11 @@ const OptionRow = ({
 interface QuestionEditorProps {
 	value: string;
 	onChange: (html: string) => void;
-	autoFocus?: boolean;
+	autoFocus?:    boolean;
+	focusTrigger?: number;
 }
 
-const QuestionEditor = ({ value, onChange, autoFocus }: QuestionEditorProps) => {
+const QuestionEditor = ({ value, onChange, autoFocus, focusTrigger }: QuestionEditorProps) => {
 	const [isFocused, setIsFocused] = useState(false);
 	const onChangeRef   = useRef(onChange);
 	const didFocusRef   = useRef(false);
@@ -185,6 +187,11 @@ const QuestionEditor = ({ value, onChange, autoFocus }: QuestionEditorProps) => 
 			editor.commands.focus('end');
 		}
 	}, [autoFocus, editor]);
+
+	/* Focus triggered from the header title/pencil click */
+	useEffect(() => {
+		if (focusTrigger && editor) editor.commands.focus('end');
+	}, [focusTrigger, editor]);
 
 	type FormatMark = 'bold' | 'italic' | 'underline' | 'strike' | 'code' | 'highlight';
 
@@ -282,19 +289,22 @@ const TextFieldConfig = ({
 	field,
 	onChange,
 	autoFocus,
+	focusTrigger,
 }: {
 	field: FormField;
 	onChange: (f: FormField) => void;
-	autoFocus?: boolean;
+	autoFocus?:    boolean;
+	focusTrigger?: number;
 }) => (
 	<div className="space-y-4">
 		<QuestionEditor
 			value={field.label}
 			onChange={(html) => onChange({ ...field, label: html })}
 			autoFocus={autoFocus}
+			focusTrigger={focusTrigger}
 		/>
 
-		<div className="space-y-1.5 border-t border-border/40 pt-4">
+		<div className="space-y-1.5">
 			<label className="block text-[11.5px] font-medium text-muted-foreground/70">
 				{__('Placeholder', 'all-feedback')}
 			</label>
@@ -313,10 +323,12 @@ const OptionsConfig = ({
 	field,
 	onChange,
 	autoFocus,
+	focusTrigger,
 }: {
 	field: FormField;
 	onChange: (f: FormField) => void;
-	autoFocus?: boolean;
+	autoFocus?:    boolean;
+	focusTrigger?: number;
 }) => {
 	const options = field.options ?? ['Option 1', 'Option 2', 'Option 3'];
 	const [optDragIdx, setOptDragIdx] = useState<number | null>(null);
@@ -363,6 +375,7 @@ const OptionsConfig = ({
 				value={field.label}
 				onChange={(html) => onChange({ ...field, label: html })}
 				autoFocus={autoFocus}
+				focusTrigger={focusTrigger}
 			/>
 			<div className="space-y-2">
 				{options.map((opt, i) => (
@@ -400,16 +413,19 @@ const DefaultFieldConfig = ({
 	field,
 	onChange,
 	autoFocus,
+	focusTrigger,
 }: {
 	field: FormField;
 	onChange: (f: FormField) => void;
-	autoFocus?: boolean;
+	autoFocus?:    boolean;
+	focusTrigger?: number;
 }) => (
 	<div className="space-y-4">
 		<QuestionEditor
 			value={field.label}
 			onChange={(html) => onChange({ ...field, label: html })}
 			autoFocus={autoFocus}
+			focusTrigger={focusTrigger}
 		/>
 	</div>
 );
@@ -430,6 +446,10 @@ export interface FieldEditorProps {
 	onDrop: (e: React.DragEvent, index: number) => void;
 }
 
+/* Strip HTML tags and decode basic entities to plain text */
+const htmlToText = (html: string): string =>
+	html.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&nbsp;/g, ' ').trim();
+
 const FieldEditor = ({
 	field,
 	index,
@@ -445,32 +465,48 @@ const FieldEditor = ({
 	onDrop,
 }: FieldEditorProps) => {
 	const typeConfig   = FIELD_TYPES.find((t) => t.type === field.type);
-	const [isCollapsed, setIsCollapsed] = useState(false);
+	const [isCollapsed,   setIsCollapsed]   = useState(false);
+	const [focusTrigger,  setFocusTrigger]  = useState(0);
 
 	const renderConfig = () => {
 		switch (field.type) {
 			case 'short_text':
 			case 'long_text':
-				return <TextFieldConfig field={field} onChange={onChange} autoFocus={autoFocus} />;
+				return <TextFieldConfig field={field} onChange={onChange} autoFocus={autoFocus} focusTrigger={focusTrigger} />;
 			case 'radio':
 			case 'checkboxes':
-				return <OptionsConfig field={field} onChange={onChange} autoFocus={autoFocus} />;
+				return <OptionsConfig field={field} onChange={onChange} autoFocus={autoFocus} focusTrigger={focusTrigger} />;
 			default:
-				return <DefaultFieldConfig field={field} onChange={onChange} autoFocus={autoFocus} />;
+				return <DefaultFieldConfig field={field} onChange={onChange} autoFocus={autoFocus} focusTrigger={focusTrigger} />;
 		}
 	};
 
 	return (
 		<div
 			draggable
-			onDragStart={(e) => { e.stopPropagation(); onDragStart(index); }}
+			onDragStart={(e) => {
+				e.stopPropagation();
+				const el = e.currentTarget as HTMLElement;
+				const clone = el.cloneNode(true) as HTMLElement;
+				Object.assign(clone.style, {
+					position: 'fixed', top: '-9999px', left: '-9999px',
+					width: `${el.offsetWidth}px`,
+					transform: 'rotate(1.5deg) scale(1.02)',
+					boxShadow: '0 20px 40px rgba(0,0,0,0.15), 0 6px 12px rgba(0,0,0,0.08)',
+					borderRadius: '12px', overflow: 'hidden', pointerEvents: 'none',
+				});
+				document.body.appendChild(clone);
+				e.dataTransfer.setDragImage(clone, el.offsetWidth / 2, 32);
+				requestAnimationFrame(() => document.body.removeChild(clone));
+				onDragStart(index);
+			}}
 			onDragOver={(e) => { e.stopPropagation(); e.preventDefault(); onDragOver(e, index); }}
 			onDragEnd={(e) => { e.stopPropagation(); onDragEnd(); }}
 			onDrop={(e) => { e.stopPropagation(); e.preventDefault(); onDrop(e, index); }}
 			className={cn(
-				'group relative overflow-hidden rounded-xl border border-border/60 bg-white transition-all',
-				isDragging && 'opacity-40 scale-[0.99]',
-				isDragOver && !isDragging && 'border-primary/40 ring-1 ring-primary/15',
+				'relative overflow-hidden rounded-xl border border-border/60 bg-white transition-all duration-150',
+				isDragging && 'opacity-40 scale-[0.98]',
+				isDragOver && !isDragging && 'border-t-[3px] border-t-primary bg-primary/[0.02]',
 			)}
 		>
 			{/* ── Header bar — click to collapse ── */}
@@ -479,7 +515,8 @@ const FieldEditor = ({
 				onClick={() => setIsCollapsed((v) => !v)}
 			>
 				<span
-					className="cursor-grab text-muted-foreground/25 hover:text-muted-foreground/60"
+					title={__('Drag to reorder', 'all-feedback')}
+					className="cursor-grab text-muted-foreground/40 transition-colors hover:text-muted-foreground/70 active:cursor-grabbing"
 					onClick={(e) => e.stopPropagation()}
 					onMouseDown={(e) => e.stopPropagation()}
 				>
@@ -487,14 +524,27 @@ const FieldEditor = ({
 				</span>
 
 				{typeConfig && (
-					<span className="field-type-icon size-[22px]" data-type={field.type}>
-						<typeConfig.Icon className="size-3" />
+					<span title={typeConfig.label} className="flex shrink-0 items-center" onClick={(e) => e.stopPropagation()}>
+						<typeConfig.Icon className="size-4 text-muted-foreground/60" />
 					</span>
 				)}
 
-				<span className="text-[11.5px] font-medium text-muted-foreground">
-					{typeConfig?.label}
-				</span>
+				{/* Field title — click focuses the question editor */}
+				<button
+					type="button"
+					className="group/title flex w-[180px] shrink-0 items-center gap-2 rounded-md border border-transparent px-2 py-1 text-left transition-colors hover:border-border/50 hover:bg-black/[0.04]"
+					onClick={(e) => {
+						e.stopPropagation();
+						setIsCollapsed(false);
+						setFocusTrigger((v) => v + 1);
+					}}
+					onMouseDown={(e) => e.stopPropagation()}
+				>
+					<span className="min-w-0 flex-1 truncate text-[12px] text-foreground/75">
+						{htmlToText(field.label) || __('Untitled', 'all-feedback')}
+					</span>
+					<Pencil className="size-3 shrink-0 text-muted-foreground/40 opacity-0 transition-opacity group-hover/title:opacity-100" />
+				</button>
 
 				<div className="ml-auto flex items-center gap-1">
 					{/* Chevron — always visible */}
@@ -512,6 +562,7 @@ const FieldEditor = ({
 							variant="ghost"
 							size="icon-xs"
 							onClick={onDuplicate}
+							title={__('Duplicate field', 'all-feedback')}
 							aria-label={__('Duplicate field', 'all-feedback')}
 						>
 							<Copy className="size-3" />
@@ -521,6 +572,7 @@ const FieldEditor = ({
 							size="icon-xs"
 							onClick={onDelete}
 							className="hover:bg-destructive/10 hover:text-destructive active:bg-destructive/15"
+							title={__('Delete field', 'all-feedback')}
 							aria-label={__('Delete field', 'all-feedback')}
 						>
 							<Trash2 className="size-3" />
@@ -536,17 +588,15 @@ const FieldEditor = ({
 			)}>
 				<div className="overflow-hidden">
 					{/* Field config */}
-					<div className="px-5 py-4">
+					<div className="space-y-3 px-5 py-4">
 						{renderConfig()}
-					</div>
-
-					{/* Footer: field properties */}
-					<div className="flex items-center border-t border-border/40 bg-muted/20 px-4 py-2.5">
-						<RequiredCheckbox
-							fieldId={field.id}
-							value={field.required}
-							onChange={(v) => onChange({ ...field, required: v })}
-						/>
+						<div className="pt-1">
+							<RequiredCheckbox
+								fieldId={field.id}
+								value={field.required}
+								onChange={(v) => onChange({ ...field, required: v })}
+							/>
+						</div>
 					</div>
 				</div>
 			</div>

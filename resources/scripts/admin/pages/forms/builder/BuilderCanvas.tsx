@@ -103,7 +103,14 @@ const BuilderCanvas = ({ sections, onSectionsChange }: BuilderCanvasProps) => {
 
 	return (
 		<div className="flex-1 overflow-y-auto bg-background p-5">
-			<div className="w-full space-y-4">
+			<div
+				className="w-full space-y-4"
+				onDragLeave={(e) => {
+					if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+						setSectionDropIdx(null);
+					}
+				}}
+			>
 				{sections.map((section, idx) => (
 					<SectionCard
 						key={section.id}

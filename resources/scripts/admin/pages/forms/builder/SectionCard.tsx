@@ -44,6 +44,7 @@ const SectionCard = ({
 	const [fieldDragIdx,   setFieldDragIdx]   = useState<number | null>(null);
 	const [fieldDropIdx, setFieldDropIdx] = useState<number | null>(null);
 	const addFieldBtnRef = useRef<HTMLButtonElement>(null);
+	const cardRef        = useRef<HTMLDivElement>(null);
 
 	// ── Section title editing ──────────────────────────────────────────────
 	const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -154,13 +155,14 @@ const SectionCard = ({
 
 	return (
 		<div
+			ref={cardRef}
 			onDragOver={(e) => { e.preventDefault(); onDragOver(e, index); }}
 			onDrop={(e) => { e.preventDefault(); onDrop(e, index); }}
 			className={cn(
-				'overflow-hidden rounded-2xl border bg-white transition-all',
-				isDragging && 'opacity-40 scale-[0.99]',
+				'overflow-hidden rounded-2xl border bg-white transition-all duration-150',
+				isDragging && 'opacity-40 scale-[0.98]',
 				isDragOver && !isDragging
-					? 'border-primary/50 shadow-[0_0_0_3px_oklch(var(--primary)/0.10)]'
+					? 'border-t-[3px] border-t-primary bg-primary/[0.02]'
 					: !isCollapsed
 						? 'border-primary/40'
 						: 'border-border/60',
@@ -169,14 +171,29 @@ const SectionCard = ({
 			{/* ── Section header ─────────────────────────────────────────── */}
 			<div
 				draggable
-				onDragStart={(e) => { e.stopPropagation(); onDragStart(index); }}
+				onDragStart={(e) => {
+					e.stopPropagation();
+					const el = cardRef.current ?? e.currentTarget as HTMLElement;
+					const clone = el.cloneNode(true) as HTMLElement;
+					Object.assign(clone.style, {
+						position: 'fixed', top: '-9999px', left: '-9999px',
+						width: `${el.offsetWidth}px`,
+						transform: 'rotate(1deg) scale(1.01)',
+						boxShadow: '0 20px 40px rgba(0,0,0,0.15), 0 6px 12px rgba(0,0,0,0.08)',
+						borderRadius: '16px', overflow: 'hidden', pointerEvents: 'none',
+					});
+					document.body.appendChild(clone);
+					e.dataTransfer.setDragImage(clone, el.offsetWidth / 2, 40);
+					requestAnimationFrame(() => document.body.removeChild(clone));
+					onDragStart(index);
+				}}
 				onDragEnd={(e) => { e.stopPropagation(); onDragEnd(); }}
 				onClick={() => setIsCollapsed((v) => !v)}
 				className="flex cursor-pointer items-center border-b border-border/50 bg-white px-5 py-4 transition-colors hover:bg-muted/20"
 			>
 				{/* Left group (flex-1): grip + title */}
 				<div className="flex flex-1 items-center gap-2">
-					<span className="cursor-grab text-primary/30 transition-colors hover:text-primary/60 active:cursor-grabbing">
+					<span title={__('Drag to reorder', 'all-feedback')} className="cursor-grab text-muted-foreground/40 transition-colors hover:text-muted-foreground/70 active:cursor-grabbing">
 						<GripVertical className="size-4 shrink-0" />
 					</span>
 
@@ -241,6 +258,7 @@ const SectionCard = ({
 						variant="ghost"
 						size="icon-xs"
 						onClick={() => setIsCollapsed((v) => !v)}
+						title={isCollapsed ? __('Expand section', 'all-feedback') : __('Collapse section', 'all-feedback')}
 						aria-label={isCollapsed ? __('Expand section', 'all-feedback') : __('Collapse section', 'all-feedback')}
 					>
 						<ChevronDown className={cn('size-3.5 transition-transform duration-200', isCollapsed && '-rotate-90')} />
@@ -249,6 +267,7 @@ const SectionCard = ({
 						variant="ghost"
 						size="icon-xs"
 						onClick={onSectionDuplicate}
+						title={__('Duplicate section', 'all-feedback')}
 						aria-label={__('Duplicate section', 'all-feedback')}
 					>
 						<Copy className="size-3.5" />
@@ -258,6 +277,7 @@ const SectionCard = ({
 						size="icon-xs"
 						onClick={onSectionDelete}
 						className="shrink-0 hover:bg-destructive/10 hover:text-destructive active:bg-destructive/15"
+						title={__('Delete section', 'all-feedback')}
 						aria-label={__('Delete section', 'all-feedback')}
 					>
 						<Trash2 className="size-3.5" />
@@ -267,9 +287,17 @@ const SectionCard = ({
 
 			{/* ── Section body ───────────────────────────────────────────── */}
 			<div className={cn('grid transition-[grid-template-rows] duration-200 ease-in-out', isCollapsed ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]')}>
-			<div className="overflow-hidden"><div className="p-5">
+			<div className="overflow-hidden"><div className="bg-white p-5">
 				{section.fields.length > 0 && (
-					<div className="mb-3 space-y-2">
+					<div
+						className="mb-3 space-y-4"
+						onDragOver={(e) => e.stopPropagation()}
+						onDragLeave={(e) => {
+							if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+								setFieldDropIdx(null);
+							}
+						}}
+					>
 						{section.fields.map((field, fieldIdx) => (
 							<FieldEditor
 								key={field.id}

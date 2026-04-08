@@ -59,7 +59,7 @@ const FieldTypeMenu = ({ triggerRef, onSelect, onClose }: FieldTypeMenuProps) =>
 			className="field-type-menu overflow-hidden rounded-xl border border-border bg-white p-1.5 shadow-dropdown"
 			style={{ visibility: 'hidden' }}
 		>
-			{FIELD_TYPES.map(({ type, label, Icon }) => (
+			{FIELD_TYPES.map(({ type, label, Icon, iconColor }) => (
 				<button
 					key={type}
 					type="button"

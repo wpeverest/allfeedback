@@ -276,13 +276,13 @@ const PreviewPanel = ({ sections, device, onDeviceChange }: PreviewPanelProps) =
 							</div>
 
 							{/* New tab button */}
-							<button type="button" className="mb-1 ml-1 flex size-[18px] items-center justify-center rounded text-foreground/40 hover:bg-black/8 hover:text-foreground/60">
+							<button type="button" className="ml-3 flex size-[18px] self-center items-center justify-center rounded text-foreground/40 hover:bg-black/8 hover:text-foreground/60">
 								<Plus className="size-3" />
 							</button>
 						</div>
 
 						{/* Toolbar row — seamlessly below tab strip, same bg */}
-						<div className="flex items-center gap-0.5 px-2 pb-2 pt-1">
+						<div className="flex items-center gap-0.5 px-2 pb-2 pt-2">
 							<button type="button" className="flex size-[22px] items-center justify-center rounded-full text-foreground/20">
 								<ArrowLeft className="size-3.5" />
 							</button>
