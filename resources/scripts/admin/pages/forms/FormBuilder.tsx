@@ -5,7 +5,7 @@ import { useStore } from '@tanstack/react-store';
 import { useRouter } from '@tanstack/react-router';
 import { Route } from '@/admin/routes/builder.index';
 import { __ } from '@wordpress/i18n';
-import { ArrowLeft, Check, ChevronDown, LayoutGrid, Palette, Pencil, Settings2, X } from 'lucide-react';
+import { ArrowLeft, Check, ChevronDown, Info, LayoutGrid, Palette, Pencil, Settings2, X } from 'lucide-react';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import BuilderCanvas from './builder/BuilderCanvas';
 import PreviewPanel from './builder/PreviewPanel';
@@ -46,9 +46,11 @@ const FormBuilder = () => {
 	const [activeTab,       setActiveTab]       = useState<BuilderTab>('builder');
 	const [previewDevice,   setPreviewDevice]   = useState<PreviewDevice>('desktop');
 	const [previewWidth,    setPreviewWidth]    = useState(() => Math.round(window.innerWidth * 0.45));
-	const [publishMenuOpen, setPublishMenuOpen] = useState(false);
+	const [publishMenuOpen,   setPublishMenuOpen]   = useState(false);
+	const [shortcutsOpen,     setShortcutsOpen]     = useState(false);
 
-	const publishMenuRef = useRef<HTMLDivElement>(null);
+	const publishMenuRef  = useRef<HTMLDivElement>(null);
+	const shortcutsRef    = useRef<HTMLDivElement>(null);
 
  	useEffect(() => {
 		const hidden: { el: HTMLElement; display: string }[] = [];
@@ -102,6 +104,17 @@ const FormBuilder = () => {
 		document.addEventListener('mousedown', handle);
 		return () => document.removeEventListener('mousedown', handle);
 	}, [publishMenuOpen]);
+
+	useEffect(() => {
+		if (!shortcutsOpen) return;
+		const handle = (e: MouseEvent) => {
+			if (shortcutsRef.current && !shortcutsRef.current.contains(e.target as Node)) {
+				setShortcutsOpen(false);
+			}
+		};
+		document.addEventListener('mousedown', handle);
+		return () => document.removeEventListener('mousedown', handle);
+	}, [shortcutsOpen]);
 
  	useEffect(() => {
 		const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -165,10 +178,24 @@ const FormBuilder = () => {
 		router.history.back();
 	};
 
+	const isMac = typeof navigator !== 'undefined' && /mac/i.test(navigator.platform);
+
 	const handlePublish = () => {
 		void form.handleSubmit();
 		setPublishMenuOpen(false);
 	};
+
+	/* ── Ctrl/Cmd + S → publish ─────────────────────────────────── */
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			const isSave = (e.ctrlKey || e.metaKey) && e.key === 's';
+			if (!isSave) return;
+			e.preventDefault();
+			void form.handleSubmit();
+		};
+		window.addEventListener('keydown', handleKeyDown);
+		return () => window.removeEventListener('keydown', handleKeyDown);
+	}, [form]);
 
 	return (
 		<div className="allfb-builder fixed inset-0 z-[99999] flex flex-col bg-background">
@@ -247,8 +274,44 @@ const FormBuilder = () => {
 					</div>
 				)}
 
- 				<div ref={publishMenuRef} className="relative">
-					<div className="publish-split flex items-stretch overflow-hidden rounded-lg shadow-sm">
+ 				{/* Keyboard shortcuts info */}
+				<div ref={shortcutsRef} className="relative">
+					<button
+						type="button"
+						onClick={() => setShortcutsOpen((v) => !v)}
+						className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+						aria-label={__('Keyboard shortcuts', 'all-feedback')}
+					>
+						<Info className="size-4" />
+					</button>
+
+					{shortcutsOpen && (
+						<div className="absolute right-0 top-full z-10 mt-1.5 w-56 overflow-hidden rounded-xl border border-border bg-white shadow-dropdown">
+							<div className="border-b border-border px-4 py-2.5">
+								<p className="text-[12px] font-semibold text-foreground">{__('Keyboard shortcuts', 'all-feedback')}</p>
+							</div>
+							<div className="px-4 py-2">
+								{[
+									{ label: __('Save / Publish', 'all-feedback'), keys: isMac ? ['⌘', 'S'] : ['Ctrl', 'S'] },
+								].map(({ label, keys }) => (
+									<div key={label} className="flex items-center justify-between py-1.5">
+										<span className="text-[12px] text-muted-foreground">{label}</span>
+										<div className="flex items-center gap-1">
+											{keys.map((k) => (
+												<kbd key={k} className="rounded border border-border bg-muted/60 px-1.5 py-0.5 text-[11px] font-medium text-foreground leading-none">
+													{k}
+												</kbd>
+											))}
+										</div>
+									</div>
+								))}
+							</div>
+						</div>
+					)}
+				</div>
+
+				<div ref={publishMenuRef} className="relative">
+					<div className="publish-split flex items-stretch overflow-hidden rounded-lg shadow-sm" title={isMac ? '⌘S' : 'Ctrl+S'}>
 						<button
 							type="button"
 							onClick={handlePublish}
@@ -287,7 +350,7 @@ const FormBuilder = () => {
  			<div className="flex flex-1 overflow-hidden">
  				<div className="flex flex-1 flex-col overflow-hidden">
  					{/* Stepper nav */}
-					<div className="flex shrink-0 items-center justify-center bg-white px-8 py-4">
+					<div className="flex h-[72px] shrink-0 items-center justify-center bg-white px-8">
 						{TABS.map(({ value, label, Icon, pro }, idx) => {
 							const activeIdx = TABS.findIndex((t) => t.value === activeTab);
 							const isActive  = activeTab === value;

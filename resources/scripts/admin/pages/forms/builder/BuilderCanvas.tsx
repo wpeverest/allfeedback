@@ -89,21 +89,9 @@ const BuilderCanvas = ({ sections, onSectionsChange }: BuilderCanvasProps) => {
 	if (sections.length === 0) {
 		return (
 			<div className="flex flex-1 items-center justify-center bg-background">
-				<div className="flex flex-col items-center text-center">
-					{/* Title + description above the illustration */}
-					<span className="block text-[17px] font-semibold text-foreground">
-						{__('No sections yet', 'all-feedback')}
-					</span>
-					<span className="mt-2 block max-w-[320px] text-[13px] leading-relaxed text-muted-foreground">
-						{__('Sections help you group related questions. Add your first one to get started.', 'all-feedback')}
-					</span>
-
-					{/* Illustration with arrow pointing straight down at the button */}
-					<div className="mt-5">
-						<EmptyCanvasIllustration />
-					</div>
-
-					{/* Button placed immediately after SVG — arrow tip lands here */}
+				<div className="flex flex-col items-center">
+					<EmptyCanvasIllustration />
+					{/* Button immediately after SVG — arrow tip points here */}
 					<Button onClick={addSection} className="-mt-1">
 						<Plus className="size-4" />
 						{__('Add a Section', 'all-feedback')}
