@@ -26,8 +26,7 @@ interface FeedbackForm {
 
 const STATUS_BADGE: Record<FormStatus, { variant: 'success' | 'secondary' | 'outline'; label: string }> = {
 	active: { variant: 'success',   label: __('Active', 'all-feedback') },
-	paused: { variant: 'secondary', label: __('Paused', 'all-feedback') },
-	draft:  { variant: 'outline',   label: __('Draft',  'all-feedback') },
+ 	draft:  { variant: 'outline',   label: __('Draft',  'all-feedback') },
 };
 
 const PER_PAGE_OPTIONS = ['10', '25', '50'];
@@ -84,8 +83,7 @@ const AllForms = () => {
 					<SelectContent>
 						<SelectItem value="all">{__('All Status', 'all-feedback')}</SelectItem>
 						<SelectItem value="active">{__('Active', 'all-feedback')}</SelectItem>
-						<SelectItem value="paused">{__('Paused', 'all-feedback')}</SelectItem>
-						<SelectItem value="draft">{__('Draft',  'all-feedback')}</SelectItem>
+ 						<SelectItem value="draft">{__('Draft',  'all-feedback')}</SelectItem>
 					</SelectContent>
 				</Select>
 

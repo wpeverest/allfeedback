@@ -11,10 +11,16 @@ interface BuilderCanvasProps {
 	onSectionsChange: (sections: FormSection[]) => void;
 }
 
+interface FieldPos { sectionIdx: number; fieldIdx: number }
+
 const BuilderCanvas = ({ sections, onSectionsChange }: BuilderCanvasProps) => {
 	const [sectionDragIdx, setSectionDragIdx] = useState<number | null>(null);
 	const [sectionDropIdx, setSectionDropIdx] = useState<number | null>(null);
 	const [newSectionId,   setNewSectionId]   = useState<string | null>(null);
+
+	/* ── Field drag state (cross-section) ──────────────────────────────── */
+	const [fieldDrag, setFieldDrag] = useState<FieldPos | null>(null);
+	const [fieldDrop, setFieldDrop] = useState<FieldPos | null>(null);
 
 	const addSection = useCallback(() => {
 		const newSection: FormSection = {
@@ -59,11 +65,12 @@ const BuilderCanvas = ({ sections, onSectionsChange }: BuilderCanvasProps) => {
 		[sections, onSectionsChange],
 	);
 
+	/* ── Section drag handlers ─────────────────────────────────────────── */
 	const handleSectionDragStart = (idx: number) => setSectionDragIdx(idx);
 
 	const handleSectionDragOver = (e: React.DragEvent, idx: number) => {
 		e.preventDefault();
-		setSectionDropIdx(idx);
+		if (sectionDragIdx !== null) setSectionDropIdx(idx);
 	};
 
 	const handleSectionDragEnd = () => {
@@ -84,6 +91,36 @@ const BuilderCanvas = ({ sections, onSectionsChange }: BuilderCanvasProps) => {
 		onSectionsChange(next);
 		setSectionDragIdx(null);
 		setSectionDropIdx(null);
+	};
+
+	/* ── Field drag handlers (shared across sections) ──────────────────── */
+	const handleFieldDragStart = (sectionIdx: number, fieldIdx: number) => {
+		setFieldDrag({ sectionIdx, fieldIdx });
+	};
+
+	const handleFieldDragOver = (sectionIdx: number, fieldIdx: number) => {
+		if (fieldDrag !== null) setFieldDrop({ sectionIdx, fieldIdx });
+	};
+
+	const handleFieldDragLeave = () => setFieldDrop(null);
+
+	const handleFieldDragEnd = () => {
+		setFieldDrag(null);
+		setFieldDrop(null);
+	};
+
+	const handleFieldDrop = (targetSectionIdx: number, targetFieldIdx: number) => {
+		if (!fieldDrag) { setFieldDrag(null); setFieldDrop(null); return; }
+		const { sectionIdx: fromSec, fieldIdx: fromField } = fieldDrag;
+		if (fromSec === targetSectionIdx && fromField === targetFieldIdx) {
+			setFieldDrag(null); setFieldDrop(null); return;
+		}
+		const next = sections.map((s) => ({ ...s, fields: [...s.fields] }));
+		const [removed] = next[fromSec].fields.splice(fromField, 1);
+		next[targetSectionIdx].fields.splice(targetFieldIdx, 0, removed);
+		onSectionsChange(next);
+		setFieldDrag(null);
+		setFieldDrop(null);
 	};
 
 	if (sections.length === 0) {
@@ -120,6 +157,8 @@ const BuilderCanvas = ({ sections, onSectionsChange }: BuilderCanvasProps) => {
 						autoFocus={section.id === newSectionId}
 						isDragging={sectionDragIdx === idx}
 						isDragOver={sectionDropIdx === idx && sectionDragIdx !== idx}
+						fieldDrag={fieldDrag}
+						fieldDrop={fieldDrop}
 						onSectionChange={(s) => handleSectionChange(idx, s)}
 						onSectionDelete={() => deleteSection(idx)}
 						onSectionDuplicate={() => duplicateSection(idx)}
@@ -127,6 +166,11 @@ const BuilderCanvas = ({ sections, onSectionsChange }: BuilderCanvasProps) => {
 						onDragOver={handleSectionDragOver}
 						onDragEnd={handleSectionDragEnd}
 						onDrop={handleSectionDrop}
+						onFieldDragStart={handleFieldDragStart}
+						onFieldDragOver={handleFieldDragOver}
+						onFieldDragLeave={handleFieldDragLeave}
+						onFieldDragEnd={handleFieldDragEnd}
+						onFieldDrop={handleFieldDrop}
 					/>
 				))}
 

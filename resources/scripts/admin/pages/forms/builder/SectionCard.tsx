@@ -8,6 +8,8 @@ import FieldTypeMenu from './FieldTypeMenu';
 import { FIELD_TYPES } from './fieldTypes';
 import type { FieldType, FormField, FormSection } from './types';
 
+interface FieldPos { sectionIdx: number; fieldIdx: number }
+
 interface SectionCardProps {
 	section: FormSection;
 	index: number;
@@ -15,6 +17,8 @@ interface SectionCardProps {
 	isDragging: boolean;
 	isDragOver: boolean;
 	autoFocus?: boolean;
+	fieldDrag: FieldPos | null;
+	fieldDrop: FieldPos | null;
 	onSectionChange: (section: FormSection) => void;
 	onSectionDelete: () => void;
 	onSectionDuplicate: () => void;
@@ -22,6 +26,11 @@ interface SectionCardProps {
 	onDragOver: (e: React.DragEvent, index: number) => void;
 	onDragEnd: () => void;
 	onDrop: (e: React.DragEvent, index: number) => void;
+	onFieldDragStart: (sectionIdx: number, fieldIdx: number) => void;
+	onFieldDragOver:  (sectionIdx: number, fieldIdx: number) => void;
+	onFieldDragLeave: () => void;
+	onFieldDragEnd:   () => void;
+	onFieldDrop:      (sectionIdx: number, fieldIdx: number) => void;
 }
 
 const SectionCard = ({
@@ -30,6 +39,8 @@ const SectionCard = ({
 	isDragging,
 	isDragOver,
 	autoFocus = false,
+	fieldDrag,
+	fieldDrop,
 	onSectionChange,
 	onSectionDelete,
 	onSectionDuplicate,
@@ -37,12 +48,15 @@ const SectionCard = ({
 	onDragOver,
 	onDragEnd,
 	onDrop,
+	onFieldDragStart,
+	onFieldDragOver,
+	onFieldDragLeave,
+	onFieldDragEnd,
+	onFieldDrop,
 }: SectionCardProps) => {
 	const [isCollapsed,    setIsCollapsed]    = useState(false);
 	const [menuOpen,       setMenuOpen]       = useState(false);
 	const [newFieldId,     setNewFieldId]     = useState<string | null>(null);
-	const [fieldDragIdx,   setFieldDragIdx]   = useState<number | null>(null);
-	const [fieldDropIdx, setFieldDropIdx] = useState<number | null>(null);
 	const addFieldBtnRef = useRef<HTMLButtonElement>(null);
 	const cardRef        = useRef<HTMLDivElement>(null);
 
@@ -135,23 +149,6 @@ const SectionCard = ({
 		[section, onSectionChange],
 	);
 
-	const handleFieldDragStart = (fieldIdx: number) => setFieldDragIdx(fieldIdx);
-	const handleFieldDragOver  = (_e: React.DragEvent, fieldIdx: number) => setFieldDropIdx(fieldIdx);
-	const handleFieldDragEnd   = () => { setFieldDragIdx(null); setFieldDropIdx(null); };
-
-	const handleFieldDrop = (_e: React.DragEvent, targetIdx: number) => {
-		if (fieldDragIdx === null || fieldDragIdx === targetIdx) {
-			setFieldDragIdx(null);
-			setFieldDropIdx(null);
-			return;
-		}
-		const next = [...section.fields];
-		const [removed] = next.splice(fieldDragIdx, 1);
-		next.splice(targetIdx, 0, removed);
-		onSectionChange({ ...section, fields: next });
-		setFieldDragIdx(null);
-		setFieldDropIdx(null);
-	};
 
 	return (
 		<div
@@ -294,7 +291,7 @@ const SectionCard = ({
 						onDragOver={(e) => e.stopPropagation()}
 						onDragLeave={(e) => {
 							if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-								setFieldDropIdx(null);
+								onFieldDragLeave();
 							}
 						}}
 					>
@@ -303,23 +300,23 @@ const SectionCard = ({
 								key={field.id}
 								field={field}
 								index={fieldIdx}
-								isDragging={fieldDragIdx === fieldIdx}
-								isDragOver={fieldDropIdx === fieldIdx && fieldDragIdx !== fieldIdx}
+								isDragging={fieldDrag?.sectionIdx === index && fieldDrag?.fieldIdx === fieldIdx}
+								isDragOver={fieldDrop?.sectionIdx === index && fieldDrop?.fieldIdx === fieldIdx && !(fieldDrag?.sectionIdx === index && fieldDrag?.fieldIdx === fieldIdx)}
 								autoFocus={newFieldId === field.id}
 								onChange={(f) => handleFieldChange(fieldIdx, f)}
 								onDelete={() => deleteField(fieldIdx)}
 								onDuplicate={() => duplicateField(fieldIdx)}
-								onDragStart={handleFieldDragStart}
-								onDragOver={handleFieldDragOver}
-								onDragEnd={handleFieldDragEnd}
-								onDrop={handleFieldDrop}
+								onDragStart={() => onFieldDragStart(index, fieldIdx)}
+								onDragOver={(_e, _i) => onFieldDragOver(index, fieldIdx)}
+								onDragEnd={onFieldDragEnd}
+								onDrop={(_e, _i) => onFieldDrop(index, fieldIdx)}
 							/>
 						))}
 					</div>
 				)}
 
 				<div className="flex">
-					<Button ref={addFieldBtnRef} size="sm" variant="ghost" onClick={toggleMenu}>
+					<Button ref={addFieldBtnRef} size="sm" variant="ghost" onMouseDown={(e) => e.preventDefault()} onClick={toggleMenu}>
 						<Plus className="size-3.5" />
 						{__('Add Field', 'all-feedback')}
 					</Button>
