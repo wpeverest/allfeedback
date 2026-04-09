@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			<ErrorBoundary>
 				<QueryClientProvider client={queryClient}>
 					<RouterProvider router={router} />
-					<Toaster />
+					<Toaster closeButton />
 					<ReactQueryDevtools initialIsOpen={false} />
 				</QueryClientProvider>
 			</ErrorBoundary>

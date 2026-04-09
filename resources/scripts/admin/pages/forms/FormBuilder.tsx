@@ -1,17 +1,22 @@
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useForm } from '@tanstack/react-form';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useStore } from '@tanstack/react-store';
 import { useRouter } from '@tanstack/react-router';
 import { Route } from '@/admin/routes/builder.index';
+import { surveyQuery } from '@/admin/queries/surveys';
 import { __ } from '@wordpress/i18n';
-import { ArrowLeft, Check, ChevronDown, Info, LayoutGrid, Palette, Pencil, Redo2, Settings2, Undo2, X } from 'lucide-react';
+import { ArrowLeft, Check, ChevronDown, Info, LayoutGrid, Loader2, Palette, Pencil, Redo2, Settings2, Undo2, X } from 'lucide-react';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import BuilderCanvas from './builder/BuilderCanvas';
 import PreviewPanel from './builder/PreviewPanel';
 import SettingsPanel from './builder/SettingsPanel';
-import type { BuilderTab, FormSection, FormSettings, PreviewDevice } from './builder/types';
+import type { BuilderTab, FieldType, FormField, FormSection, FormSettings, PreviewDevice } from './builder/types';
 import { DEFAULT_FORM_SETTINGS } from './builder/types';
+import { surveysApi } from '@/admin/api/surveys';
+import type { SurveyFormSchema, SurveyStatus } from '@/admin/api/surveys';
 
 const WP_ELEMENTS = ['#wpadminbar', '#adminmenuwrap', '#adminmenuback'] as const;
 
@@ -21,67 +26,113 @@ const TABS: { value: BuilderTab; label: string; Icon: typeof LayoutGrid; pro?: b
 	{ value: 'styling', label: __('Styling', 'all-feedback'), Icon: Palette, pro: true },
 ];
 
-const FormBuilder = () => {
-	const router    = useRouter();
-	const { new: isNewForm } = Route.useSearch();
+/** Deserialize API form_schema back into builder FormSection[] */
+const deserializeFormSchema = (schema: SurveyFormSchema | null): FormSection[] => {
+	if (!schema) return [];
+	return schema.sections.map((section) => ({
+		id:     section.id,
+		title:  section.title,
+		fields: section.fields.map((field): FormField => ({
+			id:       field.id,
+			type:     field.type as FieldType,
+			label:    field.label,
+			required: field.required,
+			...(field.settings.placeholder    !== undefined && { placeholder:    field.settings.placeholder    as string }),
+			...(field.settings.options        !== undefined && { options:        field.settings.options        as string[] }),
+			...(field.settings.starScale      !== undefined && { starScale:      field.settings.starScale      as 'star' | 'number' }),
+			...(field.settings.starRange      !== undefined && { starRange:      field.settings.starRange      as 5 | 10 }),
+			...(field.settings.scaleMin       !== undefined && { scaleMin:       field.settings.scaleMin       as number }),
+			...(field.settings.scaleMax       !== undefined && { scaleMax:       field.settings.scaleMax       as number }),
+			...(field.settings.scaleLowLabel  !== undefined && { scaleLowLabel:  field.settings.scaleLowLabel  as string }),
+			...(field.settings.scaleHighLabel !== undefined && { scaleHighLabel: field.settings.scaleHighLabel as string }),
+		})),
+	}));
+};
 
-	/* ── TODO: remove — mock data for development only ─────────────── */
-	const MOCK_SECTIONS: FormSection[] = [
-		{
-			id: 'section-mock-1',
-			title: 'Page 1',
-			fields: [
-				{ id: 'f1-1', type: 'short_text',  label: 'What is your full name?',                          required: true,  placeholder: 'e.g. Jane Smith' },
-				{ id: 'f1-2', type: 'short_text',  label: 'What is your email address?',                      required: true,  placeholder: 'e.g. jane@example.com' },
-				{ id: 'f1-3', type: 'radio',        label: 'How did you hear about us?',                      required: false, options: ['Search engine', 'Social media', 'Word of mouth', 'Advertisement'] },
-				{ id: 'f1-4', type: 'checkboxes',  label: 'Which products are you interested in?',            required: false, options: ['Product A', 'Product B', 'Product C', 'Product D'] },
-				{ id: 'f1-5', type: 'long_text',   label: 'Tell us a bit about yourself and your goals.',     required: false, placeholder: 'Share as much or as little as you like…' },
-			],
-		},
-		{
-			id: 'section-mock-2',
-			title: 'Page 2',
-			fields: [
-				{ id: 'f2-1', type: 'star_rating', label: 'How would you rate your overall experience?',      required: true,  starRange: 5  },
-				{ id: 'f2-2', type: 'scale',       label: 'How easy was it to get started?',                  required: false, scaleMin: 0, scaleMax: 10, scaleLowLabel: 'Very difficult', scaleHighLabel: 'Very easy' },
-				{ id: 'f2-3', type: 'nps',         label: 'How likely are you to recommend us to a friend or colleague?', required: false },
-				{ id: 'f2-4', type: 'radio',        label: 'How often do you use our product?',               required: false, options: ['Daily', 'Weekly', 'Monthly', 'Rarely'] },
-				{ id: 'f2-5', type: 'long_text',   label: 'What do you like most about our product?',         required: false, placeholder: 'Your feedback helps us improve…' },
-			],
-		},
-		{
-			id: 'section-mock-3',
-			title: 'Page 3',
-			fields: [
-				{ id: 'f3-1', type: 'checkboxes',  label: 'Which features do you use most?',                 required: false, options: ['Dashboard', 'Reports', 'Integrations', 'API', 'Mobile app'] },
-				{ id: 'f3-2', type: 'scale',       label: 'How satisfied are you with our support team?',    required: false, scaleMin: 1, scaleMax: 5, scaleLowLabel: 'Not satisfied', scaleHighLabel: 'Very satisfied' },
-				{ id: 'f3-3', type: 'short_text',  label: 'What is one thing we could do better?',           required: false, placeholder: 'e.g. Faster response times' },
-				{ id: 'f3-4', type: 'star_rating', label: 'How would you rate our customer support?',        required: false, starRange: 5 },
-				{ id: 'f3-5', type: 'long_text',   label: 'Any other comments or suggestions?',              required: false, placeholder: 'We read every response…' },
-			],
-		},
-	];
+/** Serialize builder sections into the API form_schema shape */
+const serializeFormSchema = (sections: FormSection[]): SurveyFormSchema => ({
+	version:  '1.0',
+	sections: sections.map((section) => ({
+		id:     section.id,
+		title:  section.title,
+		fields: section.fields.map((field) => ({
+			id:       field.id,
+			type:     field.type,
+			label:    field.label,
+			required: field.required,
+			settings: {
+				...(field.placeholder    !== undefined && { placeholder:    field.placeholder    }),
+				...(field.options        !== undefined && { options:        field.options        }),
+				...(field.starScale      !== undefined && { starScale:      field.starScale      }),
+				...(field.starRange      !== undefined && { starRange:      field.starRange      }),
+				...(field.scaleMin       !== undefined && { scaleMin:       field.scaleMin       }),
+				...(field.scaleMax       !== undefined && { scaleMax:       field.scaleMax       }),
+				...(field.scaleLowLabel  !== undefined && { scaleLowLabel:  field.scaleLowLabel  }),
+				...(field.scaleHighLabel !== undefined && { scaleHighLabel: field.scaleHighLabel }),
+			},
+		})),
+	})),
+});
+
+const FormBuilder = () => {
+	const router      = useRouter();
+	const queryClient = useQueryClient();
+	const { new: isNewForm, id: formId } = Route.useSearch();
+
+	/* ── Remote survey data ─────────────────────────────────────────── */
+	// The route loader (builder.index.tsx) pre-fetches this into cache before the
+	// component mounts, so surveyData is available on the very first render and
+	// there is no async timing gap between mount and data availability.
+	const { data: surveyData } = useQuery({
+		...surveyQuery(formId!),
+		enabled: !!formId,
+	});
+
+	const [surveyStatus, setSurveyStatus] = useState<SurveyStatus>('draft');
+
+	/* track which submit action is pending: publish or draft */
+	const submitActionRef = useRef<'publish' | 'draft'>('draft');
 
  	const form = useForm({
 		defaultValues: {
-			title:    __('My Feedback Form', 'all-feedback') as string,
-			sections: MOCK_SECTIONS,
+			title:    '' as string,
+			sections: [] as FormSection[],
 			settings: DEFAULT_FORM_SETTINGS as FormSettings,
 		},
 		onSubmit: async ({ value }) => {
-			// TODO: persist via WP REST API
-			console.log('Saving form:', value);
-			form.reset(value); // clear dirty state after successful save
+			if (!formId) return;
+			const isPublishing = submitActionRef.current === 'publish';
+			const data: Parameters<typeof surveysApi.update>[1] = {
+				title:       value.title,
+				form_schema: serializeFormSchema(value.sections),
+				settings:    value.settings as Record<string, unknown>,
+			};
+			data.status = isPublishing ? 'published' : 'draft';
+			const updated = await surveysApi.update(formId, data);
+			setSurveyStatus(updated.status);
+			setIsDirty(false);
+			// Keep the individual survey cache fresh and invalidate the list.
+			queryClient.setQueryData(surveyQuery(formId).queryKey, updated);
+			void queryClient.invalidateQueries({ queryKey: ['surveys'] });
+			toast.success(
+				isPublishing
+					? __('Form published successfully.', 'all-feedback')
+					: __('Draft saved successfully.', 'all-feedback'),
+			);
 		},
 	});
+
+	const isSubmitting = useStore(form.store, (s) => s.isSubmitting);
 
 	const title    = useStore(form.store, (s) => s.values.title);
 	const sections = useStore(form.store, (s) => s.values.sections);
 	const settings = useStore(form.store, (s) => s.values.settings);
-	const isDirty  = useStore(form.store, (s) => s.isDirty);
+
+	const [isDirty, setIsDirty] = useState(false);
 
 	const handleSettingsChange = useCallback((next: FormSettings) => {
 		form.setFieldValue('settings', next);
+		setIsDirty(true);
 	}, [form]);
 
  	const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -97,8 +148,37 @@ const FormBuilder = () => {
 	const [shortcutsOpen,     setShortcutsOpen]     = useState(false);
 
 	/* ── Undo / Redo history ────────────────────────────────────────── */
-	const historyRef                        = useRef<FormSection[][]>([MOCK_SECTIONS]);
+	const historyRef                        = useRef<FormSection[][]>([[]]);
 	const [historyIdx, setHistoryIdx]       = useState(0);
+
+	/* ── Populate form from API data ────────────────────────────────── */
+	// The ref guards against re-initialisation if surveyData reference changes
+	// (e.g. after a save that updates the query cache).
+	const dataInitializedRef = useRef(false);
+	useEffect(() => {
+		if (!surveyData || dataInitializedRef.current) return;
+		dataInitializedRef.current = true;
+		const loadedSections = deserializeFormSchema(surveyData.form_schema);
+		const loadedSettings = surveyData.settings
+			? { ...DEFAULT_FORM_SETTINGS, ...(surveyData.settings as Partial<FormSettings>) }
+			: DEFAULT_FORM_SETTINGS;
+		setSurveyStatus(surveyData.status);
+		historyRef.current = [loadedSections];
+		setHistoryIdx(0);
+		// keepDefaultValues: true prevents formApi.update() on the next render from
+		// detecting a defaultValues mismatch and wiping the store back to the static
+		// empty defaults passed to useForm().
+		form.reset(
+			{ title: surveyData.title, sections: loadedSections, settings: loadedSettings },
+			{ keepDefaultValues: true },
+		);
+		// For new forms, open title-edit mode once we have the real title.
+		if (isNewForm) {
+			titleSnapshotRef.current = surveyData.title;
+			setIsEditingTitle(true);
+		}
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [surveyData]);
 	const canUndo                           = historyIdx > 0;
 	const canRedo                           = historyIdx < historyRef.current.length - 1;
 
@@ -108,6 +188,7 @@ const FormBuilder = () => {
 		historyRef.current = trimmed;
 		setHistoryIdx(trimmed.length - 1);
 		form.setFieldValue('sections', next);
+		setIsDirty(true);
 	}, [form, historyIdx]);
 
 	const undo = useCallback(() => {
@@ -115,6 +196,7 @@ const FormBuilder = () => {
 		const newIdx = historyIdx - 1;
 		setHistoryIdx(newIdx);
 		form.setFieldValue('sections', historyRef.current[newIdx]);
+		setIsDirty(true);
 	}, [canUndo, form, historyIdx]);
 
 	const redo = useCallback(() => {
@@ -122,6 +204,7 @@ const FormBuilder = () => {
 		const newIdx = historyIdx + 1;
 		setHistoryIdx(newIdx);
 		form.setFieldValue('sections', historyRef.current[newIdx]);
+		setIsDirty(true);
 	}, [canRedo, form, historyIdx]);
 
 	const publishMenuRef  = useRef<HTMLDivElement>(null);
@@ -163,11 +246,6 @@ const FormBuilder = () => {
 			titleInputRef.current?.select();
 		}
 	}, [isEditingTitle]);
-
- 	useEffect(() => {
-		if (isNewForm) startEditingTitle();
-	// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
 
  	useEffect(() => {
 		if (!publishMenuOpen) return;
@@ -256,7 +334,18 @@ const FormBuilder = () => {
 	const isMac = typeof navigator !== 'undefined' && /mac/i.test(navigator.platform);
 
 	const handlePublish = () => {
-		void form.handleSubmit();
+		submitActionRef.current = 'publish';
+		form.handleSubmit().catch(() => {
+			toast.error(__('Failed to save. Please try again.', 'all-feedback'));
+		});
+		setPublishMenuOpen(false);
+	};
+
+	const handleSaveAsDraft = () => {
+		submitActionRef.current = 'draft';
+		form.handleSubmit().catch(() => {
+			toast.error(__('Failed to save. Please try again.', 'all-feedback'));
+		});
 		setPublishMenuOpen(false);
 	};
 
@@ -265,13 +354,13 @@ const FormBuilder = () => {
 		const handleKeyDown = (e: KeyboardEvent) => {
 			const mod = e.ctrlKey || e.metaKey;
 			if (!mod) return;
-			if (e.key === 's') { e.preventDefault(); void form.handleSubmit(); return; }
+			if (e.key === 's') { e.preventDefault(); submitActionRef.current = surveyStatus === 'published' ? 'publish' : 'draft'; form.handleSubmit().catch(() => {}); return; }
 			if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); return; }
 			if (e.key === 'y' || (e.key === 'z' && e.shiftKey)) { e.preventDefault(); redo(); }
 		};
 		window.addEventListener('keydown', handleKeyDown);
 		return () => window.removeEventListener('keydown', handleKeyDown);
-	}, [form, undo, redo]);
+	}, [form, undo, redo, surveyStatus]);
 
 	return (
 		<div className="allfb-builder fixed inset-0 z-[99999] flex flex-col bg-background">
@@ -299,7 +388,7 @@ const FormBuilder = () => {
 								ref={titleInputRef}
 								type="text"
 								value={title}
-								onChange={(e) => form.setFieldValue('title', e.target.value)}
+								onChange={(e) => { form.setFieldValue('title', e.target.value); setIsDirty(true); }}
 								onKeyDown={(e) => {
 									if (e.key === 'Enter') commitTitle();
 									if (e.key === 'Escape') cancelTitle();
@@ -341,6 +430,13 @@ const FormBuilder = () => {
 				</div>
 
 				<div className="flex items-center gap-3">
+				{surveyStatus === 'draft' && !isDirty && (
+					<div className="flex items-center gap-1.5 rounded-full border border-border bg-muted/60 px-3 py-1">
+						<span className="text-[12px] font-medium text-muted-foreground">
+							{__('Draft', 'all-feedback')}
+						</span>
+					</div>
+				)}
 				{isDirty && (
 					<div className="flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1">
 						<span className="size-1.5 animate-pulse rounded-full bg-amber-400" />
@@ -415,8 +511,10 @@ const FormBuilder = () => {
 						<button
 							type="button"
 							onClick={handlePublish}
-							className="h-10 bg-primary px-5 text-[14px] font-medium text-primary-foreground transition-colors hover:bg-brand-600 active:bg-brand-700"
+							disabled={isSubmitting}
+							className="flex h-10 items-center gap-2 bg-primary px-5 text-[14px] font-medium text-primary-foreground transition-colors hover:bg-brand-600 active:bg-brand-700 disabled:opacity-70"
 						>
+							{isSubmitting && <Loader2 className="size-3.5 animate-spin" />}
 							{__('Publish', 'all-feedback')}
 						</button>
 						<button
@@ -433,10 +531,7 @@ const FormBuilder = () => {
 						<div className="absolute right-0 top-full z-10 mt-1.5 w-44 overflow-hidden rounded-xl border border-border bg-white py-1 shadow-dropdown">
 							<button
 								type="button"
-								onClick={() => {
-									// TODO: save as draft API call
-									setPublishMenuOpen(false);
-								}}
+								onClick={handleSaveAsDraft}
 								className="flex w-full items-center px-4 py-2.5 text-[13px] text-foreground transition-colors hover:bg-muted/60"
 							>
 								{__('Save as Draft', 'all-feedback')}
