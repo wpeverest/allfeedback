@@ -73,7 +73,7 @@ class ResponsesController extends RestController {
 				[
 					'methods'             => \WP_REST_Server::CREATABLE,
 					'callback'            => [ $this, 'store' ],
-					'permission_callback' => '__return_true',
+					'permission_callback' => [ $this, 'publicPermission' ],
 					'args'                => array_merge(
 						$this->idArg(),
 						$this->submitArgs()
@@ -347,9 +347,9 @@ class ResponsesController extends RestController {
 				'validate_callback' => 'rest_validate_request_arg',
 			],
 			'score'         => $this->argInteger(
-				description: __( 'Numeric score for NPS, CSAT, or CES fields.', 'all-feedback' ),
+				description: __( 'Numeric score for NPS, CSAT, CES, or star rating fields.', 'all-feedback' ),
 				min:         0,
-				max:         10,
+				max:         100,
 			),
 			'page_url'      => $this->argString(
 				description: __( 'URL of the page where the survey was displayed.', 'all-feedback' ),

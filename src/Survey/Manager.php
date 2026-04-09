@@ -36,18 +36,27 @@ class Manager {
 	/**
 	 * Field types that the form builder may use inside form_schema.
 	 *
+	 * Names must match the `type` values emitted by the React builder exactly —
+	 * SurveysController::validateFormSchema() rejects any unlisted type.
+	 *
 	 * @since 1.0.0
 	 */
 	public const FIELD_TYPES = [
+		// Metric types
 		'nps',
 		'csat',
 		'ces',
-		'star_rating',
-		'text',
-		'textarea',
+		// Text input types
+		'short_text',
+		'long_text',
+		// Choice types
 		'radio',
-		'checkbox',
+		'checkboxes',
 		'dropdown',
+		// Scale / rating types
+		'star_rating',
+		'scale',
+		// Misc types
 		'email',
 		'yes_no',
 	];

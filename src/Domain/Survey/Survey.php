@@ -186,22 +186,22 @@ class Survey extends Entity {
 	}
 
 	/**
-	 * Transition the survey to Active status so it is publicly visible.
+	 * Transition the survey to Published status so it is publicly visible.
 	 *
 	 * @since 1.0.0
 	 */
-	public function activate(): void {
-		$this->status = SurveyStatus::Active;
+	public function publish(): void {
+		$this->status = SurveyStatus::Published;
 		$this->touch();
 	}
 
 	/**
-	 * Transition the survey to Inactive status, hiding it from public view.
+	 * Transition the survey to Archived status, hiding it from public view.
 	 *
 	 * @since 1.0.0
 	 */
-	public function deactivate(): void {
-		$this->status = SurveyStatus::Inactive;
+	public function archive(): void {
+		$this->status = SurveyStatus::Archived;
 		$this->touch();
 	}
 

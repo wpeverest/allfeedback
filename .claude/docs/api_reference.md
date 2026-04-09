@@ -97,16 +97,28 @@ Create a new survey (always starts as `draft`).
     "sections": [
       {
         "id": "sec_1",
-        "title": "",
-        "description": "",
+        "title": "Section 1",
         "fields": [
           {
             "id": "fld_1",
             "type": "nps",
             "label": "How likely are you to recommend us?",
             "required": true,
-            "options": {},
-            "conditional_logic": null
+            "settings": {}
+          },
+          {
+            "id": "fld_2",
+            "type": "short_text",
+            "label": "Any comments?",
+            "required": false,
+            "settings": { "placeholder": "Tell us more…" }
+          },
+          {
+            "id": "fld_3",
+            "type": "radio",
+            "label": "How did you hear about us?",
+            "required": false,
+            "settings": { "options": ["Search engine", "Friend", "Ad"] }
           }
         ]
       }
@@ -344,9 +356,24 @@ Submit a response from the public widget.
 
 ## Allowed Field Types
 
-Valid values for `field.type` inside `form_schema`:
+Valid values for `field.type` inside `form_schema` (enforced by `SurveysController::validateFormSchema()`; source of truth is `Manager::FIELD_TYPES`):
 
-`nps` · `csat` · `ces` · `star_rating` · `text` · `textarea` · `radio` · `checkbox` · `dropdown` · `email` · `yes_no`
+| Type | Category | Builder `settings` keys |
+|------|----------|------------------------|
+| `nps` | Metric | `{}` |
+| `csat` | Metric | `{}` |
+| `ces` | Metric | `{}` |
+| `short_text` | Text input | `{ "placeholder": "" }` |
+| `long_text` | Text input | `{ "placeholder": "" }` |
+| `radio` | Choice | `{ "options": ["…"] }` |
+| `checkboxes` | Choice | `{ "options": ["…"] }` |
+| `dropdown` | Choice | `{ "options": ["…"] }` |
+| `star_rating` | Scale | `{}` |
+| `scale` | Scale | `{}` |
+| `email` | Misc | `{ "placeholder": "" }` |
+| `yes_no` | Misc | `{}` |
+
+Every field object must carry a `settings` key (an object, may be empty `{}`). The React builder always emits it; server-side validation does not currently require it but will in a future version.
 
 ---
 

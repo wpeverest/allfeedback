@@ -1,6 +1,6 @@
 # Architectural Patterns
 
-> Last updated: session 2 (survey backend built).
+> Last updated: session 3 (form builder API completed and field types aligned).
 
 ## 1. Service Provider Pattern
 
@@ -147,6 +147,23 @@ Used by `Plugin` and `Modules/ModuleRegistry`. Guards against double-boot during
 Centralised in `src/Survey/Manager.php` as public constants so controllers, validators, and future frontend config generation all derive from the same source of truth:
 
 - `Manager::FIELD_TYPES` — allowed values for `field.type` inside `form_schema`
-- `Manager::STATUSES` — allowed values for the `status` column (`draft`, `published`, `paused`, `archived`)
+- `Manager::STATUSES` — allowed values for the `status` column: `draft`, `published`, `archived`
 
-When adding a new field type, add it to `Manager::FIELD_TYPES` only — validation in `SurveysController::validateFormSchema()` reads from that constant automatically.
+**Field type names must exactly match what the React builder emits.** Current list:
+
+```php
+// Metric types
+'nps', 'csat', 'ces',
+// Text input
+'short_text', 'long_text',
+// Choice
+'radio', 'checkboxes', 'dropdown',
+// Scale / rating
+'star_rating', 'scale',
+// Misc
+'email', 'yes_no',
+```
+
+When adding a new field type: add it to `Manager::FIELD_TYPES` only — `SurveysController::validateFormSchema()` reads from that constant automatically. No other PHP file needs updating.
+
+> **Naming rule:** Use the React builder's `FieldType` value as the canonical name. Do not use legacy WordPress/PHP naming conventions (`text`, `textarea`, `checkbox`) — those caused a breaking mismatch that was fixed in session 3.

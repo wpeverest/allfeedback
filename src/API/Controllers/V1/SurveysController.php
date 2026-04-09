@@ -328,6 +328,10 @@ class SurveysController extends RestController {
 
 		$updated = $this->manager->find( $id );
 
+		if ( $updated === null ) {
+			return $this->errorResponse( __( 'Failed to retrieve updated survey.', 'all-feedback' ), 500 );
+		}
+
 		return $this->successResponse( $this->prepareSurvey( $updated ) );
 	}
 
@@ -391,6 +395,10 @@ class SurveysController extends RestController {
 		}
 
 		$copy = $this->manager->find( $newId );
+
+		if ( $copy === null ) {
+			return $this->errorResponse( __( 'Failed to retrieve duplicated survey.', 'all-feedback' ), 500 );
+		}
 
 		return $this->successResponse( $this->prepareSurvey( $copy ), 201 );
 	}
@@ -826,6 +834,10 @@ class SurveysController extends RestController {
 		);
 
 		$updated = $this->manager->find( $id );
+
+		if ( $updated === null ) {
+			return $this->errorResponse( __( 'Failed to retrieve updated survey.', 'all-feedback' ), 500 );
+		}
 
 		return $this->successResponse( $this->prepareSurvey( $updated ) );
 	}

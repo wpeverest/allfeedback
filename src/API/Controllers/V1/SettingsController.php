@@ -83,7 +83,7 @@ class SettingsController extends RestController {
 	 * @return \WP_REST_Response
 	 * @since 1.0.0
 	 */
-	public function index(): \WP_REST_Response {
+	public function index( \WP_REST_Request $request ): \WP_REST_Response {
 		return $this->successResponse(
 			[
 				'settings' => $this->settingsManager->all(),

@@ -16,7 +16,7 @@ use Carbon\CarbonImmutable;
 /**
  * wpdb-backed implementation of ResponseRepository.
  *
- * Persists Response aggregates to the custom `{prefix}allfb_responses` table.
+ * Persists Response aggregates to the custom `{prefix}af_responses` table.
  * The response_data JSON column is encoded on write and decoded on read so that
  * the domain layer always works with PHP arrays.
  *
@@ -40,7 +40,7 @@ class WpdbResponseRepository implements ResponseRepository {
 	 */
 	public function __construct() {
 		global $wpdb;
-		$this->table = $wpdb->prefix . 'allfb_responses';
+		$this->table = $wpdb->prefix . 'af_responses';
 	}
 
 	/**

@@ -17,7 +17,7 @@ use Carbon\CarbonImmutable;
 /**
  * wpdb-backed implementation of SurveyRepository.
  *
- * Persists Survey aggregates to the custom `{prefix}allfb_surveys` table.
+ * Persists Survey aggregates to the custom `{prefix}af_surveys` table.
  * JSON columns (form_schema, settings, targeting) are encoded on write and
  * decoded on read so that the domain layer always works with PHP arrays.
  *
@@ -43,7 +43,7 @@ class WpdbSurveyRepository implements SurveyRepository {
 	 */
 	public function __construct() {
 		global $wpdb;
-		$this->table = $wpdb->prefix . 'allfb_surveys';
+		$this->table = $wpdb->prefix . 'af_surveys';
 	}
 
 	/**
