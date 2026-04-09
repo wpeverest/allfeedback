@@ -47,7 +47,7 @@ class FeatureManager {
 	/**
 	 * Check whether a feature is currently enabled for the current user/context.
 	 *
-	 * Precedence: override → stored config → 'rmb:feature:{name}' filter → false.
+	 * Precedence: override → stored config → 'allfeedback:feature:{name}' filter → false.
 	 *
 	 * @param string $feature Feature slug, e.g. 'new-dashboard'.
 	 */
@@ -74,14 +74,14 @@ class FeatureManager {
 		}
 
 		/**
-		 * Filter: rmb:feature:{$feature}
+		 * Filter: allfeedback:feature:{$feature}
 		 *
 		 * Allows code to declare a feature enabled without storing it in
 		 * wp_options. Useful for add-ons that always enable a feature.
 		 *
 		 * @param bool $enabled Default: false.
 		 */
-		return (bool) $this->applyFilters( "rmb:feature:{$feature}", false );
+		return (bool) $this->applyFilters( "allfeedback:feature:{$feature}", false );
 	}
 
 	/**

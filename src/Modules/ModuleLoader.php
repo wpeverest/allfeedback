@@ -15,7 +15,7 @@ use AllFeedback\Traits\Hooks;
  *
  * How to register a module from an add-on plugin:
  *
- *   add_filter( 'rmb:modules:register', function ( array $modules ) {
+ *   add_filter( 'allfeedback:modules:register', function ( array $modules ) {
  *       $modules['my-module'] = \MyPlugin\MyModule::class;
  *       return $modules;
  *   } );
@@ -32,7 +32,7 @@ class ModuleLoader {
 
 	/**
 	 * Map of module-id → FQCN.
-	 * Populated via the 'rmb:modules:register' filter.
+	 * Populated via the 'allfeedback:modules:register' filter.
 	 *
 	 * @var array<string, class-string<ModuleInterface>>
 	 */
@@ -59,14 +59,14 @@ class ModuleLoader {
 	 */
 	public function loadModules(): void {
 		/**
-		 * Filter: rmb:modules:register
+		 * Filter: allfeedback:modules:register
 		 *
 		 * Add your module FQCN here. Keyed by module id.
 		 *
 		 * @param array<string, class-string<ModuleInterface>> $modules
 		 */
 		$this->availableModules = $this->applyFilters(
-			'rmb:modules:register',
+			'allfeedback:modules:register',
 			$this->availableModules
 		);
 
@@ -84,13 +84,13 @@ class ModuleLoader {
 		}
 
 		/**
-		 * Action: rmb:modules:loaded
+		 * Action: allfeedback:modules:loaded
 		 *
 		 * Fires after all modules have been registered and booted.
 		 *
 		 * @param ModuleInterface[] $sorted Sorted module list.
 		 */
-		$this->doAction( 'rmb:modules:loaded', $sorted );
+		$this->doAction( 'allfeedback:modules:loaded', $sorted );
 	}
 
 	/** Access the registry to inspect module state. */

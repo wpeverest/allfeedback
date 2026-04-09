@@ -4,10 +4,15 @@ declare(strict_types=1);
 
 namespace AllFeedback\Core;
 
+defined( 'ABSPATH' ) || exit;
+
 use AllFeedback\Admin\AdminServiceProvider;
 use AllFeedback\API\ApiServiceProvider;
 use AllFeedback\Core\Contracts\ServiceProviderInterface;
+use AllFeedback\Core\Jobs\JobServiceProvider;
 use AllFeedback\Frontend\FrontendServiceProvider;
+use AllFeedback\Infrastructure\Google\GoogleIntegrationProvider;
+use AllFeedback\Infrastructure\Mail\NotificationServiceProvider;
 use AllFeedback\Traits\Hooks;
 
 /**
@@ -17,20 +22,28 @@ use AllFeedback\Traits\Hooks;
  *
  * Responsibilities:
  *  1. Load the plugin text domain.
- *  2. Boot core services (migrations, post types, etc.).
- *  3. Boot the correct context providers (Admin | Frontend | API).
- *  4. Register the global enqueue hooks that dispatch context-specific hooks.
+ *  2. Boot core services (migrations, post types, roles).
+ *  3. Boot context-specific providers (Admin | Frontend | API).
+ *  4. Boot cross-cutting providers (Jobs, Notifications, Google).
+ *  5. Register global enqueue hooks.
+ *
+ * @since 1.0.0
  */
 class AppServiceProvider implements ServiceProviderInterface {
 
 	use Hooks;
 
+	/**
+	 * @since 1.0.0
+	 */
 	public function __construct(
 		private readonly Container $container,
 	) {}
 
 	/**
 	 * Main entry point. Called by Plugin::boot().
+	 *
+	 * @since 1.0.0
 	 */
 	public function boot(): void {
 		$this->loadTextDomain();
@@ -39,13 +52,10 @@ class AppServiceProvider implements ServiceProviderInterface {
 		$this->registerHooks();
 	}
 
-	// ------------------------------------------------------------------
-	// Text domain
-	// ------------------------------------------------------------------
-
 	/**
 	 * Load plugin translations from the /languages directory.
-	 * Must run on the 'init' action so the user's locale is known.
+	 *
+	 * @since 1.0.0
 	 */
 	private function loadTextDomain(): void {
 		$this->addAction(
@@ -60,86 +70,71 @@ class AppServiceProvider implements ServiceProviderInterface {
 		);
 	}
 
-	// ------------------------------------------------------------------
-	// Core services
-	// ------------------------------------------------------------------
-
 	/**
 	 * Boot services that must run regardless of admin / frontend context.
+	 *
+	 * @since 1.0.0
 	 */
 	private function bootCore(): void {
 		$this->container->get( CoreServiceProvider::class )->boot();
 	}
 
-	// ------------------------------------------------------------------
-	// Context providers
-	// ------------------------------------------------------------------
-
 	/**
 	 * Boot the appropriate service providers for the current request context.
 	 *
-	 * - AdminServiceProvider  → WP admin screens
-	 * - FrontendServiceProvider → public-facing pages
-	 * - ApiServiceProvider     → all contexts (REST API routes)
+	 * @since 1.0.0
 	 */
 	private function registerProviders(): void {
-		// Admin context — but NOT during AJAX or REST requests.
 		if ( $this->isAdminContext() ) {
 			$this->container->get( AdminServiceProvider::class )->boot();
 		}
 
-		// Frontend context — also skip during AJAX / REST requests.
 		if ( ! $this->isAdminContext() ) {
 			$this->container->get( FrontendServiceProvider::class )->boot();
 		}
 
-		// REST API routes are registered on every request.
+		// REST API routes registered on every request.
 		$this->container->get( ApiServiceProvider::class )->boot();
+
+		// Cross-cutting providers — always boot.
+		$this->container->get( JobServiceProvider::class )->boot();
+		$this->container->get( NotificationServiceProvider::class )->boot();
+		$this->container->get( GoogleIntegrationProvider::class )->boot();
 	}
 
-	// ------------------------------------------------------------------
-	// Global enqueue hooks
-	// ------------------------------------------------------------------
-
 	/**
-	 * Register the two enqueue entry-points and let context-specific providers
-	 * listen to the namespaced sub-hooks.
+	 * Register global enqueue hooks.
+	 *
+	 * @since 1.0.0
 	 */
 	private function registerHooks(): void {
-		// 'admin_enqueue_scripts' fires on every admin screen — passes the $hook string.
 		$this->addAction( 'admin_enqueue_scripts', [ $this, 'enqueueAdminAssets' ] );
-
-		// 'wp_enqueue_scripts' fires on every public page.
 		$this->addAction( 'wp_enqueue_scripts', [ $this, 'enqueueFrontendAssets' ] );
 	}
 
 	/**
-	 * Relay admin enqueue to a namespaced action so providers can listen without
-	 * needing to know the WordPress hook name.
+	 * Relay admin enqueue to a namespaced action.
 	 *
 	 * @param string $hook Current admin page hook suffix.
+	 * @since 1.0.0
 	 */
 	public function enqueueAdminAssets( string $hook ): void {
-		$this->doAction( 'rmb:enqueue-assets:admin', $hook );
+		$this->doAction( 'allfeedback:enqueue-assets:admin', $hook );
 	}
 
 	/**
 	 * Relay frontend enqueue to a namespaced action.
+	 *
+	 * @since 1.0.0
 	 */
 	public function enqueueFrontendAssets(): void {
-		$this->doAction( 'rmb:enqueue-assets:frontend' );
+		$this->doAction( 'allfeedback:enqueue-assets:frontend' );
 	}
 
-	// ------------------------------------------------------------------
-	// Helpers
-	// ------------------------------------------------------------------
-
 	/**
-	 * Determine if we're running inside the WP admin.
+	 * Determine if we are running inside the WP admin (excluding AJAX and REST).
 	 *
-	 * is_admin() returns true even for AJAX and REST requests originated from
-	 * an admin screen, so we explicitly exclude those contexts so that the
-	 * frontend provider boots correctly for API consumers.
+	 * @since 1.0.0
 	 */
 	private function isAdminContext(): bool {
 		if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {

@@ -252,7 +252,7 @@ class SettingsManager {
 		$this->loaded = $toStore;
 
 		/**
-		 * Action: rmb:settings:updated
+		 * Action: allfeedback:settings:updated
 		 *
 		 * Fires after settings are persisted.
 		 *
