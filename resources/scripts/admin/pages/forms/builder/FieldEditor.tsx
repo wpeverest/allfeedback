@@ -4,7 +4,6 @@ import HighlightExtension from '@tiptap/extension-highlight';
 import UnderlineExtension from '@tiptap/extension-underline';
 import PlaceholderExtension from '@tiptap/extension-placeholder';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { __ } from '@wordpress/i18n';
 import {
@@ -27,28 +26,29 @@ import { FIELD_TYPES } from './fieldTypes';
 import type { FormField } from './types';
 
 /* ── Required checkbox ─────────────────────────────────────────────────── */
-interface RequiredCheckboxProps {
-	fieldId: string;
-	value: boolean;
-	onChange: (v: boolean) => void;
-}
-
-const RequiredCheckbox = ({ fieldId, value, onChange }: RequiredCheckboxProps) => (
-	<div className="flex items-center gap-2">
-		<input
-			type="checkbox"
-			id={`required-${fieldId}`}
-			checked={value}
-			onChange={(e) => onChange(e.target.checked)}
-			className="field-required-checkbox"
-		/>
-		<label
-			htmlFor={`required-${fieldId}`}
-			className="cursor-pointer select-none text-[12px] font-medium text-muted-foreground"
-		>
+/* ── Required switch ───────────────────────────────────────────────────── */
+const RequiredSwitch = ({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) => (
+	<button
+		type="button"
+		role="switch"
+		aria-checked={value}
+		title={__('Required', 'all-feedback')}
+		onClick={() => onChange(!value)}
+		className="flex items-center gap-1.5 rounded-md px-1.5 py-1 transition-colors hover:bg-black/[0.04]"
+	>
+		<span className="text-[11px] font-medium text-muted-foreground/60 select-none">
 			{__('Required', 'all-feedback')}
-		</label>
-	</div>
+		</span>
+		<span className={cn(
+			'relative inline-flex h-[14px] w-6 shrink-0 items-center rounded-full transition-colors duration-200',
+			value ? 'bg-primary' : 'bg-border',
+		)}>
+			<span className={cn(
+				'inline-block size-[10px] rounded-full bg-white shadow-sm transition-transform duration-200',
+				value ? 'translate-x-[11px]' : 'translate-x-[2px]',
+			)} />
+		</span>
+	</button>
 );
 
 /* ── Option row (multi-select / checkboxes) ────────────────────────────── */
@@ -99,10 +99,10 @@ const OptionRow = ({
 
 		{/* Dashed-border input — same visual language as QuestionEditor */}
 		<div className={cn(
-			'flex flex-1 items-center gap-2 rounded-lg border border-dashed px-2.5 py-2 transition-colors',
+			'flex flex-1 items-center gap-2 rounded-lg border px-2.5 py-2 transition-all duration-150',
 			isDragOver && !isDragging
-				? 'border-primary/50 bg-primary/[0.015]'
-				: 'border-border/50 hover:border-border/80 hover:bg-muted/20 focus-within:border-primary/50 focus-within:bg-primary/[0.015]',
+				? 'border-primary/40 shadow-[0_0_0_3px_hsl(var(--primary)/0.08)]'
+				: 'border-dashed border-border/50 hover:border-border/80 hover:bg-muted/20 focus-within:border-primary/50 focus-within:bg-primary/[0.015]',
 		)}>
 			{/* Type indicator */}
 			<span className={cn(
@@ -422,9 +422,14 @@ const StarRatingConfig = ({
 	autoFocus?:    boolean;
 	focusTrigger?: number;
 }) => {
-	const scale    = field.starScale ?? 'star';
 	const range    = field.starRange ?? 5;
 	const labelCls = 'block text-[11.5px] font-medium text-muted-foreground/70';
+	const chipCls  = (active: boolean) => cn(
+		'flex h-8 w-10 items-center justify-center rounded-lg border text-[12px] font-semibold transition-colors',
+		active
+			? 'border-primary bg-primary/10 text-primary'
+			: 'border-border/60 text-muted-foreground/60 hover:border-primary/40 hover:text-primary/70',
+	);
 
 	return (
 		<div className="space-y-4">
@@ -435,36 +440,102 @@ const StarRatingConfig = ({
 				focusTrigger={focusTrigger}
 			/>
 
+			<div className="space-y-1.5">
+				<label className={labelCls}>{__('Range', 'all-feedback')}</label>
+				<div className="flex gap-1.5">
+					<button type="button" onClick={() => onChange({ ...field, starRange: 5 })} className={chipCls(range === 5)}>
+						5
+					</button>
+					<button type="button" onClick={() => onChange({ ...field, starRange: 10 })} className={chipCls(range === 10)}>
+						10
+					</button>
+				</div>
+			</div>
+		</div>
+	);
+};
+
+/* ── Scale config ──────────────────────────────────────────────────────── */
+const ScaleConfig = ({
+	field,
+	onChange,
+	autoFocus,
+	focusTrigger,
+}: {
+	field: FormField;
+	onChange: (f: FormField) => void;
+	autoFocus?:    boolean;
+	focusTrigger?: number;
+}) => {
+	const min      = field.scaleMin ?? 0;
+	const max      = field.scaleMax ?? 10;
+	const labelCls = 'block text-[11.5px] font-medium text-muted-foreground/70';
+	const inputCls = 'w-full rounded-lg border border-border/70 bg-transparent px-3 py-2 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/10';
+
+	return (
+		<div className="space-y-4">
+			<QuestionEditor
+				value={field.label}
+				onChange={(html) => onChange({ ...field, label: html })}
+				autoFocus={autoFocus}
+				focusTrigger={focusTrigger}
+			/>
+
+			{/* Range picker */}
+			<div className="space-y-1.5">
+				<label className={labelCls}>{__('Range', 'all-feedback')}</label>
+				<div className="flex w-fit items-center gap-2">
+					<div className="flex flex-col items-center gap-0.5">
+						<input
+							type="number"
+							min={0}
+							value={min}
+							onChange={(e) => {
+								const v = parseInt(e.target.value, 10);
+								if (!isNaN(v) && v >= 0 && v < max) onChange({ ...field, scaleMin: v });
+							}}
+							className="h-8 w-16 rounded-lg border border-border/70 bg-transparent px-2.5 text-center text-[13px] font-semibold text-foreground focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/10"
+						/>
+						<span className="text-[10px] text-muted-foreground/50">{__('Start', 'all-feedback')}</span>
+					</div>
+
+					<span className="mb-3.5 text-[13px] text-muted-foreground/40">–</span>
+
+					<div className="flex flex-col items-center gap-0.5">
+						<input
+							type="number"
+							min={min + 1}
+							value={max}
+							onChange={(e) => {
+								const v = parseInt(e.target.value, 10);
+								if (!isNaN(v) && v > min) onChange({ ...field, scaleMax: v });
+							}}
+							className="h-8 w-16 rounded-lg border border-border/70 bg-transparent px-2.5 text-center text-[13px] font-semibold text-foreground focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/10"
+						/>
+						<span className="text-[10px] text-muted-foreground/50">{__('End', 'all-feedback')}</span>
+					</div>
+				</div>
+			</div>
+
+			{/* Low / High labels */}
 			<div className="grid grid-cols-2 gap-3">
 				<div className="space-y-1.5">
-					<label className={labelCls}>{__('Scale', 'all-feedback')}</label>
-					<Select
-						value={scale}
-						onValueChange={(v) => onChange({ ...field, starScale: v as FormField['starScale'] })}
-					>
-						<SelectTrigger className="h-8 w-full text-[13px]">
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="star">{__('Star', 'all-feedback')}</SelectItem>
-							<SelectItem value="number">{__('Number', 'all-feedback')}</SelectItem>
-						</SelectContent>
-					</Select>
+					<label className={labelCls}>{__('Low label', 'all-feedback')}</label>
+					<input
+						value={field.scaleLowLabel ?? ''}
+						onChange={(e) => onChange({ ...field, scaleLowLabel: e.target.value })}
+						placeholder={__('e.g. Not likely', 'all-feedback')}
+						className={inputCls}
+					/>
 				</div>
 				<div className="space-y-1.5">
-					<label className={labelCls}>{__('Range', 'all-feedback')}</label>
-					<Select
-						value={String(range)}
-						onValueChange={(v) => onChange({ ...field, starRange: Number(v) as FormField['starRange'] })}
-					>
-						<SelectTrigger className="h-8 w-full text-[13px]">
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="5">{__('5 points', 'all-feedback')}</SelectItem>
-							<SelectItem value="10">{__('10 points', 'all-feedback')}</SelectItem>
-						</SelectContent>
-					</Select>
+					<label className={labelCls}>{__('High label', 'all-feedback')}</label>
+					<input
+						value={field.scaleHighLabel ?? ''}
+						onChange={(e) => onChange({ ...field, scaleHighLabel: e.target.value })}
+						placeholder={__('e.g. Very likely', 'all-feedback')}
+						className={inputCls}
+					/>
 				</div>
 			</div>
 		</div>
@@ -541,6 +612,8 @@ const FieldEditor = ({
 				return <OptionsConfig field={field} onChange={onChange} autoFocus={autoFocus} focusTrigger={focusTrigger} />;
 			case 'star_rating':
 				return <StarRatingConfig field={field} onChange={onChange} autoFocus={autoFocus} focusTrigger={focusTrigger} />;
+			case 'scale':
+				return <ScaleConfig field={field} onChange={onChange} autoFocus={autoFocus} focusTrigger={focusTrigger} />;
 			default:
 				return <DefaultFieldConfig field={field} onChange={onChange} autoFocus={autoFocus} focusTrigger={focusTrigger} />;
 		}
@@ -554,9 +627,11 @@ const FieldEditor = ({
 			onDragOver={(e) => { e.stopPropagation(); e.preventDefault(); onDragOver(e, index); }}
 			onDrop={(e) => { e.stopPropagation(); e.preventDefault(); onDrop(e, index); }}
 			className={cn(
-				'relative rounded-xl border border-border/60 bg-white transition-all duration-150',
+				'relative rounded-xl border bg-white transition-all duration-150',
 				isDragging && 'opacity-40 scale-[0.98]',
-				isDragOver && !isDragging && 'border-t-[3px] border-t-primary bg-primary/[0.02]',
+				isDragOver && !isDragging
+					? 'border-primary/40 shadow-[0_0_0_3px_hsl(var(--primary)/0.08)]'
+					: 'border-border/60',
 			)}
 		>
 			{/* ── Header bar — click to collapse, drag to reorder ── */}
@@ -615,6 +690,14 @@ const FieldEditor = ({
 				</button>
 
 				<div className="ml-auto flex items-center gap-1">
+					{/* Required switch */}
+					<div onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
+						<RequiredSwitch
+							value={field.required}
+							onChange={(v) => onChange({ ...field, required: v })}
+						/>
+					</div>
+
 					{/* Chevron — always visible */}
 					<span className="flex size-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-black/[0.06] hover:text-foreground">
 						<ChevronDown className={cn(
@@ -660,13 +743,6 @@ const FieldEditor = ({
 					{/* Field config */}
 					<div className="space-y-3 px-5 py-4">
 						{renderConfig()}
-						<div className="pt-1">
-							<RequiredCheckbox
-								fieldId={field.id}
-								value={field.required}
-								onChange={(v) => onChange({ ...field, required: v })}
-							/>
-						</div>
 					</div>
 				</div>
 			</div>

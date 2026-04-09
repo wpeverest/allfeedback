@@ -159,10 +159,8 @@ const SectionCard = ({
 				'overflow-hidden rounded-2xl border bg-white transition-all duration-150',
 				isDragging && 'opacity-40 scale-[0.98]',
 				isDragOver && !isDragging
-					? 'border-t-[3px] border-t-primary bg-primary/[0.02]'
-					: !isCollapsed
-						? 'border-primary/40'
-						: 'border-border/60',
+					? 'border-primary/40 shadow-[0_0_0_3px_hsl(var(--primary)/0.08)]'
+					: 'border-border/60',
 			)}
 		>
 			{/* ── Section header ─────────────────────────────────────────── */}

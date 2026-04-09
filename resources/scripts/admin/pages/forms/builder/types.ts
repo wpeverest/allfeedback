@@ -16,6 +16,10 @@ export interface FormField {
 	options?: string[];
 	starScale?: 'star' | 'number';
 	starRange?: 5 | 10;
+	scaleMin?: number;
+	scaleMax?: number;
+	scaleLowLabel?: string;
+	scaleHighLabel?: string;
 }
 
 export interface FormSection {

@@ -78,6 +78,51 @@ const StarRatingPreview = ({ field, value, onChange }: { field: FormField; value
 	);
 };
 
+/* ─── Scale rating interactive input ────────────────────────────────────── */
+const ScalePreview = ({ field, value, onChange }: { field: FormField; value: string; onChange: (v: string) => void }) => {
+	const [hovered, setHovered] = useState<number | null>(null);
+	const min      = field.scaleMin ?? 0;
+	const max      = field.scaleMax ?? 10;
+	const selected = value !== '' ? Number(value) : null;
+	const active   = hovered ?? selected;
+	const points   = Array.from({ length: max - min + 1 }, (_, i) => min + i);
+	const btnSize  = points.length > 8 ? 'size-7 text-[11px]' : 'size-9 text-[13px]';
+
+	return (
+		<div className="space-y-1.5" onMouseLeave={() => setHovered(null)}>
+			<div className="flex gap-1.5 flex-wrap">
+				{points.map((n) => (
+					<button
+						key={n}
+						type="button"
+						onMouseEnter={() => setHovered(n)}
+						onClick={() => onChange(selected === n ? '' : String(n))}
+						className={cn(
+							'flex items-center justify-center rounded-lg border font-semibold transition-all duration-100 hover:scale-105 active:scale-95',
+							btnSize,
+							active !== null && n <= active
+								? 'border-primary bg-primary text-white'
+								: 'border-border/70 bg-muted/30 text-foreground/60 hover:border-primary/50 hover:bg-primary/8 hover:text-primary',
+						)}
+					>
+						{n}
+					</button>
+				))}
+			</div>
+			{(field.scaleLowLabel || field.scaleHighLabel) && (
+				<div className="flex justify-between">
+					{field.scaleLowLabel && (
+						<span className="text-[11.5px] text-muted-foreground/60">{field.scaleLowLabel}</span>
+					)}
+					{field.scaleHighLabel && (
+						<span className="ml-auto text-[11.5px] text-muted-foreground/60">{field.scaleHighLabel}</span>
+					)}
+				</div>
+			)}
+		</div>
+	);
+};
+
 /* ─── Interactive field preview ─────────────────────────────────────────── */
 interface FieldPreviewProps {
 	field:    FormField;
@@ -105,7 +150,7 @@ const FieldPreview = ({ field, value, error, onChange }: FieldPreviewProps) => {
 	};
 
 	return (
-		<div className="space-y-1">
+		<div className="space-y-0">
 			<div className="flex items-baseline gap-0.5">
 				<p
 					className="text-[10.5px] text-foreground [&_strong]:font-semibold [&_em]:italic [&_u]:underline [&_s]:line-through [&_code]:rounded [&_code]:bg-muted [&_code]:px-0.5 [&_code]:font-mono [&_code]:text-[0.9em] [&_mark]:rounded [&_mark]:bg-amber-100 [&_mark]:text-amber-800"
@@ -136,9 +181,9 @@ const FieldPreview = ({ field, value, error, onChange }: FieldPreviewProps) => {
 			)}
 
 			{field.type === 'radio' && (
-				<div className="space-y-1.5">
+				<div className="space-y-1">
 					{(field.options ?? []).map((opt, i) => (
-						<label key={i} className="flex cursor-pointer items-center gap-2">
+						<label key={i} className="flex cursor-pointer items-center gap-1.5">
 							<span className={cn(
 								'flex size-3 shrink-0 items-center justify-center rounded-full border transition-colors',
 								strVal === opt
@@ -162,9 +207,9 @@ const FieldPreview = ({ field, value, error, onChange }: FieldPreviewProps) => {
 			)}
 
 			{field.type === 'checkboxes' && (
-				<div className="space-y-1.5">
+				<div className="space-y-1">
 					{(field.options ?? []).map((opt, i) => (
-						<label key={i} className="flex cursor-pointer items-center gap-2">
+						<label key={i} className="flex cursor-pointer items-center gap-1.5">
 							<span className={cn(
 								'flex size-3 shrink-0 items-center justify-center rounded-[2px] border transition-colors',
 								arrVal.includes(opt)
@@ -194,7 +239,11 @@ const FieldPreview = ({ field, value, error, onChange }: FieldPreviewProps) => {
 				<StarRatingPreview field={field} value={strVal} onChange={onChange} />
 			)}
 
-			{!['short_text', 'long_text', 'radio', 'checkboxes', 'star_rating'].includes(field.type) && (
+			{field.type === 'scale' && (
+				<ScalePreview field={field} value={strVal} onChange={onChange} />
+			)}
+
+			{!['short_text', 'long_text', 'radio', 'checkboxes', 'star_rating', 'scale'].includes(field.type) && (
 				<div className="h-5 rounded-md border border-border/60 bg-muted/40" />
 			)}
 
@@ -236,7 +285,7 @@ const WidgetBody = ({
 		isClosed || isMinimized ? 'pointer-events-none scale-90 opacity-0' : 'scale-100 opacity-100',
 	)}>
 		{/* Widget header */}
-		<div className="flex items-center justify-end gap-0.5 bg-primary px-3 py-2.5">
+		<div className="flex items-center justify-end gap-0.5 bg-primary px-2.5 py-1.5">
 			{showControls && (
 				<>
 					<button
@@ -263,8 +312,8 @@ const WidgetBody = ({
 		<div className="bg-white">
 			{isSubmitted ? (
 				/* ── Success state ── */
-				<div className="flex flex-col items-center justify-center px-4 py-8 text-center">
-					<CheckCircle2 className="mb-2.5 size-8 text-primary" />
+				<div className="flex flex-col items-center justify-center px-4 py-5 text-center">
+					<CheckCircle2 className="mb-1.5 size-6 text-primary" />
 					<p className="text-[12px] font-semibold text-foreground">
 						{__('Thank you!', 'all-feedback')}
 					</p>
@@ -275,7 +324,7 @@ const WidgetBody = ({
 			) : (
 				<>
  					{totalSteps > 1 && (
-						<div className="flex items-center justify-between border-b border-border/30 px-4 py-2">
+						<div className="flex items-center justify-between border-b border-border/30 px-3 py-1.5">
 							<div className="flex items-center gap-1.5">
 								{steps.map((_, i) => (
 									<span
@@ -294,16 +343,16 @@ const WidgetBody = ({
 					)}
 
 					{/* Fields */}
-					<div className="max-h-[240px] overflow-y-auto px-4 py-4">
+					<div className="max-h-[240px] overflow-y-auto px-3 py-3">
 						{!hasSteps ? (
-							<div className="flex flex-col items-center justify-center py-4">
-								<Eye className="mb-2 size-5 text-muted-foreground/25" />
-								<p className="text-[11px] text-muted-foreground/55">
+							<div className="flex flex-col items-center justify-center py-3">
+								<Eye className="mb-1.5 size-4 text-muted-foreground/25" />
+								<p className="text-[10.5px] text-muted-foreground/55">
 									{__('Add fields to preview', 'all-feedback')}
 								</p>
 							</div>
 						) : (
-							<div className="space-y-4">
+							<div className="space-y-3">
 								{currentFields.map((field) => (
 									<FieldPreview
 										key={field.id}
@@ -319,12 +368,12 @@ const WidgetBody = ({
 
 					{/* Navigation footer */}
 					{hasSteps && (
-						<div className="flex items-center gap-2 border-t border-border/40 px-4 py-3">
+						<div className="flex items-center gap-2 border-t border-border/40 px-3 py-3 mt-1">
 							{stepIndex > 0 && (
 								<button
 									type="button"
 									onClick={onBack}
-									className="flex-1 rounded-lg border border-border py-2.5 text-[12px] font-medium text-foreground/70 transition-colors hover:bg-muted/50"
+									className="flex-1 rounded-lg border border-border py-3 text-[11.5px] font-medium text-foreground/70 transition-colors hover:bg-muted/50"
 								>
 									{__('Back', 'all-feedback')}
 								</button>
@@ -333,7 +382,7 @@ const WidgetBody = ({
 								<button
 									type="button"
 									onClick={onSubmit}
-									className="flex-1 rounded-lg bg-primary py-2.5 text-[12px] font-semibold text-white transition-colors hover:bg-brand-600 active:bg-brand-700"
+									className="flex-1 rounded-lg bg-primary py-3 text-[11.5px] font-semibold text-white transition-colors hover:bg-brand-600 active:bg-brand-700"
 								>
 									{__('Submit', 'all-feedback')}
 								</button>
@@ -341,7 +390,7 @@ const WidgetBody = ({
 								<button
 									type="button"
 									onClick={onNext}
-									className="flex-1 rounded-lg bg-primary py-2.5 text-[12px] font-semibold text-white transition-colors hover:bg-brand-600 active:bg-brand-700"
+									className="flex-1 rounded-lg bg-primary py-3 text-[11.5px] font-semibold text-white transition-colors hover:bg-brand-600 active:bg-brand-700"
 								>
 									{__('Next', 'all-feedback')}
 								</button>
@@ -480,7 +529,7 @@ const PreviewPanel = ({ sections, device, onDeviceChange }: PreviewPanelProps) =
 							type="button"
 							onClick={() => setViewMode('page')}
 							className={cn(
-								'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[12px] font-medium transition-colors',
+								'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-colors',
 								viewMode === 'page'
 									? 'bg-primary/10 text-primary'
 									: 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
@@ -493,7 +542,7 @@ const PreviewPanel = ({ sections, device, onDeviceChange }: PreviewPanelProps) =
 							type="button"
 							onClick={() => setViewMode('widget')}
 							className={cn(
-								'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[12px] font-medium transition-colors',
+								'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-colors',
 								viewMode === 'widget'
 									? 'bg-primary/10 text-primary'
 									: 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
@@ -513,7 +562,7 @@ const PreviewPanel = ({ sections, device, onDeviceChange }: PreviewPanelProps) =
 					<div className="flex flex-1 items-start justify-center overflow-hidden p-4">
 						{/* Device-constrained browser window */}
 						<div
-							className="flex h-full flex-col overflow-hidden rounded-xl border border-border/60 bg-white shadow-md transition-all duration-300"
+							className="flex h-full flex-col overflow-hidden rounded-xl border border-border/60 bg-white shadow-md"
 							style={{ width: pageMaxW ? `min(${pageMaxW}, 100%)` : '100%' }}
 						>
 							{/* ── Browser chrome ── */}
