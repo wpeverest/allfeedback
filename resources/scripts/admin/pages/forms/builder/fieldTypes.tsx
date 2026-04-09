@@ -19,7 +19,7 @@ export const FIELD_TYPES: FieldTypeConfig[] = [
 		Icon: Type,
 		iconBg: '#fef2f2',
 		iconColor: '#f43f5e',
-		defaultLabel: 'Short Answer',
+		defaultLabel: 'What is your name?',
 	},
 	{
 		type: 'long_text',
@@ -27,7 +27,7 @@ export const FIELD_TYPES: FieldTypeConfig[] = [
 		Icon: AlignLeft,
 		iconBg: '#eff6ff',
 		iconColor: '#3b82f6',
-		defaultLabel: 'Long Answer',
+		defaultLabel: 'Please describe your experience.',
 	},
 	{
 		type: 'radio',
@@ -35,7 +35,7 @@ export const FIELD_TYPES: FieldTypeConfig[] = [
 		Icon: CircleDot,
 		iconBg: '#f5f3ff',
 		iconColor: '#8b5cf6',
-		defaultLabel: 'Choose one',
+		defaultLabel: 'Which option best describes you?',
 	},
 	{
 		type: 'checkboxes',
@@ -43,7 +43,7 @@ export const FIELD_TYPES: FieldTypeConfig[] = [
 		Icon: CheckSquare,
 		iconBg: '#f0fdf4',
 		iconColor: '#22c55e',
-		defaultLabel: 'Select all that apply',
+		defaultLabel: 'Select all that apply.',
 	},
 	{
 		type: 'star_rating',
@@ -51,7 +51,7 @@ export const FIELD_TYPES: FieldTypeConfig[] = [
 		Icon: Star,
 		iconBg: '#fffbeb',
 		iconColor: '#f59e0b',
-		defaultLabel: 'Star Rating',
+		defaultLabel: 'How would you rate your overall experience?',
 	},
 	{
 		type: 'scale',
@@ -59,7 +59,7 @@ export const FIELD_TYPES: FieldTypeConfig[] = [
 		Icon: BarChart3,
 		iconBg: '#ecfdf5',
 		iconColor: '#10b981',
-		defaultLabel: 'Scale',
+		defaultLabel: 'How would you rate us on a scale?',
 	},
 	{
 		type: 'nps',
@@ -67,6 +67,6 @@ export const FIELD_TYPES: FieldTypeConfig[] = [
 		Icon: Gauge,
 		iconBg: '#fff1f2',
 		iconColor: '#e11d48',
-		defaultLabel: 'NPS Score',
+		defaultLabel: 'How likely are you to recommend us to a friend or colleague?',
 	},
 ];

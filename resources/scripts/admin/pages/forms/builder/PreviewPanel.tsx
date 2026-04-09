@@ -206,7 +206,7 @@ const FieldPreview = ({ field, value, error, onChange }: FieldPreviewProps) => {
 		<div className="space-y-2.5">
 			<div className="flex items-baseline gap-0.5">
 				<div
-					className="field-preview-label text-[13px] text-foreground [&_p]:m-0 [&_strong]:font-semibold [&_em]:italic [&_u]:underline [&_s]:line-through [&_code]:rounded [&_code]:bg-muted [&_code]:px-0.5 [&_code]:font-mono [&_code]:text-[0.9em] [&_mark]:rounded [&_mark]:bg-amber-100 [&_mark]:text-amber-800"
+					className="field-preview-label text-[13.5px] text-foreground [&_p]:m-0 [&_strong]:font-semibold [&_em]:italic [&_u]:underline [&_s]:line-through [&_code]:rounded [&_code]:bg-muted [&_code]:px-0.5 [&_code]:font-mono [&_code]:text-[0.9em] [&_mark]:rounded [&_mark]:bg-amber-100 [&_mark]:text-amber-800"
 					dangerouslySetInnerHTML={{ __html: baseHtml }}
 				/>
 				{field.required && (
@@ -253,7 +253,7 @@ const FieldPreview = ({ field, value, error, onChange }: FieldPreviewProps) => {
 								onChange={() => onChange(opt)}
 								className="sr-only"
 							/>
-							<span className="text-[10.5px] text-foreground/75">{opt || `Option ${i + 1}`}</span>
+							<span className="text-[12.5px] text-foreground/75">{opt || `Option ${i + 1}`}</span>
 						</label>
 					))}
 				</div>
@@ -282,7 +282,7 @@ const FieldPreview = ({ field, value, error, onChange }: FieldPreviewProps) => {
 								onChange={() => toggleCheckbox(opt)}
 								className="sr-only"
 							/>
-							<span className="text-[10.5px] text-foreground/75">{opt || `Option ${i + 1}`}</span>
+							<span className="text-[12.5px] text-foreground/75">{opt || `Option ${i + 1}`}</span>
 						</label>
 					))}
 				</div>
@@ -388,7 +388,7 @@ const WidgetBody = ({
 										key={i}
 										className={cn(
 											'size-1.5 rounded-full transition-all duration-200',
-											i === stepIndex ? 'w-4 bg-primary' : i < stepIndex ? 'bg-primary/40' : 'bg-border',
+											i === stepIndex ? 'w-3 bg-primary' : i < stepIndex ? 'bg-primary/40' : 'bg-border',
 										)}
 									/>
 								))}
@@ -400,7 +400,7 @@ const WidgetBody = ({
 					)}
 
 					{/* Fields */}
-					<div className="max-h-[240px] overflow-y-auto px-3 py-3">
+					<div className="max-h-[240px] overflow-y-auto px-4 py-4">
 						{!hasSteps ? (
 							<div className="flex flex-col items-center justify-center py-3">
 								<Eye className="mb-1.5 size-4 text-muted-foreground/25" />
@@ -425,7 +425,7 @@ const WidgetBody = ({
 
 					{/* Navigation footer */}
 					{hasSteps && (
-						<div className="flex items-center gap-2 border-t border-border/40 px-3 py-3 mt-1">
+						<div className="flex items-center gap-2 border-t border-border/40 px-4 py-4 mt-1">
 							{stepIndex > 0 && (
 								<button
 									type="button"

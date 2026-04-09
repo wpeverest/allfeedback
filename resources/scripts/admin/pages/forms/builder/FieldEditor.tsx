@@ -411,7 +411,7 @@ const OptionsConfig = ({
 				<button
 					type="button"
 					onClick={() => addOptionAfter(options.length - 1)}
-					className="flex items-center gap-1.5 pl-[22px] text-[12.5px] text-muted-foreground/60 transition-colors hover:text-primary"
+					className="mt-1.5 flex items-center gap-1.5 pl-[22px] text-[12.5px] text-muted-foreground/60 transition-colors hover:text-primary"
 				>
 					<Plus className="size-3.5" />
 					{__('Add option', 'all-feedback')}

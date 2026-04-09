@@ -5,7 +5,7 @@ import { useStore } from '@tanstack/react-store';
 import { useRouter } from '@tanstack/react-router';
 import { Route } from '@/admin/routes/builder.index';
 import { __ } from '@wordpress/i18n';
-import { ArrowLeft, Check, ChevronDown, Info, LayoutGrid, Palette, Pencil, Settings2, X } from 'lucide-react';
+import { ArrowLeft, Check, ChevronDown, Info, LayoutGrid, Palette, Pencil, Redo2, Settings2, Undo2, X } from 'lucide-react';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import BuilderCanvas from './builder/BuilderCanvas';
 import PreviewPanel from './builder/PreviewPanel';
@@ -25,7 +25,7 @@ const FormBuilder = () => {
 
  	const form = useForm({
 		defaultValues: {
-			title:    __('Untitled Feedback Form', 'all-feedback') as string,
+			title:    __('My Feedback Form', 'all-feedback') as string,
 			sections: [] as FormSection[],
 		},
 		onSubmit: async ({ value }) => {
@@ -48,6 +48,34 @@ const FormBuilder = () => {
 	const [previewWidth,    setPreviewWidth]    = useState(() => Math.round(window.innerWidth * 0.45));
 	const [publishMenuOpen,   setPublishMenuOpen]   = useState(false);
 	const [shortcutsOpen,     setShortcutsOpen]     = useState(false);
+
+	/* ── Undo / Redo history ────────────────────────────────────────── */
+	const historyRef                        = useRef<FormSection[][]>([[]]);
+	const [historyIdx, setHistoryIdx]       = useState(0);
+	const canUndo                           = historyIdx > 0;
+	const canRedo                           = historyIdx < historyRef.current.length - 1;
+
+	const handleSectionsChange = useCallback((next: FormSection[]) => {
+		const trimmed = historyRef.current.slice(0, historyIdx + 1);
+		trimmed.push(next);
+		historyRef.current = trimmed;
+		setHistoryIdx(trimmed.length - 1);
+		form.setFieldValue('sections', next);
+	}, [form, historyIdx]);
+
+	const undo = useCallback(() => {
+		if (!canUndo) return;
+		const newIdx = historyIdx - 1;
+		setHistoryIdx(newIdx);
+		form.setFieldValue('sections', historyRef.current[newIdx]);
+	}, [canUndo, form, historyIdx]);
+
+	const redo = useCallback(() => {
+		if (!canRedo) return;
+		const newIdx = historyIdx + 1;
+		setHistoryIdx(newIdx);
+		form.setFieldValue('sections', historyRef.current[newIdx]);
+	}, [canRedo, form, historyIdx]);
 
 	const publishMenuRef  = useRef<HTMLDivElement>(null);
 	const shortcutsRef    = useRef<HTMLDivElement>(null);
@@ -185,17 +213,18 @@ const FormBuilder = () => {
 		setPublishMenuOpen(false);
 	};
 
-	/* ── Ctrl/Cmd + S → publish ─────────────────────────────────── */
+	/* ── Keyboard shortcuts ─────────────────────────────────────── */
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
-			const isSave = (e.ctrlKey || e.metaKey) && e.key === 's';
-			if (!isSave) return;
-			e.preventDefault();
-			void form.handleSubmit();
+			const mod = e.ctrlKey || e.metaKey;
+			if (!mod) return;
+			if (e.key === 's') { e.preventDefault(); void form.handleSubmit(); return; }
+			if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); return; }
+			if (e.key === 'y' || (e.key === 'z' && e.shiftKey)) { e.preventDefault(); redo(); }
 		};
 		window.addEventListener('keydown', handleKeyDown);
 		return () => window.removeEventListener('keydown', handleKeyDown);
-	}, [form]);
+	}, [form, undo, redo]);
 
 	return (
 		<div className="allfb-builder fixed inset-0 z-[99999] flex flex-col bg-background">
@@ -274,7 +303,29 @@ const FormBuilder = () => {
 					</div>
 				)}
 
- 				{/* Keyboard shortcuts info */}
+ 				{/* Undo / Redo */}
+				<div className="flex items-center gap-0.5">
+					<button
+						type="button"
+						onClick={undo}
+						disabled={!canUndo}
+						title={isMac ? '⌘Z' : 'Ctrl+Z'}
+						className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground disabled:pointer-events-none disabled:opacity-35"
+					>
+						<Undo2 className="size-4" />
+					</button>
+					<button
+						type="button"
+						onClick={redo}
+						disabled={!canRedo}
+						title={isMac ? '⌘⇧Z' : 'Ctrl+Y'}
+						className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground disabled:pointer-events-none disabled:opacity-35"
+					>
+						<Redo2 className="size-4" />
+					</button>
+				</div>
+
+				{/* Keyboard shortcuts info */}
 				<div ref={shortcutsRef} className="relative">
 					<button
 						type="button"
@@ -292,7 +343,9 @@ const FormBuilder = () => {
 							</div>
 							<div className="px-4 py-2">
 								{[
-									{ label: __('Save / Publish', 'all-feedback'), keys: isMac ? ['⌘', 'S'] : ['Ctrl', 'S'] },
+									{ label: __('Save / Publish', 'all-feedback'), keys: isMac ? ['⌘', 'S']       : ['Ctrl', 'S'] },
+									{ label: __('Undo',           'all-feedback'), keys: isMac ? ['⌘', 'Z']       : ['Ctrl', 'Z'] },
+									{ label: __('Redo',           'all-feedback'), keys: isMac ? ['⌘', '⇧', 'Z'] : ['Ctrl', 'Y'] },
 								].map(({ label, keys }) => (
 									<div key={label} className="flex items-center justify-between py-1.5">
 										<span className="text-[12px] text-muted-foreground">{label}</span>
@@ -399,7 +452,7 @@ const FormBuilder = () => {
 						{activeTab === 'builder' && (
 							<BuilderCanvas
 								sections={sections}
-								onSectionsChange={(next) => form.setFieldValue('sections', next)}
+								onSectionsChange={handleSectionsChange}
 							/>
 						)}
 

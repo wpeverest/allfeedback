@@ -1,7 +1,15 @@
 import { computePosition, flip, offset, shift } from '@floating-ui/dom';
+import { Smile, Target, Zap } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { FIELD_TYPES } from './fieldTypes';
 import type { FieldType } from './types';
+import { __ } from '@wordpress/i18n';
+
+const PRO_FIELD_TYPES = [
+	{ label: 'PMF',  description: 'Product Market Fit',    Icon: Target },
+	{ label: 'CSAT', description: 'Customer Satisfaction', Icon: Smile  },
+	{ label: 'CES',  description: 'Customer Effort Score', Icon: Zap    },
+];
 
 interface FieldTypeMenuProps {
 	triggerRef: React.RefObject<HTMLElement | null>;
@@ -59,7 +67,8 @@ const FieldTypeMenu = ({ triggerRef, onSelect, onClose }: FieldTypeMenuProps) =>
 			className="field-type-menu overflow-hidden rounded-xl border border-border bg-white p-1.5 shadow-dropdown"
 			style={{ visibility: 'hidden' }}
 		>
-			{FIELD_TYPES.map(({ type, label, Icon, iconColor }) => (
+			{/* Free field types */}
+			{FIELD_TYPES.map(({ type, label, Icon }) => (
 				<button
 					key={type}
 					type="button"
@@ -69,6 +78,24 @@ const FieldTypeMenu = ({ triggerRef, onSelect, onClose }: FieldTypeMenuProps) =>
 					<Icon className="size-4 shrink-0" />
 					{label}
 				</button>
+			))}
+
+			{/* Pro divider */}
+			<div className="my-1 border-t border-border/60" />
+
+			{/* Pro field types */}
+			{PRO_FIELD_TYPES.map(({ label, description, Icon }) => (
+				<div
+					key={label}
+					className="flex w-full cursor-not-allowed items-center gap-3 rounded-lg px-4 py-3 text-left text-[13px] text-muted-foreground opacity-55"
+					title={__('Available in Pro plan', 'all-feedback')}
+				>
+					<Icon className="size-4 shrink-0" />
+					<span className="flex-1">{description}</span>
+					<span className="shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[9.5px] font-semibold text-amber-600">
+						Pro
+					</span>
+				</div>
 			))}
 		</div>
 	);

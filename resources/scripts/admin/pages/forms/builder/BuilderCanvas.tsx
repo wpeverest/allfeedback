@@ -25,7 +25,7 @@ const BuilderCanvas = ({ sections, onSectionsChange }: BuilderCanvasProps) => {
 	const addSection = useCallback(() => {
 		const newSection: FormSection = {
 			id: `section-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-			title: `Section ${sections.length + 1}`,
+			title: `Page ${sections.length + 1}`,
 			fields: [],
 		};
 		setNewSectionId(newSection.id);
