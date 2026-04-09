@@ -493,7 +493,7 @@ const FormBuilder = () => {
 					{activeTab === 'builder' && canvasScrolled && (
 						<div className="absolute inset-x-0 bottom-0 h-[2px] bg-border/40">
 							<div
-								className="h-full bg-primary/30 transition-[width] duration-75"
+								className="h-full bg-primary/60 transition-[width] duration-75"
 								style={{ width: `${canvasProgress * 100}%` }}
 							/>
 						</div>
