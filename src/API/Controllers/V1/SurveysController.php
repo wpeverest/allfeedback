@@ -223,9 +223,19 @@ class SurveysController extends RestController {
 			return $this->errorResponse( __( 'Failed to retrieve created survey.', 'all-feedback' ), 500 );
 		}
 
+		$schemaStats = $this->schemaStats( $data['form_schema'] ?? null );
+
 		$this->logger->info(
 			'Survey created.',
-			[ 'survey_id' => $id, 'title' => $data['title'], 'user_id' => get_current_user_id() ]
+			array_merge(
+				[
+					'survey_id'  => $id,
+					'title'      => $data['title'],
+					'has_schema' => $data['form_schema'] !== null,
+					'user_id'    => get_current_user_id(),
+				],
+				$schemaStats
+			)
 		);
 
 		return $this->successResponse( $this->prepareSurvey( $survey ), 201 );
@@ -321,10 +331,17 @@ class SurveysController extends RestController {
 			return $this->errorResponse( __( 'Failed to update survey.', 'all-feedback' ), 500 );
 		}
 
-		$this->logger->info(
-			'Survey updated.',
-			[ 'survey_id' => $id, 'changed_keys' => array_keys( $data ), 'user_id' => get_current_user_id() ]
-		);
+		$logContext = [
+			'survey_id'   => $id,
+			'changed_keys' => array_keys( $data ),
+			'user_id'     => get_current_user_id(),
+		];
+
+		if ( isset( $data['form_schema'] ) ) {
+			$logContext = array_merge( $logContext, $this->schemaStats( $data['form_schema'] ) );
+		}
+
+		$this->logger->info( 'Survey updated.', $logContext );
 
 		$updated = $this->manager->find( $id );
 
@@ -770,6 +787,42 @@ class SurveysController extends RestController {
 	}
 
 	/**
+	 * Extract section and field counts from a raw form_schema value.
+	 *
+	 * Accepts a JSON string (as stored in the DB after encoding) or an array
+	 * (as received directly from the request). Returns zeroed counts when the
+	 * schema is absent, not an array, or has no sections.
+	 *
+	 * @param mixed $schema Raw form_schema — JSON string, array, or null.
+	 * @return array{section_count: int, field_count: int}
+	 * @since 1.0.0
+	 */
+	private function schemaStats( mixed $schema ): array {
+		$stats = [ 'section_count' => 0, 'field_count' => 0 ];
+
+		if ( $schema === null || $schema === '' ) {
+			return $stats;
+		}
+
+		$decoded = is_string( $schema ) ? json_decode( $schema, true ) : (array) $schema;
+
+		if ( ! is_array( $decoded ) || empty( $decoded['sections'] ) || ! is_array( $decoded['sections'] ) ) {
+			return $stats;
+		}
+
+		$stats['section_count'] = count( $decoded['sections'] );
+
+		foreach ( $decoded['sections'] as $section ) {
+			$section = (array) $section;
+			if ( ! empty( $section['fields'] ) && is_array( $section['fields'] ) ) {
+				$stats['field_count'] += count( $section['fields'] );
+			}
+		}
+
+		return $stats;
+	}
+
+	/**
 	 * Normalise a JSON parameter to an associative array regardless of how
 	 * the REST client delivered it.
 	 *
@@ -828,9 +881,29 @@ class SurveysController extends RestController {
 			);
 		}
 
+		$hasSchema   = ! empty( $survey->form_schema );
+		$schemaStats = $this->schemaStats( $survey->form_schema ?? null );
+
+		if ( $status === 'published' && ! $hasSchema ) {
+			$this->logger->warning(
+				'Survey published without a form schema.',
+				[ 'survey_id' => $id, 'title' => $survey->title, 'user_id' => get_current_user_id() ]
+			);
+		}
+
 		$this->logger->info(
 			"Survey status changed to {$status}.",
-			[ 'survey_id' => $id, 'title' => $survey->title, 'status' => $status, 'user_id' => get_current_user_id() ]
+			array_merge(
+				[
+					'survey_id'       => $id,
+					'title'           => $survey->title,
+					'previous_status' => $survey->status,
+					'new_status'      => $status,
+					'has_schema'      => $hasSchema,
+					'user_id'         => get_current_user_id(),
+				],
+				$schemaStats
+			)
 		);
 
 		$updated = $this->manager->find( $id );
