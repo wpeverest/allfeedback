@@ -39,6 +39,16 @@ const htmlToText = (html: string): string => {
 	return div.textContent ?? div.innerText ?? '';
 };
 
+/** Unwrap a single <p>...</p> so it renders as inline text, keeping height consistent
+ *  whether the label is plain text (before editing) or Tiptap HTML (after first keystroke). */
+const normalizeLabel = (html: string): string => {
+	const t = html.trim();
+	if (t.startsWith('<p>') && t.endsWith('</p>') && t.indexOf('<p>', 1) === -1) {
+		return t.slice(3, -4);
+	}
+	return t;
+};
+
 /* ─── Star rating interactive input ─────────────────────────────────────── */
 const StarRatingPreview = ({ field, value, onChange }: { field: FormField; value: string; onChange: (v: string) => void }) => {
 	const [hovered, setHovered] = useState(0);
@@ -181,7 +191,7 @@ const FieldPreview = ({ field, value, error, onChange }: FieldPreviewProps) => {
 		error ? 'border-destructive/60' : 'border-border/70',
 	);
 
-	const baseHtml = field.label?.trim() ? field.label : '<span style="opacity:0.4">Untitled</span>';
+	const baseHtml = field.label?.trim() ? normalizeLabel(field.label) : '<span style="opacity:0.4">Untitled</span>';
 	const strVal    = typeof value === 'string' ? value : '';
 	const arrVal    = Array.isArray(value) ? value : [];
 
@@ -193,14 +203,14 @@ const FieldPreview = ({ field, value, error, onChange }: FieldPreviewProps) => {
 	};
 
 	return (
-		<div className="space-y-0">
+		<div className="space-y-2.5">
 			<div className="flex items-baseline gap-0.5">
-				<p
-					className="text-[10.5px] text-foreground [&_strong]:font-semibold [&_em]:italic [&_u]:underline [&_s]:line-through [&_code]:rounded [&_code]:bg-muted [&_code]:px-0.5 [&_code]:font-mono [&_code]:text-[0.9em] [&_mark]:rounded [&_mark]:bg-amber-100 [&_mark]:text-amber-800"
+				<div
+					className="field-preview-label text-[13px] text-foreground [&_p]:m-0 [&_strong]:font-semibold [&_em]:italic [&_u]:underline [&_s]:line-through [&_code]:rounded [&_code]:bg-muted [&_code]:px-0.5 [&_code]:font-mono [&_code]:text-[0.9em] [&_mark]:rounded [&_mark]:bg-amber-100 [&_mark]:text-amber-800"
 					dangerouslySetInnerHTML={{ __html: baseHtml }}
 				/>
 				{field.required && (
-					<span className="shrink-0 text-[9px] font-bold leading-none text-destructive">*</span>
+					<span className="shrink-0 text-[11px] font-bold leading-none text-destructive">*</span>
 				)}
 			</div>
 
@@ -399,7 +409,7 @@ const WidgetBody = ({
 								</p>
 							</div>
 						) : (
-							<div className="space-y-3">
+							<div className="space-y-5">
 								{currentFields.map((field) => (
 									<FieldPreview
 										key={field.id}
@@ -576,27 +586,27 @@ const PreviewPanel = ({ sections, device, onDeviceChange }: PreviewPanelProps) =
 							type="button"
 							onClick={() => setViewMode('page')}
 							className={cn(
-								'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-colors',
+								'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[10px] font-medium transition-colors',
 								viewMode === 'page'
 									? 'bg-primary/10 text-primary'
 									: 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
 							)}
 						>
 							<Globe className="size-3" />
-							{__('Page', 'all-feedback')}
+							<span className="text-[11px]">{__('Page', 'all-feedback')}</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => setViewMode('widget')}
 							className={cn(
-								'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-colors',
+								'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[10px] font-medium transition-colors',
 								viewMode === 'widget'
 									? 'bg-primary/10 text-primary'
 									: 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
 							)}
 						>
 							<MessageSquare className="size-3" />
-							{__('Widget', 'all-feedback')}
+							<span className="text-[11px]">{__('Widget', 'all-feedback')}</span>
 						</button>
 					</div>
 				</div>
@@ -689,6 +699,16 @@ const PreviewPanel = ({ sections, device, onDeviceChange }: PreviewPanelProps) =
 												<div className="h-1.5 w-3/4 rounded-full bg-foreground/[0.06]" />
 											</div>
 										))}
+									</div>
+
+									{/* Preview notice — styled as inline page content */}
+									<div className="mx-4 mt-5 border-t border-black/[0.06] pt-4">
+										<div className="mb-1.5 h-1.5 w-2/5 rounded-full bg-foreground/[0.09]" />
+										<div className="space-y-1">
+											<p className="text-[8px] leading-[1.6] text-foreground/50">
+												{__('This is an approximate preview. The widget position, size, and styling may look different on your live site depending on your theme, screen resolution, and custom CSS.', 'all-feedback')}
+											</p>
+										</div>
 									</div>
 								</div>
 

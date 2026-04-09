@@ -14,8 +14,11 @@ import {
 	GripVertical,
 	Highlighter as HighlighterIcon,
 	Italic as ItalicIcon,
+	List as BulletListIcon,
+	ListOrdered as OrderedListIcon,
 	Pencil,
 	Plus,
+	Quote as BlockquoteIcon,
 	Strikethrough as StrikethroughIcon,
 	Trash2,
 	Underline as UnderlineIcon,
@@ -156,9 +159,6 @@ const QuestionEditor = ({ value, onChange, autoFocus, focusTrigger }: QuestionEd
 		extensions: [
 			StarterKit.configure({
 				heading:        false,
-				bulletList:     false,
-				orderedList:    false,
-				blockquote:     false,
 				codeBlock:      false,
 				horizontalRule: false,
 			}),
@@ -194,32 +194,40 @@ const QuestionEditor = ({ value, onChange, autoFocus, focusTrigger }: QuestionEd
 		if (focusTrigger && editor) editor.commands.focus('end');
 	}, [focusTrigger, editor]);
 
-	type FormatMark = 'bold' | 'italic' | 'underline' | 'strike' | 'code' | 'highlight';
+	type FormatMark = 'bold' | 'italic' | 'underline' | 'strike' | 'code' | 'highlight' | 'bulletList' | 'orderedList' | 'blockquote';
 
 	const toggleFormat = (fmt: FormatMark) => {
 		if (!editor) return;
 		const chain = editor.chain().focus();
-		if (fmt === 'bold')      chain.toggleBold().run();
-		if (fmt === 'italic')    chain.toggleItalic().run();
-		if (fmt === 'underline') chain.toggleUnderline().run();
-		if (fmt === 'strike')    chain.toggleStrike().run();
-		if (fmt === 'code')      chain.toggleCode().run();
-		if (fmt === 'highlight') chain.toggleHighlight().run();
+		if (fmt === 'bold')        chain.toggleBold().run();
+		if (fmt === 'italic')      chain.toggleItalic().run();
+		if (fmt === 'underline')   chain.toggleUnderline().run();
+		if (fmt === 'strike')      chain.toggleStrike().run();
+		if (fmt === 'code')        chain.toggleCode().run();
+		if (fmt === 'highlight')   chain.toggleHighlight().run();
+		if (fmt === 'bulletList')  chain.toggleBulletList().run();
+		if (fmt === 'orderedList') chain.toggleOrderedList().run();
+		if (fmt === 'blockquote')  chain.toggleBlockquote().run();
 	};
 
 	const clearAllMarks = () => editor?.chain().focus().unsetAllMarks().run();
 
-	/* Two groups separated by a divider */
+	/* Three groups separated by dividers */
 	const TOOLBAR_GROUPS: { fmt: FormatMark; Icon: LucideIcon; title: string }[][] = [
 		[
-			{ fmt: 'bold',      Icon: BoldIcon,          title: __('Bold', 'all-feedback') },
-			{ fmt: 'italic',    Icon: ItalicIcon,        title: __('Italic', 'all-feedback') },
-			{ fmt: 'underline', Icon: UnderlineIcon,     title: __('Underline', 'all-feedback') },
-			{ fmt: 'strike',    Icon: StrikethroughIcon, title: __('Strikethrough', 'all-feedback') },
+			{ fmt: 'bold',        Icon: BoldIcon,          title: __('Bold', 'all-feedback') },
+			{ fmt: 'italic',      Icon: ItalicIcon,        title: __('Italic', 'all-feedback') },
+			{ fmt: 'underline',   Icon: UnderlineIcon,     title: __('Underline', 'all-feedback') },
+			{ fmt: 'strike',      Icon: StrikethroughIcon, title: __('Strikethrough', 'all-feedback') },
 		],
 		[
-			{ fmt: 'code',      Icon: CodeIcon,          title: __('Inline code', 'all-feedback') },
-			{ fmt: 'highlight', Icon: HighlighterIcon,   title: __('Highlight', 'all-feedback') },
+			{ fmt: 'code',        Icon: CodeIcon,          title: __('Inline code', 'all-feedback') },
+			{ fmt: 'highlight',   Icon: HighlighterIcon,   title: __('Highlight', 'all-feedback') },
+		],
+		[
+			{ fmt: 'bulletList',  Icon: BulletListIcon,    title: __('Bullet list', 'all-feedback') },
+			{ fmt: 'orderedList', Icon: OrderedListIcon,   title: __('Ordered list', 'all-feedback') },
+			{ fmt: 'blockquote',  Icon: BlockquoteIcon,    title: __('Blockquote', 'all-feedback') },
 		],
 	];
 
@@ -274,6 +282,10 @@ const QuestionEditor = ({ value, onChange, autoFocus, focusTrigger }: QuestionEd
 				data-focused={isFocused}
 				className={cn(
 					'question-editor-field rounded-lg border border-dashed transition-colors',
+					'[&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-4',
+					'[&_ol]:my-1 [&_ol]:list-decimal [&_ol]:pl-4',
+					'[&_li]:my-0.5',
+					'[&_blockquote]:my-1 [&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground/70 [&_blockquote]:italic',
 					isFocused
 						? 'border-primary/50 bg-primary/[0.015]'
 						: 'border-border/50 hover:border-border/80 hover:bg-muted/20',
