@@ -123,6 +123,49 @@ const ScalePreview = ({ field, value, onChange }: { field: FormField; value: str
 	);
 };
 
+/* ─── NPS interactive input ──────────────────────────────────────────────── */
+const NpsPreview = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => {
+	const [hovered, setHovered] = useState<number | null>(null);
+	const selected = value !== '' ? Number(value) : null;
+
+	const colorFor = (n: number) => {
+		if (n <= 6) return { active: 'border-destructive/50 bg-destructive/10 text-destructive', hover: 'hover:border-destructive/40 hover:bg-destructive/[0.06] hover:text-destructive' };
+		if (n <= 8) return { active: 'border-amber-400/70 bg-amber-50 text-amber-600',           hover: 'hover:border-amber-400/50 hover:bg-amber-50/60 hover:text-amber-600' };
+		return          { active: 'border-green-500/60 bg-green-50 text-green-600',              hover: 'hover:border-green-500/40 hover:bg-green-50/60 hover:text-green-600' };
+	};
+
+	return (
+		<div className="space-y-1.5" onMouseLeave={() => setHovered(null)}>
+			<div className="flex gap-1">
+				{Array.from({ length: 11 }, (_, i) => i).map((n) => {
+					const isActive = (hovered ?? selected) === n;
+					const { active, hover } = colorFor(n);
+					return (
+						<button
+							key={n}
+							type="button"
+							onMouseEnter={() => setHovered(n)}
+							onClick={() => onChange(selected === n ? '' : String(n))}
+							className={cn(
+								'flex h-7 flex-1 items-center justify-center rounded-lg border text-[11px] font-semibold transition-all duration-100 active:scale-95',
+								isActive
+									? active
+									: cn('border-border/60 bg-muted/30 text-foreground/60', hover),
+							)}
+						>
+							{n}
+						</button>
+					);
+				})}
+			</div>
+			<div className="flex justify-between">
+				<span className="text-[11.5px] text-muted-foreground/60">{__('Not at all likely', 'all-feedback')}</span>
+				<span className="text-[11.5px] text-muted-foreground/60">{__('Extremely likely', 'all-feedback')}</span>
+			</div>
+		</div>
+	);
+};
+
 /* ─── Interactive field preview ─────────────────────────────────────────── */
 interface FieldPreviewProps {
 	field:    FormField;
@@ -243,7 +286,11 @@ const FieldPreview = ({ field, value, error, onChange }: FieldPreviewProps) => {
 				<ScalePreview field={field} value={strVal} onChange={onChange} />
 			)}
 
-			{!['short_text', 'long_text', 'radio', 'checkboxes', 'star_rating', 'scale'].includes(field.type) && (
+			{field.type === 'nps' && (
+				<NpsPreview value={strVal} onChange={onChange} />
+			)}
+
+			{!['short_text', 'long_text', 'radio', 'checkboxes', 'star_rating', 'scale', 'nps'].includes(field.type) && (
 				<div className="h-5 rounded-md border border-border/60 bg-muted/40" />
 			)}
 

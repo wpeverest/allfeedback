@@ -542,6 +542,31 @@ const ScaleConfig = ({
 	);
 };
 
+/* ── NPS config ────────────────────────────────────────────────────────── */
+const NpsConfig = ({
+	field,
+	onChange,
+	autoFocus,
+	focusTrigger,
+}: {
+	field: FormField;
+	onChange: (f: FormField) => void;
+	autoFocus?:    boolean;
+	focusTrigger?: number;
+}) => (
+	<div className="space-y-4">
+		<QuestionEditor
+			value={field.label}
+			onChange={(html) => onChange({ ...field, label: html })}
+			autoFocus={autoFocus}
+			focusTrigger={focusTrigger}
+		/>
+		<p className="text-[11.5px] text-muted-foreground/60">
+			{__('Fixed 0 – 10 scale. No configuration needed.', 'all-feedback')}
+		</p>
+	</div>
+);
+
 /* ── Default field config (rating, scale, nps, etc.) ──────────────────── */
 const DefaultFieldConfig = ({
 	field,
@@ -614,6 +639,8 @@ const FieldEditor = ({
 				return <StarRatingConfig field={field} onChange={onChange} autoFocus={autoFocus} focusTrigger={focusTrigger} />;
 			case 'scale':
 				return <ScaleConfig field={field} onChange={onChange} autoFocus={autoFocus} focusTrigger={focusTrigger} />;
+			case 'nps':
+				return <NpsConfig field={field} onChange={onChange} autoFocus={autoFocus} focusTrigger={focusTrigger} />;
 			default:
 				return <DefaultFieldConfig field={field} onChange={onChange} autoFocus={autoFocus} focusTrigger={focusTrigger} />;
 		}
@@ -699,7 +726,7 @@ const FieldEditor = ({
 					</div>
 
 					{/* Chevron — always visible */}
-					<span className="flex size-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-black/[0.06] hover:text-foreground">
+					<span className="flex size-6 items-center justify-center rounded transition-colors hover:bg-black/[0.06]">
 						<ChevronDown className={cn(
 							'size-3.5 transition-transform duration-200',
 							isCollapsed && '-rotate-90',
