@@ -73,7 +73,7 @@ class AdminServiceProvider implements ServiceProvider {
 
 		$menu_icon = 'data:image/svg+xml;base64,' . base64_encode(
 			'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'
-			. '<path fill="black" d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>'
+			. '<path fill="white" d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>'
 			. '</svg>'
 		);
 
