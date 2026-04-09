@@ -14,6 +14,8 @@ export interface FormField {
 	required: boolean;
 	placeholder?: string;
 	options?: string[];
+	starScale?: 'star' | 'number';
+	starRange?: 5 | 10;
 }
 
 export interface FormSection {

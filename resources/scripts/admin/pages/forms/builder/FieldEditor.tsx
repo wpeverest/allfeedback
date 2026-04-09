@@ -4,6 +4,7 @@ import HighlightExtension from '@tiptap/extension-highlight';
 import UnderlineExtension from '@tiptap/extension-underline';
 import PlaceholderExtension from '@tiptap/extension-placeholder';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { __ } from '@wordpress/i18n';
 import {
@@ -408,6 +409,69 @@ const OptionsConfig = ({
 	);
 };
 
+
+/* ── Star Rating config ────────────────────────────────────────────────── */
+const StarRatingConfig = ({
+	field,
+	onChange,
+	autoFocus,
+	focusTrigger,
+}: {
+	field: FormField;
+	onChange: (f: FormField) => void;
+	autoFocus?:    boolean;
+	focusTrigger?: number;
+}) => {
+	const scale    = field.starScale ?? 'star';
+	const range    = field.starRange ?? 5;
+	const labelCls = 'block text-[11.5px] font-medium text-muted-foreground/70';
+
+	return (
+		<div className="space-y-4">
+			<QuestionEditor
+				value={field.label}
+				onChange={(html) => onChange({ ...field, label: html })}
+				autoFocus={autoFocus}
+				focusTrigger={focusTrigger}
+			/>
+
+			{/* Stop propagation so parent drag handlers don't interfere with Select */}
+			<div className="grid grid-cols-2 gap-3" onMouseDown={(e) => e.stopPropagation()}>
+				<div className="space-y-1.5">
+					<label className={labelCls}>{__('Scale', 'all-feedback')}</label>
+					<Select
+						value={scale}
+						onValueChange={(v) => onChange({ ...field, starScale: v as FormField['starScale'] })}
+					>
+						<SelectTrigger className="h-8 w-full text-[13px]">
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="star">{__('Star', 'all-feedback')}</SelectItem>
+							<SelectItem value="number">{__('Number', 'all-feedback')}</SelectItem>
+						</SelectContent>
+					</Select>
+				</div>
+				<div className="space-y-1.5">
+					<label className={labelCls}>{__('Range', 'all-feedback')}</label>
+					<Select
+						value={String(range)}
+						onValueChange={(v) => onChange({ ...field, starRange: Number(v) as FormField['starRange'] })}
+					>
+						<SelectTrigger className="h-8 w-full text-[13px]">
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="5">{__('5 points', 'all-feedback')}</SelectItem>
+							<SelectItem value="10">{__('10 points', 'all-feedback')}</SelectItem>
+						</SelectContent>
+					</Select>
+				</div>
+			</div>
+		</div>
+	);
+};
+
 /* ── Default field config (rating, scale, nps, etc.) ──────────────────── */
 const DefaultFieldConfig = ({
 	field,
@@ -476,32 +540,19 @@ const FieldEditor = ({
 			case 'radio':
 			case 'checkboxes':
 				return <OptionsConfig field={field} onChange={onChange} autoFocus={autoFocus} focusTrigger={focusTrigger} />;
+			case 'star_rating':
+				return <StarRatingConfig field={field} onChange={onChange} autoFocus={autoFocus} focusTrigger={focusTrigger} />;
 			default:
 				return <DefaultFieldConfig field={field} onChange={onChange} autoFocus={autoFocus} focusTrigger={focusTrigger} />;
 		}
 	};
 
+	const cardRef = useRef<HTMLDivElement>(null);
+
 	return (
 		<div
-			draggable
-			onDragStart={(e) => {
-				e.stopPropagation();
-				const el = e.currentTarget as HTMLElement;
-				const clone = el.cloneNode(true) as HTMLElement;
-				Object.assign(clone.style, {
-					position: 'fixed', top: '-9999px', left: '-9999px',
-					width: `${el.offsetWidth}px`,
-					transform: 'rotate(1.5deg) scale(1.02)',
-					boxShadow: '0 20px 40px rgba(0,0,0,0.15), 0 6px 12px rgba(0,0,0,0.08)',
-					borderRadius: '12px', overflow: 'hidden', pointerEvents: 'none',
-				});
-				document.body.appendChild(clone);
-				e.dataTransfer.setDragImage(clone, el.offsetWidth / 2, 32);
-				requestAnimationFrame(() => document.body.removeChild(clone));
-				onDragStart(index);
-			}}
+			ref={cardRef}
 			onDragOver={(e) => { e.stopPropagation(); e.preventDefault(); onDragOver(e, index); }}
-			onDragEnd={(e) => { e.stopPropagation(); onDragEnd(); }}
 			onDrop={(e) => { e.stopPropagation(); e.preventDefault(); onDrop(e, index); }}
 			className={cn(
 				'relative overflow-hidden rounded-xl border border-border/60 bg-white transition-all duration-150',
@@ -509,8 +560,26 @@ const FieldEditor = ({
 				isDragOver && !isDragging && 'border-t-[3px] border-t-primary bg-primary/[0.02]',
 			)}
 		>
-			{/* ── Header bar — click to collapse ── */}
+			{/* ── Header bar — click to collapse, drag to reorder ── */}
 			<div
+				draggable
+				onDragStart={(e) => {
+					e.stopPropagation();
+					const el = cardRef.current ?? e.currentTarget as HTMLElement;
+					const clone = el.cloneNode(true) as HTMLElement;
+					Object.assign(clone.style, {
+						position: 'fixed', top: '-9999px', left: '-9999px',
+						width: `${el.offsetWidth}px`,
+						transform: 'rotate(1.5deg) scale(1.02)',
+						boxShadow: '0 20px 40px rgba(0,0,0,0.15), 0 6px 12px rgba(0,0,0,0.08)',
+						borderRadius: '12px', overflow: 'hidden', pointerEvents: 'none',
+					});
+					document.body.appendChild(clone);
+					e.dataTransfer.setDragImage(clone, el.offsetWidth / 2, 32);
+					requestAnimationFrame(() => document.body.removeChild(clone));
+					onDragStart(index);
+				}}
+				onDragEnd={(e) => { e.stopPropagation(); onDragEnd(); }}
 				className="flex cursor-pointer items-center gap-2 border-b border-border/50 bg-muted/25 px-4 py-2.5 transition-colors hover:bg-muted/40"
 				onClick={() => setIsCollapsed((v) => !v)}
 			>

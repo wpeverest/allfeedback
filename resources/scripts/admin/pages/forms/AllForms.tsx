@@ -62,7 +62,6 @@ const AllForms = () => {
 	return (
 		<div className="p-5 md:p-6">
 
-				{/* Filter bar — on page background, no card */}
 			<div className="mb-4 flex flex-wrap items-center gap-3 py-1">
 				<div className="relative w-[260px]">
 					<svg className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
