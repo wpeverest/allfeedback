@@ -71,13 +71,19 @@ class AdminServiceProvider implements ServiceProvider {
 			echo '<div id="' . esc_attr( self::MOUNT_ID ) . '"></div>';
 		};
 
+		$menu_icon = 'data:image/svg+xml;base64,' . base64_encode(
+			'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'
+			. '<path fill="black" d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>'
+			. '</svg>'
+		);
+
 		add_menu_page(
 			page_title: __( 'All Feedback', 'all-feedback' ),
 			menu_title: __( 'AllFeedback', 'all-feedback' ),
 			capability: 'manage_options',
 			menu_slug:  self::MENU_SLUG,
 			callback:   $mountPoint,
-			icon_url:   'dashicons-admin-generic',
+			icon_url:   $menu_icon,
 			position:   30,
 		);
 
