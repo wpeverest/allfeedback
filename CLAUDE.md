@@ -111,17 +111,59 @@ pnpm release      # clean → build → POT → composer --no-dev → zip
 
 Migrations run **automatically** on `admin_init` — visiting any WP admin page is enough.
 
-To run manually via WP-CLI:
+### Tables not created? (common in development)
+
+**Option 1 — Reactivate the plugin (fastest)**
+WP Admin → Plugins → Deactivate "All Feedback" → Activate.
+This fires the activation hook which calls `onActivation()` → `migrator->run()` directly.
+
+**Option 2 — WP-CLI via LocalWP site shell**
+LocalWP uses a custom MySQL socket — use the built-in shell, not your system terminal:
 ```bash
-wp eval 'AllFeedback\Plugin::getInstance()->getContainer()->get(AllFeedback\Infrastructure\Database\Migrator::class)->run();' \
-  --path="/home/wpeverest/Local Sites/user-registration/app/public"
+# Open "Open Site Shell" in LocalWP, then:
+wp eval 'AllFeedback\Plugin::getInstance()->getContainer()->get(AllFeedback\Infrastructure\Database\Migrator::class)->run();'
 ```
 
-To verify tables exist:
-```bash
-wp db query "SHOW TABLES LIKE 'wp_af%';" \
-  --path="/home/wpeverest/Local Sites/user-registration/app/public"
+**Option 3 — Adminer / phpMyAdmin (raw SQL fallback)**
+Open LocalWP → Database → Adminer and run:
+```sql
+CREATE TABLE IF NOT EXISTS wp_af_surveys (
+    id             BIGINT(20) UNSIGNED  NOT NULL AUTO_INCREMENT,
+    title          VARCHAR(255)         NOT NULL DEFAULT '',
+    description    TEXT                          DEFAULT NULL,
+    form_schema    LONGTEXT                      DEFAULT NULL,
+    settings       LONGTEXT                      DEFAULT NULL,
+    targeting      LONGTEXT                      DEFAULT NULL,
+    status         VARCHAR(20)          NOT NULL DEFAULT 'draft',
+    response_count INT UNSIGNED         NOT NULL DEFAULT 0,
+    created_by     BIGINT(20) UNSIGNED           DEFAULT NULL,
+    created_at     DATETIME             NOT NULL,
+    updated_at     DATETIME                      DEFAULT NULL,
+    PRIMARY KEY (id),
+    KEY status (status), KEY created_by (created_by), KEY created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS wp_af_responses (
+    id            BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+    survey_id     BIGINT(20) UNSIGNED NOT NULL,
+    response_data LONGTEXT                     DEFAULT NULL,
+    score         SMALLINT                     DEFAULT NULL,
+    page_url      VARCHAR(2083)                DEFAULT NULL,
+    device_type   VARCHAR(20)                  DEFAULT NULL,
+    ip_hash       VARCHAR(64)                  DEFAULT NULL,
+    user_id       BIGINT(20) UNSIGNED          DEFAULT NULL,
+    consent_given TINYINT(1)          NOT NULL DEFAULT 0,
+    created_at    DATETIME            NOT NULL,
+    PRIMARY KEY (id),
+    KEY survey_id (survey_id), KEY ip_hash (ip_hash), KEY created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
+
+### Verify tables exist
+```bash
+wp db query "SHOW TABLES LIKE 'wp_af%';"
+```
+Expected output: `wp_af_responses` and `wp_af_surveys`.
 
 **Always clear the PHP-DI compiled container cache after changing `config/services.php`:**
 ```bash
