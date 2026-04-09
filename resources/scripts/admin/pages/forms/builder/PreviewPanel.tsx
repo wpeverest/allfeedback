@@ -734,6 +734,12 @@ const PreviewPanel = ({ sections, device, onDeviceChange }: PreviewPanelProps) =
 							<div className="relative flex-1 overflow-hidden bg-[#f8f9fa]">
 								{/* Fake website wireframe */}
 								<div className="pointer-events-none absolute inset-0 flex flex-col">
+									{/* Preview notice — styled as a site announcement bar */}
+									<div className="flex items-center justify-center bg-foreground/[0.055] px-4 py-[5px]">
+										<p className="text-[7.5px] font-medium leading-[1.5] tracking-wide text-foreground/40 text-center">
+											{__('Approximate preview — position, size, and styling may vary on your live site based on your theme and screen size', 'all-feedback')}
+										</p>
+									</div>
 									{/* Site nav */}
 									<div className="flex h-9 shrink-0 items-center gap-3 border-b border-black/5 bg-white px-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
 										<div className="h-2.5 w-14 rounded-full bg-foreground/10" />
@@ -758,16 +764,6 @@ const PreviewPanel = ({ sections, device, onDeviceChange }: PreviewPanelProps) =
 												<div className="h-1.5 w-3/4 rounded-full bg-foreground/[0.06]" />
 											</div>
 										))}
-									</div>
-
-									{/* Preview notice — styled as inline page content */}
-									<div className="mx-4 mt-5 border-t border-black/[0.06] pt-4">
-										<div className="mb-1.5 h-1.5 w-2/5 rounded-full bg-foreground/[0.09]" />
-										<div className="space-y-1">
-											<p className="text-[8px] leading-[1.6] text-foreground/50">
-												{__('This is an approximate preview. The widget position, size, and styling may look different on your live site depending on your theme, screen resolution, and custom CSS.', 'all-feedback')}
-											</p>
-										</div>
 									</div>
 								</div>
 
