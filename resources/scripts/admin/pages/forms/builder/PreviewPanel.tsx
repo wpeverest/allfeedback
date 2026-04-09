@@ -1,11 +1,12 @@
 import { cn } from '@/lib/utils';
 import { ArrowLeft, ArrowRight, CheckCircle2, ChevronLeft, ChevronRight, Eye, Globe, Lock, MessageSquare, Minus, Monitor, MoreHorizontal, Plus, RotateCw, Smartphone, Star, Tablet, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import type { FormField, FormSection, PreviewDevice } from './types';
+import type { FormField, FormSection, FormSettings, PreviewDevice } from './types';
 import { __ } from '@wordpress/i18n';
 
 interface PreviewPanelProps {
 	sections:       FormSection[];
+	settings:       FormSettings;
 	device:         PreviewDevice;
 	onDeviceChange: (device: PreviewDevice) => void;
 }
@@ -323,6 +324,7 @@ interface WidgetBodyProps {
 	isMinimized:   boolean;
 	isClosed:      boolean;
 	showControls:  boolean; // false in widget-only mode
+	settings:      FormSettings;
 	onMinimize:    () => void;
 	onClose:       () => void;
 	onChange:      (fieldId: string, value: string | string[]) => void;
@@ -334,7 +336,7 @@ interface WidgetBodyProps {
 
 const WidgetBody = ({
 	steps, stepIndex, totalSteps, hasSteps, isLastStep, currentFields,
-	isSubmitted, fieldValues, fieldErrors, isMinimized, isClosed, showControls,
+	isSubmitted, fieldValues, fieldErrors, isMinimized, isClosed, showControls, settings,
 	onMinimize, onClose, onChange, onNext, onBack, onSubmit, onResubmit,
 }: WidgetBodyProps) => (
 	<div className={cn(
@@ -372,10 +374,14 @@ const WidgetBody = ({
 				<div className="flex flex-col items-center justify-center px-4 py-5 text-center">
 					<CheckCircle2 className="mb-1.5 size-6 text-primary" />
 					<p className="text-[12px] font-semibold text-foreground">
-						{__('Thank you!', 'all-feedback')}
+						{settings.thankYouEnabled && settings.thankYouTitle
+							? settings.thankYouTitle
+							: __('Thank you!', 'all-feedback')}
 					</p>
 					<p className="mt-0.5 text-[11px] text-muted-foreground">
-						{__('Your response has been recorded.', 'all-feedback')}
+						{settings.thankYouEnabled && settings.thankYouDescription
+							? settings.thankYouDescription
+							: __('Your response has been recorded.', 'all-feedback')}
 					</p>
 				</div>
 			) : (
@@ -476,7 +482,7 @@ const getSiteHostname = (): string => {
 };
 
 /* ─── Main component ─────────────────────────────────────────────────────── */
-const PreviewPanel = ({ sections, device, onDeviceChange }: PreviewPanelProps) => {
+const PreviewPanel = ({ sections, settings, device, onDeviceChange }: PreviewPanelProps) => {
 	const steps        = activeSections(sections);
 	const totalSteps   = steps.length;
 	const hasSteps     = totalSteps > 0;
@@ -546,7 +552,7 @@ const PreviewPanel = ({ sections, device, onDeviceChange }: PreviewPanelProps) =
 
 	const sharedWidgetProps = {
 		steps, stepIndex, totalSteps, hasSteps, isLastStep, currentFields,
-		isSubmitted, fieldValues, fieldErrors, isMinimized, isClosed,
+		isSubmitted, fieldValues, fieldErrors, isMinimized, isClosed, settings,
 		onMinimize: () => setIsMinimized(true),
 		onClose:    () => setIsClosed(true),
 		onChange:   handleChange,

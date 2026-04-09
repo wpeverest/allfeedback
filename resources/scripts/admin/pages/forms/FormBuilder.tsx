@@ -9,7 +9,9 @@ import { ArrowLeft, Check, ChevronDown, Info, LayoutGrid, Palette, Pencil, Redo2
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import BuilderCanvas from './builder/BuilderCanvas';
 import PreviewPanel from './builder/PreviewPanel';
-import type { BuilderTab, FormSection, PreviewDevice } from './builder/types';
+import SettingsPanel from './builder/SettingsPanel';
+import type { BuilderTab, FormSection, FormSettings, PreviewDevice } from './builder/types';
+import { DEFAULT_FORM_SETTINGS } from './builder/types';
 
 const WP_ELEMENTS = ['#wpadminbar', '#adminmenuwrap', '#adminmenuback'] as const;
 
@@ -64,6 +66,7 @@ const FormBuilder = () => {
 		defaultValues: {
 			title:    __('My Feedback Form', 'all-feedback') as string,
 			sections: MOCK_SECTIONS,
+			settings: DEFAULT_FORM_SETTINGS as FormSettings,
 		},
 		onSubmit: async ({ value }) => {
 			// TODO: persist via WP REST API
@@ -74,7 +77,12 @@ const FormBuilder = () => {
 
 	const title    = useStore(form.store, (s) => s.values.title);
 	const sections = useStore(form.store, (s) => s.values.sections);
+	const settings = useStore(form.store, (s) => s.values.settings);
 	const isDirty  = useStore(form.store, (s) => s.isDirty);
+
+	const handleSettingsChange = useCallback((next: FormSettings) => {
+		form.setFieldValue('settings', next);
+	}, [form]);
 
  	const [isEditingTitle, setIsEditingTitle] = useState(false);
 	const titleSnapshotRef                    = useRef('');
@@ -513,17 +521,10 @@ const FormBuilder = () => {
 						)}
 
 						{activeTab === 'settings' && (
-							<div className="flex flex-1 items-center justify-center">
-								<div className="text-center">
-									<Settings2 className="mx-auto mb-3 size-8 text-muted-foreground/30" />
-									<p className="text-[14px] font-medium text-foreground">
-										{__('Form Settings', 'all-feedback')}
-									</p>
-									<p className="mt-1 text-[13px] text-muted-foreground">
-										{__('Coming soon', 'all-feedback')}
-									</p>
-								</div>
-							</div>
+							<SettingsPanel
+								settings={settings}
+								onChange={handleSettingsChange}
+							/>
 						)}
 
 						{activeTab === 'styling' && (
@@ -559,6 +560,7 @@ const FormBuilder = () => {
 				>
 					<PreviewPanel
 						sections={sections}
+						settings={settings}
 						device={previewDevice}
 						onDeviceChange={setPreviewDevice}
 					/>
