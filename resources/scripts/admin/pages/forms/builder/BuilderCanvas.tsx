@@ -2,18 +2,19 @@ import { Button } from '@/components/ui/button';
 import { __ } from '@wordpress/i18n';
 import { Plus } from 'lucide-react';
 import EmptyCanvasIllustration from './EmptyCanvasIllustration';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import SectionCard from './SectionCard';
 import type { FormSection } from './types';
 
 interface BuilderCanvasProps {
 	sections: FormSection[];
 	onSectionsChange: (sections: FormSection[]) => void;
+	onScrollChange?: (scrolled: boolean, progress: number) => void;
 }
 
 interface FieldPos { sectionIdx: number; fieldIdx: number }
 
-const BuilderCanvas = ({ sections, onSectionsChange }: BuilderCanvasProps) => {
+const BuilderCanvas = ({ sections, onSectionsChange, onScrollChange }: BuilderCanvasProps) => {
 	const [sectionDragIdx, setSectionDragIdx] = useState<number | null>(null);
 	const [sectionDropIdx, setSectionDropIdx] = useState<number | null>(null);
 	const [newSectionId,   setNewSectionId]   = useState<string | null>(null);
@@ -138,8 +139,17 @@ const BuilderCanvas = ({ sections, onSectionsChange }: BuilderCanvasProps) => {
 		);
 	}
 
+	const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+		const el = e.currentTarget;
+		const scrolled = el.scrollTop > 0;
+		const progress = el.scrollHeight <= el.clientHeight
+			? 0
+			: el.scrollTop / (el.scrollHeight - el.clientHeight);
+		onScrollChange?.(scrolled, progress);
+	};
+
 	return (
-		<div className="flex-1 overflow-y-auto bg-background p-5">
+		<div className="flex-1 overflow-y-auto bg-background p-5" onScroll={handleScroll}>
 			<div
 				className="w-full space-y-4"
 				onDragLeave={(e) => {

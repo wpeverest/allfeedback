@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { ArrowLeft, ArrowRight, CheckCircle2, Eye, Globe, Lock, MessageSquare, Minus, Monitor, MoreHorizontal, Plus, RotateCw, Smartphone, Star, Tablet, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, ChevronLeft, ChevronRight, Eye, Globe, Lock, MessageSquare, Minus, Monitor, MoreHorizontal, Plus, RotateCw, Smartphone, Star, Tablet, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { FormField, FormSection, PreviewDevice } from './types';
 import { __ } from '@wordpress/i18n';
@@ -559,6 +559,33 @@ const PreviewPanel = ({ sections, device, onDeviceChange }: PreviewPanelProps) =
 	/* Reset shown when widget is closed/minimized (page view) or form is submitted (both views) */
 	const needsReset = isSubmitted || (viewMode === 'page' && (isClosed || isMinimized));
 
+	/* ── Admin page navigation (bypasses validation) ─────────────── */
+	// Total admin pages = real steps + 1 (Thank you)
+	const adminTotalPages = totalSteps + 1;
+	const adminCurrentPage = isSubmitted ? totalSteps : stepIndex; // 0-indexed; last = thank you
+
+	const adminPrev = () => {
+		if (isSubmitted) {
+			setIsSubmitted(false);
+			setCurrentStep(totalSteps - 1);
+		} else if (currentStep > 0) {
+			setFieldErrors({});
+			setCurrentStep((s) => s - 1);
+		}
+	};
+
+	const adminNext = () => {
+		if (!isSubmitted && stepIndex < totalSteps - 1) {
+			setFieldErrors({});
+			setCurrentStep((s) => s + 1);
+		} else if (!isSubmitted && stepIndex === totalSteps - 1) {
+			setIsSubmitted(true);
+		}
+	};
+
+	const adminCanPrev = hasSteps && (adminCurrentPage > 0);
+	const adminCanNext = hasSteps && !isSubmitted;
+
 	return (
 		<div className="flex h-full flex-col bg-white">
 			{/* ── Panel header ──────────────────────────────────────────── */}
@@ -611,6 +638,38 @@ const PreviewPanel = ({ sections, device, onDeviceChange }: PreviewPanelProps) =
 					</div>
 				</div>
 			</div>
+
+			{/* ── Admin page navigator ─────────────────────────────────── */}
+			{hasSteps && (
+				<div className="flex shrink-0 items-center justify-between border-t border-border/50 bg-muted/20 px-4 py-1.5">
+					<span className="text-[11px] font-medium text-muted-foreground/60">
+						{__('Admin nav', 'all-feedback')}
+					</span>
+					<div className="flex items-center gap-2">
+						<button
+							type="button"
+							onClick={adminPrev}
+							disabled={!adminCanPrev}
+							className="flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+						>
+							<ChevronLeft className="size-3.5" />
+						</button>
+						<span className="min-w-[64px] text-center text-[11.5px] font-medium text-foreground">
+							{isSubmitted
+								? __('Thank you', 'all-feedback')
+								: `${__('Page', 'all-feedback')} ${stepIndex + 1} / ${adminTotalPages}`}
+						</span>
+						<button
+							type="button"
+							onClick={adminNext}
+							disabled={!adminCanNext}
+							className="flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+						>
+							<ChevronRight className="size-3.5" />
+						</button>
+					</div>
+				</div>
+			)}
 
 			{/* ── Main preview area ─────────────────────────────────────── */}
 			{viewMode === 'page' ? (

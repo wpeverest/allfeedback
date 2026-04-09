@@ -80,7 +80,9 @@ const FormBuilder = () => {
 	const titleSnapshotRef                    = useRef('');
 	const titleInputRef                       = useRef<HTMLInputElement>(null);
 
-	const [activeTab,       setActiveTab]       = useState<BuilderTab>('builder');
+	const [activeTab,         setActiveTab]         = useState<BuilderTab>('builder');
+	const [canvasScrolled,    setCanvasScrolled]    = useState(false);
+	const [canvasProgress,    setCanvasProgress]    = useState(0);
 	const [previewDevice,   setPreviewDevice]   = useState<PreviewDevice>('desktop');
 	const [previewWidth,    setPreviewWidth]    = useState(() => Math.round(window.innerWidth * 0.45));
 	const [publishMenuOpen,   setPublishMenuOpen]   = useState(false);
@@ -440,7 +442,10 @@ const FormBuilder = () => {
  			<div className="flex flex-1 overflow-hidden">
  				<div className="flex flex-1 flex-col overflow-hidden">
  					{/* Stepper nav */}
-					<div className="flex h-[72px] shrink-0 items-center justify-center bg-white px-8">
+					<div className={cn(
+						'relative flex h-[72px] shrink-0 items-center justify-center bg-white px-8 transition-shadow duration-150',
+						canvasScrolled && activeTab === 'builder' && 'shadow-[0_1px_0_0_hsl(var(--border)),0_4px_10px_-2px_rgba(0,0,0,0.06)]',
+					)}>
 						{TABS.map(({ value, label, Icon, pro }, idx) => {
 							const activeIdx = TABS.findIndex((t) => t.value === activeTab);
 							const isActive  = activeTab === value;
@@ -483,6 +488,16 @@ const FormBuilder = () => {
 								</Fragment>
 							);
 						})}
+
+					{/* Scroll progress bar */}
+					{activeTab === 'builder' && canvasScrolled && (
+						<div className="absolute inset-x-0 bottom-0 h-[2px] bg-border/40">
+							<div
+								className="h-full bg-primary/30 transition-[width] duration-75"
+								style={{ width: `${canvasProgress * 100}%` }}
+							/>
+						</div>
+					)}
 					</div>
 
 					<div className="flex flex-1 overflow-hidden">
@@ -490,6 +505,10 @@ const FormBuilder = () => {
 							<BuilderCanvas
 								sections={sections}
 								onSectionsChange={handleSectionsChange}
+								onScrollChange={(scrolled, progress) => {
+									setCanvasScrolled(scrolled);
+									setCanvasProgress(progress);
+								}}
 							/>
 						)}
 
