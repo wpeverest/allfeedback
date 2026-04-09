@@ -314,9 +314,18 @@ const SectionCard = ({
 				)}
 
 				<div className="flex">
-					<Button ref={addFieldBtnRef} size="sm" variant="ghost" onMouseDown={(e) => e.preventDefault()} onClick={toggleMenu}>
-						<Plus className="size-3.5" />
-						{__('Add Field', 'all-feedback')}
+					<Button
+						ref={addFieldBtnRef}
+						size="sm"
+						variant="ghost"
+						onMouseDown={(e) => e.preventDefault()}
+						onClick={toggleMenu}
+						className={cn(menuOpen && 'bg-muted/60 text-foreground')}
+					>
+						{menuOpen
+							? <><X className="size-3.5" />{__('Close', 'all-feedback')}</>
+							: <><Plus className="size-3.5" />{__('Add Field', 'all-feedback')}</>
+						}
 					</Button>
 				</div>
 			</div></div></div>

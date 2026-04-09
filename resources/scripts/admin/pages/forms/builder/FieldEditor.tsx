@@ -151,6 +151,7 @@ interface QuestionEditorProps {
 
 const QuestionEditor = ({ value, onChange, autoFocus, focusTrigger }: QuestionEditorProps) => {
 	const [isFocused, setIsFocused] = useState(false);
+	const [isOpen,    setIsOpen]    = useState(false);
 	const onChangeRef   = useRef(onChange);
 	const didFocusRef   = useRef(false);
 	onChangeRef.current = onChange;
@@ -170,7 +171,7 @@ const QuestionEditor = ({ value, onChange, autoFocus, focusTrigger }: QuestionEd
 		],
 		content:  value || '',
 		onUpdate: ({ editor }) => onChangeRef.current(editor.getHTML()),
-		onFocus:  () => setIsFocused(true),
+		onFocus:  () => { setIsFocused(true); setIsOpen(true); },
 		onBlur:   () => setIsFocused(false),
 	});
 
@@ -237,7 +238,7 @@ const QuestionEditor = ({ value, onChange, autoFocus, focusTrigger }: QuestionEd
 			<div
 				className={cn(
 					'mb-2 flex items-center gap-px overflow-hidden transition-all duration-150',
-					isFocused ? 'max-h-7 opacity-100' : 'max-h-0 opacity-0 pointer-events-none',
+					isOpen ? 'max-h-7 opacity-100' : 'max-h-0 opacity-0 pointer-events-none',
 				)}
 			>
 				{TOOLBAR_GROUPS.map((group, gi) => (
@@ -275,18 +276,29 @@ const QuestionEditor = ({ value, onChange, autoFocus, focusTrigger }: QuestionEd
 				>
 					<span className="text-[10px] font-bold leading-none">T<span className="text-[8px]">✕</span></span>
 				</button>
+
+				{/* Done — explicit close trigger */}
+				<span className="mx-1 h-3.5 w-px bg-border/70" />
+				<button
+					type="button"
+					title={__('Close editor', 'all-feedback')}
+					onMouseDown={(e) => { e.preventDefault(); editor?.commands.blur(); setIsOpen(false); }}
+					className="flex h-[22px] items-center justify-center rounded px-1.5 text-[10.5px] font-medium text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
+				>
+					{__('Close', 'all-feedback')}
+				</button>
 			</div>
 
 			{/* Tiptap editor — dashed border always visible to signal editability */}
 			<div
-				data-focused={isFocused}
+				data-focused={isOpen}
 				className={cn(
 					'question-editor-field rounded-lg border border-dashed transition-colors',
 					'[&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-4',
 					'[&_ol]:my-1 [&_ol]:list-decimal [&_ol]:pl-4',
 					'[&_li]:my-0.5',
 					'[&_blockquote]:my-1 [&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground/70 [&_blockquote]:italic',
-					isFocused
+					isOpen
 						? 'border-primary/50 bg-primary/[0.015]'
 						: 'border-border/50 hover:border-border/80 hover:bg-muted/20',
 				)}

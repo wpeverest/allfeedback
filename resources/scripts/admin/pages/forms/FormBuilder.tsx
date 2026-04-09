@@ -23,10 +23,47 @@ const FormBuilder = () => {
 	const router    = useRouter();
 	const { new: isNewForm } = Route.useSearch();
 
+	/* ── TODO: remove — mock data for development only ─────────────── */
+	const MOCK_SECTIONS: FormSection[] = [
+		{
+			id: 'section-mock-1',
+			title: 'Page 1',
+			fields: [
+				{ id: 'f1-1', type: 'short_text',  label: 'What is your full name?',                          required: true,  placeholder: 'e.g. Jane Smith' },
+				{ id: 'f1-2', type: 'short_text',  label: 'What is your email address?',                      required: true,  placeholder: 'e.g. jane@example.com' },
+				{ id: 'f1-3', type: 'radio',        label: 'How did you hear about us?',                      required: false, options: ['Search engine', 'Social media', 'Word of mouth', 'Advertisement'] },
+				{ id: 'f1-4', type: 'checkboxes',  label: 'Which products are you interested in?',            required: false, options: ['Product A', 'Product B', 'Product C', 'Product D'] },
+				{ id: 'f1-5', type: 'long_text',   label: 'Tell us a bit about yourself and your goals.',     required: false, placeholder: 'Share as much or as little as you like…' },
+			],
+		},
+		{
+			id: 'section-mock-2',
+			title: 'Page 2',
+			fields: [
+				{ id: 'f2-1', type: 'star_rating', label: 'How would you rate your overall experience?',      required: true,  starRange: 5  },
+				{ id: 'f2-2', type: 'scale',       label: 'How easy was it to get started?',                  required: false, scaleMin: 0, scaleMax: 10, scaleLowLabel: 'Very difficult', scaleHighLabel: 'Very easy' },
+				{ id: 'f2-3', type: 'nps',         label: 'How likely are you to recommend us to a friend or colleague?', required: false },
+				{ id: 'f2-4', type: 'radio',        label: 'How often do you use our product?',               required: false, options: ['Daily', 'Weekly', 'Monthly', 'Rarely'] },
+				{ id: 'f2-5', type: 'long_text',   label: 'What do you like most about our product?',         required: false, placeholder: 'Your feedback helps us improve…' },
+			],
+		},
+		{
+			id: 'section-mock-3',
+			title: 'Page 3',
+			fields: [
+				{ id: 'f3-1', type: 'checkboxes',  label: 'Which features do you use most?',                 required: false, options: ['Dashboard', 'Reports', 'Integrations', 'API', 'Mobile app'] },
+				{ id: 'f3-2', type: 'scale',       label: 'How satisfied are you with our support team?',    required: false, scaleMin: 1, scaleMax: 5, scaleLowLabel: 'Not satisfied', scaleHighLabel: 'Very satisfied' },
+				{ id: 'f3-3', type: 'short_text',  label: 'What is one thing we could do better?',           required: false, placeholder: 'e.g. Faster response times' },
+				{ id: 'f3-4', type: 'star_rating', label: 'How would you rate our customer support?',        required: false, starRange: 5 },
+				{ id: 'f3-5', type: 'long_text',   label: 'Any other comments or suggestions?',              required: false, placeholder: 'We read every response…' },
+			],
+		},
+	];
+
  	const form = useForm({
 		defaultValues: {
 			title:    __('My Feedback Form', 'all-feedback') as string,
-			sections: [] as FormSection[],
+			sections: MOCK_SECTIONS,
 		},
 		onSubmit: async ({ value }) => {
 			// TODO: persist via WP REST API
@@ -50,7 +87,7 @@ const FormBuilder = () => {
 	const [shortcutsOpen,     setShortcutsOpen]     = useState(false);
 
 	/* ── Undo / Redo history ────────────────────────────────────────── */
-	const historyRef                        = useRef<FormSection[][]>([[]]);
+	const historyRef                        = useRef<FormSection[][]>([MOCK_SECTIONS]);
 	const [historyIdx, setHistoryIdx]       = useState(0);
 	const canUndo                           = historyIdx > 0;
 	const canRedo                           = historyIdx < historyRef.current.length - 1;
