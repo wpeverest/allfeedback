@@ -54,13 +54,13 @@ class Migrator {
 		}
 
 		/** Fires before any pending migrations are executed. */
-		$this->doAction( 'rmb:migrations:before_run', $pending );
+		$this->doAction( 'allfeedback:migrations:before_run', $pending );
 
 		foreach ( $pending as $file ) {
 			$name = $this->migrationName( $file );
 
 			/** Fires before a single migration runs. */
-			$this->doAction( 'rmb:migration:before', $name );
+			$this->doAction( 'allfeedback:migration:before', $name );
 
 			$migration = $this->resolve( $file );
 			$migration->up();
@@ -69,11 +69,11 @@ class Migrator {
 			$this->saveRanMigrations( $ran );
 
 			/** Fires after a single migration runs. */
-			$this->doAction( 'rmb:migration:after', $name );
+			$this->doAction( 'allfeedback:migration:after', $name );
 		}
 
 		/** Fires after all pending migrations have executed. */
-		$this->doAction( 'rmb:migrations:after_run', $pending );
+		$this->doAction( 'allfeedback:migrations:after_run', $pending );
 	}
 
 	/**
@@ -84,7 +84,7 @@ class Migrator {
 		$files = array_reverse( $this->discoverMigrationFiles() );
 
 		/** Fires before rolling back migrations. */
-		$this->doAction( 'rmb:migrations:before_rollback', $ran );
+		$this->doAction( 'allfeedback:migrations:before_rollback', $ran );
 
 		foreach ( $files as $file ) {
 			$name = $this->migrationName( $file );
@@ -94,7 +94,7 @@ class Migrator {
 			}
 
 			/** Fires before a single migration is rolled back. */
-			$this->doAction( 'rmb:migration:before_rollback', $name );
+			$this->doAction( 'allfeedback:migration:before_rollback', $name );
 
 			$migration = $this->resolve( $file );
 			$migration->down();
@@ -103,13 +103,13 @@ class Migrator {
 			$this->saveRanMigrations( $ran );
 
 			/** Fires after a single migration is rolled back. */
-			$this->doAction( 'rmb:migration:after_rollback', $name );
+			$this->doAction( 'allfeedback:migration:after_rollback', $name );
 		}
 
 		delete_option( self::OPTION_KEY );
 
 		/** Fires after all migrations have been rolled back. */
-		$this->doAction( 'rmb:migrations:after_rollback' );
+		$this->doAction( 'allfeedback:migrations:after_rollback' );
 	}
 
 	/**
@@ -159,13 +159,13 @@ class Migrator {
 	 */
 	private function discoverMigrationFiles(): array {
 		/**
-		 * Filter: rmb:migrations:path
+		 * Filter: allfeedback:migrations:path
 		 *
 		 * Override the directory scanned for migration files.
 		 *
 		 * @param string $migrationsPath Absolute path to the migrations directory.
 		 */
-		$path = $this->applyFilters( 'rmb:migrations:path', $this->migrationsPath );
+		$path = $this->applyFilters( 'allfeedback:migrations:path', $this->migrationsPath );
 
 		$files = glob( $path . '*.php' ) ?: [];
 		sort( $files );

@@ -73,7 +73,7 @@ class Logger {
 	 * @param array<string, mixed> $context Key→value pairs to append.
 	 */
 	private function log( string $level, string $message, array $context = [] ): void {
-		$prefix = sprintf( '[RMB %s] [v%s] ', $level, Constants::VERSION );
+		$prefix = sprintf( '[AllFeedback %s] [v%s] ', $level, Constants::VERSION );
 		$entry  = $prefix . $message;
 
 		if ( ! empty( $context ) ) {

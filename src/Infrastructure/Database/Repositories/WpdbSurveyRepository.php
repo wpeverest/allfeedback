@@ -1,0 +1,275 @@
+<?php
+
+declare(strict_types=1);
+
+namespace AllFeedback\Infrastructure\Database\Repositories;
+
+defined( 'ABSPATH' ) || exit;
+
+use AllFeedback\Domain\Survey\Survey;
+use AllFeedback\Domain\Survey\SurveyFilter;
+use AllFeedback\Domain\Survey\SurveyRepository;
+use AllFeedback\Domain\Survey\SurveyStatus;
+use Carbon\CarbonImmutable;
+
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
+
+/**
+ * wpdb-backed implementation of SurveyRepository.
+ *
+ * Persists Survey aggregates to the custom `{prefix}af_surveys` table.
+ * JSON columns (form_schema, settings, targeting) are encoded on write and
+ * decoded on read so that the domain layer always works with PHP arrays.
+ *
+ * @since 1.0.0
+ */
+class WpdbSurveyRepository implements SurveyRepository {
+
+	/** @since 1.0.0 */
+	private string $table;
+
+	/** @since 1.0.0 */
+	private const ALLOWED_ORDERBY = [
+		'id',
+		'title',
+		'status',
+		'response_count',
+		'created_at',
+		'updated_at',
+	];
+
+	/**
+	 * @since 1.0.0
+	 */
+	public function __construct() {
+		global $wpdb;
+		$this->table = $wpdb->prefix . 'af_surveys';
+	}
+
+	/**
+	 * Persist a new or updated Survey and return the saved instance.
+	 *
+	 * @since 1.0.0
+	 */
+	public function save( Survey $survey ): Survey {
+		return $survey->isNew() ? $this->insert( $survey ) : $this->update( $survey );
+	}
+
+	/**
+	 * Retrieve a single Survey by its primary key, or null if not found.
+	 *
+	 * @since 1.0.0
+	 */
+	public function findById( int $id ): ?Survey {
+		global $wpdb;
+
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM {$this->table} WHERE id = %d LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$id
+			),
+			ARRAY_A
+		);
+
+		return $row ? $this->hydrate( $row ) : null;
+	}
+
+	/**
+	 * Retrieve all Surveys matching the given filter.
+	 *
+	 * @return Survey[]
+	 * @since 1.0.0
+	 */
+	public function findAll( SurveyFilter $filter ): array {
+		global $wpdb;
+
+		[ $where, $params ] = $this->buildFilterQuery( $filter );
+
+		$orderBy = in_array( $filter->orderBy, self::ALLOWED_ORDERBY, true ) ? $filter->orderBy : 'created_at';
+		$order   = strtoupper( $filter->order ) === 'ASC' ? 'ASC' : 'DESC';
+		$limit   = max( 1, $filter->perPage );
+		$offset  = max( 0, ( $filter->page - 1 ) * $limit );
+
+		$whereClause = $where !== [] ? 'WHERE ' . implode( ' AND ', $where ) : '';
+		$sql         = "SELECT * FROM {$this->table} {$whereClause} ORDER BY {$orderBy} {$order} LIMIT %d OFFSET %d"; // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		$params[] = $limit;
+		$params[] = $offset;
+
+		$rows = $wpdb->get_results( $wpdb->prepare( $sql, ...$params ), ARRAY_A ) ?: []; // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+
+		return array_map( [ $this, 'hydrate' ], $rows );
+	}
+
+	/**
+	 * Count all Surveys matching the given filter.
+	 *
+	 * @since 1.0.0
+	 */
+	public function count( SurveyFilter $filter ): int {
+		global $wpdb;
+
+		[ $where, $params ] = $this->buildFilterQuery( $filter );
+
+		$whereClause = $where !== [] ? 'WHERE ' . implode( ' AND ', $where ) : '';
+		$sql         = "SELECT COUNT(*) FROM {$this->table} {$whereClause}"; // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		if ( $params !== [] ) {
+			return (int) $wpdb->get_var( $wpdb->prepare( $sql, ...$params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		}
+
+		return (int) $wpdb->get_var( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+	}
+
+	/**
+	 * Permanently remove a Survey by its primary key.
+	 *
+	 * @since 1.0.0
+	 */
+	public function delete( int $id ): bool {
+		global $wpdb;
+		return $wpdb->delete( $this->table, [ 'id' => $id ], [ '%d' ] ) !== false;
+	}
+
+	/**
+	 * Insert a new Survey row and return the reconstituted instance with its assigned id.
+	 *
+	 * @since 1.0.0
+	 */
+	private function insert( Survey $survey ): Survey {
+		global $wpdb;
+
+		$result = $wpdb->insert(
+			$this->table,
+			[
+				'title'          => $survey->getTitle(),
+				'description'    => $survey->getDescription(),
+				'form_schema'    => wp_json_encode( $survey->getFormSchema() ),
+				'settings'       => wp_json_encode( $survey->getSettings() ),
+				'targeting'      => wp_json_encode( $survey->getTargeting() ),
+				'status'         => $survey->getStatus()->value,
+				'response_count' => $survey->getResponseCount(),
+				'created_by'     => $survey->getCreatedBy() ?: null,
+				'created_at'     => $survey->getCreatedAt()->format( 'Y-m-d H:i:s' ),
+				'updated_at'     => $survey->getUpdatedAt()?->format( 'Y-m-d H:i:s' ),
+			],
+			[ '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%s', '%s' ]
+		);
+
+		if ( false === $result ) {
+			throw new \RuntimeException( 'Failed to insert survey: ' . esc_html( $wpdb->last_error ) );
+		}
+
+		return Survey::reconstitute(
+			id: (int) $wpdb->insert_id,
+			title: $survey->getTitle(),
+			description: $survey->getDescription(),
+			formSchema: $survey->getFormSchema(),
+			settings: $survey->getSettings(),
+			targeting: $survey->getTargeting(),
+			status: $survey->getStatus(),
+			responseCount: $survey->getResponseCount(),
+			createdBy: $survey->getCreatedBy(),
+			createdAt: $survey->getCreatedAt(),
+			updatedAt: $survey->getUpdatedAt(),
+		);
+	}
+
+	/**
+	 * Update an existing Survey row.
+	 *
+	 * @since 1.0.0
+	 */
+	private function update( Survey $survey ): Survey {
+		global $wpdb;
+
+		$result = $wpdb->update(
+			$this->table,
+			[
+				'title'          => $survey->getTitle(),
+				'description'    => $survey->getDescription(),
+				'form_schema'    => wp_json_encode( $survey->getFormSchema() ),
+				'settings'       => wp_json_encode( $survey->getSettings() ),
+				'targeting'      => wp_json_encode( $survey->getTargeting() ),
+				'status'         => $survey->getStatus()->value,
+				'response_count' => $survey->getResponseCount(),
+				'updated_at'     => current_time( 'mysql' ),
+			],
+			[ 'id' => $survey->getId() ],
+			[ '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s' ],
+			[ '%d' ]
+		);
+
+		if ( false === $result ) {
+			throw new \RuntimeException( 'Failed to update survey: ' . esc_html( $wpdb->last_error ) );
+		}
+
+		return $survey;
+	}
+
+	/**
+	 * Hydrate a Survey aggregate from a raw database row.
+	 *
+	 * @param array<string, mixed> $row Raw associative array from wpdb.
+	 * @since 1.0.0
+	 */
+	private function hydrate( array $row ): Survey {
+		return Survey::reconstitute(
+			id: (int) $row['id'],
+			title: (string) $row['title'],
+			description: (string) ( $row['description'] ?? '' ),
+			formSchema: $this->decodeJson( (string) ( $row['form_schema'] ?? '' ) ),
+			settings: $this->decodeJson( (string) ( $row['settings'] ?? '' ) ),
+			targeting: $this->decodeJson( (string) ( $row['targeting'] ?? '' ) ),
+			status: SurveyStatus::from( $row['status'] ),
+			responseCount: (int) ( $row['response_count'] ?? 0 ),
+			createdBy: (int) ( $row['created_by'] ?? 0 ),
+			createdAt: CarbonImmutable::parse( $row['created_at'] ),
+			updatedAt: ! empty( $row['updated_at'] ) ? CarbonImmutable::parse( $row['updated_at'] ) : null,
+		);
+	}
+
+	/**
+	 * Build the WHERE conditions and parameter list from a SurveyFilter.
+	 *
+	 * @return array{0: string[], 1: mixed[]}
+	 * @since 1.0.0
+	 */
+	private function buildFilterQuery( SurveyFilter $filter ): array {
+		global $wpdb;
+
+		$where  = [];
+		$params = [];
+
+		if ( $filter->status !== null ) {
+			$where[]  = 'status = %s';
+			$params[] = $filter->status->value;
+		}
+
+		if ( $filter->createdBy !== null ) {
+			$where[]  = 'created_by = %d';
+			$params[] = $filter->createdBy;
+		}
+
+		if ( $filter->search !== null && $filter->search !== '' ) {
+			$where[]  = 'title LIKE %s';
+			$params[] = '%' . $wpdb->esc_like( $filter->search ) . '%';
+		}
+
+		return [ $where, $params ];
+	}
+
+	/**
+	 * Decode a JSON string to an array, returning an empty array on failure.
+	 *
+	 * @since 1.0.0
+	 */
+	private function decodeJson( string $json ): array {
+		if ( $json === '' ) {
+			return [];
+		}
+
+		$decoded = json_decode( $json, true );
+		return is_array( $decoded ) ? $decoded : [];
+	}
+}

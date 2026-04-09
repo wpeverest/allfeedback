@@ -4,45 +4,53 @@ declare(strict_types=1);
 
 namespace AllFeedback\Core;
 
+defined( 'ABSPATH' ) || exit;
+
 use AllFeedback\Core\Contracts\ServiceProviderInterface;
 use AllFeedback\Infrastructure\Database\Migrator;
+use AllFeedback\Infrastructure\PostTypes\Survey as SurveyPostType;
+use AllFeedback\Infrastructure\Taxonomies\SurveyCategory;
 use AllFeedback\Traits\Hooks;
 
 /**
  * Class CoreServiceProvider
  *
- * Responsible for bootstrapping core functionality:
- *  - Running database migrations on admin_init
- *  - Registering custom post types / taxonomies (add yours here)
- *  - Running activation tasks (migrations, role creation)
+ * Bootstraps core plugin functionality:
+ *  - Database migrations on admin_init
+ *  - Custom post type and taxonomy registration on init
+ *  - Role creation on plugin activation
  *
- * Add more init hooks here as the plugin grows.
+ * @since 1.0.0
  */
 class CoreServiceProvider implements ServiceProviderInterface {
 
 	use Hooks;
 
+	/**
+	 * @since 1.0.0
+	 */
 	public function __construct(
 		private readonly RoleManager $roleManager,
 		private readonly Migrator $migrator,
+		private readonly SurveyPostType $surveyPostType,
+		private readonly SurveyCategory $surveyCategory,
 	) {}
 
 	/**
 	 * Register WordPress hooks.
+	 *
+	 * @since 1.0.0
 	 */
 	public function boot(): void {
-		// Run any pending database migrations on every admin page load.
 		$this->addAction( 'admin_init', [ $this, 'runPendingMigrations' ] );
-
-		// Hook into the plugin's own activation action (fired by Plugin::activate()).
-		$this->addAction( 'rmb:activated', [ $this, 'onActivation' ] );
-
-		// Register custom post types / taxonomies on 'init'.
-		// $this->addAction( 'init', [ $this, 'registerPostTypes' ] );
+		$this->addAction( 'allfeedback:activated', [ $this, 'onActivation' ] );
+		$this->addAction( 'init', [ $this, 'registerPostTypes' ] );
 	}
 
 	/**
 	 * Execute any migrations that have not been run yet.
+	 *
+	 * @since 1.0.0
 	 */
 	public function runPendingMigrations(): void {
 		if ( $this->migrator->hasPending() ) {
@@ -52,20 +60,22 @@ class CoreServiceProvider implements ServiceProviderInterface {
 
 	/**
 	 * Tasks to run on plugin activation.
-	 * Fires after WordPress has loaded so the container is fully available.
+	 *
+	 * @since 1.0.0
 	 */
 	public function onActivation(): void {
 		$this->migrator->run();
 		$this->roleManager->createRoles();
-
-		$this->doAction( 'rmb:activated:complete' );
+		$this->doAction( 'allfeedback:activated:complete' );
 	}
 
-	// ------------------------------------------------------------------
-	// Custom Post Types / Taxonomies (expand as needed)
-	// ------------------------------------------------------------------
-
-	// public function registerPostTypes(): void {
-	//     register_post_type( 'allfb_item', [ /* args */ ] );
-	// }
+	/**
+	 * Register all custom post types and taxonomies.
+	 *
+	 * @since 1.0.0
+	 */
+	public function registerPostTypes(): void {
+		$this->surveyPostType->register();
+		$this->surveyCategory->register();
+	}
 }

@@ -28,9 +28,9 @@ use AllFeedback\Traits\Hooks;
  *       }
  *   }
  *
- * Register it by hooking into 'rmb:modules:register':
+ * Register it by hooking into 'allfeedback:modules:register':
  *
- *   add_filter( 'rmb:modules:register', function ( $modules ) {
+ *   add_filter( 'allfeedback:modules:register', function ( $modules ) {
  *       $modules['sample-module'] = SampleModule::class;
  *       return $modules;
  *   } );
@@ -120,14 +120,14 @@ abstract class AbstractModule implements ModuleInterface {
 	public function enable(): void {
 		$this->enabled = true;
 		$this->saveModuleState();
-		$this->doAction( "rmb:module:{$this->id}:enabled" );
+		$this->doAction( "allfeedback:module:{$this->id}:enabled" );
 	}
 
 	/** {@inheritdoc} */
 	public function disable(): void {
 		$this->enabled = false;
 		$this->saveModuleState();
-		$this->doAction( "rmb:module:{$this->id}:disabled" );
+		$this->doAction( "allfeedback:module:{$this->id}:disabled" );
 	}
 
 	// ------------------------------------------------------------------

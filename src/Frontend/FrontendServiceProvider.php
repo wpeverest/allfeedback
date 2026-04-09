@@ -42,7 +42,7 @@ class FrontendServiceProvider implements ServiceProvider {
 		$this->addAction( 'init', [ $this, 'registerShortcodes' ] );
 
 		// Listen for the namespaced enqueue action fired by AppServiceProvider.
-		$this->addAction( 'rmb:enqueue-assets:frontend', [ $this, 'enqueueAssets' ] );
+		$this->addAction( 'allfeedback:enqueue-assets:frontend', [ $this, 'enqueueAssets' ] );
 	}
 
 	// ------------------------------------------------------------------
@@ -82,13 +82,13 @@ class FrontendServiceProvider implements ServiceProvider {
 		);
 
 		/**
-		 * Filter: rmb:shortcode:sample:atts
+		 * Filter: allfeedback:shortcode:sample:atts
 		 *
 		 * Allows modification of the resolved shortcode attributes.
 		 *
 		 * @param array<string, string> $atts Resolved attributes.
 		 */
-		$atts = apply_filters( 'rmb:shortcode:sample:atts', $atts );
+		$atts = apply_filters( 'allfeedback:shortcode:sample:atts', $atts );
 
 		$title   = esc_html( $atts['title'] );
 		$bgColor = esc_attr( $atts['bg_color'] );
@@ -110,11 +110,11 @@ class FrontendServiceProvider implements ServiceProvider {
 
 			<?php
 			/**
-			 * Hook: rmb:shortcode:sample:after_content
+			 * Hook: allfeedback:shortcode:sample:after_content
 			 *
 			 * Fired inside the shortcode output, after the main content.
 			 */
-			do_action( 'rmb:shortcode:sample:after_content', $atts );
+			do_action( 'allfeedback:shortcode:sample:after_content', $atts );
 			?>
 		</div>
 		<?php
@@ -134,7 +134,7 @@ class FrontendServiceProvider implements ServiceProvider {
 	public function enqueueAssets(): void {
 		// Build the data object that will be inlined before the frontend script.
 		$frontendData = $this->applyFilters(
-			'rmb:frontend:script_data',
+			'allfeedback:frontend:script_data',
 			[
 				'siteUrl'  => home_url( '/' ),
 				'nonce'    => wp_create_nonce( 'wp_rest' ),
@@ -161,11 +161,11 @@ class FrontendServiceProvider implements ServiceProvider {
 		);
 
 		/**
-		 * Hook: rmb:frontend:enqueue_assets
+		 * Hook: allfeedback:frontend:enqueue_assets
 		 *
 		 * Fired after the core frontend assets are enqueued.
 		 * Add-ons can hook here to load their own public assets.
 		 */
-		$this->doAction( 'rmb:frontend:enqueue_assets' );
+		$this->doAction( 'allfeedback:frontend:enqueue_assets' );
 	}
 }

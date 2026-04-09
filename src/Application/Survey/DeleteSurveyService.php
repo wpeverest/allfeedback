@@ -1,0 +1,46 @@
+<?php
+
+declare(strict_types=1);
+
+namespace AllFeedback\Application\Survey;
+
+defined( 'ABSPATH' ) || exit;
+
+use AllFeedback\Core\Exceptions\NotFoundException;
+use AllFeedback\Domain\Survey\SurveyRepository;
+
+/**
+ * Use-case service: delete a survey aggregate from the persistence layer.
+ *
+ * @package AllFeedback\Application\Survey
+ * @since   1.0.0
+ */
+class DeleteSurveyService {
+
+	/**
+	 * @since 1.0.0
+	 */
+	public function __construct(
+		private readonly SurveyRepository $repository,
+	) {}
+
+	/**
+	 * Delete a survey by ID.
+	 *
+	 * @param int $id Survey ID to delete.
+	 * @return void
+	 * @throws NotFoundException When no survey exists for the given ID.
+	 * @since 1.0.0
+	 */
+	public function execute( int $id ): void {
+		$survey = $this->repository->findById( $id );
+
+		if ( $survey === null ) {
+			throw NotFoundException::forResource( esc_html__( 'Survey', 'all-feedback' ), $id );
+		}
+
+		$this->repository->delete( $id );
+
+		do_action( 'allfeedback:survey:deleted', $id, $survey );
+	}
+}

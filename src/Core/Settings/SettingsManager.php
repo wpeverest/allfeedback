@@ -34,13 +34,22 @@ class SettingsManager {
 	 * Keys not present here are ignored in set/setMultiple.
 	 */
 	private const DEFAULTS = [
-		// ── General ───────────────────────────────────────────────────
-		'plugin_name'      => 'All Feedback',
-		'sample_option'    => '',
-		'sample_bool'      => false,
-		'sample_int'       => 10,
+		// ── Notifications ─────────────────────────────────────────────
+		'email_notifications' => false,       // Send email when a new response arrives
+		'notification_email'  => '',          // Recipient; empty = admin_email
 
-		// ── Add your settings below ───────────────────────────────────
+		// ── Defaults for new surveys ──────────────────────────────────
+		'default_position'    => 'bottom-right', // bottom-right | bottom-left | center | full-page
+		'default_trigger'     => 'immediate',    // immediate | time_delay | scroll | exit_intent
+		'default_trigger_delay' => 5,            // seconds; applies when trigger = time_delay
+		'default_require_consent' => false,      // Pre-tick GDPR consent on new surveys
+
+		// ── Data & Privacy ────────────────────────────────────────────
+		'data_retention_days' => 0,           // Days before responses are auto-deleted; 0 = keep forever
+		'anonymize_ip'        => true,        // Store IP as one-way hash (always true for GDPR)
+
+		// ── Branding ──────────────────────────────────────────────────
+		'branding_enabled'    => true,        // Show "Powered by AllFeedback" badge on widget
 	];
 
 	/** Lazy-loaded merged settings (defaults + stored values). */
@@ -139,27 +148,63 @@ class SettingsManager {
 	 */
 	public function getSchema(): array {
 		return [
-			'plugin_name'   => [
-				'type'        => 'string',
-				'default'     => self::DEFAULTS['plugin_name'],
-				'description' => __( 'Plugin display name.', 'all-feedback' ),
-			],
-			'sample_option' => [
-				'type'        => 'string',
-				'default'     => self::DEFAULTS['sample_option'],
-				'description' => __( 'A sample text option.', 'all-feedback' ),
-			],
-			'sample_bool'   => [
+			// ── Notifications ─────────────────────────────────────────
+			'email_notifications'      => [
 				'type'        => 'boolean',
-				'default'     => self::DEFAULTS['sample_bool'],
-				'description' => __( 'A sample boolean toggle.', 'all-feedback' ),
+				'default'     => self::DEFAULTS['email_notifications'],
+				'description' => __( 'Send an email notification when a new response is received.', 'all-feedback' ),
 			],
-			'sample_int'    => [
+			'notification_email'       => [
+				'type'        => 'string',
+				'default'     => self::DEFAULTS['notification_email'],
+				'description' => __( 'Email address to notify. Defaults to the site admin email when empty.', 'all-feedback' ),
+			],
+
+			// ── Defaults for new surveys ──────────────────────────────
+			'default_position'         => [
+				'type'        => 'string',
+				'default'     => self::DEFAULTS['default_position'],
+				'enum'        => [ 'bottom-right', 'bottom-left', 'center', 'full-page' ],
+				'description' => __( 'Default display position applied to newly created surveys.', 'all-feedback' ),
+			],
+			'default_trigger'          => [
+				'type'        => 'string',
+				'default'     => self::DEFAULTS['default_trigger'],
+				'enum'        => [ 'immediate', 'time_delay', 'scroll', 'exit_intent' ],
+				'description' => __( 'Default trigger type applied to newly created surveys.', 'all-feedback' ),
+			],
+			'default_trigger_delay'    => [
 				'type'        => 'integer',
-				'default'     => self::DEFAULTS['sample_int'],
-				'minimum'     => 1,
-				'maximum'     => 100,
-				'description' => __( 'A sample integer setting.', 'all-feedback' ),
+				'default'     => self::DEFAULTS['default_trigger_delay'],
+				'minimum'     => 0,
+				'maximum'     => 3600,
+				'description' => __( 'Default trigger delay in seconds (used when trigger = time_delay).', 'all-feedback' ),
+			],
+			'default_require_consent'  => [
+				'type'        => 'boolean',
+				'default'     => self::DEFAULTS['default_require_consent'],
+				'description' => __( 'Pre-enable the GDPR consent checkbox on newly created surveys.', 'all-feedback' ),
+			],
+
+			// ── Data & Privacy ────────────────────────────────────────
+			'data_retention_days'      => [
+				'type'        => 'integer',
+				'default'     => self::DEFAULTS['data_retention_days'],
+				'minimum'     => 0,
+				'maximum'     => 3650,
+				'description' => __( 'Days before responses are automatically deleted. 0 keeps data forever.', 'all-feedback' ),
+			],
+			'anonymize_ip'             => [
+				'type'        => 'boolean',
+				'default'     => self::DEFAULTS['anonymize_ip'],
+				'description' => __( 'Store visitor IP addresses as a one-way hash (recommended for GDPR).', 'all-feedback' ),
+			],
+
+			// ── Branding ──────────────────────────────────────────────
+			'branding_enabled'         => [
+				'type'        => 'boolean',
+				'default'     => self::DEFAULTS['branding_enabled'],
+				'description' => __( 'Show "Powered by AllFeedback" badge on the public-facing survey widget.', 'all-feedback' ),
 			],
 		];
 	}
@@ -207,12 +252,12 @@ class SettingsManager {
 		$this->loaded = $toStore;
 
 		/**
-		 * Action: rmb:settings:updated
+		 * Action: allfeedback:settings:updated
 		 *
 		 * Fires after settings are persisted.
 		 *
 		 * @param array<string, mixed> $toStore The saved settings array.
 		 */
-		$this->doAction( 'rmb:settings:updated', $toStore );
+		$this->doAction( 'allfeedback:settings:updated', $toStore );
 	}
 }

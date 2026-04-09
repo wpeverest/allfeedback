@@ -1,0 +1,46 @@
+<?php
+
+declare(strict_types=1);
+
+namespace AllFeedback\Application\Survey;
+
+defined( 'ABSPATH' ) || exit;
+
+/**
+ * Immutable data-transfer object representing a survey payload.
+ *
+ * @package AllFeedback\Application\Survey
+ * @since   1.0.0
+ */
+class SurveyDTO {
+
+	/**
+	 * @since 1.0.0
+	 */
+	public function __construct(
+		public readonly string $title,
+		public readonly string $description,
+		public readonly array $formSchema,
+		public readonly array $settings,
+		public readonly array $targeting,
+		public readonly string $status,
+	) {}
+
+	/**
+	 * Build a SurveyDTO from a raw associative array.
+	 *
+	 * @param array $data Raw request data.
+	 * @return self
+	 * @since 1.0.0
+	 */
+	public static function fromArray( array $data ): self {
+		return new self(
+			title: $data['title'] ?? '',
+			description: $data['description'] ?? '',
+			formSchema: $data['form_schema'] ?? [],
+			settings: $data['settings'] ?? [],
+			targeting: $data['targeting'] ?? [],
+			status: $data['status'] ?? 'draft',
+		);
+	}
+}

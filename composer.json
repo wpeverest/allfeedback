@@ -5,7 +5,10 @@
   "autoload": {
     "psr-4": {
       "AllFeedback\\": "src/"
-    }
+    },
+    "files": [
+      "src/Support/helpers.php"
+    ]
   },
   "require": {
     "php": ">=8.2",

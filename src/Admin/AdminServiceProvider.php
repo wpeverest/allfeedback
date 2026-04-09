@@ -50,7 +50,7 @@ class AdminServiceProvider implements ServiceProvider {
 	 */
 	public function boot(): void {
 		$this->addAction( 'admin_menu',                        [ $this, 'registerMenus' ] );
-		$this->addAction( 'rmb:enqueue-assets:admin',          [ $this, 'enqueueAssets' ] );
+		$this->addAction( 'allfeedback:enqueue-assets:admin',          [ $this, 'enqueueAssets' ] );
 		$this->addAction( 'admin_footer',                      [ $this, 'inlineMenuHighlight' ] );
 	}
 
@@ -205,7 +205,7 @@ class AdminServiceProvider implements ServiceProvider {
 		}
 
 		$adminData = $this->applyFilters(
-			'rmb:admin:script_data',
+			'allfeedback:admin:script_data',
 			[
 				'adminUrl'      => admin_url( 'admin.php' ),
 				'pluginUrl'     => Constants::url(),
@@ -237,6 +237,6 @@ class AdminServiceProvider implements ServiceProvider {
 			);
 		}
 
-		$this->doAction( 'rmb:admin:enqueue_assets', $hook );
+		$this->doAction( 'allfeedback:admin:enqueue_assets', $hook );
 	}
 }

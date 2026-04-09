@@ -1,0 +1,62 @@
+<?php
+
+declare(strict_types=1);
+
+namespace AllFeedback\Domain\Response;
+
+defined( 'ABSPATH' ) || exit;
+
+/**
+ * Repository interface for the Response aggregate.
+ *
+ * Implementations are registered in the DI container and provide the actual
+ * persistence mechanism (e.g. wpdb).
+ *
+ * @since 1.0.0
+ */
+interface ResponseRepository {
+
+	/**
+	 * Persist a new Response and return the saved instance.
+	 *
+	 * @since 1.0.0
+	 */
+	public function save( Response $response ): Response;
+
+	/**
+	 * Retrieve a single Response by its primary key, or null if not found.
+	 *
+	 * @since 1.0.0
+	 */
+	public function findById( int $id ): ?Response;
+
+	/**
+	 * Retrieve all Responses for a given Survey, applying the filter.
+	 *
+	 * @return Response[]
+	 *
+	 * @since 1.0.0
+	 */
+	public function findBySurveyId( int $surveyId, ResponseFilter $filter ): array;
+
+	/**
+	 * Count all Responses for a given Survey.
+	 *
+	 * @since 1.0.0
+	 */
+	public function countBySurveyId( int $surveyId ): int;
+
+	/**
+	 * Permanently remove a single Response by its primary key.
+	 *
+	 * @since 1.0.0
+	 */
+	public function delete( int $id ): bool;
+
+	/**
+	 * Permanently remove all Responses belonging to a given Survey.
+	 *
+	 * @since 1.0.0
+	 */
+	public function deleteBySurveyId( int $surveyId ): bool;
+}

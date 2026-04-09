@@ -81,12 +81,12 @@ final class Plugin {
 		$this->maybeFlushRewriteRules();
 
 		/**
-		 * Action: rmb:booted
+		 * Action: allfeedback:booted
 		 *
 		 * Fires once after the plugin is fully initialised.
 		 * Third-party code can hook here to add functionality.
 		 */
-		$this->doAction( 'rmb:booted' );
+		$this->doAction( 'allfeedback:booted' );
 	}
 
 	/**
@@ -125,12 +125,12 @@ final class Plugin {
 		}
 
 		/**
-		 * Action: rmb:activated
+		 * Action: allfeedback:activated
 		 *
 		 * CoreServiceProvider::onActivation() hooks here to run migrations
 		 * and create custom user roles.
 		 */
-		$this->doAction( 'rmb:activated' );
+		$this->doAction( 'allfeedback:activated' );
 
 		// Flush rewrite rules so any new endpoints are live immediately.
 		flush_rewrite_rules();
@@ -148,11 +148,11 @@ final class Plugin {
 		flush_rewrite_rules();
 
 		/**
-		 * Action: rmb:deactivated
+		 * Action: allfeedback:deactivated
 		 *
 		 * Fires after the plugin has been deactivated.
 		 */
-		$this->doAction( 'rmb:deactivated' );
+		$this->doAction( 'allfeedback:deactivated' );
 	}
 
 	// ------------------------------------------------------------------
@@ -201,13 +201,13 @@ final class Plugin {
 		$optionKey = 'allfb_rewrite_version';
 
 		/**
-		 * Filter: rmb:rewrite:expected_version
+		 * Filter: allfeedback:rewrite:expected_version
 		 *
 		 * Increment the default value to trigger a rewrite flush on the next load.
 		 *
 		 * @param string $version Current expected rewrite version.
 		 */
-		$expected = $this->applyFilters( 'rmb:rewrite:expected_version', '1' );
+		$expected = $this->applyFilters( 'allfeedback:rewrite:expected_version', '1' );
 
 		if ( get_option( $optionKey ) !== $expected ) {
 			$this->addAction(
