@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AllFeedback\API;
 
 use AllFeedback\API\Controllers\V1\ResponsesController;
+use AllFeedback\API\Controllers\V1\SettingsController;
 use AllFeedback\API\Controllers\V1\SurveysController;
 use AllFeedback\Core\Container;
 use AllFeedback\Core\ServiceProvider;
@@ -19,8 +20,8 @@ use DI\ContainerBuilder;
  *
  * How to add a new REST controller:
  *  1. Create the controller in src/API/Controllers/V1/YourController.php.
- *  2. Add it to the $controllers array in registerRoutes().
- *  3. Add it to config/services.php so the DI container can resolve it.
+ *  2. Add it to the $controllers array in registerRoutes() below.
+ *  3. Bind it in config/services.php so the DI container can resolve it.
  *
  * @since 1.0.0
  */
@@ -56,15 +57,16 @@ class ApiServiceProvider implements ServiceProvider {
 	/**
 	 * Resolve each controller from the DI container and call registerRoutes().
 	 *
-	 * The order of $controllers determines the order routes are registered,
-	 * which matters when two URL patterns overlap (more-specific first).
+	 * Order matters when two URL patterns overlap — list more-specific
+	 * (nested) routes before their parent resource.
 	 *
 	 * @since 1.0.0
 	 */
 	public function registerRoutes(): void {
 		$controllers = [
-			SurveysController::class,
-			ResponsesController::class,
+			ResponsesController::class, // /surveys/{id}/responses — must come before SurveysController
+			SurveysController::class,   // /surveys
+			SettingsController::class,  // /settings
 		];
 
 		foreach ( $controllers as $class ) {

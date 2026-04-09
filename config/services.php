@@ -4,7 +4,7 @@
  * Dependency-injection container definitions.
  *
  * Loaded by Container::buildContainer() via PHP-DI.
- * Add new service / repository bindings here as the plugin grows.
+ * Add new service / manager / controller bindings here as the plugin grows.
  *
  * @see https://php-di.org/doc/php-definitions.html
  */
@@ -14,6 +14,7 @@ declare(strict_types=1);
 use AllFeedback\Admin\AdminServiceProvider;
 use AllFeedback\API\ApiServiceProvider;
 use AllFeedback\API\Controllers\V1\ResponsesController;
+use AllFeedback\API\Controllers\V1\SettingsController;
 use AllFeedback\API\Controllers\V1\SurveysController;
 use AllFeedback\Core\AppServiceProvider;
 use AllFeedback\Core\CoreServiceProvider;
@@ -28,6 +29,7 @@ use AllFeedback\Support\AssetManager;
 use AllFeedback\Support\Config;
 use AllFeedback\Support\Logger;
 use AllFeedback\Survey\Manager;
+use AllFeedback\Survey\ResponseManager;
 
 use function DI\{autowire, create, factory, get};
 
@@ -36,42 +38,44 @@ return [
 	// ------------------------------------------------------------------
 	// Configuration
 	// ------------------------------------------------------------------
-	Config::class                  => create( Config::class )->constructor( get( 'config.app' ) ),
+	Config::class               => create( Config::class )->constructor( get( 'config.app' ) ),
 
 	// ------------------------------------------------------------------
 	// Support services
 	// ------------------------------------------------------------------
-	Logger::class                  => autowire(),
-	AssetManager::class            => autowire(),
+	Logger::class               => autowire(),
+	AssetManager::class         => autowire(),
 
 	// ------------------------------------------------------------------
 	// Core infrastructure
 	// ------------------------------------------------------------------
-	Migrator::class                => create( Migrator::class ),
-	RoleManager::class             => create( RoleManager::class ),
+	Migrator::class             => create( Migrator::class ),
+	RoleManager::class          => create( RoleManager::class ),
 
 	// ------------------------------------------------------------------
 	// Feature flags & settings
 	// ------------------------------------------------------------------
-	FeatureManager::class          => create( FeatureManager::class ),
-	SettingsManager::class         => create( SettingsManager::class ),
+	FeatureManager::class       => create( FeatureManager::class ),
+	SettingsManager::class      => create( SettingsManager::class ),
 
 	// ------------------------------------------------------------------
 	// Module system
 	// ------------------------------------------------------------------
-	ModuleRegistry::class          => factory( fn() => ModuleRegistry::getInstance() ),
-	ModuleLoader::class            => autowire(),
+	ModuleRegistry::class       => factory( fn() => ModuleRegistry::getInstance() ),
+	ModuleLoader::class         => autowire(),
 
 	// ------------------------------------------------------------------
-	// Survey
+	// Survey table gateways
 	// ------------------------------------------------------------------
-	Manager::class                 => create( Manager::class ),
+	Manager::class              => create( Manager::class ),
+	ResponseManager::class      => create( ResponseManager::class ),
 
 	// ------------------------------------------------------------------
 	// REST API controllers
 	// ------------------------------------------------------------------
-	SurveysController::class       => autowire(),
-	ResponsesController::class     => autowire(),
+	SurveysController::class    => autowire(),
+	ResponsesController::class  => autowire(),
+	SettingsController::class   => autowire(),
 
 	// ------------------------------------------------------------------
 	// Service providers

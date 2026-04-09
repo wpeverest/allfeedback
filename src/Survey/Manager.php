@@ -31,7 +31,7 @@ class Manager {
 	 *
 	 * @since 1.0.0
 	 */
-	public const STATUSES = [ 'draft', 'published', 'paused', 'archived' ];
+	public const STATUSES = [ 'draft', 'published', 'archived' ];
 
 	/**
 	 * Field types that the form builder may use inside form_schema.

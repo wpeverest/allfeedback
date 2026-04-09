@@ -8,6 +8,8 @@ defined( 'ABSPATH' ) || exit;
 
 use AllFeedback\API\RestController;
 use AllFeedback\Survey\Manager;
+use AllFeedback\Survey\ResponseManager;
+use AllFeedback\Support\Logger;
 
 /**
  * Class ResponsesController
@@ -15,8 +17,9 @@ use AllFeedback\Survey\Manager;
  * REST controller for survey responses.
  *
  * Routes registered (all under all-feedback/v1):
- *   POST /surveys/{id}/responses  → store()  : public submission with nonce validation
- *   GET  /surveys/{id}/responses  → index()  : paginated response list (admin only)
+ *   GET  /surveys/{id}/responses          → index()  : paginated response list (admin)
+ *   POST /surveys/{id}/responses          → store()  : public submission with nonce validation
+ *   DELETE /surveys/{id}/responses/{rid}  → destroy(): delete a single response (admin)
  *
  * @package AllFeedback\API\Controllers\V1
  * @since   1.0.0
@@ -29,25 +32,15 @@ class ResponsesController extends RestController {
 	protected string $restBase = 'surveys';
 
 	/**
-	 * Nonce action used to authenticate frontend widget submissions.
-	 *
-	 * @since 1.0.0
-	 */
-	private const NONCE_ACTION = 'allfeedback_submit';
-
-	/**
-	 * Bare table name for responses (without the WordPress prefix).
-	 *
-	 * @since 1.0.0
-	 */
-	private const TABLE_RESPONSES = 'af_responses';
-
-	/**
-	 * @param Manager $surveyManager Table gateway for the af_surveys table.
+	 * @param Manager         $surveyManager   Table gateway for af_surveys.
+	 * @param ResponseManager $responseManager Table gateway for af_responses.
+	 * @param Logger          $logger          Structured logger.
 	 * @since 1.0.0
 	 */
 	public function __construct(
 		private readonly Manager $surveyManager,
+		private readonly ResponseManager $responseManager,
+		private readonly Logger $logger,
 	) {}
 
 	/**
@@ -83,35 +76,32 @@ class ResponsesController extends RestController {
 					'permission_callback' => '__return_true',
 					'args'                => array_merge(
 						$this->idArg(),
+						$this->submitArgs()
+					),
+				],
+				'schema' => [ $this, 'getPublicItemSchema' ],
+			]
+		);
+
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->restBase . '/(?P<id>\d+)/responses/(?P<rid>\d+)',
+			[
+				[
+					'methods'             => \WP_REST_Server::DELETABLE,
+					'callback'            => [ $this, 'destroy' ],
+					'permission_callback' => [ $this, 'adminPermission' ],
+					'args'                => array_merge(
+						$this->idArg(),
 						[
-							'response_data' => [
-								'description'       => __( 'Field answers keyed by field ID.', 'all-feedback' ),
-								'type'              => 'object',
+							'rid' => [
+								'description'       => __( 'Unique identifier of the response.', 'all-feedback' ),
+								'type'              => 'integer',
 								'required'          => true,
-								'sanitize_callback' => null,
+								'minimum'           => 1,
+								'sanitize_callback' => 'absint',
 								'validate_callback' => 'rest_validate_request_arg',
 							],
-							'score'         => $this->argInteger(
-								description: __( 'Numeric score for NPS, CSAT, or CES fields.', 'all-feedback' ),
-								min:         0,
-								max:         10,
-							),
-							'page_url'      => $this->argString(
-								description: __( 'URL of the page where the survey was displayed.', 'all-feedback' ),
-								maxLength:   2083,
-							),
-							'device_type'   => $this->argEnum(
-								description: __( 'Visitor device type at submission time.', 'all-feedback' ),
-								values:      [ 'desktop', 'tablet', 'mobile' ],
-							),
-							'nonce'         => $this->argString(
-								description: __( 'WordPress nonce for submission authentication.', 'all-feedback' ),
-								required:    true,
-							),
-							'consent_given' => $this->argBoolean(
-								description: __( 'Whether the visitor gave GDPR consent.', 'all-feedback' ),
-								default:     false,
-							),
 						]
 					),
 				],
@@ -145,7 +135,8 @@ class ResponsesController extends RestController {
 		$dateFrom = sanitize_text_field( (string) ( $request->get_param( 'date_from' ) ?? '' ) );
 		$dateTo   = sanitize_text_field( (string) ( $request->get_param( 'date_to' ) ?? '' ) );
 
-		[ $responses, $total ] = $this->queryResponses( $surveyId, $perPage, $offset, $dateFrom, $dateTo );
+		$responses = $this->responseManager->findBySurvey( $surveyId, $perPage, $offset, $dateFrom, $dateTo );
+		$total     = $this->responseManager->countBySurvey( $surveyId, $dateFrom, $dateTo );
 
 		return $this->successResponse(
 			[
@@ -160,10 +151,9 @@ class ResponsesController extends RestController {
 	/**
 	 * POST /all-feedback/v1/surveys/{id}/responses
 	 *
-	 * Accept a frontend widget submission.
-	 *
-	 * Validates the nonce, checks for duplicate submission via IP hash,
-	 * persists the response, and increments the survey's cached response count.
+	 * Accept a public widget submission.
+	 * Validates the nonce, checks for duplicate IP submission, persists the
+	 * response, and increments the survey's cached response count.
 	 *
 	 * @param \WP_REST_Request $request Full request data.
 	 * @return \WP_REST_Response|\WP_Error
@@ -172,7 +162,8 @@ class ResponsesController extends RestController {
 	public function store( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$nonce = sanitize_text_field( (string) ( $request->get_param( 'nonce' ) ?? '' ) );
 
-		if ( ! wp_verify_nonce( $nonce, self::NONCE_ACTION ) ) {
+		if ( ! wp_verify_nonce( $nonce, ResponseManager::NONCE_ACTION ) ) {
+			$this->logger->warning( 'Response submission rejected: invalid nonce.', [ 'survey_id' => (int) $request->get_param( 'id' ) ] );
 			return $this->errorResponse( __( 'Invalid or expired nonce.', 'all-feedback' ), 403 );
 		}
 
@@ -184,159 +175,204 @@ class ResponsesController extends RestController {
 		}
 
 		if ( $survey->status !== 'published' ) {
+			$this->logger->warning(
+				'Response submission rejected: survey not published.',
+				[ 'survey_id' => $surveyId, 'status' => $survey->status ]
+			);
 			return $this->errorResponse( __( 'This survey is not currently accepting responses.', 'all-feedback' ), 403 );
 		}
 
-		$ipHash = $this->hashIp();
+		$ipHash = $this->responseManager->hashIp();
 
-		if ( $this->isDuplicateSubmission( $surveyId, $ipHash ) ) {
+		if ( $this->responseManager->isDuplicate( $surveyId, $ipHash ) ) {
+			$this->logger->debug( 'Duplicate response blocked.', [ 'survey_id' => $surveyId ] );
 			return $this->errorResponse( __( 'A response from this visitor has already been recorded.', 'all-feedback' ), 409 );
 		}
 
-		$responseData = $request->get_param( 'response_data' );
-		$score        = $request->get_param( 'score' );
-		$pageUrl      = esc_url_raw( (string) ( $request->get_param( 'page_url' ) ?? '' ) );
-		$deviceType   = sanitize_key( (string) ( $request->get_param( 'device_type' ) ?? '' ) );
-		$consent      = (bool) $request->get_param( 'consent_given' );
-
-		$newId = $this->insertResponse(
+		$newId = $this->responseManager->insert(
 			[
 				'survey_id'     => $surveyId,
-				'response_data' => wp_json_encode( $responseData ),
-				'score'         => $score !== null ? (int) $score : null,
-				'page_url'      => $pageUrl !== '' ? $pageUrl : null,
-				'device_type'   => $deviceType !== '' ? $deviceType : null,
+				'response_data' => wp_json_encode( $request->get_param( 'response_data' ) ),
+				'score'         => $request->get_param( 'score' ) !== null ? (int) $request->get_param( 'score' ) : null,
+				'page_url'      => esc_url_raw( (string) ( $request->get_param( 'page_url' ) ?? '' ) ) ?: null,
+				'device_type'   => sanitize_key( (string) ( $request->get_param( 'device_type' ) ?? '' ) ) ?: null,
 				'ip_hash'       => $ipHash,
 				'user_id'       => is_user_logged_in() ? get_current_user_id() : null,
-				'consent_given' => $consent ? 1 : 0,
+				'consent_given' => (bool) $request->get_param( 'consent_given' ) ? 1 : 0,
 				'created_at'    => current_time( 'mysql' ),
 			]
 		);
 
 		if ( $newId === false ) {
+			$this->logger->error( 'Response insert failed at DB layer.', [ 'survey_id' => $surveyId ] );
 			return $this->errorResponse( __( 'Failed to save response.', 'all-feedback' ), 500 );
 		}
 
 		$this->surveyManager->incrementResponseCount( $surveyId );
 
+		$this->logger->info(
+			'Response received.',
+			[
+				'response_id' => $newId,
+				'survey_id'   => $surveyId,
+				'score'       => $request->get_param( 'score' ),
+				'anonymous'   => ! is_user_logged_in(),
+			]
+		);
+
 		return $this->successResponse( [ 'id' => $newId ], 201 );
 	}
 
-	// ------------------------------------------------------------------
-	// Internal helpers
-	// ------------------------------------------------------------------
-
 	/**
-	 * Fetch a paginated set of responses for a survey plus the total count.
+	 * DELETE /all-feedback/v1/surveys/{id}/responses/{rid}
 	 *
-	 * Returns a two-element array: [ object[] $rows, int $total ].
+	 * Permanently delete a single response record.
 	 *
-	 * @param int    $surveyId Survey primary key.
-	 * @param int    $perPage  Maximum rows to return.
-	 * @param int    $offset   Number of rows to skip.
-	 * @param string $dateFrom Optional lower bound (Y-m-d).
-	 * @param string $dateTo   Optional upper bound (Y-m-d).
-	 * @return array{ 0: object[], 1: int }
+	 * @param \WP_REST_Request $request Full request data.
+	 * @return \WP_REST_Response|\WP_Error
 	 * @since 1.0.0
 	 */
-	private function queryResponses( int $surveyId, int $perPage, int $offset, string $dateFrom, string $dateTo ): array {
-		global $wpdb;
+	public function destroy( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		$surveyId   = (int) $request->get_param( 'id' );
+		$responseId = (int) $request->get_param( 'rid' );
 
-		$table      = $wpdb->prefix . self::TABLE_RESPONSES;
-		$conditions = [ 'survey_id = %d' ];
-		$values     = [ $surveyId ];
+		$response = $this->responseManager->find( $responseId );
 
-		if ( $dateFrom !== '' ) {
-			$conditions[] = 'DATE(created_at) >= %s';
-			$values[]     = $dateFrom;
+		if ( $response === null || (int) $response->survey_id !== $surveyId ) {
+			return $this->notFoundResponse( __( 'Response', 'all-feedback' ) );
 		}
 
-		if ( $dateTo !== '' ) {
-			$conditions[] = 'DATE(created_at) <= %s';
-			$values[]     = $dateTo;
+		if ( ! $this->responseManager->delete( $responseId ) ) {
+			$this->logger->error(
+				'Response deletion failed at DB layer.',
+				[ 'response_id' => $responseId, 'survey_id' => $surveyId, 'user_id' => get_current_user_id() ]
+			);
+			return $this->errorResponse( __( 'Failed to delete the response.', 'all-feedback' ), 500 );
 		}
 
-		$where = 'WHERE ' . implode( ' AND ', $conditions );
-
-		$countValues = $values;
-
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$total = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} {$where}", $countValues ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-
-		$values[] = $perPage;
-		$values[] = $offset;
-
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} {$where} ORDER BY created_at DESC LIMIT %d OFFSET %d", $values ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-
-		return [ $rows ?: [], $total ];
-	}
-
-	/**
-	 * Check whether a response from the same IP already exists for this survey.
-	 *
-	 * @param int    $surveyId Survey primary key.
-	 * @param string $ipHash   Anonymised hashed IP address.
-	 * @return bool
-	 * @since 1.0.0
-	 */
-	private function isDuplicateSubmission( int $surveyId, string $ipHash ): bool {
-		global $wpdb;
-
-		$table = $wpdb->prefix . self::TABLE_RESPONSES;
-
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$exists = $wpdb->get_var(
-			$wpdb->prepare( "SELECT id FROM {$table} WHERE survey_id = %d AND ip_hash = %s LIMIT 1", $surveyId, $ipHash ) // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$this->logger->info(
+			'Response deleted.',
+			[ 'response_id' => $responseId, 'survey_id' => $surveyId, 'user_id' => get_current_user_id() ]
 		);
 
-		return $exists !== null;
+		return $this->successResponse( [ 'deleted' => true, 'id' => $responseId ] );
 	}
+
+	// ------------------------------------------------------------------
+	// Schema
+	// ------------------------------------------------------------------
 
 	/**
-	 * Persist a new response row and return the inserted ID.
+	 * JSON schema for a single response item.
 	 *
-	 * @param array<string, mixed> $data Column-value map.
-	 * @return int|false
+	 * @return array<string, mixed>
 	 * @since 1.0.0
 	 */
-	private function insertResponse( array $data ): int|false {
-		global $wpdb;
-
-		$intCols  = [ 'survey_id', 'score', 'user_id', 'consent_given' ];
-		$formats  = [];
-
-		foreach ( array_keys( $data ) as $col ) {
-			$formats[] = in_array( $col, $intCols, true ) ? '%d' : '%s';
-		}
-
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-		$result = $wpdb->insert( $wpdb->prefix . self::TABLE_RESPONSES, $data, $formats );
-
-		if ( $result === false ) {
-			return false;
-		}
-
-		return (int) $wpdb->insert_id;
+	public function getPublicItemSchema(): array {
+		return [
+			'$schema'    => 'http://json-schema.org/draft-04/schema#',
+			'title'      => 'allfeedback_response',
+			'type'       => 'object',
+			'properties' => [
+				'id'            => [
+					'description' => __( 'Unique identifier.', 'all-feedback' ),
+					'type'        => 'integer',
+					'context'     => [ 'view' ],
+					'readonly'    => true,
+				],
+				'survey_id'     => [
+					'description' => __( 'Parent survey identifier.', 'all-feedback' ),
+					'type'        => 'integer',
+					'context'     => [ 'view' ],
+					'readonly'    => true,
+				],
+				'response_data' => [
+					'description' => __( 'Field answers keyed by field ID.', 'all-feedback' ),
+					'type'        => [ 'object', 'null' ],
+					'context'     => [ 'view' ],
+				],
+				'score'         => [
+					'description' => __( 'Numeric score for NPS, CSAT, or CES fields.', 'all-feedback' ),
+					'type'        => [ 'integer', 'null' ],
+					'context'     => [ 'view' ],
+				],
+				'page_url'      => [
+					'description' => __( 'URL of the page where the survey was displayed.', 'all-feedback' ),
+					'type'        => [ 'string', 'null' ],
+					'context'     => [ 'view' ],
+				],
+				'device_type'   => [
+					'description' => __( 'Visitor device type.', 'all-feedback' ),
+					'type'        => [ 'string', 'null' ],
+					'context'     => [ 'view' ],
+				],
+				'user_id'       => [
+					'description' => __( 'WordPress user ID (null = anonymous).', 'all-feedback' ),
+					'type'        => [ 'integer', 'null' ],
+					'context'     => [ 'view' ],
+					'readonly'    => true,
+				],
+				'consent_given' => [
+					'description' => __( 'Whether the visitor gave GDPR consent.', 'all-feedback' ),
+					'type'        => 'boolean',
+					'context'     => [ 'view' ],
+				],
+				'created_at'    => [
+					'description' => __( 'Submission timestamp (MySQL datetime).', 'all-feedback' ),
+					'type'        => 'string',
+					'context'     => [ 'view' ],
+					'readonly'    => true,
+				],
+			],
+		];
 	}
+
+	// ------------------------------------------------------------------
+	// Argument schemas
+	// ------------------------------------------------------------------
 
 	/**
-	 * Hash the visitor's IP address for anonymised duplicate detection.
+	 * Body arguments for the public submission endpoint.
 	 *
-	 * HMAC-SHA256 with the WordPress auth key as the secret ensures the hash
-	 * cannot be reversed to recover the original IP while still being unique
-	 * per visitor.
-	 *
-	 * @return string 64-character hex digest.
+	 * @return array<string, array<string, mixed>>
 	 * @since 1.0.0
 	 */
-	private function hashIp(): string {
-		$ip     = sanitize_text_field( (string) ( $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '' ) );
-		$ip     = trim( explode( ',', $ip )[0] );
-		$secret = defined( 'AUTH_KEY' ) ? AUTH_KEY : 'allfeedback';
-
-		return hash_hmac( 'sha256', $ip, $secret );
+	private function submitArgs(): array {
+		return [
+			'response_data' => [
+				'description'       => __( 'Field answers keyed by field ID.', 'all-feedback' ),
+				'type'              => 'object',
+				'required'          => true,
+				'sanitize_callback' => null,
+				'validate_callback' => 'rest_validate_request_arg',
+			],
+			'score'         => $this->argInteger(
+				description: __( 'Numeric score for NPS, CSAT, or CES fields.', 'all-feedback' ),
+				min:         0,
+				max:         10,
+			),
+			'page_url'      => $this->argString(
+				description: __( 'URL of the page where the survey was displayed.', 'all-feedback' ),
+				maxLength:   2083,
+			),
+			'device_type'   => $this->argEnum(
+				description: __( 'Visitor device type at submission time.', 'all-feedback' ),
+				values:      [ 'desktop', 'tablet', 'mobile' ],
+			),
+			'nonce'         => $this->argString(
+				description: __( 'WordPress nonce for submission authentication.', 'all-feedback' ),
+				required:    true,
+			),
+			'consent_given' => $this->argBoolean(
+				description: __( 'Whether the visitor gave GDPR consent.', 'all-feedback' ),
+				default:     false,
+			),
+		];
 	}
+
+	// ------------------------------------------------------------------
+	// Serialisation
+	// ------------------------------------------------------------------
 
 	/**
 	 * Serialise a wpdb response row into the REST response shape.

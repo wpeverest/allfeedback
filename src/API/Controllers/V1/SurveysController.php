@@ -8,6 +8,7 @@ defined( 'ABSPATH' ) || exit;
 
 use AllFeedback\API\RestController;
 use AllFeedback\Survey\Manager;
+use AllFeedback\Support\Logger;
 
 /**
  * Class SurveysController
@@ -15,14 +16,14 @@ use AllFeedback\Survey\Manager;
  * REST controller for the /surveys resource.
  *
  * Routes registered (all under all-feedback/v1):
- *   GET    /surveys                      → index()     : paginated list
- *   POST   /surveys                      → store()     : create
- *   GET    /surveys/{id}                 → show()      : single survey
- *   PUT    /surveys/{id}                 → update()    : full or partial update
- *   DELETE /surveys/{id}                 → destroy()   : soft or hard delete
- *   POST   /surveys/{id}/duplicate       → duplicate() : copy
- *   POST   /surveys/{id}/publish         → publish()   : set status to published
- *   POST   /surveys/{id}/pause          → pause()     : set status to paused
+ *   GET    /surveys                      → index()       : paginated list
+ *   POST   /surveys                      → store()       : create
+ *   DELETE /surveys                      → destroyMany() : bulk delete
+ *   GET    /surveys/{id}                 → show()        : single survey
+ *   PUT    /surveys/{id}                 → update()      : full or partial update / autosave
+ *   DELETE /surveys/{id}                 → destroy()     : soft or hard delete
+ *   POST   /surveys/{id}/duplicate       → duplicate()   : copy survey
+ *   POST   /surveys/{id}/publish         → publish()     : set status to published
  *
  * @package AllFeedback\API\Controllers\V1
  * @since   1.0.0
@@ -36,10 +37,12 @@ class SurveysController extends RestController {
 
 	/**
 	 * @param Manager $manager Table gateway for the af_surveys table.
+	 * @param Logger  $logger  Structured logger.
 	 * @since 1.0.0
 	 */
 	public function __construct(
 		private readonly Manager $manager,
+		private readonly Logger $logger,
 	) {}
 
 	/**
@@ -63,6 +66,12 @@ class SurveysController extends RestController {
 					'callback'            => [ $this, 'store' ],
 					'permission_callback' => [ $this, 'adminPermission' ],
 					'args'                => $this->writeArgs( required: true ),
+				],
+				[
+					'methods'             => \WP_REST_Server::DELETABLE,
+					'callback'            => [ $this, 'destroyMany' ],
+					'permission_callback' => [ $this, 'adminPermission' ],
+					'args'                => $this->bulkDeleteArgs(),
 				],
 				'schema' => [ $this, 'getPublicItemSchema' ],
 			]
@@ -124,16 +133,6 @@ class SurveysController extends RestController {
 			]
 		);
 
-		register_rest_route(
-			$this->namespace,
-			'/' . $this->restBase . '/(?P<id>\d+)/pause',
-			[
-				'methods'             => \WP_REST_Server::CREATABLE,
-				'callback'            => [ $this, 'pause' ],
-				'permission_callback' => [ $this, 'adminPermission' ],
-				'args'                => $this->idArg(),
-			]
-		);
 	}
 
 	// ------------------------------------------------------------------
@@ -214,6 +213,7 @@ class SurveysController extends RestController {
 		$id = $this->manager->insert( $data );
 
 		if ( $id === false ) {
+			$this->logger->error( 'Survey creation failed at DB layer.', [ 'user_id' => get_current_user_id() ] );
 			return $this->errorResponse( __( 'Failed to create survey.', 'all-feedback' ), 500 );
 		}
 
@@ -222,6 +222,11 @@ class SurveysController extends RestController {
 		if ( $survey === null ) {
 			return $this->errorResponse( __( 'Failed to retrieve created survey.', 'all-feedback' ), 500 );
 		}
+
+		$this->logger->info(
+			'Survey created.',
+			[ 'survey_id' => $id, 'title' => $data['title'], 'user_id' => get_current_user_id() ]
+		);
 
 		return $this->successResponse( $this->prepareSurvey( $survey ), 201 );
 	}
@@ -312,8 +317,14 @@ class SurveysController extends RestController {
 		}
 
 		if ( ! $this->manager->update( $id, $data ) ) {
+			$this->logger->error( 'Survey update failed at DB layer.', [ 'survey_id' => $id, 'user_id' => get_current_user_id() ] );
 			return $this->errorResponse( __( 'Failed to update survey.', 'all-feedback' ), 500 );
 		}
+
+		$this->logger->info(
+			'Survey updated.',
+			[ 'survey_id' => $id, 'changed_keys' => array_keys( $data ), 'user_id' => get_current_user_id() ]
+		);
 
 		$updated = $this->manager->find( $id );
 
@@ -339,8 +350,14 @@ class SurveysController extends RestController {
 		}
 
 		if ( ! $this->manager->delete( $id, $force ) ) {
+			$this->logger->error( 'Survey deletion failed at DB layer.', [ 'survey_id' => $id, 'force' => $force, 'user_id' => get_current_user_id() ] );
 			return $this->errorResponse( __( 'Failed to delete survey.', 'all-feedback' ), 500 );
 		}
+
+		$this->logger->info(
+			$force ? 'Survey permanently deleted.' : 'Survey archived.',
+			[ 'survey_id' => $id, 'title' => $survey->title, 'user_id' => get_current_user_id() ]
+		);
 
 		return $this->successResponse(
 			[
@@ -392,16 +409,58 @@ class SurveysController extends RestController {
 	}
 
 	/**
-	 * POST /all-feedback/v1/surveys/{id}/pause
+	 * DELETE /all-feedback/v1/surveys
 	 *
-	 * Transition a survey to paused status.
+	 * Bulk-delete multiple surveys by ID.
+	 * Accepts an 'ids' array in the request body. Each survey is soft-deleted
+	 * (archived) by default; pass force=true to permanently delete.
 	 *
 	 * @param \WP_REST_Request $request Full request data.
 	 * @return \WP_REST_Response|\WP_Error
 	 * @since 1.0.0
 	 */
-	public function pause( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
-		return $this->transitionStatus( (int) $request->get_param( 'id' ), 'paused' );
+	public function destroyMany( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		$ids   = array_values( array_filter( array_map( 'absint', (array) ( $request->get_param( 'ids' ) ?? [] ) ) ) );
+		$force = (bool) $request->get_param( 'force' );
+
+		if ( empty( $ids ) ) {
+			return $this->errorResponse( __( 'No survey IDs provided.', 'all-feedback' ), 422 );
+		}
+
+		$deleted = 0;
+		$failed  = [];
+
+		foreach ( $ids as $id ) {
+			if ( $this->manager->find( $id ) === null ) {
+				$failed[] = $id;
+				continue;
+			}
+
+			if ( $this->manager->delete( $id, $force ) ) {
+				++$deleted;
+			} else {
+				$failed[] = $id;
+			}
+		}
+
+		$this->logger->info(
+			'Bulk survey delete completed.',
+			[
+				'requested'     => $ids,
+				'deleted_count' => $deleted,
+				'failed'        => $failed,
+				'force'         => $force,
+				'user_id'       => get_current_user_id(),
+			]
+		);
+
+		return $this->successResponse(
+			[
+				'deleted' => $deleted,
+				'failed'  => $failed,
+				'force'   => $force,
+			]
+		);
 	}
 
 	// ------------------------------------------------------------------
@@ -558,6 +617,31 @@ class SurveysController extends RestController {
 				description: __( 'Survey lifecycle status.', 'all-feedback' ),
 				values:      Manager::STATUSES,
 				default:     'draft',
+			),
+		];
+	}
+
+	/**
+	 * Body arguments for DELETE /surveys (bulk delete).
+	 *
+	 * @return array<string, array<string, mixed>>
+	 * @since 1.0.0
+	 */
+	private function bulkDeleteArgs(): array {
+		return [
+			'ids'   => [
+				'description' => __( 'Array of survey IDs to delete.', 'all-feedback' ),
+				'type'        => 'array',
+				'required'    => true,
+				'items'       => [
+					'type'    => 'integer',
+					'minimum' => 1,
+				],
+				'minItems'    => 1,
+			],
+			'force' => $this->argBoolean(
+				description: __( 'Permanently delete instead of archiving.', 'all-feedback' ),
+				default:     false,
 			),
 		];
 	}
@@ -722,6 +806,10 @@ class SurveysController extends RestController {
 		}
 
 		if ( ! $this->manager->updateStatus( $id, $status ) ) {
+			$this->logger->error(
+				'Survey status transition failed at DB layer.',
+				[ 'survey_id' => $id, 'target_status' => $status, 'user_id' => get_current_user_id() ]
+			);
 			return $this->errorResponse(
 				sprintf(
 					/* translators: %s: Target status */
@@ -731,6 +819,11 @@ class SurveysController extends RestController {
 				500
 			);
 		}
+
+		$this->logger->info(
+			"Survey status changed to {$status}.",
+			[ 'survey_id' => $id, 'title' => $survey->title, 'status' => $status, 'user_id' => get_current_user_id() ]
+		);
 
 		$updated = $this->manager->find( $id );
 
