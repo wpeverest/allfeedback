@@ -435,8 +435,7 @@ const StarRatingConfig = ({
 				focusTrigger={focusTrigger}
 			/>
 
-			{/* Stop propagation so parent drag handlers don't interfere with Select */}
-			<div className="grid grid-cols-2 gap-3" onMouseDown={(e) => e.stopPropagation()}>
+			<div className="grid grid-cols-2 gap-3">
 				<div className="space-y-1.5">
 					<label className={labelCls}>{__('Scale', 'all-feedback')}</label>
 					<Select
@@ -555,7 +554,7 @@ const FieldEditor = ({
 			onDragOver={(e) => { e.stopPropagation(); e.preventDefault(); onDragOver(e, index); }}
 			onDrop={(e) => { e.stopPropagation(); e.preventDefault(); onDrop(e, index); }}
 			className={cn(
-				'relative overflow-hidden rounded-xl border border-border/60 bg-white transition-all duration-150',
+				'relative rounded-xl border border-border/60 bg-white transition-all duration-150',
 				isDragging && 'opacity-40 scale-[0.98]',
 				isDragOver && !isDragging && 'border-t-[3px] border-t-primary bg-primary/[0.02]',
 			)}
@@ -580,7 +579,7 @@ const FieldEditor = ({
 					onDragStart(index);
 				}}
 				onDragEnd={(e) => { e.stopPropagation(); onDragEnd(); }}
-				className="flex cursor-pointer items-center gap-2 border-b border-border/50 bg-muted/25 px-4 py-2.5 transition-colors hover:bg-muted/40"
+				className="flex cursor-pointer items-center gap-2 rounded-t-xl border-b border-border/50 bg-muted/25 px-4 py-2.5 transition-colors hover:bg-muted/40"
 				onClick={() => setIsCollapsed((v) => !v)}
 			>
 				<span
@@ -617,10 +616,12 @@ const FieldEditor = ({
 
 				<div className="ml-auto flex items-center gap-1">
 					{/* Chevron — always visible */}
-					<ChevronDown className={cn(
-						'size-3.5 transition-transform duration-200',
-						isCollapsed && '-rotate-90',
-					)} />
+					<span className="flex size-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-black/[0.06] hover:text-foreground">
+						<ChevronDown className={cn(
+							'size-3.5 transition-transform duration-200',
+							isCollapsed && '-rotate-90',
+						)} />
+					</span>
 
 					{/* Copy / delete — always visible */}
 					<div

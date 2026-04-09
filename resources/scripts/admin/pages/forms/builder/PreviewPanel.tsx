@@ -46,7 +46,7 @@ const StarRatingPreview = ({ field, value, onChange }: { field: FormField; value
 	const range    = field.starRange ?? 5;
 	const selected = Number(value) || 0;
 	const active   = hovered || selected;
-	const iconSize = range >= 10 ? 'size-3.5' : 'size-5';
+	const iconSize = range >= 10 ? 'size-5' : 'size-7';
 
 	return (
 		<div className="flex gap-0.5" onMouseLeave={() => setHovered(0)}>
@@ -60,7 +60,7 @@ const StarRatingPreview = ({ field, value, onChange }: { field: FormField; value
 				>
 					{scale === 'number' ? (
 						<span className={cn(
-							'flex items-center justify-center rounded text-[10px] font-semibold transition-colors',
+							'flex items-center justify-center rounded text-[12px] font-semibold transition-colors',
 							iconSize,
 							n <= active ? 'bg-primary text-white' : 'bg-muted/60 text-muted-foreground/60',
 						)}>
@@ -271,18 +271,10 @@ const WidgetBody = ({
 					<p className="mt-0.5 text-[11px] text-muted-foreground">
 						{__('Your response has been recorded.', 'all-feedback')}
 					</p>
-					<button
-						type="button"
-						onClick={onResubmit}
-						className="mt-3 text-[11px] text-primary underline-offset-2 hover:underline"
-					>
-						{__('Submit another', 'all-feedback')}
-					</button>
 				</div>
 			) : (
 				<>
-					{/* Step indicator — only when multiple sections */}
-					{totalSteps > 1 && (
+ 					{totalSteps > 1 && (
 						<div className="flex items-center justify-between border-b border-border/30 px-4 py-2">
 							<div className="flex items-center gap-1.5">
 								{steps.map((_, i) => (
@@ -440,6 +432,10 @@ const PreviewPanel = ({ sections, device, onDeviceChange }: PreviewPanelProps) =
 	const handleReset = () => {
 		setIsClosed(false);
 		setIsMinimized(false);
+		setIsSubmitted(false);
+		setFieldValues({});
+		setFieldErrors({});
+		setCurrentStep(0);
 	};
 
 	const sharedWidgetProps = {
@@ -454,8 +450,8 @@ const PreviewPanel = ({ sections, device, onDeviceChange }: PreviewPanelProps) =
 		onResubmit: () => { setIsSubmitted(false); setFieldValues({}); setFieldErrors({}); setCurrentStep(0); },
 	};
 
-	/* Reset only applies to page view (widget view widget is always visible) */
-	const needsReset = viewMode === 'page' && (isClosed || isMinimized);
+	/* Reset shown when widget is closed/minimized (page view) or form is submitted (both views) */
+	const needsReset = isSubmitted || (viewMode === 'page' && (isClosed || isMinimized));
 
 	return (
 		<div className="flex h-full flex-col bg-white">
