@@ -14,6 +14,7 @@ use AllFeedback\Core\Exceptions\NotFoundException;
 use AllFeedback\Domain\Response\Response;
 use AllFeedback\Domain\Response\ResponseRepository;
 use AllFeedback\Domain\Survey\SurveyRepository;
+use AllFeedback\Survey\Manager;
 
 /**
  * Use-case service: validate and persist a survey response submission.
@@ -29,6 +30,7 @@ class SubmitResponseService {
 	public function __construct(
 		private readonly SurveyRepository $surveyRepository,
 		private readonly ResponseRepository $responseRepository,
+		private readonly Manager $surveyManager,
 	) {}
 
 	/**
@@ -70,6 +72,8 @@ class SubmitResponseService {
 		);
 
 		$response = $this->responseRepository->save( $response );
+
+		$this->surveyManager->incrementResponseCount( $dto->surveyId );
 
 		do_action( 'allfeedback:response:submitted', $response, $survey );
 
