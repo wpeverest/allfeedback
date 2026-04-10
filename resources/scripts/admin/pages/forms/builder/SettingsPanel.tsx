@@ -115,14 +115,16 @@ const Chips = <T extends string>({
 	</div>
 );
 
-/** Animated collapse / expand */
+/** Animated collapse / expand — left accent line shows dependency on the parent option */
 const Collapse = ({ open, children }: { open: boolean; children: React.ReactNode }) => (
 	<div className={cn(
 		'grid transition-[grid-template-rows] duration-200 ease-in-out',
 		open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
 	)}>
 		<div className="overflow-hidden">
-			<div className="pt-4">{children}</div>
+			<div className="ml-1 border-l-2 border-primary/20 pl-4 pt-4">
+				{children}
+			</div>
 		</div>
 	</div>
 );
@@ -186,6 +188,7 @@ const ContentPicker = ({
 	const wrapperRef  = useRef<HTMLDivElement>(null);
 	const inputRef    = useRef<HTMLInputElement>(null);
 	const listRef     = useRef<HTMLDivElement>(null);
+	const scrollRef   = useRef<HTMLDivElement>(null);
 	const sentinelRef = useRef<HTMLDivElement>(null);
 
 	const debouncedQuery = useDebouncedValue(query, 300);
@@ -199,7 +202,7 @@ const ContentPicker = ({
 	} = useInfiniteQuery({
 		queryKey:         ['content-search', postType, debouncedQuery],
 		queryFn:          ({ pageParam }) =>
-			surveysApi.contentSearch({ search: debouncedQuery, post_type: postType, page: pageParam as number, per_page: 20 }),
+			surveysApi.contentSearch({ search: debouncedQuery, post_type: postType, page: pageParam as number, per_page: 10 }),
 		initialPageParam: 1,
 		getNextPageParam: (lastPage, allPages) => {
 			const fetched = allPages.reduce((n, p) => n + p.items.length, 0);
@@ -249,22 +252,30 @@ const ContentPicker = ({
 		return () => document.removeEventListener('mousedown', handle);
 	}, [open]);
 
-	/* ── IntersectionObserver sentinel for infinite scroll ── */
+	/* ── Keep a stable ref so the IntersectionObserver callback never goes stale ── */
+	const fetchStateRef = useRef({ hasNextPage, isFetchingNextPage, fetchNextPage });
 	useEffect(() => {
+		fetchStateRef.current = { hasNextPage, isFetchingNextPage, fetchNextPage };
+	}, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+	/* ── IntersectionObserver on sentinel inside the scrollable container ── */
+	useEffect(() => {
+		const root     = scrollRef.current;
 		const sentinel = sentinelRef.current;
-		const list     = listRef.current;
-		if (!sentinel || !list) return;
+		if (!root || !sentinel) return;
+
 		const observer = new IntersectionObserver(
 			(entries) => {
-				if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage) {
-					void fetchNextPage();
-				}
+				if (!entries[0].isIntersecting) return;
+				const { hasNextPage: has, isFetchingNextPage: fetching, fetchNextPage: fetchNext } = fetchStateRef.current;
+				if (has && !fetching) void fetchNext();
 			},
-			{ root: list, threshold: 0.1 },
+			{ root, threshold: 0 },
 		);
 		observer.observe(sentinel);
 		return () => observer.disconnect();
-	}, [hasNextPage, isFetchingNextPage, fetchNextPage, open, results.length]);
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [open, results.length]);
 
 	const selectedIds = selected.map((s) => s.id);
 
@@ -284,10 +295,13 @@ const ContentPicker = ({
 		<div
 			ref={listRef}
 			style={dropPos}
-			className="overflow-hidden rounded-lg border border-border bg-white shadow-lg"
+			className="relative overflow-hidden rounded-lg border border-border bg-white shadow-lg"
 			onMouseDown={(e) => e.preventDefault()}
 		>
-			<div className="max-h-52 overflow-y-auto overflow-x-hidden p-1">
+			<div
+				ref={scrollRef}
+				className="max-h-52 overflow-y-auto overflow-x-hidden p-1"
+			>
 				{isFirstLoad ? (
 					<div className="flex items-center justify-center py-4">
 						<Loader2 className="size-4 animate-spin text-muted-foreground/50" />
@@ -313,12 +327,7 @@ const ContentPicker = ({
 								<span className="min-w-0 flex-1 truncate text-left">{item.title}</span>
 							</button>
 						))}
-						<div ref={sentinelRef} className="h-1" />
-						{isFetchingNextPage && (
-							<div className="flex items-center justify-center py-2">
-								<Loader2 className="size-3.5 animate-spin text-muted-foreground/50" />
-							</div>
-						)}
+						<div ref={sentinelRef} className="h-px" />
 					</>
 				)}
 			</div>
@@ -360,8 +369,8 @@ const ContentPicker = ({
 					placeholder={placeholder}
 					className={cn(inputCls, 'pl-9 pr-8')}
 				/>
-				{isFetching && !isFetchingNextPage && (
-					<Loader2 className="absolute right-3 top-1/2 size-3.5 -translate-y-1/2 animate-spin text-muted-foreground/50" />
+				{isFetching && (
+					<Loader2 className="absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-foreground/50" />
 				)}
 			</div>
 

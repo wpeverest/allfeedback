@@ -56,12 +56,8 @@ class ContentSearchController extends RestController {
 	 * GET /all-feedback/v1/content-search
 	 *
 	 * Search published pages and posts for the page targeting picker.
-	 *
-	 * When no search keyword is supplied (initial load / picker open state),
-	 * returns a fixed number of recent items per post type so the picker is
-	 * immediately useful without requiring the user to type first.
-	 * When a keyword is present, runs a single unified title-search query
-	 * across all resolved post types, ordered alphabetically.
+	 * Runs a paginated WP_Query across the resolved post types, ordered
+	 * alphabetically by title. Works for both empty and keyword searches.
 	 *
 	 * @param \WP_REST_Request $request Full request data.
 	 * @return \WP_REST_Response
@@ -74,12 +70,8 @@ class ContentSearchController extends RestController {
 		$offset    = ( $page - 1 ) * $perPage;
 		$postTypes = $this->resolvePostTypes( (string) ( $request->get_param( 'post_type' ) ?? '' ) );
 
-		if ( $search === '' && $page === 1 ) {
-			return $this->initialLoad( $postTypes, $request );
-		}
-
 		/**
-		 * Filter the WP_Query arguments used for the keyword search.
+		 * Filter the WP_Query arguments used for the content search.
 		 *
 		 * Use to add meta_query / tax_query constraints, exclude IDs,
 		 * change sort order, or any other WP_Query customisation.
@@ -119,66 +111,6 @@ class ContentSearchController extends RestController {
 				'total'    => $total,
 				'page'     => $page,
 				'per_page' => $perPage,
-			]
-		);
-	}
-
-	/**
-	 * Build the initial-load response when no search keyword is provided.
-	 *
-	 * Runs one lightweight WP_Query per post type and returns a fixed number
-	 * of the most recently published items for each type. This gives the picker
-	 * an immediately useful set of suggestions without requiring user input.
-	 *
-	 * @param string[]         $postTypes Resolved post types to query.
-	 * @param \WP_REST_Request $request   Original REST request (passed to filters).
-	 * @return \WP_REST_Response
-	 * @since 1.0.0
-	 */
-	private function initialLoad( array $postTypes, \WP_REST_Request $request ): \WP_REST_Response {
-		/**
-		 * Filter the number of items returned per post type on initial load.
-		 *
-		 * Allows pro add-ons or themes to surface more or fewer suggestions
-		 * when the picker is opened without a search keyword.
-		 *
-		 * @param int $perType Items per post type. Default: 5.
-		 * @since 1.0.0
-		 */
-		$perType = max( 1, min( 20, (int) apply_filters( 'allfeedback_content_search_initial_per_type', 5 ) ) );
-
-		$items = [];
-
-		foreach ( $postTypes as $type ) {
-			$queryArgs = apply_filters(
-				'allfeedback_content_search_query_args',
-				[
-					'post_type'              => [ $type ],
-					'post_status'            => 'publish',
-					'posts_per_page'         => $perType,
-					'offset'                 => 0,
-					'orderby'                => 'date',
-					'order'                  => 'DESC',
-					'no_found_rows'          => true,
-					'update_post_meta_cache' => false,
-					'update_post_term_cache' => false,
-				],
-				$request
-			);
-
-			$query = new \WP_Query( $queryArgs );
-
-			foreach ( $query->posts as $post ) {
-				$items[] = $this->prepareItem( $post );
-			}
-		}
-
-		return $this->successResponse(
-			[
-				'items'    => $items,
-				'total'    => count( $items ),
-				'page'     => 1,
-				'per_page' => $perType,
 			]
 		);
 	}
