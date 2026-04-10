@@ -29,7 +29,7 @@ export interface FormSection {
 }
 
 export type TargetDevice     = 'all' | 'desktop' | 'tablet' | 'mobile';
-export type TargetPages      = 'all' | 'specific';
+export type TargetPages      = 'all' | 'specific_pages' | 'specific_posts';
 export type UserState        = 'all' | 'logged_in' | 'logged_out';
 export type TriggerType      = 'immediate' | 'time_delay' | 'scroll_depth';
 export type DelayUnit        = 'seconds' | 'minutes' | 'hours';
@@ -51,6 +51,7 @@ export interface FormSettings {
 	/* New API fields */
 	userState:        UserState;
 	targetPageIds:    number[];
+	targetPostIds:    number[];
 	triggerType:      TriggerType;
 	delayValue:       number;
 	delayUnit:        DelayUnit;
@@ -73,6 +74,7 @@ export const DEFAULT_FORM_SETTINGS: FormSettings = {
 	targetUrls:          '',
 	userState:           'all',
 	targetPageIds:       [],
+	targetPostIds:       [],
 	triggerType:         'immediate',
 	delayValue:          0,
 	delayUnit:           'seconds',

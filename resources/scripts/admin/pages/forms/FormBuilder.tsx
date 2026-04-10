@@ -55,8 +55,14 @@ const serializeSettings = (s: FormSettings): Record<string, unknown> => ({
 	next_label:          s.nextLabel,
 	back_label:          s.backLabel,
 	user_state:          s.userState,
-	target_pages:        s.targetPages,
-	target_page_ids:     s.targetPageIds,
+	// Map specific_pages / specific_posts → 'specific' for the API
+	target_pages:        s.targetPages === 'all' ? 'all' : 'specific',
+	// Store whichever ID list is active; the other is irrelevant when not selected
+	target_page_ids:     s.targetPages === 'specific_pages'
+		? s.targetPageIds
+		: s.targetPages === 'specific_posts'
+			? s.targetPostIds
+			: [],
 	trigger_type:        s.triggerType,
 	delay_value:         s.delayValue,
 	delay_unit:          s.delayUnit,
@@ -71,6 +77,9 @@ const serializeSettings = (s: FormSettings): Record<string, unknown> => ({
 	thankYouDescription: s.thankYouDescription,
 	targetDevice:        s.targetDevice,
 	targetUrls:          s.targetUrls,
+	// Persist the detailed mode so reloading restores the correct picker
+	targetPages:         s.targetPages,
+	targetPostIds:       s.targetPostIds,
 });
 
 /** Deserialize API settings object (snake_case) → FormSettings (camelCase) */
@@ -79,8 +88,17 @@ const deserializeSettings = (raw: Record<string, unknown>): Partial<FormSettings
 	...(raw.next_label         !== undefined && { nextLabel:          raw.next_label         as string }),
 	...(raw.back_label         !== undefined && { backLabel:          raw.back_label         as string }),
 	...(raw.user_state         !== undefined && { userState:          raw.user_state         as FormSettings['userState'] }),
-	...(raw.target_pages       !== undefined && { targetPages:        raw.target_pages       as FormSettings['targetPages'] }),
+	// Prefer our persisted camelCase key; fall back to API 'specific' → 'specific_pages'
+	...(raw.targetPages !== undefined
+		? { targetPages: raw.targetPages as FormSettings['targetPages'] }
+		: raw.target_pages !== undefined && {
+			targetPages: raw.target_pages === 'specific'
+				? 'specific_pages'
+				: raw.target_pages as FormSettings['targetPages'],
+		}
+	),
 	...(raw.target_page_ids    !== undefined && { targetPageIds:      raw.target_page_ids    as number[] }),
+	...(raw.targetPostIds      !== undefined && { targetPostIds:      raw.targetPostIds      as number[] }),
 	...(raw.trigger_type       !== undefined && { triggerType:        raw.trigger_type       as FormSettings['triggerType'] }),
 	...(raw.delay_value        !== undefined && { delayValue:         raw.delay_value        as number }),
 	...(raw.delay_unit         !== undefined && { delayUnit:          raw.delay_unit         as FormSettings['delayUnit'] }),
@@ -597,8 +615,7 @@ const FormBuilder = () => {
 
  			<div className="flex flex-1 overflow-hidden">
  				<div className="flex flex-1 flex-col overflow-hidden">
- 					{/* Stepper nav */}
-					<div className={cn(
+ 					<div className={cn(
 						'relative flex h-[72px] shrink-0 items-center justify-center bg-white px-8 transition-shadow duration-150',
 						((canvasScrolled && activeTab === 'builder') || (settingsScrolled && activeTab === 'settings')) && 'shadow-[0_1px_0_0_hsl(var(--border)),0_4px_10px_-2px_rgba(0,0,0,0.06)]',
 					)}>

@@ -9,10 +9,11 @@ import {
 } from '@/components/ui/select';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { cn } from '@/lib/utils';
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query';
 import { __ } from '@wordpress/i18n';
-import { Check, FileText, Lock, Loader2, Search, X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { FileText, Lock, Loader2, Search, X } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type {
 	DisplayFrequency,
 	DismissUnit,
@@ -163,116 +164,211 @@ const NumberWithUnit = <U extends string>({
 	</div>
 );
 
-/* ── Page picker ──────────────────────────────────────────────────────── */
+/* ── Content picker (pages or posts, infinite scroll, portal dropdown) ── */
 
-const PagePicker = ({
+const ContentPicker = ({
 	selectedIds,
 	onChange,
+	postType,
+	placeholder,
 }: {
-	selectedIds: number[];
-	onChange:    (ids: number[]) => void;
+	selectedIds:  number[];
+	onChange:     (ids: number[]) => void;
+	postType:     'page' | 'post';
+	placeholder:  string;
 }) => {
 	const [query,   setQuery]   = useState('');
 	const [open,    setOpen]    = useState(false);
-	const [pageMap, setPageMap] = useState<Record<number, string>>({});
-	const wrapperRef            = useRef<HTMLDivElement>(null);
-	const debouncedQuery        = useDebouncedValue(query, 300);
+	const [itemMap, setItemMap] = useState<Record<number, ContentSearchItem>>({});
+	const [dropPos, setDropPos] = useState<React.CSSProperties>({});
 
-	const { data, isFetching } = useQuery({
-		queryKey: ['content-search', debouncedQuery],
-		queryFn:  () => surveysApi.contentSearch({ search: debouncedQuery, per_page: 12 }),
-		enabled:  open,
+	const wrapperRef  = useRef<HTMLDivElement>(null);
+	const inputRef    = useRef<HTMLInputElement>(null);
+	const listRef     = useRef<HTMLDivElement>(null);
+	const sentinelRef = useRef<HTMLDivElement>(null);
+
+	const debouncedQuery = useDebouncedValue(query, 300);
+
+	const {
+		data,
+		isFetching,
+		isFetchingNextPage,
+		fetchNextPage,
+		hasNextPage,
+	} = useInfiniteQuery({
+		queryKey:         ['content-search', postType, debouncedQuery],
+		queryFn:          ({ pageParam }) =>
+			surveysApi.contentSearch({ search: debouncedQuery, post_type: postType, page: pageParam as number, per_page: 20 }),
+		initialPageParam: 1,
+		getNextPageParam: (lastPage, allPages) => {
+			const fetched = allPages.reduce((n, p) => n + p.items.length, 0);
+			return fetched < lastPage.total ? allPages.length + 1 : undefined;
+		},
 		placeholderData: keepPreviousData,
+		enabled: open,
 	});
 
-	const results = data?.items ?? [];
+	const results = data?.pages.flatMap((p) => p.items) ?? [];
 
+	/* ── Compute portal dropdown position from input rect ── */
+	const updateDropPos = useCallback(() => {
+		if (!inputRef.current) return;
+		const rect = inputRef.current.getBoundingClientRect();
+		setDropPos({
+			position: 'fixed',
+			top:      rect.bottom + 4,
+			left:     rect.left,
+			width:    rect.width,
+			zIndex:   100001,
+		});
+	}, []);
+
+	/* ── Open / reposition ── */
+	useEffect(() => {
+		if (!open) return;
+		updateDropPos();
+		window.addEventListener('scroll', updateDropPos, true);
+		window.addEventListener('resize', updateDropPos);
+		return () => {
+			window.removeEventListener('scroll', updateDropPos, true);
+			window.removeEventListener('resize', updateDropPos);
+		};
+	}, [open, updateDropPos]);
+
+	/* ── Close on outside click ── */
 	useEffect(() => {
 		if (!open) return;
 		const handle = (e: MouseEvent) => {
-			if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
-				setOpen(false);
-			}
+			const target = e.target as Node;
+			const inWrapper = wrapperRef.current?.contains(target);
+			const inList    = listRef.current?.contains(target);
+			if (!inWrapper && !inList) setOpen(false);
 		};
 		document.addEventListener('mousedown', handle);
 		return () => document.removeEventListener('mousedown', handle);
 	}, [open]);
 
+	/* ── IntersectionObserver sentinel for infinite scroll ── */
+	useEffect(() => {
+		const sentinel = sentinelRef.current;
+		const list     = listRef.current;
+		if (!sentinel || !list) return;
+		const observer = new IntersectionObserver(
+			(entries) => {
+				if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+					void fetchNextPage();
+				}
+			},
+			{ root: list, threshold: 0.1 },
+		);
+		observer.observe(sentinel);
+		return () => observer.disconnect();
+	}, [hasNextPage, isFetchingNextPage, fetchNextPage, open, results.length]);
+
 	const select = (item: ContentSearchItem) => {
 		if (selectedIds.includes(item.id)) return;
-		setPageMap((prev) => ({ ...prev, [item.id]: item.title }));
+		setItemMap((prev) => ({ ...prev, [item.id]: item }));
 		onChange([...selectedIds, item.id]);
-		setQuery('');
+		// Don't clear query — keeps the result list stable and focus intact
+		inputRef.current?.focus();
 	};
 
 	const remove = (id: number) => onChange(selectedIds.filter((i) => i !== id));
 
+	const isFirstLoad = isFetching && !isFetchingNextPage && results.length === 0;
+
+	const visible = results.filter((item) => !selectedIds.includes(item.id));
+
+	const dropdown = open && (
+		<div
+			ref={listRef}
+			style={dropPos}
+			className="overflow-hidden rounded-lg border border-border bg-white shadow-lg"
+			onMouseDown={(e) => e.preventDefault()}
+		>
+			<div className="max-h-52 overflow-y-auto overflow-x-hidden p-1">
+				{isFirstLoad ? (
+					<div className="flex items-center justify-center py-4">
+						<Loader2 className="size-4 animate-spin text-muted-foreground/50" />
+					</div>
+				) : visible.length === 0 ? (
+					<p className="px-2 py-1.5 text-[14px] text-muted-foreground">
+						{results.length > 0
+							? __('All results already selected.', 'all-feedback')
+							: query
+								? __('No results found.', 'all-feedback')
+								: __('Type to search…', 'all-feedback')
+						}
+					</p>
+				) : (
+					<>
+						{visible.map((item) => (
+							<button
+								key={item.id}
+								type="button"
+								onClick={() => select(item)}
+								className="relative flex w-full cursor-pointer select-none items-center gap-2 rounded-md py-1.5 pl-2 pr-8 text-[14px] text-foreground outline-none transition-colors hover:bg-accent"
+							>
+								<span className="min-w-0 flex-1 truncate text-left">{item.title}</span>
+							</button>
+						))}
+						<div ref={sentinelRef} className="h-1" />
+						{isFetchingNextPage && (
+							<div className="flex items-center justify-center py-2">
+								<Loader2 className="size-3.5 animate-spin text-muted-foreground/50" />
+							</div>
+						)}
+					</>
+				)}
+			</div>
+		</div>
+	);
+
 	return (
 		<div ref={wrapperRef} className="space-y-2">
+			{/* Selected chips */}
 			{selectedIds.length > 0 && (
 				<div className="flex flex-wrap gap-1.5">
-					{selectedIds.map((id) => (
-						<span
-							key={id}
-							className="flex items-center gap-1.5 rounded-lg border border-border/60 bg-muted/40 px-2.5 py-1 text-[12px] text-foreground/80"
-						>
-							<FileText className="size-3 shrink-0 text-muted-foreground/60" />
-							<span className="max-w-[160px] truncate">{pageMap[id] ?? `#${id}`}</span>
-							<button
-								type="button"
-								onClick={() => remove(id)}
-								className="ml-0.5 flex size-3.5 shrink-0 items-center justify-center rounded-full text-muted-foreground/60 hover:text-destructive"
+					{selectedIds.map((id) => {
+						const item = itemMap[id];
+						return (
+							<span
+								key={id}
+								className="flex items-center gap-1.5 rounded-lg border border-border/60 bg-muted/40 px-2.5 py-1 text-[12px] text-foreground/80"
 							>
-								<X className="size-3" />
-							</button>
-						</span>
-					))}
+								<FileText className="size-3 shrink-0 text-muted-foreground/60" />
+								<span className="max-w-[140px] truncate">{item?.title ?? `#${id}`}</span>
+								<button
+									type="button"
+									onClick={() => remove(id)}
+									className="ml-0.5 flex size-3.5 shrink-0 items-center justify-center rounded-full text-muted-foreground/60 hover:text-destructive"
+								>
+									<X className="size-3" />
+								</button>
+							</span>
+						);
+					})}
 				</div>
 			)}
 
+			{/* Search input */}
 			<div className="relative">
 				<Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground/50" />
 				<input
+					ref={inputRef}
 					value={query}
 					onChange={(e) => setQuery(e.target.value)}
-					onFocus={() => setOpen(true)}
-					placeholder={__('Search pages & posts…', 'all-feedback')}
+					onFocus={() => { updateDropPos(); setOpen(true); }}
+					placeholder={placeholder}
 					className={cn(inputCls, 'pl-9 pr-8')}
 				/>
-				{isFetching && (
+				{isFetching && !isFetchingNextPage && (
 					<Loader2 className="absolute right-3 top-1/2 size-3.5 -translate-y-1/2 animate-spin text-muted-foreground/50" />
 				)}
-				{open && (
-					<div className="absolute left-0 right-0 top-full z-20 mt-1 max-h-52 overflow-y-auto overflow-x-hidden rounded-xl border border-border bg-white shadow-[0_4px_16px_rgba(0,0,0,0.10)]">
-						{results.length === 0 && !isFetching ? (
-							<p className="px-4 py-3 text-[12px] text-muted-foreground/70">
-								{query ? __('No results found.', 'all-feedback') : __('Start typing to search…', 'all-feedback')}
-							</p>
-						) : results.map((item) => {
-							const isSelected = selectedIds.includes(item.id);
-							return (
-								<button
-									key={item.id}
-									type="button"
-									onClick={() => select(item)}
-									disabled={isSelected}
-									className="flex w-full items-center gap-3 px-4 py-2 text-left transition-colors hover:bg-muted/50 disabled:pointer-events-none disabled:opacity-50"
-								>
-									<FileText className="size-3.5 shrink-0 text-muted-foreground/50" />
-									<div className="min-w-0 flex-1">
-										<p className="truncate text-[13px] text-foreground">{item.title}</p>
-										<p className="truncate text-[11px] text-muted-foreground/60">{item.url}</p>
-									</div>
-									<span className="shrink-0 rounded bg-muted/60 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground/60">
-										{item.type}
-									</span>
-									{isSelected && <Check className="size-3.5 shrink-0 text-primary" />}
-								</button>
-							);
-						})}
-					</div>
-				)}
 			</div>
+
+			{/* Portal dropdown — escapes overflow-y-auto scroll container */}
+			{typeof document !== 'undefined' && createPortal(dropdown, document.body)}
 		</div>
 	);
 };
@@ -280,8 +376,9 @@ const PagePicker = ({
 /* ── Options ──────────────────────────────────────────────────────────── */
 
 const PAGE_OPTIONS: { value: TargetPages; label: string }[] = [
-	{ value: 'all',      label: __('All pages',      'all-feedback') },
-	{ value: 'specific', label: __('Specific pages', 'all-feedback') },
+	{ value: 'all',            label: __('All',            'all-feedback') },
+	{ value: 'specific_pages', label: __('Specific Pages', 'all-feedback') },
+	{ value: 'specific_posts', label: __('Specific Posts', 'all-feedback') },
 ];
 
 const DISMISS_UNIT_OPTIONS: { value: DismissUnit; label: string }[] = [
@@ -399,21 +496,36 @@ const SettingsPanel = ({ settings, onChange, onScrollChange }: SettingsPanelProp
 							</SelectContent>
 						</Select>
 					</Row>
-					<Row label={__('Pages', 'all-feedback')}>
+					<Row label={__('Show on', 'all-feedback')}>
 						<Chips
 							options={PAGE_OPTIONS}
 							value={settings.targetPages}
 							onChange={(v) => update({ targetPages: v })}
 						/>
 					</Row>
-					<Collapse open={settings.targetPages === 'specific'}>
-						<Row label={__('Select pages', 'all-feedback')}>
-							<PagePicker
-								selectedIds={settings.targetPageIds}
-								onChange={(ids) => update({ targetPageIds: ids })}
-							/>
-						</Row>
-					</Collapse>
+					{/* Both collapses share one wrapper so space-y-4 adds gap only once */}
+					<div>
+						<Collapse open={settings.targetPages === 'specific_pages'}>
+							<Row label={__('Select pages', 'all-feedback')}>
+								<ContentPicker
+									postType="page"
+									selectedIds={settings.targetPageIds}
+									onChange={(ids) => update({ targetPageIds: ids })}
+									placeholder={__('Search pages…', 'all-feedback')}
+								/>
+							</Row>
+						</Collapse>
+						<Collapse open={settings.targetPages === 'specific_posts'}>
+							<Row label={__('Select posts', 'all-feedback')}>
+								<ContentPicker
+									postType="post"
+									selectedIds={settings.targetPostIds}
+									onChange={(ids) => update({ targetPostIds: ids })}
+									placeholder={__('Search posts…', 'all-feedback')}
+								/>
+							</Row>
+						</Collapse>
+					</div>
 				</Card>
 
 				{/* ── Display Trigger (PRO) ──────────────────────────────── */}
