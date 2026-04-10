@@ -37,7 +37,7 @@ export type DisplayFrequency = 'once' | 'until_submit';
 export type DismissUnit      = 'hours' | 'days' | 'weeks';
 
 export interface FormSettings {
-	/* Original fields */
+
 	thankYouEnabled:     boolean;
 	thankYouTitle:       string;
 	thankYouDescription: string;
@@ -48,7 +48,6 @@ export interface FormSettings {
 	targetPages:         TargetPages;
 	targetUrls:          string;
 
-	/* New API fields */
 	userState:        UserState;
 	targetPageIds:    { id: number; title: string }[];
 	targetPostIds:    { id: number; title: string }[];

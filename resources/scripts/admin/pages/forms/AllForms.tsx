@@ -47,8 +47,6 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import type { SurveyStatus } from '@/admin/api/surveys';
 
-/* ── Status config ───────────────────────────────────────────────────────── */
-
 const STATUS_CONFIG: Record<SurveyStatus, {
 	variant: 'success' | 'secondary' | 'outline' | 'warning' | 'info' | 'danger';
 	label:   string;
@@ -72,10 +70,8 @@ const STATUS_FILTER_OPTIONS = [
 
 const PER_PAGE_OPTIONS = [10, 25, 50];
 
-/* ── Cell text ───────────────────────────────────────────────────────────── */
 const cellCls = 'text-[14px] font-normal leading-[20px] text-[oklch(0.446_0.03_256.802)]';
 
-/* ── Skeleton row ────────────────────────────────────────────────────────── */
 const SkeletonRow = () => (
 	<tr className="border-b border-border">
 		<td className="w-12 px-4 py-5">
@@ -105,12 +101,10 @@ const SkeletonRow = () => (
 	</tr>
 );
 
-/* ── AllForms ────────────────────────────────────────────────────────────── */
 const AllForms = () => {
 	const navigate    = useNavigate();
 	const queryClient = useQueryClient();
 
-	/* ── Filters / sort / pagination ───────────────────────────────────── */
 	const [search,  setSearch]  = useState('');
 	const debouncedSearch       = useDebouncedValue(search, 300);
 	const [status,  setStatus]  = useState('all');
@@ -119,13 +113,11 @@ const AllForms = () => {
 	const [orderby, setOrderby] = useState('created_at');
 	const [order,   setOrder]   = useState<'ASC' | 'DESC'>('DESC');
 
-	/* ── Selection / action UI state ───────────────────────────────────── */
 	const [checked,           setChecked]           = useState<number[]>([]);
 	const [confirmDeleteId,   setConfirmDeleteId]   = useState<number | null>(null);
 	const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
 	const [confirmBulkTrash,  setConfirmBulkTrash]  = useState(false);
 
-	/* ── Query ─────────────────────────────────────────────────────────── */
 	const queryParams = {
 		page,
 		per_page: perPage,
@@ -144,10 +136,8 @@ const AllForms = () => {
 	const total      = data?.total   ?? 0;
 	const totalPages = Math.max(1, Math.ceil(total / perPage));
 
-	/* ── Reset page when debounced search settles ─────────────────────── */
 	useEffect(() => { setPage(1); }, [debouncedSearch]);
 
-	/* ── Sort helper ───────────────────────────────────────────────────── */
 	const handleSort = (column: string) => {
 		if (orderby === column) {
 			setOrder((prev) => (prev === 'DESC' ? 'ASC' : 'DESC'));
@@ -158,10 +148,6 @@ const AllForms = () => {
 		setPage(1);
 	};
 
-	/**
-	 * Unified column header — uses <span role="button"> for sortable columns
-	 * to avoid WordPress admin's button CSS reset overriding font styles.
-	 */
 	const colHeadCls = 'flex items-center gap-1 text-[12px] font-semibold uppercase tracking-wide leading-[16px] select-none text-[oklch(0.446_0.03_256.802)]';
 
 	const ColHead = ({ column, label, sortable = false }: { column?: string; label: string; sortable?: boolean }) => {
@@ -186,20 +172,17 @@ const AllForms = () => {
 		);
 	};
 
-	/* ── Selection ─────────────────────────────────────────────────────── */
 	const allChecked  = surveys.length > 0 && surveys.every((s) => checked.includes(s.id));
 	const someChecked = checked.length > 0 && !allChecked;
 	const toggleAll   = () => setChecked(allChecked ? [] : surveys.map((s) => s.id));
 	const toggleOne   = (id: number) =>
 		setChecked((prev) => prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]);
 
-	/* ── Derive bulk action visibility from the actual selection ───────── */
 	const checkedSurveys      = surveys.filter((s) => checked.includes(s.id));
 	const allSelectedTrashed  = checkedSurveys.length > 0 && checkedSurveys.every((s) => s.status === 'trashed');
 	const anySelectedTrashed  = checkedSurveys.some((s) => s.status === 'trashed');
 	const anySelectedNotTrashed = checkedSurveys.some((s) => s.status !== 'trashed');
 
-	/* ── Create mutation ───────────────────────────────────────────────── */
 	const createMutation = useMutation({
 		mutationFn: () => surveysApi.create({ title: __('Untitled Form', 'all-feedback') }),
 		onSuccess: (survey) => {
@@ -207,7 +190,6 @@ const AllForms = () => {
 		},
 	});
 
-	/* ── Single delete mutation (permanent) ────────────────────────────── */
 	const deleteMutation = useMutation({
 		mutationFn: (id: number) => surveysApi.delete(id),
 		onSuccess: () => {
@@ -222,7 +204,6 @@ const AllForms = () => {
 		},
 	});
 
-	/* ── Single trash mutation (soft-delete) ───────────────────────────── */
 	const trashMutation = useMutation({
 		mutationFn: (id: number) => surveysApi.trash(id),
 		onSuccess: () => {
@@ -234,7 +215,6 @@ const AllForms = () => {
 		},
 	});
 
-	/* ── Restore mutation (trashed → draft) ────────────────────────────── */
 	const restoreMutation = useMutation({
 		mutationFn: (id: number) => surveysApi.update(id, { status: 'draft' }),
 		onSuccess: () => {
@@ -246,7 +226,6 @@ const AllForms = () => {
 		},
 	});
 
-	/* ── Bulk restore mutation ──────────────────────────────────────────── */
 	const bulkRestoreMutation = useMutation({
 		mutationFn: (ids: number[]) => Promise.all(ids.map((id) => surveysApi.update(id, { status: 'draft' }))),
 		onSuccess: () => {
@@ -259,7 +238,6 @@ const AllForms = () => {
 		},
 	});
 
-	/* ── Clone mutation ────────────────────────────────────────────────── */
 	const cloneMutation = useMutation({
 		mutationFn: (id: number) => surveysApi.duplicate(id),
 		onSuccess: () => {
@@ -271,7 +249,6 @@ const AllForms = () => {
 		},
 	});
 
-	/* ── Bulk delete mutation (permanent) ──────────────────────────────── */
 	const bulkDeleteMutation = useMutation({
 		mutationFn: (ids: number[]) => surveysApi.bulkDelete(ids),
 		onSuccess: (result) => {
@@ -290,7 +267,6 @@ const AllForms = () => {
 		},
 	});
 
-	/* ── Bulk trash mutation ────────────────────────────────────────────── */
 	const bulkTrashMutation = useMutation({
 		mutationFn: (ids: number[]) => surveysApi.bulkTrash(ids),
 		onSuccess: (result) => {
@@ -312,7 +288,7 @@ const AllForms = () => {
 	return (
 		<div className="p-5 md:p-6">
 
-			{/* Single-delete confirm */}
+			{}
 			<ConfirmDialog
 				open={confirmDeleteId !== null}
 				onOpenChange={(open) => { if (!open && !deleteMutation.isPending) setConfirmDeleteId(null); }}
@@ -324,7 +300,7 @@ const AllForms = () => {
 				isPending={deleteMutation.isPending}
 			/>
 
-			{/* Bulk-delete confirm */}
+			{}
 			<ConfirmDialog
 				open={confirmBulkDelete}
 				onOpenChange={(open) => { if (!open && !bulkDeleteMutation.isPending) setConfirmBulkDelete(false); }}
@@ -336,7 +312,7 @@ const AllForms = () => {
 				isPending={bulkDeleteMutation.isPending}
 			/>
 
-			{/* Bulk-trash confirm */}
+			{}
 			<ConfirmDialog
 				open={confirmBulkTrash}
 				onOpenChange={(open) => { if (!open && !bulkTrashMutation.isPending) setConfirmBulkTrash(false); }}
@@ -348,7 +324,7 @@ const AllForms = () => {
 				isPending={bulkTrashMutation.isPending}
 			/>
 
-			{/* ── Toolbar ──────────────────────────────────────────────── */}
+			{}
 			<div className="mb-4 flex flex-wrap items-center gap-3 py-1">
 				<div className="relative w-full sm:w-[260px]">
 					<svg
@@ -388,13 +364,13 @@ const AllForms = () => {
 				</div>
 			</div>
 
-			{/* ── Table card ───────────────────────────────────────────── */}
+			{}
 			<div className="rounded-xl border border-border bg-card">
 				<div className="overflow-x-auto">
 					<table className="w-full table-fixed">
 						<thead>
 							<tr className="border-b border-border bg-muted/30">
-								{/* Checkbox — fixed narrow */}
+								{}
 								<th className="w-12 px-4 py-4 text-left">
 									<Checkbox
 										checked={someChecked ? 'indeterminate' : allChecked}
@@ -402,27 +378,27 @@ const AllForms = () => {
 										disabled={isLoading || surveys.length === 0}
 									/>
 								</th>
-								{/* ID — fixed narrow */}
+								{}
 								<th className="w-16 px-4 py-4 text-left">
 									<ColHead column="id" label={__('ID', 'all-feedback')} sortable />
 								</th>
-								{/* Form Name — capped width */}
+								{}
 								<th className="w-[220px] px-4 py-4 text-left">
 									<ColHead label={__('Form Name', 'all-feedback')} />
 								</th>
-								{/* Responses — fixed */}
+								{}
 								<th className="w-28 px-4 py-4 text-left">
 									<ColHead column="response_count" label={__('Responses', 'all-feedback')} sortable />
 								</th>
-								{/* Created — fixed */}
+								{}
 								<th className="w-36 px-4 py-4 text-left">
 									<ColHead column="created_at" label={__('Created', 'all-feedback')} sortable />
 								</th>
-								{/* Status — fixed */}
+								{}
 								<th className="w-32 px-4 py-4 text-left">
 									<ColHead label={__('Status', 'all-feedback')} />
 								</th>
-								{/* Actions — minimal fixed */}
+								{}
 								<th className="w-24 px-4 py-4 text-left">
 									<ColHead label={__('Actions', 'all-feedback')} />
 								</th>
@@ -430,10 +406,10 @@ const AllForms = () => {
 						</thead>
 
 						<tbody>
-							{/* Loading */}
+							{}
 							{isLoading && Array.from({ length: 5 }, (_, i) => <SkeletonRow key={i} />)}
 
-							{/* Error */}
+							{}
 							{isError && !isLoading && (
 								<tr><td colSpan={7}>
 									<EmptyState
@@ -444,7 +420,7 @@ const AllForms = () => {
 								</td></tr>
 							)}
 
-							{/* Empty */}
+							{}
 							{!isLoading && !isError && surveys.length === 0 && (
 								<tr><td colSpan={7}>
 									<EmptyState
@@ -461,7 +437,7 @@ const AllForms = () => {
 								</td></tr>
 							)}
 
-							{/* Data rows */}
+							{}
 							{!isLoading && !isError && surveys.map((survey) => {
 								const statusCfg = STATUS_CONFIG[survey.status] ?? STATUS_CONFIG.draft;
 								const isSelected = checked.includes(survey.id);
@@ -474,7 +450,7 @@ const AllForms = () => {
 											isSelected ? 'bg-primary/[0.03]' : 'hover:bg-muted/20',
 										)}
 									>
-										{/* Checkbox */}
+										{}
 										<td className="w-12 px-4 py-5">
 											<Checkbox
 												checked={isSelected}
@@ -482,14 +458,14 @@ const AllForms = () => {
 											/>
 										</td>
 
-										{/* ID */}
+										{}
 										<td className="w-16 px-4 py-5">
 											<span className={cn(cellCls, 'tabular-nums text-foreground/40')}>
 												#{survey.id}
 											</span>
 										</td>
 
-										{/* Form name */}
+										{}
 										<td className="w-[220px] px-4 py-5">
 											<button
 												type="button"
@@ -505,7 +481,7 @@ const AllForms = () => {
 											</button>
 										</td>
 
-										{/* Responses */}
+										{}
 										<td className="w-28 px-4 py-5">
 											{survey.response_count > 0 ? (
 												<button
@@ -523,14 +499,14 @@ const AllForms = () => {
 											)}
 										</td>
 
-										{/* Created date */}
+										{}
 										<td className="w-36 px-4 py-5">
 											<span className={cellCls}>
 												{format(new Date(survey.created_at), 'MMM d, yyyy')}
 											</span>
 										</td>
 
-										{/* Status */}
+										{}
 										<td className="w-32 px-4 py-5">
 											<Badge variant={statusCfg.variant}>
 												<span className={cn('size-1.5 rounded-full', statusCfg.dot)} />
@@ -538,10 +514,10 @@ const AllForms = () => {
 											</Badge>
 										</td>
 
-										{/* Actions */}
+										{}
 										<td className="w-24 px-4 py-5">
 											<div className="flex items-center gap-1">
-												{/* Edit button — desktop only */}
+												{}
 												<button
 													type="button"
 													onClick={() => void navigate({
@@ -554,7 +530,7 @@ const AllForms = () => {
 													{__('Edit', 'all-feedback')}
 												</button>
 
-												{/* More menu */}
+												{}
 												<DropdownMenu>
 													<DropdownMenuTrigger asChild>
 														<button
@@ -566,7 +542,7 @@ const AllForms = () => {
 														</button>
 													</DropdownMenuTrigger>
 													<DropdownMenuContent>
-														{/* Edit — mobile only */}
+														{}
 														<DropdownMenuItem
 															className="max-sm:flex sm:hidden"
 															onSelect={() => void navigate({
@@ -577,7 +553,7 @@ const AllForms = () => {
 															{__('Edit', 'all-feedback')}
 														</DropdownMenuItem>
 
-														{/* Restore — only for trashed forms */}
+														{}
 														{survey.status === 'trashed' && (
 															<DropdownMenuItem
 																onSelect={() => restoreMutation.mutate(survey.id)}
@@ -591,7 +567,7 @@ const AllForms = () => {
 															</DropdownMenuItem>
 														)}
 
-														{/* Clone */}
+														{}
 														<DropdownMenuItem
 															onSelect={() => cloneMutation.mutate(survey.id)}
 															disabled={cloneMutation.isPending}
@@ -603,7 +579,7 @@ const AllForms = () => {
 															{__('Clone', 'all-feedback')}
 														</DropdownMenuItem>
 
-														{/* Trash — hidden when already trashed */}
+														{}
 														{survey.status !== 'trashed' && (
 															<DropdownMenuItem
 																onSelect={() => trashMutation.mutate(survey.id)}
@@ -617,7 +593,7 @@ const AllForms = () => {
 															</DropdownMenuItem>
 														)}
 
-														{/* Delete — only for trashed forms */}
+														{}
 														{survey.status === 'trashed' && (
 															<DropdownMenuItem
 																destructive
@@ -639,7 +615,7 @@ const AllForms = () => {
 				</div>
 			</div>
 
-			{/* ── Pagination ───────────────────────────────────────────── */}
+			{}
 			<Pagination
 				className="mt-6"
 				page={page}
@@ -652,7 +628,7 @@ const AllForms = () => {
 				onPerPageChange={(n) => { setPerPage(n); setPage(1); }}
 			/>
 
-			{/* ── Bulk-action bar ───────────────────────────────────────── */}
+			{}
 			<BulkActionBar
 				count={checked.length}
 				showTrash={anySelectedNotTrashed}

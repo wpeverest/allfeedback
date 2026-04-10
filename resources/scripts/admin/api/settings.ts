@@ -1,13 +1,4 @@
-/**
- * api/settings.ts — Settings resource API
- *
- * Mirrors the SettingsManager::DEFAULTS keys on the PHP side.
- * Extend the Settings type as you add more options.
- */
-
 import { request } from './client';
-
-// ── Types ──────────────────────────────────────────────────────────────
 
 export type Settings = {
 	plugin_name:   string;
@@ -15,8 +6,6 @@ export type Settings = {
 	sample_bool:   boolean;
 	sample_int:    number;
 };
-
-// ── API object ─────────────────────────────────────────────────────────
 
 export const settingsApi = {
 	get: () =>

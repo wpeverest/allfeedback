@@ -26,7 +26,6 @@ const TABS: { value: BuilderTab; label: string; Icon: typeof LayoutGrid; pro?: b
 	{ value: 'styling',  label: __('Styling',  'all-feedback'), Icon: Palette,   pro: true },
 ];
 
-/** Deserialize API form_schema back into builder FormSection[] */
 const deserializeFormSchema = (schema: SurveyFormSchema | null): FormSection[] => {
 	if (!schema) return [];
 	return schema.sections.map((section) => ({
@@ -49,15 +48,14 @@ const deserializeFormSchema = (schema: SurveyFormSchema | null): FormSection[] =
 	}));
 };
 
-/** Serialize FormSettings (camelCase) → API settings object (snake_case) */
 const serializeSettings = (s: FormSettings): Record<string, unknown> => ({
 	submit_label:        s.submitLabel,
 	next_label:          s.nextLabel,
 	back_label:          s.backLabel,
 	user_state:          s.userState,
-	// Map specific_pages / specific_posts → 'specific' for the API
+
 	target_pages:        s.targetPages === 'all' ? 'all' : 'specific',
-	// API only needs plain IDs — extract from {id,title} objects
+
 	target_page_ids:     s.targetPages === 'specific_pages'
 		? s.targetPageIds.map((p) => p.id)
 		: s.targetPages === 'specific_posts'
@@ -71,25 +69,24 @@ const serializeSettings = (s: FormSettings): Record<string, unknown> => ({
 	max_impressions:     s.maxImpressions,
 	dismiss_wait_value:  s.dismissWaitValue,
 	dismiss_wait_unit:   s.dismissWaitUnit,
-	// Non-API fields stored as-is
+
 	thankYouEnabled:     s.thankYouEnabled,
 	thankYouTitle:       s.thankYouTitle,
 	thankYouDescription: s.thankYouDescription,
 	targetDevice:        s.targetDevice,
 	targetUrls:          s.targetUrls,
-	// Persist the detailed mode + full {id,title} objects so titles survive reload
+
 	targetPages:         s.targetPages,
 	targetPageIds:       s.targetPageIds,
 	targetPostIds:       s.targetPostIds,
 });
 
-/** Deserialize API settings object (snake_case) → FormSettings (camelCase) */
 const deserializeSettings = (raw: Record<string, unknown>): Partial<FormSettings> => ({
 	...(raw.submit_label       !== undefined && { submitLabel:        raw.submit_label       as string }),
 	...(raw.next_label         !== undefined && { nextLabel:          raw.next_label         as string }),
 	...(raw.back_label         !== undefined && { backLabel:          raw.back_label         as string }),
 	...(raw.user_state         !== undefined && { userState:          raw.user_state         as FormSettings['userState'] }),
-	// Prefer our persisted camelCase key; fall back to API 'specific' → 'specific_pages'
+
 	...(raw.targetPages !== undefined
 		? { targetPages: raw.targetPages as FormSettings['targetPages'] }
 		: raw.target_pages !== undefined && {
@@ -98,7 +95,7 @@ const deserializeSettings = (raw: Record<string, unknown>): Partial<FormSettings
 				: raw.target_pages as FormSettings['targetPages'],
 		}
 	),
-	// Prefer persisted {id,title} objects; fall back to bare IDs (title-less, legacy)
+
 	...(raw.targetPageIds !== undefined
 		? { targetPageIds: raw.targetPageIds as FormSettings['targetPageIds'] }
 		: raw.target_page_ids !== undefined && {
@@ -114,7 +111,7 @@ const deserializeSettings = (raw: Record<string, unknown>): Partial<FormSettings
 	...(raw.max_impressions    !== undefined && { maxImpressions:     raw.max_impressions    as number }),
 	...(raw.dismiss_wait_value !== undefined && { dismissWaitValue:   raw.dismiss_wait_value as number }),
 	...(raw.dismiss_wait_unit  !== undefined && { dismissWaitUnit:    raw.dismiss_wait_unit  as FormSettings['dismissWaitUnit'] }),
-	// Non-API fields stored as-is
+
 	...(raw.thankYouEnabled     !== undefined && { thankYouEnabled:     raw.thankYouEnabled     as boolean }),
 	...(raw.thankYouTitle       !== undefined && { thankYouTitle:       raw.thankYouTitle       as string }),
 	...(raw.thankYouDescription !== undefined && { thankYouDescription: raw.thankYouDescription as string }),
@@ -122,7 +119,6 @@ const deserializeSettings = (raw: Record<string, unknown>): Partial<FormSettings
 	...(raw.targetUrls          !== undefined && { targetUrls:          raw.targetUrls          as string }),
 });
 
-/** Serialize builder sections into the API form_schema shape */
 const serializeFormSchema = (sections: FormSection[]): SurveyFormSchema => ({
 	version:  '1.0',
 	sections: sections.map((section) => ({
@@ -154,10 +150,6 @@ const FormBuilder = () => {
 
 	const [activeTab, setActiveTab] = useState<BuilderTab>('builder');
 
-	/* ── Remote survey data ─────────────────────────────────────────── */
-	// The route loader (builder.index.tsx) pre-fetches this into cache before the
-	// component mounts, so surveyData is available on the very first render and
-	// there is no async timing gap between mount and data availability.
 	const { data: surveyData } = useQuery({
 		...surveyQuery(formId!),
 		enabled: !!formId,
@@ -165,7 +157,6 @@ const FormBuilder = () => {
 
 	const [surveyStatus, setSurveyStatus] = useState<SurveyStatus>('draft');
 
-	/* track which submit action is pending: publish or draft */
 	const submitActionRef = useRef<'publish' | 'draft'>('draft');
 
  	const form = useForm({
@@ -186,7 +177,7 @@ const FormBuilder = () => {
 			const updated = await surveysApi.update(formId, data);
 			setSurveyStatus(updated.status);
 			setIsDirty(false);
-			// Keep the individual survey cache fresh and invalidate the list.
+
 			queryClient.setQueryData(surveyQuery(formId).queryKey, updated);
 			void queryClient.invalidateQueries({ queryKey: ['surveys'] });
 			toast.success(
@@ -223,13 +214,9 @@ const FormBuilder = () => {
 	const [publishMenuOpen,   setPublishMenuOpen]   = useState(false);
 	const [shortcutsOpen,     setShortcutsOpen]     = useState(false);
 
-	/* ── Undo / Redo history ────────────────────────────────────────── */
 	const historyRef                        = useRef<FormSection[][]>([[]]);
 	const [historyIdx, setHistoryIdx]       = useState(0);
 
-	/* ── Populate form from API data ────────────────────────────────── */
-	// The ref guards against re-initialisation if surveyData reference changes
-	// (e.g. after a save that updates the query cache).
 	const dataInitializedRef = useRef(false);
 	useEffect(() => {
 		if (!surveyData || dataInitializedRef.current) return;
@@ -241,19 +228,17 @@ const FormBuilder = () => {
 		setSurveyStatus(surveyData.status);
 		historyRef.current = [loadedSections];
 		setHistoryIdx(0);
-		// keepDefaultValues: true prevents formApi.update() on the next render from
-		// detecting a defaultValues mismatch and wiping the store back to the static
-		// empty defaults passed to useForm().
+
 		form.reset(
 			{ title: surveyData.title, sections: loadedSections, settings: loadedSettings },
 			{ keepDefaultValues: true },
 		);
-		// For new forms, open title-edit mode once we have the real title.
+
 		if (isNewForm) {
 			titleSnapshotRef.current = surveyData.title;
 			setIsEditingTitle(true);
 		}
-	// eslint-disable-next-line react-hooks/exhaustive-deps
+
 	}, [surveyData]);
 	const canUndo                           = historyIdx > 0;
 	const canRedo                           = historyIdx < historyRef.current.length - 1;
@@ -425,7 +410,6 @@ const FormBuilder = () => {
 		setPublishMenuOpen(false);
 	};
 
-	/* ── Keyboard shortcuts ─────────────────────────────────────── */
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
 			const mod = e.ctrlKey || e.metaKey;
@@ -524,7 +508,7 @@ const FormBuilder = () => {
 					</div>
 				)}
 
- 				{/* Undo / Redo */}
+ 				{}
 				<div className="flex items-center gap-0.5">
 					<button
 						type="button"
@@ -546,7 +530,7 @@ const FormBuilder = () => {
 					</button>
 				</div>
 
-				{/* Keyboard shortcuts info */}
+				{}
 				<div ref={shortcutsRef} className="relative">
 					<button
 						type="button"

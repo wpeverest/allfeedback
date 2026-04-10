@@ -20,7 +20,6 @@ interface FieldTypeMenuProps {
 const FieldTypeMenu = ({ triggerRef, onSelect, onClose }: FieldTypeMenuProps) => {
 	const menuRef = useRef<HTMLDivElement>(null);
 
-	/* ── Outside-click handler ──────────────────────────────────────── */
 	useEffect(() => {
 		const handle = (e: MouseEvent) => {
 			const target = e.target as Node;
@@ -31,14 +30,12 @@ const FieldTypeMenu = ({ triggerRef, onSelect, onClose }: FieldTypeMenuProps) =>
 		return () => document.removeEventListener('mousedown', handle);
 	}, [onClose, triggerRef]);
 
-	/* ── Escape key ─────────────────────────────────────────────────── */
 	useEffect(() => {
 		const handle = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
 		document.addEventListener('keydown', handle);
 		return () => document.removeEventListener('keydown', handle);
 	}, [onClose]);
 
-	/* ── Floating-UI positioning (flip when near viewport bottom) ────── */
 	useEffect(() => {
 		const menu    = menuRef.current;
 		const trigger = triggerRef.current;
@@ -67,7 +64,7 @@ const FieldTypeMenu = ({ triggerRef, onSelect, onClose }: FieldTypeMenuProps) =>
 			className="field-type-menu overflow-hidden rounded-xl border border-border bg-white p-1.5 shadow-dropdown"
 			style={{ visibility: 'hidden' }}
 		>
-			{/* Free field types */}
+			{}
 			{FIELD_TYPES.map(({ type, label, Icon }) => (
 				<button
 					key={type}
@@ -80,10 +77,10 @@ const FieldTypeMenu = ({ triggerRef, onSelect, onClose }: FieldTypeMenuProps) =>
 				</button>
 			))}
 
-			{/* Pro divider */}
+			{}
 			<div className="my-1 border-t border-border/60" />
 
-			{/* Pro field types */}
+			{}
 			{PRO_FIELD_TYPES.map(({ label, description, Icon }) => (
 				<div
 					key={label}

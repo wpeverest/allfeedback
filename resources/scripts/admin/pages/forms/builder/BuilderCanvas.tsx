@@ -19,7 +19,6 @@ const BuilderCanvas = ({ sections, onSectionsChange, onScrollChange }: BuilderCa
 	const [sectionDropIdx, setSectionDropIdx] = useState<number | null>(null);
 	const [newSectionId,   setNewSectionId]   = useState<string | null>(null);
 
-	/* ── Field drag state (cross-section) ──────────────────────────────── */
 	const [fieldDrag, setFieldDrag] = useState<FieldPos | null>(null);
 	const [fieldDrop, setFieldDrop] = useState<FieldPos | null>(null);
 
@@ -66,7 +65,6 @@ const BuilderCanvas = ({ sections, onSectionsChange, onScrollChange }: BuilderCa
 		[sections, onSectionsChange],
 	);
 
-	/* ── Section drag handlers ─────────────────────────────────────────── */
 	const handleSectionDragStart = (idx: number) => setSectionDragIdx(idx);
 
 	const handleSectionDragOver = (e: React.DragEvent, idx: number) => {
@@ -94,7 +92,6 @@ const BuilderCanvas = ({ sections, onSectionsChange, onScrollChange }: BuilderCa
 		setSectionDropIdx(null);
 	};
 
-	/* ── Field drag handlers (shared across sections) ──────────────────── */
 	const handleFieldDragStart = (sectionIdx: number, fieldIdx: number) => {
 		setFieldDrag({ sectionIdx, fieldIdx });
 	};
@@ -129,7 +126,7 @@ const BuilderCanvas = ({ sections, onSectionsChange, onScrollChange }: BuilderCa
 			<div className="flex flex-1 items-center justify-center bg-background">
 				<div className="flex flex-col items-center">
 					<EmptyCanvasIllustration />
-					{/* Button immediately after SVG — arrow tip points here */}
+					{}
 					<Button onClick={addSection} className="-mt-1">
 						<Plus className="size-4" />
 						{__('Add a Section', 'all-feedback')}

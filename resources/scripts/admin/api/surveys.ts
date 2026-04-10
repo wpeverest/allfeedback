@@ -1,11 +1,5 @@
-/**
- * api/surveys.ts — Surveys resource API
- */
-
 import { request, toQuery } from './client';
 import type { PaginatedMeta, PaginationParams } from './client';
-
-// ── Types ──────────────────────────────────────────────────────────────
 
 export type SurveyStatus = 'draft' | 'published' | 'paused' | 'archived' | 'trashed';
 
@@ -145,8 +139,6 @@ export type ContentSearchParams = {
 	per_page?:  number;
 };
 
-// ── API object ─────────────────────────────────────────────────────────
-
 export const surveysApi = {
 	list: (params?: SurveyListParams) =>
 		request<SurveyListResponse>('/surveys' + toQuery(params)),
@@ -160,19 +152,15 @@ export const surveysApi = {
 	update: (id: number, data: UpdateSurveyData) =>
 		request<Survey>(`/surveys/${id}`, { method: 'PUT', data }),
 
-	/** Move a single survey to trash (status → trashed). Returns 409 if already trashed. */
 	trash: (id: number) =>
 		request<TrashSurveyResponse>(`/surveys/${id}/trash`, { method: 'DELETE' }),
 
-	/** Permanently delete a single survey. Must be trashed first — returns 409 otherwise. */
 	delete: (id: number) =>
 		request<DeleteSurveyResponse>(`/surveys/${id}/delete`, { method: 'DELETE' }),
 
-	/** Bulk-move surveys to trash. Already-trashed IDs are silently skipped. */
 	bulkTrash: (ids: number[]) =>
 		request<BulkTrashResponse>('/surveys/trash', { method: 'DELETE', data: { ids } }),
 
-	/** Bulk permanently delete surveys. Non-trashed IDs are silently skipped. */
 	bulkDelete: (ids: number[]) =>
 		request<BulkDeleteResponse>('/surveys/delete', { method: 'DELETE', data: { ids } }),
 

@@ -1,11 +1,3 @@
-/**
- * lib/query-client.ts
- *
- * Shared TanStack Query client.
- * Errors surfaced from queries and mutations are automatically
- * displayed via Sonner toast notifications.
- */
-
 import { keepPreviousData, Query, QueryCache, QueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -25,7 +17,7 @@ export const queryClient = new QueryClient({
 		queries: {
 			refetchOnWindowFocus: false,
 			retry:                false,
-			// Keep previous data visible while new data loads (no flash).
+
 			placeholderData:      keepPreviousData,
 		},
 		mutations: {

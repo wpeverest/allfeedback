@@ -14,8 +14,6 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import type { SurveyResponse } from '@/admin/api/surveys';
 
-/* ── Helpers ─────────────────────────────────────────────────────────────── */
-
 const cellCls = 'text-[13px] font-normal leading-[20px] text-[oklch(0.446_0.03_256.802)]';
 
 const getResponseSummary = (data: Record<string, unknown> | null): string => {
@@ -27,7 +25,6 @@ const getResponseSummary = (data: Record<string, unknown> | null): string => {
 	return String(first);
 };
 
-/* ── Skeleton row ────────────────────────────────────────────────────────── */
 const SkeletonRow = () => (
 	<tr className="border-b border-border">
 		<td className="w-12 px-4 py-4"><div className="size-[16px] animate-pulse rounded-[4px] bg-muted" /></td>
@@ -38,7 +35,6 @@ const SkeletonRow = () => (
 	</tr>
 );
 
-/* ── ResponsesPanel ──────────────────────────────────────────────────────── */
 interface ResponsesPanelProps {
 	surveyId: number;
 }
@@ -66,21 +62,18 @@ const ResponsesPanel = ({ surveyId }: ResponsesPanelProps) => {
 	const total      = data?.total     ?? 0;
 	const totalPages = Math.max(1, Math.ceil(total / perPage));
 
-	/* ── Sort (client-side within current page) ── */
 	const sorted = [...responses].sort((a, b) => {
 		const valA = sortBy === 'id' ? a.id : new Date(a.created_at).getTime();
 		const valB = sortBy === 'id' ? b.id : new Date(b.created_at).getTime();
 		return order === 'DESC' ? valB - valA : valA - valB;
 	});
 
-	/* ── Selection ── */
 	const allChecked  = responses.length > 0 && responses.every((r) => checked.includes(r.id));
 	const someChecked = checked.length > 0 && !allChecked;
 	const toggleAll   = () => setChecked(allChecked ? [] : responses.map((r) => r.id));
 	const toggleOne   = (id: number) =>
 		setChecked((prev) => prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]);
 
-	/* ── Delete mutation ── */
 	const deleteMutation = useMutation({
 		mutationFn: (responseId: number) => surveysApi.deleteResponse(surveyId, responseId),
 		onSuccess: () => {
@@ -95,7 +88,6 @@ const ResponsesPanel = ({ surveyId }: ResponsesPanelProps) => {
 		},
 	});
 
-	/* ── Bulk delete mutation ── */
 	const bulkDeleteMutation = useMutation({
 		mutationFn: (ids: number[]) =>
 			Promise.all(ids.map((id) => surveysApi.deleteResponse(surveyId, id))),
@@ -115,7 +107,6 @@ const ResponsesPanel = ({ surveyId }: ResponsesPanelProps) => {
 		},
 	});
 
-	/* ── Col head ── */
 	const colHeadCls = 'flex items-center gap-1 text-[12px] font-semibold uppercase tracking-wide leading-[16px] select-none text-[oklch(0.446_0.03_256.802)]';
 	const ColHead = ({ label, col }: { label: string; col?: 'id' | 'created_at' }) => {
 		const isActive = col !== undefined && sortBy === col;
@@ -147,7 +138,7 @@ const ResponsesPanel = ({ surveyId }: ResponsesPanelProps) => {
 	return (
 		<div className="flex-1 overflow-y-auto bg-background p-5">
 
-			{/* Single delete */}
+			{}
 			<ConfirmDialog
 				open={confirmDeleteId !== null}
 				onOpenChange={(open) => { if (!open && !deleteMutation.isPending) setConfirmDeleteId(null); }}
@@ -159,7 +150,7 @@ const ResponsesPanel = ({ surveyId }: ResponsesPanelProps) => {
 				isPending={deleteMutation.isPending}
 			/>
 
-			{/* Bulk delete */}
+			{}
 			<ConfirmDialog
 				open={bulkConfirmOpen}
 				onOpenChange={(open) => { if (!open && !bulkDeleteMutation.isPending) setBulkConfirmOpen(false); }}
@@ -171,7 +162,7 @@ const ResponsesPanel = ({ surveyId }: ResponsesPanelProps) => {
 				isPending={bulkDeleteMutation.isPending}
 			/>
 
-			{/* Table card */}
+			{}
 			<div className="rounded-xl border border-border bg-card">
 				<div className="overflow-x-auto">
 					<table className="w-full table-fixed">

@@ -1,8 +1,3 @@
-/**
- * components/ui/sonner.tsx — shadcn/ui Sonner toast wrapper
- * Run: pnpm dlx shadcn@latest add sonner  to replace with the full component.
- */
-
 import { Toaster as SonnerToaster } from 'sonner';
 
 type ToasterProps = React.ComponentProps<typeof SonnerToaster>;

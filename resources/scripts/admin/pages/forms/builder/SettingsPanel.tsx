@@ -28,8 +28,6 @@ interface SettingsPanelProps {
 	onScrollChange?: (scrolled: boolean, progress: number) => void;
 }
 
-/* ── Shared primitives ────────────────────────────────────────────────── */
-
 const labelCls = 'text-[13.5px] font-normal text-foreground/80';
 
 const inputCls = [
@@ -46,7 +44,6 @@ const textareaCls = [
 	'disabled:cursor-not-allowed disabled:opacity-50',
 ].join(' ');
 
-/** Horizontal label + control row */
 const Row = ({ label, children }: { label: string; children: React.ReactNode }) => (
 	<div className="flex items-center gap-4">
 		<label className={cn(labelCls, 'w-[32%] shrink-0')}>{label}</label>
@@ -54,7 +51,6 @@ const Row = ({ label, children }: { label: string; children: React.ReactNode }) 
 	</div>
 );
 
-/** Card wrapper */
 const Card = ({ title, children }: { title: string; children: React.ReactNode }) => (
 	<div className="overflow-hidden rounded-2xl border border-border/60 bg-white">
 		<div className="border-b border-border/50 px-5 py-3.5">
@@ -66,7 +62,6 @@ const Card = ({ title, children }: { title: string; children: React.ReactNode })
 	</div>
 );
 
-/** Pill toggle */
 const Toggle = ({ checked, onChange }: { checked: boolean; onChange: () => void }) => (
 	<button
 		type="button"
@@ -86,7 +81,6 @@ const Toggle = ({ checked, onChange }: { checked: boolean; onChange: () => void 
 	</button>
 );
 
-/** Chip button group */
 const Chips = <T extends string>({
 	options,
 	value,
@@ -115,7 +109,6 @@ const Chips = <T extends string>({
 	</div>
 );
 
-/** Animated collapse / expand — left accent line shows dependency on the parent option */
 const Collapse = ({ open, children }: { open: boolean; children: React.ReactNode }) => (
 	<div className={cn(
 		'grid transition-[grid-template-rows] duration-200 ease-in-out',
@@ -129,7 +122,6 @@ const Collapse = ({ open, children }: { open: boolean; children: React.ReactNode
 	</div>
 );
 
-/** Number input + Select unit side-by-side */
 const NumberWithUnit = <U extends string>({
 	numberValue,
 	unit,
@@ -165,8 +157,6 @@ const NumberWithUnit = <U extends string>({
 		</Select>
 	</div>
 );
-
-/* ── Content picker (pages or posts, infinite scroll, portal dropdown) ── */
 
 type PickerItem = { id: number; title: string };
 
@@ -214,7 +204,6 @@ const ContentPicker = ({
 
 	const results = data?.pages.flatMap((p) => p.items) ?? [];
 
-	/* ── Compute portal dropdown position from input rect ── */
 	const updateDropPos = useCallback(() => {
 		if (!inputRef.current) return;
 		const rect = inputRef.current.getBoundingClientRect();
@@ -227,7 +216,6 @@ const ContentPicker = ({
 		});
 	}, []);
 
-	/* ── Open / reposition ── */
 	useEffect(() => {
 		if (!open) return;
 		updateDropPos();
@@ -239,7 +227,6 @@ const ContentPicker = ({
 		};
 	}, [open, updateDropPos]);
 
-	/* ── Close on outside click ── */
 	useEffect(() => {
 		if (!open) return;
 		const handle = (e: MouseEvent) => {
@@ -252,13 +239,11 @@ const ContentPicker = ({
 		return () => document.removeEventListener('mousedown', handle);
 	}, [open]);
 
-	/* ── Keep a stable ref so the IntersectionObserver callback never goes stale ── */
 	const fetchStateRef = useRef({ hasNextPage, isFetchingNextPage, fetchNextPage });
 	useEffect(() => {
 		fetchStateRef.current = { hasNextPage, isFetchingNextPage, fetchNextPage };
 	}, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-	/* ── IntersectionObserver on sentinel inside the scrollable container ── */
 	useEffect(() => {
 		const root     = scrollRef.current;
 		const sentinel = sentinelRef.current;
@@ -274,7 +259,7 @@ const ContentPicker = ({
 		);
 		observer.observe(sentinel);
 		return () => observer.disconnect();
-	// eslint-disable-next-line react-hooks/exhaustive-deps
+
 	}, [open, results.length]);
 
 	const selectedIds = selected.map((s) => s.id);
@@ -336,7 +321,7 @@ const ContentPicker = ({
 
 	return (
 		<div ref={wrapperRef} className="space-y-2">
-			{/* Selected chips */}
+			{}
 			{selected.length > 0 && (
 				<div className="flex flex-wrap gap-1.5">
 					{selected.map(({ id, title }) => (
@@ -358,7 +343,7 @@ const ContentPicker = ({
 				</div>
 			)}
 
-			{/* Search input */}
+			{}
 			<div className="relative">
 				<Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground/50" />
 				<input
@@ -374,13 +359,11 @@ const ContentPicker = ({
 				)}
 			</div>
 
-			{/* Portal dropdown — escapes overflow-y-auto scroll container */}
+			{}
 			{typeof document !== 'undefined' && createPortal(dropdown, document.body)}
 		</div>
 	);
 };
-
-/* ── Options ──────────────────────────────────────────────────────────── */
 
 const PAGE_OPTIONS: { value: TargetPages; label: string }[] = [
 	{ value: 'all',            label: __('All',            'all-feedback') },
@@ -394,12 +377,10 @@ const DISMISS_UNIT_OPTIONS: { value: DismissUnit; label: string }[] = [
 	{ value: 'weeks', label: __('Weeks', 'all-feedback') },
 ];
 
-/* ── Display Trigger PRO card ─────────────────────────────────────────── */
-
 const ProCard = ({ title }: { title: string }) => (
 	<div className="relative overflow-hidden rounded-2xl border border-border/60 bg-white">
 
-		{/* Blurred content */}
+		{}
 		<div className="pointer-events-none select-none opacity-60">
 			<div className="flex items-center justify-between border-b border-border/50 px-5 py-3.5">
 				<h3 className="text-[14px] font-semibold text-foreground" style={{ margin: 0 }}>
@@ -443,8 +424,6 @@ const ProCard = ({ title }: { title: string }) => (
 	</div>
 );
 
-/* ── SettingsPanel ────────────────────────────────────────────────────── */
-
 const SettingsPanel = ({ settings, onChange, onScrollChange }: SettingsPanelProps) => {
 	const update = (patch: Partial<FormSettings>) => onChange({ ...settings, ...patch });
 
@@ -461,7 +440,7 @@ const SettingsPanel = ({ settings, onChange, onScrollChange }: SettingsPanelProp
 		<div className="flex-1 overflow-y-auto bg-background p-5" onScroll={handleScroll}>
 			<div className="w-full space-y-4">
 
-				{/* ── Submit Buttons ─────────────────────────────────────── */}
+				{}
 				<Card title={__('Submit Buttons', 'all-feedback')}>
 					<Row label={__('Submit label', 'all-feedback')}>
 						<input
@@ -489,7 +468,7 @@ const SettingsPanel = ({ settings, onChange, onScrollChange }: SettingsPanelProp
 					</Row>
 				</Card>
 
-				{/* ── Targeting ──────────────────────────────────────────── */}
+				{}
 				<Card title={__('Targeting', 'all-feedback')}>
 					<Row label={__('Show to', 'all-feedback')}>
 						<Select value={settings.userState} onValueChange={(v) => update({ userState: v as UserState })}>
@@ -510,7 +489,7 @@ const SettingsPanel = ({ settings, onChange, onScrollChange }: SettingsPanelProp
 							onChange={(v) => update({ targetPages: v })}
 						/>
 					</Row>
-					{/* Both collapses share one wrapper so space-y-4 adds gap only once */}
+					{}
 					<div>
 						<Collapse open={settings.targetPages === 'specific_pages'}>
 							<Row label={__('Select pages', 'all-feedback')}>
@@ -535,10 +514,10 @@ const SettingsPanel = ({ settings, onChange, onScrollChange }: SettingsPanelProp
 					</div>
 				</Card>
 
-				{/* ── Display Trigger (PRO) ──────────────────────────────── */}
+				{}
 				<ProCard title={__('Display Trigger', 'all-feedback')} />
 
-				{/* ── Frequency & Limits ─────────────────────────────────── */}
+				{}
 				<Card title={__('Frequency & Limits', 'all-feedback')}>
 					<Row label={__('Display frequency', 'all-feedback')}>
 						<Select value={settings.displayFrequency} onValueChange={(v) => update({ displayFrequency: v as DisplayFrequency })}>
@@ -575,7 +554,7 @@ const SettingsPanel = ({ settings, onChange, onScrollChange }: SettingsPanelProp
 					</Collapse>
 				</Card>
 
-				{/* ── Thank You Page ─────────────────────────────────────── */}
+				{}
 				<Card title={__('Thank You Page', 'all-feedback')}>
 					<Row label={__('Enable', 'all-feedback')}>
 						<Toggle

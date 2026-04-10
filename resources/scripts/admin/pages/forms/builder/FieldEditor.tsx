@@ -28,8 +28,6 @@ import { useEffect, useRef, useState } from 'react';
 import { FIELD_TYPES } from './fieldTypes';
 import type { FormField } from './types';
 
-/* ── Required checkbox ─────────────────────────────────────────────────── */
-/* ── Required switch ───────────────────────────────────────────────────── */
 const RequiredSwitch = ({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) => (
 	<button
 		type="button"
@@ -54,7 +52,6 @@ const RequiredSwitch = ({ value, onChange }: { value: boolean; onChange: (v: boo
 	</button>
 );
 
-/* ── Option row (multi-select / checkboxes) ────────────────────────────── */
 interface OptionRowProps {
 	fieldType: 'radio' | 'checkboxes';
 	value: string;
@@ -95,19 +92,19 @@ const OptionRow = ({
 			isDragging && 'opacity-40',
 		)}
 	>
-		{/* Drag handle */}
+		{}
 		<span className="cursor-grab text-muted-foreground/25 transition-colors hover:text-muted-foreground/60">
 			<GripVertical className="size-3.5" />
 		</span>
 
-		{/* Dashed-border input — same visual language as QuestionEditor */}
+		{}
 		<div className={cn(
 			'flex flex-1 items-center gap-2 rounded-lg border px-2.5 py-2 transition-all duration-150',
 			isDragOver && !isDragging
 				? 'border-primary/40 shadow-[0_0_0_3px_hsl(var(--primary)/0.08)]'
 				: 'border-dashed border-border/50 hover:border-border/80 hover:bg-muted/20 focus-within:border-primary/50 focus-within:bg-primary/[0.015]',
 		)}>
-			{/* Type indicator */}
+			{}
 			<span className={cn(
 				'flex shrink-0 items-center justify-center border border-border/60 bg-white',
 				fieldType === 'radio' ? 'size-3.5 rounded-full' : 'size-3.5 rounded-[3px]',
@@ -121,7 +118,7 @@ const OptionRow = ({
 			/>
 		</div>
 
-		{/* Actions */}
+		{}
 		<div className="flex items-center gap-0.5">
 			<button
 				type="button"
@@ -141,7 +138,6 @@ const OptionRow = ({
 	</div>
 );
 
-/* ── Question rich-text editor (Tiptap) ────────────────────────────────── */
 interface QuestionEditorProps {
 	value: string;
 	onChange: (html: string) => void;
@@ -175,14 +171,12 @@ const QuestionEditor = ({ value, onChange, autoFocus, focusTrigger }: QuestionEd
 		onBlur:   () => setIsFocused(false),
 	});
 
-	/* Sync external value changes (e.g. undo/redo from parent) */
 	useEffect(() => {
 		if (editor && !editor.isFocused && value !== editor.getHTML()) {
 			editor.commands.setContent(value || '', false);
 		}
 	}, [value, editor]);
 
-	/* Auto-focus when a new field is added */
 	useEffect(() => {
 		if (autoFocus && editor && !didFocusRef.current) {
 			didFocusRef.current = true;
@@ -190,7 +184,6 @@ const QuestionEditor = ({ value, onChange, autoFocus, focusTrigger }: QuestionEd
 		}
 	}, [autoFocus, editor]);
 
-	/* Focus triggered from the header title/pencil click */
 	useEffect(() => {
 		if (focusTrigger && editor) editor.commands.focus('end');
 	}, [focusTrigger, editor]);
@@ -213,7 +206,6 @@ const QuestionEditor = ({ value, onChange, autoFocus, focusTrigger }: QuestionEd
 
 	const clearAllMarks = () => editor?.chain().focus().unsetAllMarks().run();
 
-	/* Three groups separated by dividers */
 	const TOOLBAR_GROUPS: { fmt: FormatMark; Icon: LucideIcon; title: string }[][] = [
 		[
 			{ fmt: 'bold',        Icon: BoldIcon,          title: __('Bold', 'all-feedback') },
@@ -234,7 +226,7 @@ const QuestionEditor = ({ value, onChange, autoFocus, focusTrigger }: QuestionEd
 
 	return (
 		<div>
-			{/* Format toolbar — slides in when editor is focused */}
+			{}
 			<div
 				className={cn(
 					'mb-2 flex items-center gap-px overflow-hidden transition-all duration-150',
@@ -266,7 +258,7 @@ const QuestionEditor = ({ value, onChange, autoFocus, focusTrigger }: QuestionEd
 					</>
 				))}
 
-				{/* Separator + clear */}
+				{}
 				<span className="mx-1 h-3.5 w-px bg-border/70" />
 				<button
 					type="button"
@@ -277,7 +269,7 @@ const QuestionEditor = ({ value, onChange, autoFocus, focusTrigger }: QuestionEd
 					<span className="text-[10px] font-bold leading-none">T<span className="text-[8px]">✕</span></span>
 				</button>
 
-				{/* Done — explicit close trigger */}
+				{}
 				<span className="mx-1 h-3.5 w-px bg-border/70" />
 				<button
 					type="button"
@@ -289,7 +281,7 @@ const QuestionEditor = ({ value, onChange, autoFocus, focusTrigger }: QuestionEd
 				</button>
 			</div>
 
-			{/* Tiptap editor — dashed border always visible to signal editability */}
+			{}
 			<div
 				data-focused={isOpen}
 				className={cn(
@@ -309,7 +301,6 @@ const QuestionEditor = ({ value, onChange, autoFocus, focusTrigger }: QuestionEd
 	);
 };
 
-/* ── Text field config (short_text / long_text) ────────────────────────── */
 const TextFieldConfig = ({
 	field,
 	onChange,
@@ -343,7 +334,6 @@ const TextFieldConfig = ({
 	</div>
 );
 
-/* ── Options config (radio + checkboxes) ───────────────────────────────── */
 const OptionsConfig = ({
 	field,
 	onChange,
@@ -433,8 +423,6 @@ const OptionsConfig = ({
 	);
 };
 
-
-/* ── Star Rating config ────────────────────────────────────────────────── */
 const StarRatingConfig = ({
 	field,
 	onChange,
@@ -479,7 +467,6 @@ const StarRatingConfig = ({
 	);
 };
 
-/* ── Scale config ──────────────────────────────────────────────────────── */
 const ScaleConfig = ({
 	field,
 	onChange,
@@ -505,7 +492,7 @@ const ScaleConfig = ({
 				focusTrigger={focusTrigger}
 			/>
 
-			{/* Range picker */}
+			{}
 			<div className="space-y-1.5">
 				<label className={labelCls}>{__('Range', 'all-feedback')}</label>
 				<div className="flex w-fit items-center gap-2">
@@ -541,7 +528,7 @@ const ScaleConfig = ({
 				</div>
 			</div>
 
-			{/* Low / High labels */}
+			{}
 			<div className="grid grid-cols-2 gap-3">
 				<div className="space-y-1.5">
 					<label className={labelCls}>{__('Low label', 'all-feedback')}</label>
@@ -566,7 +553,6 @@ const ScaleConfig = ({
 	);
 };
 
-/* ── NPS config ────────────────────────────────────────────────────────── */
 const NpsConfig = ({
 	field,
 	onChange,
@@ -591,7 +577,6 @@ const NpsConfig = ({
 	</div>
 );
 
-/* ── Default field config (rating, scale, nps, etc.) ──────────────────── */
 const DefaultFieldConfig = ({
 	field,
 	onChange,
@@ -613,7 +598,6 @@ const DefaultFieldConfig = ({
 	</div>
 );
 
-/* ── FieldEditor card ──────────────────────────────────────────────────── */
 export interface FieldEditorProps {
 	field: FormField;
 	index: number;
@@ -629,7 +613,6 @@ export interface FieldEditorProps {
 	onDrop: (e: React.DragEvent, index: number) => void;
 }
 
-/* Strip HTML tags and decode basic entities to plain text */
 const htmlToText = (html: string): string =>
 	html.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&nbsp;/g, ' ').trim();
 
@@ -685,7 +668,7 @@ const FieldEditor = ({
 					: 'border-border/60',
 			)}
 		>
-			{/* ── Header bar — click to collapse, drag to reorder ── */}
+			{}
 			<div
 				draggable
 				onDragStart={(e) => {
@@ -723,7 +706,7 @@ const FieldEditor = ({
 					</span>
 				)}
 
-				{/* Field title — click focuses the question editor */}
+				{}
 				<button
 					type="button"
 					className="group/title flex w-[180px] shrink-0 items-center gap-2 rounded-md border border-transparent px-2 py-1 text-left transition-colors hover:border-border/50 hover:bg-black/[0.04]"
@@ -741,7 +724,7 @@ const FieldEditor = ({
 				</button>
 
 				<div className="ml-auto flex items-center gap-1">
-					{/* Required switch */}
+					{}
 					<div onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
 						<RequiredSwitch
 							value={field.required}
@@ -749,7 +732,7 @@ const FieldEditor = ({
 						/>
 					</div>
 
-					{/* Chevron — always visible */}
+					{}
 					<span className="flex size-6 items-center justify-center rounded transition-colors hover:bg-black/[0.06]">
 						<ChevronDown className={cn(
 							'size-3.5 transition-transform duration-200',
@@ -757,7 +740,7 @@ const FieldEditor = ({
 						)} />
 					</span>
 
-					{/* Copy / delete — always visible */}
+					{}
 					<div
 						className="flex items-center gap-0.5"
 						onClick={(e) => e.stopPropagation()}
@@ -785,13 +768,13 @@ const FieldEditor = ({
 				</div>
 			</div>
 
-			{/* ── Collapsible body ── */}
+			{}
 			<div className={cn(
 				'grid transition-[grid-template-rows] duration-200 ease-in-out',
 				isCollapsed ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]',
 			)}>
 				<div className="overflow-hidden">
-					{/* Field config */}
+					{}
 					<div className="space-y-3 px-5 py-4">
 						{renderConfig()}
 					</div>

@@ -60,7 +60,6 @@ const SectionCard = ({
 	const addFieldBtnRef = useRef<HTMLButtonElement>(null);
 	const cardRef        = useRef<HTMLDivElement>(null);
 
-	// ── Section title editing ──────────────────────────────────────────────
 	const [isEditingTitle, setIsEditingTitle] = useState(false);
 	const titleSnapshotRef                    = useRef('');
 	const titleInputRef                       = useRef<HTMLInputElement>(null);
@@ -72,10 +71,9 @@ const SectionCard = ({
 		}
 	}, [isEditingTitle]);
 
-	// Start in edit mode when section is freshly added
 	useEffect(() => {
 		if (autoFocus) startEditingTitle();
-	// eslint-disable-next-line react-hooks/exhaustive-deps
+
 	}, []);
 
 	const startEditingTitle = () => {
@@ -95,7 +93,6 @@ const SectionCard = ({
 		setIsEditingTitle(false);
 	};
 
-	// ── Field type menu ────────────────────────────────────────────────────
 	const toggleMenu = () => setMenuOpen((v) => !v);
 	const closeMenu  = () => setMenuOpen(false);
 
@@ -149,7 +146,6 @@ const SectionCard = ({
 		[section, onSectionChange],
 	);
 
-
 	return (
 		<div
 			ref={cardRef}
@@ -163,7 +159,7 @@ const SectionCard = ({
 					: 'border-border/60',
 			)}
 		>
-			{/* ── Section header ─────────────────────────────────────────── */}
+			{}
 			<div
 				draggable
 				onDragStart={(e) => {
@@ -186,7 +182,7 @@ const SectionCard = ({
 				onClick={() => setIsCollapsed((v) => !v)}
 				className="flex cursor-pointer items-center border-b border-border/50 bg-white px-5 py-4 transition-colors hover:bg-muted/20"
 			>
-				{/* Left group (flex-1): grip + title */}
+				{}
 				<div className="flex flex-1 items-center gap-2">
 					<span title={__('Drag to reorder', 'all-feedback')} className="cursor-grab text-muted-foreground/40 transition-colors hover:text-muted-foreground/70 active:cursor-grabbing">
 						<GripVertical className="size-4 shrink-0" />
@@ -247,7 +243,7 @@ const SectionCard = ({
 					)}
 				</div>
 
-				{/* Right actions: collapse toggle + duplicate + delete */}
+				{}
 				<div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
 					<Button
 						variant="ghost"
@@ -280,7 +276,7 @@ const SectionCard = ({
 				</div>
 			</div>
 
-			{/* ── Section body ───────────────────────────────────────────── */}
+			{}
 			<div className={cn('grid transition-[grid-template-rows] duration-200 ease-in-out', isCollapsed ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]')}>
 			<div className="overflow-hidden"><div className="bg-white p-5">
 				{section.fields.length > 0 && (

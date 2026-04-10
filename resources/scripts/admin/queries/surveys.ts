@@ -1,7 +1,3 @@
-/**
- * queries/surveys.ts — TanStack Query definitions for surveys
- */
-
 import { surveysApi } from '@/admin/api/surveys';
 import type { SurveyListParams } from '@/admin/api/surveys';
 

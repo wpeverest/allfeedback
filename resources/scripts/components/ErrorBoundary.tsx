@@ -1,10 +1,3 @@
-/**
- * components/ErrorBoundary.tsx
- *
- * React class-based error boundary — catches unhandled render errors and
- * shows a user-friendly recovery screen instead of a blank page.
- */
-
 import { __ } from '@wordpress/i18n';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Component, type ErrorInfo, type ReactNode } from 'react';
@@ -20,7 +13,7 @@ export class ErrorBoundary extends Component<Props, State> {
 	}
 
 	componentDidCatch(error: Error, info: ErrorInfo) {
-		// Log to the browser console — replace with a real error reporter in production.
+
 		console.error('[RMB]', error, info.componentStack);
 	}
 

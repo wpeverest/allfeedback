@@ -1,15 +1,8 @@
-/**
- * admin/RouterErrorComponent.tsx
- *
- * Displayed by TanStack Router when a route loader throws or a component
- * crashes. Provides a "Go back" action and shows the error detail.
- */
-
 import { Button } from '@/components/ui/button';
 import { __ } from '@wordpress/i18n';
 import { AlertTriangle, ArrowLeft } from 'lucide-react';
 
-type Props = { error: Error; reset: () => void };
+type Props = { error: Error };
 
 export function RouterErrorComponent({ error }: Props) {
 	return (

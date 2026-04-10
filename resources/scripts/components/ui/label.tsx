@@ -1,7 +1,3 @@
-/**
- * components/ui/label.tsx — shadcn/ui Label
- */
-
 import { cn } from '@/lib/utils';
 import * as React from 'react';
 

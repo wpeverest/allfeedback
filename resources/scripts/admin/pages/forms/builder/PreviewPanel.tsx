@@ -22,31 +22,26 @@ const DEVICES: { value: PreviewDevice; Icon: typeof Monitor; label: string }[] =
 	{ value: 'mobile',  Icon: Smartphone, label: 'Mobile'  },
 ];
 
-/** Max widget width per device */
 const DEVICE_MAX_W: Record<PreviewDevice, string> = {
 	desktop: '420px',
 	tablet:  '360px',
 	mobile:  '100%',
 };
 
-/** Simulated page width per device — constrains the whole canvas */
 const DEVICE_PAGE_W: Record<PreviewDevice, string | null> = {
-	desktop: null,        // full width
+	desktop: null,        
 	tablet:  '768px',
 	mobile:  '390px',
 };
 
 type PreviewView = 'page' | 'widget';
 
-/** Strip HTML tags → plain text */
 const htmlToText = (html: string): string => {
 	const div    = document.createElement('div');
 	div.innerHTML = html;
 	return div.textContent ?? div.innerText ?? '';
 };
 
-/** Unwrap a single <p>...</p> so it renders as inline text, keeping height consistent
- *  whether the label is plain text (before editing) or Tiptap HTML (after first keystroke). */
 const normalizeLabel = (html: string): string => {
 	const t = html.trim();
 	if (t.startsWith('<p>') && t.endsWith('</p>') && t.indexOf('<p>', 1) === -1) {
@@ -55,7 +50,6 @@ const normalizeLabel = (html: string): string => {
 	return t;
 };
 
-/* ─── Star rating interactive input ─────────────────────────────────────── */
 const StarRatingPreview = ({ field, value, onChange }: { field: FormField; value: string; onChange: (v: string) => void }) => {
 	const [hovered, setHovered] = useState(0);
 	const scale    = field.starScale ?? 'star';
@@ -94,7 +88,6 @@ const StarRatingPreview = ({ field, value, onChange }: { field: FormField; value
 	);
 };
 
-/* ─── Scale rating interactive input ────────────────────────────────────── */
 const ScalePreview = ({ field, value, onChange }: { field: FormField; value: string; onChange: (v: string) => void }) => {
 	const [hovered, setHovered] = useState<number | null>(null);
 	const min      = field.scaleMin ?? 0;
@@ -139,7 +132,6 @@ const ScalePreview = ({ field, value, onChange }: { field: FormField; value: str
 	);
 };
 
-/* ─── NPS interactive input ──────────────────────────────────────────────── */
 const NpsPreview = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => {
 	const [hovered, setHovered] = useState<number | null>(null);
 	const selected = value !== '' ? Number(value) : null;
@@ -182,7 +174,6 @@ const NpsPreview = ({ value, onChange }: { value: string; onChange: (v: string) 
 	);
 };
 
-/* ─── Interactive field preview ─────────────────────────────────────────── */
 interface FieldPreviewProps {
 	field:    FormField;
 	value:    string | string[];
@@ -315,7 +306,6 @@ const FieldPreview = ({ field, value, error, onChange }: FieldPreviewProps) => {
 	);
 };
 
-/* ─── Shared widget body ─────────────────────────────────────────────────── */
 interface WidgetBodyProps {
 	steps:         FormSection[];
 	stepIndex:     number;
@@ -328,7 +318,7 @@ interface WidgetBodyProps {
 	fieldErrors:   Record<string, string>;
 	isMinimized:   boolean;
 	isClosed:      boolean;
-	showControls:  boolean; // false in widget-only mode
+	showControls:  boolean; 
 	settings:      FormSettings;
 	onMinimize:    () => void;
 	onClose:       () => void;
@@ -365,7 +355,7 @@ const WidgetBody = ({
 		)}
 		onKeyDown={handleKeyDown}
 	>
-		{/* Widget header */}
+		{}
 		<div className="flex items-center justify-end gap-0.5 bg-primary px-2.5 py-1.5">
 			{showControls && (
 				<>
@@ -389,10 +379,10 @@ const WidgetBody = ({
 			)}
 		</div>
 
-		{/* Widget body */}
+		{}
 		<div className="bg-white">
 			{isSubmitted ? (
-				/* ── Success state ── */
+
 				<div className="flex flex-col items-center justify-center px-4 py-5 text-center">
 					<CheckCircle2 className="mb-1.5 size-6 text-primary" />
 					<p className="text-[12px] font-semibold text-foreground">
@@ -427,7 +417,7 @@ const WidgetBody = ({
 						</div>
 					)}
 
-					{/* Fields */}
+					{}
 					<div className="max-h-[240px] overflow-y-auto px-4 py-4">
 						{!hasSteps ? (
 							<div className="flex flex-col items-center justify-center py-3">
@@ -451,7 +441,7 @@ const WidgetBody = ({
 						)}
 					</div>
 
-					{/* Navigation footer */}
+					{}
 					{hasSteps && (
 						<div className="flex items-center gap-2 border-t border-border/40 px-4 py-4 mt-1">
 							{stepIndex > 0 && (
@@ -491,7 +481,6 @@ const WidgetBody = ({
 	);
 };
 
-/* ─── Helpers ────────────────────────────────────────────────────────────── */
 const allFields = (sections: FormSection[]): FormField[] =>
 	sections.flatMap((s) => s.fields);
 
@@ -506,7 +495,6 @@ const getSiteHostname = (): string => {
 	}
 };
 
-/* ─── Main component ─────────────────────────────────────────────────────── */
 const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId }: PreviewPanelProps) => {
 	const steps        = activeSections(sections);
 	const totalSteps   = steps.length;
@@ -527,7 +515,6 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId }: 
 	const isLastStep   = stepIndex === totalSteps - 1;
 	const currentFields = steps[stepIndex]?.fields ?? [];
 
-	/* ── Submit mutation ── */
 	const submitMutation = useMutation({
 		mutationFn: (data: SubmitFormData) => surveysApi.submit(surveyId!, data),
 		onSuccess: () => {
@@ -544,7 +531,6 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId }: 
 		},
 	});
 
-	/* Reset when sections structure changes */
 	useEffect(() => {
 		setFieldValues({});
 		setFieldErrors({});
@@ -621,13 +607,10 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId }: 
 		onResubmit: () => { setIsSubmitted(false); setFieldValues({}); setFieldErrors({}); setCurrentStep(0); },
 	};
 
-	/* Reset shown when widget is closed/minimized (page view) or form is submitted (both views) */
 	const needsReset = isSubmitted || (viewMode === 'page' && (isClosed || isMinimized));
 
-	/* ── Admin page navigation (bypasses validation) ─────────────── */
-	// Total admin pages = real steps + 1 (Thank you)
 	const adminTotalPages = totalSteps + 1;
-	const adminCurrentPage = isSubmitted ? totalSteps : stepIndex; // 0-indexed; last = thank you
+	const adminCurrentPage = isSubmitted ? totalSteps : stepIndex; 
 
 	const adminPrev = () => {
 		if (isSubmitted) {
@@ -653,14 +636,14 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId }: 
 
 	return (
 		<div className="flex h-full flex-col bg-white">
-			{/* ── Panel header ──────────────────────────────────────────── */}
+			{}
 			<div className="flex h-[72px] shrink-0 items-center justify-between px-6">
 				<span className="text-[13.5px] font-medium text-foreground">
 					{__('Preview changes', 'all-feedback')}
 				</span>
 
 				<div className="flex items-center gap-2">
-					{/* Reset button — whenever widget is closed/minimized */}
+					{}
 					{needsReset && (
 						<button
 							type="button"
@@ -672,7 +655,7 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId }: 
 						</button>
 					)}
 
-					{/* Page / Widget toggle */}
+					{}
 					<div className="flex items-center rounded-lg border border-border/60 p-0.5">
 						<button
 							type="button"
@@ -704,7 +687,7 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId }: 
 				</div>
 			</div>
 
-			{/* ── Admin page navigator ─────────────────────────────────── */}
+			{}
 			{hasSteps && (
 				<div className="flex shrink-0 items-center justify-between border-t border-border/50 bg-muted/20 px-4 py-1.5">
 					<span className="text-[11px] font-medium text-muted-foreground/60">
@@ -736,41 +719,41 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId }: 
 				</div>
 			)}
 
-			{/* ── Main preview area ─────────────────────────────────────── */}
+			{}
 			{viewMode === 'page' ? (
-				/* PAGE VIEW — browser chrome + simulated page */
+
 				<div className="flex flex-1 flex-col overflow-hidden bg-background">
 					<div className="flex flex-1 items-start justify-center overflow-hidden p-4">
-						{/* Device-constrained browser window */}
+						{}
 						<div
 							className="flex h-full flex-col overflow-hidden rounded-xl border border-border/60 bg-white shadow-md"
 							style={{ width: pageMaxW ? `min(${pageMaxW}, 100%)` : '100%' }}
 						>
-							{/* ── Browser chrome ── */}
+							{}
 							<div className="shrink-0 select-none bg-[#dee1e6]">
-								{/* Tab strip row */}
+								{}
 								<div className="flex items-end px-3 pt-2">
-									{/* macOS window controls */}
+									{}
 									<div className="flex shrink-0 items-center gap-[5px] pb-[6px] pr-3">
 										<span className="size-[11px] rounded-full bg-[#ff5f57] shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.12)]" />
 										<span className="size-[11px] rounded-full bg-[#ffbd2e] shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.12)]" />
 										<span className="size-[11px] rounded-full bg-[#28c840] shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.12)]" />
 									</div>
 
-									{/* Active tab */}
+									{}
 									<div className="flex min-w-0 max-w-[172px] items-center gap-1.5 rounded-t-[7px] bg-white px-2.5 pb-[6px] pt-[5px]">
 										<Globe className="size-3 shrink-0 text-muted-foreground/50" />
 										<span className="min-w-0 flex-1 truncate text-[10.5px] text-foreground/70">{siteHostname}</span>
 										<X className="size-2.5 shrink-0 text-muted-foreground/35 hover:text-foreground/60" />
 									</div>
 
-									{/* New tab button */}
+									{}
 									<button type="button" className="ml-3 flex size-[18px] self-center items-center justify-center rounded text-foreground/40 hover:bg-black/8 hover:text-foreground/60">
 										<Plus className="size-3" />
 									</button>
 								</div>
 
-								{/* Toolbar row */}
+								{}
 								<div className="flex items-center gap-0.5 px-2 pb-2 pt-2">
 									<button type="button" className="flex size-[22px] items-center justify-center rounded-full text-foreground/20">
 										<ArrowLeft className="size-3.5" />
@@ -782,7 +765,7 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId }: 
 										<RotateCw className="size-3" />
 									</button>
 
-									{/* Address bar pill */}
+									{}
 									<div className="mx-1.5 flex flex-1 items-center gap-1.5 rounded-full bg-white/95 px-3 py-[3px] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.10),0_1px_2px_rgba(0,0,0,0.06)]">
 										<Lock className="size-2.5 shrink-0 text-[#1e8e3e]" />
 										<span className="min-w-0 flex-1 truncate text-center text-[10.5px] text-foreground/70">{siteHostname}</span>
@@ -795,17 +778,17 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId }: 
 								</div>
 							</div>
 
-							{/* Page canvas */}
+							{}
 							<div className="relative flex-1 overflow-hidden bg-[#f8f9fa]">
-								{/* Fake website wireframe */}
+								{}
 								<div className="pointer-events-none absolute inset-0 flex flex-col">
-									{/* Preview notice — styled as a site announcement bar */}
+									{}
 									<div className="flex items-center justify-center bg-foreground/[0.055] px-4 py-[5px]">
 										<p className="text-[7.5px] font-medium leading-[1.5] tracking-wide text-foreground/40 text-center">
 											{__('Approximate preview — position, size, and styling may vary on your live site based on your theme and screen size', 'all-feedback')}
 										</p>
 									</div>
-									{/* Site nav */}
+									{}
 									<div className="flex h-9 shrink-0 items-center gap-3 border-b border-black/5 bg-white px-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
 										<div className="h-2.5 w-14 rounded-full bg-foreground/10" />
 										<div className="flex flex-1 items-center justify-end gap-2.5">
@@ -814,13 +797,13 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId }: 
 											<div className="h-1.5 w-7 rounded-full bg-foreground/8" />
 										</div>
 									</div>
-									{/* Hero */}
+									{}
 									<div className="flex flex-col items-center gap-2 px-6 pt-7">
 										<div className="h-3 w-3/5 rounded-full bg-foreground/10" />
 										<div className="h-2 w-2/5 rounded-full bg-foreground/[0.07]" />
 										<div className="mt-1.5 h-6 w-20 rounded-md bg-foreground/[0.08]" />
 									</div>
-									{/* Cards */}
+									{}
 									<div className="mt-5 grid grid-cols-3 gap-2 px-4">
 										{[0, 1, 2].map((i) => (
 											<div key={i} className="rounded-lg bg-white/75 p-2 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
@@ -832,7 +815,7 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId }: 
 									</div>
 								</div>
 
-								{/* ── Minimized FAB ── */}
+								{}
 								<button
 									type="button"
 									onClick={() => setIsMinimized(false)}
@@ -845,7 +828,7 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId }: 
 									<MessageSquare className="size-5 text-white" />
 								</button>
 
-								{/* ── Full widget ── */}
+								{}
 								<div
 									className={cn(
 										'absolute bottom-5 right-4',
@@ -861,7 +844,7 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId }: 
 
 					</div>
 			) : (
-				/* WIDGET VIEW — widget centered, always visible, controls decorative only */
+
 				<div className="flex flex-1 items-center justify-center overflow-hidden bg-background/50 p-6">
 					<div style={{ width: `min(${maxW}, 100%)` }}>
 						<WidgetBody
@@ -876,7 +859,7 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId }: 
 				</div>
 			)}
 
-			{/* ── Device switcher ───────────────────────────────────────── */}
+			{}
 			<div className={cn(
 				'flex shrink-0 items-center justify-center gap-1 border-t border-border px-4 py-3 transition-opacity',
 				viewMode === 'widget' && 'pointer-events-none opacity-35',

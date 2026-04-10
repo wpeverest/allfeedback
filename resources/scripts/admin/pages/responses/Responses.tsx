@@ -30,10 +30,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import type { SurveyResponse } from '@/admin/api/surveys';
 
-/* ── Shared text style ───────────────────────────────────────────────────── */
 const cellCls = 'text-[14px] font-normal leading-[20px] text-[oklch(0.446_0.03_256.802)]';
-
-/* ── Helpers ─────────────────────────────────────────────────────────────── */
 
 const getResponseSummary = (data: Record<string, unknown> | null): string => {
 	if (!data) return '—';
@@ -44,7 +41,6 @@ const getResponseSummary = (data: Record<string, unknown> | null): string => {
 	return String(first);
 };
 
-/* ── Skeleton row ────────────────────────────────────────────────────────── */
 const SkeletonRow = ({ showForm }: { showForm: boolean }) => (
 	<tr className="border-b border-border">
 		<td className="w-12 px-4 py-5"><div className="size-[16px] animate-pulse rounded-[4px] bg-muted" /></td>
@@ -56,7 +52,6 @@ const SkeletonRow = ({ showForm }: { showForm: boolean }) => (
 	</tr>
 );
 
-/* ── Responses ───────────────────────────────────────────────────────────── */
 const Responses = () => {
 	const navigate    = useNavigate();
 	const queryClient = useQueryClient();
@@ -74,20 +69,16 @@ const Responses = () => {
 
 	const debouncedSearch = useDebouncedValue(search, 300);
 
-	/* Reset page when search settles */
 	useEffect(() => { setPage(1); }, [debouncedSearch]);
 
-	/* ── Fetch surveys for the form selector ── */
 	const { data: surveysData } = useQuery({
 		...surveysQuery({ per_page: 100 }),
 		placeholderData: keepPreviousData,
 	});
 	const allSurveys = surveysData?.surveys ?? [];
 
-	/* Survey title lookup for "All Forms" view */
 	const surveyTitleMap = Object.fromEntries(allSurveys.map((s) => [s.id, s.title]));
 
-	/* ── Fetch responses ── */
 	const queryParams = { page, per_page: perPage };
 
 	const allResponsesQuery = useQuery({
@@ -113,28 +104,24 @@ const Responses = () => {
 	const showForm   = selectedSurveyId === null;
 	const numCols    = showForm ? 6 : 5;
 
-	/* ── Sort (client-side within current page) ── */
 	const sorted = [...responses].sort((a, b) => {
 		const valA = sortBy === 'id' ? a.id : new Date(a.created_at).getTime();
 		const valB = sortBy === 'id' ? b.id : new Date(b.created_at).getTime();
 		return order === 'DESC' ? valB - valA : valA - valB;
 	});
 
-	/* ── Filter responses by search text ── */
 	const filtered = debouncedSearch.trim()
 		? sorted.filter((r) =>
 			getResponseSummary(r.response_data).toLowerCase().includes(debouncedSearch.toLowerCase()),
 		)
 		: sorted;
 
-	/* ── Selection ── */
 	const allChecked  = responses.length > 0 && responses.every((r) => checked.includes(r.id));
 	const someChecked = checked.length > 0 && !allChecked;
 	const toggleAll   = () => setChecked(allChecked ? [] : responses.map((r) => r.id));
 	const toggleOne   = (id: number) =>
 		setChecked((prev) => prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]);
 
-	/* ── Single delete ── */
 	const deleteMutation = useMutation({
 		mutationFn: ({ id, surveyId }: { id: number; surveyId: number }) =>
 			surveysApi.deleteResponse(surveyId, id),
@@ -150,7 +137,6 @@ const Responses = () => {
 		},
 	});
 
-	/* ── Bulk delete ── */
 	const bulkDeleteMutation = useMutation({
 		mutationFn: (ids: number[]) =>
 			Promise.all(
@@ -175,7 +161,6 @@ const Responses = () => {
 		},
 	});
 
-	/* ── Column header ── */
 	const colHeadCls = 'flex items-center gap-1 text-[12px] font-semibold uppercase tracking-wide leading-[16px] select-none text-[oklch(0.446_0.03_256.802)]';
 
 	const ColHead = ({ label, col }: { label: string; col?: 'id' | 'created_at' }) => {
@@ -208,7 +193,7 @@ const Responses = () => {
 	return (
 		<div className="p-5 md:p-6">
 
-			{/* ── Single delete confirm ── */}
+			{}
 			<ConfirmDialog
 				open={confirmDelete !== null}
 				onOpenChange={(open) => { if (!open && !deleteMutation.isPending) setConfirmDelete(null); }}
@@ -220,7 +205,7 @@ const Responses = () => {
 				isPending={deleteMutation.isPending}
 			/>
 
-			{/* ── Bulk delete confirm ── */}
+			{}
 			<ConfirmDialog
 				open={bulkConfirmOpen}
 				onOpenChange={(open) => { if (!open && !bulkDeleteMutation.isPending) setBulkConfirmOpen(false); }}
@@ -232,10 +217,10 @@ const Responses = () => {
 				isPending={bulkDeleteMutation.isPending}
 			/>
 
-			{/* ── Toolbar ── */}
+			{}
 			<div className="mb-4 flex flex-wrap items-center gap-3 py-1">
 
-				{/* Form selector */}
+				{}
 				<Select
 					value={selectedSurveyId !== null ? String(selectedSurveyId) : 'all'}
 					onValueChange={(v) => {
@@ -257,7 +242,7 @@ const Responses = () => {
 					</SelectContent>
 				</Select>
 
-				{/* Search — same style as AllForms */}
+				{}
 				<div className="relative w-full sm:w-[260px]">
 					<svg
 						className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
@@ -274,7 +259,7 @@ const Responses = () => {
 				</div>
 			</div>
 
-			{/* ── Table card ── */}
+			{}
 			<div className="rounded-xl border border-border bg-card">
 				<div className="overflow-x-auto">
 					<table className="w-full table-fixed">
@@ -308,10 +293,10 @@ const Responses = () => {
 						</thead>
 
 						<tbody>
-							{/* Loading skeletons */}
+							{}
 							{isLoading && Array.from({ length: 5 }, (_, i) => <SkeletonRow key={i} showForm={showForm} />)}
 
-							{/* Error */}
+							{}
 							{isError && !isLoading && (
 								<tr><td colSpan={numCols}>
 									<EmptyState
@@ -322,7 +307,7 @@ const Responses = () => {
 								</td></tr>
 							)}
 
-							{/* Empty */}
+							{}
 							{!isLoading && !isError && responses.length === 0 && (
 								<tr><td colSpan={numCols}>
 									<EmptyState
@@ -333,7 +318,7 @@ const Responses = () => {
 								</td></tr>
 							)}
 
-							{/* No search match */}
+							{}
 							{!isLoading && !isError && responses.length > 0 && filtered.length === 0 && (
 								<tr><td colSpan={numCols}>
 									<EmptyState
@@ -344,7 +329,7 @@ const Responses = () => {
 								</td></tr>
 							)}
 
-							{/* Data rows */}
+							{}
 							{!isLoading && !isError && filtered.map((response: SurveyResponse) => {
 								const isSelected = checked.includes(response.id);
 								const summary    = getResponseSummary(response.response_data);
@@ -418,7 +403,7 @@ const Responses = () => {
 				</div>
 			</div>
 
-			{/* ── Pagination ── */}
+			{}
 			<Pagination
 				className="mt-6"
 				page={page}
@@ -431,7 +416,7 @@ const Responses = () => {
 				onPerPageChange={(n) => { setPerPage(n); setPage(1); }}
 			/>
 
-			{/* ── Bulk action bar ── */}
+			{}
 			<BulkActionBar
 				count={checked.length}
 				showDelete={checked.length > 0}
