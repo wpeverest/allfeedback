@@ -3,17 +3,19 @@ import { __ } from '@wordpress/i18n';
 import { Archive, Loader2, RotateCcw, Trash2, X } from 'lucide-react';
 
 export interface BulkActionBarProps {
-	count:         number;
-	showRestore?:  boolean;
-	onDelete:      () => void;
-	onTrash:       () => void;
-	onRestore:     () => void;
-	onClone:       () => void;
-	onClear:       () => void;
-	isDeleting?:   boolean;
-	isTrashing?:   boolean;
-	isRestoring?:  boolean;
-	isCloning?:    boolean;
+	count:          number;
+	showTrash?:     boolean;
+	showDelete?:    boolean;
+	showRestore?:   boolean;
+	onDelete:       () => void;
+	onTrash:        () => void;
+	onRestore:      () => void;
+	onClone:        () => void;
+	onClear:        () => void;
+	isDeleting?:    boolean;
+	isTrashing?:    boolean;
+	isRestoring?:   boolean;
+	isCloning?:     boolean;
 }
 
 /**
@@ -21,11 +23,14 @@ export interface BulkActionBarProps {
  */
 export const BulkActionBar = ({
 	count,
+	showTrash   = false,
+	showDelete  = false,
 	showRestore = false,
 	onDelete, onTrash, onRestore, onClear,
 	isDeleting, isTrashing, isRestoring,
 }: BulkActionBarProps) => {
-	const busy = isDeleting || isTrashing || isRestoring;
+	const busy        = isDeleting || isTrashing || isRestoring;
+	const hasActions  = showTrash || showDelete || showRestore;
 
 	return (
 		<div
@@ -49,10 +54,9 @@ export const BulkActionBar = ({
 					</span>
 				</div>
 
-				{/* Divider */}
-				<div className="h-5 w-px shrink-0 bg-border/60" />
+				{hasActions && <div className="h-5 w-px shrink-0 bg-border/60" />}
 
-				{/* Restore button — only in trash view */}
+				{/* Restore button */}
 				{showRestore && (
 					<>
 						<div className="px-3 py-3">
@@ -69,12 +73,12 @@ export const BulkActionBar = ({
 								{__('Restore', 'all-feedback')}
 							</button>
 						</div>
-						<div className="h-5 w-px shrink-0 bg-border/60" />
+						{(showTrash || showDelete) && <div className="h-5 w-px shrink-0 bg-border/60" />}
 					</>
 				)}
 
-				{/* Trash button — hidden in trash view */}
-				{!showRestore && (
+				{/* Trash button */}
+				{showTrash && (
 					<>
 						<div className="px-3 py-3">
 							<button
@@ -90,27 +94,29 @@ export const BulkActionBar = ({
 								{__('Trash', 'all-feedback')}
 							</button>
 						</div>
-						<div className="h-5 w-px shrink-0 bg-border/60" />
+						{showDelete && <div className="h-5 w-px shrink-0 bg-border/60" />}
 					</>
 				)}
 
-				{/* Delete button */}
-				<div className="px-3 py-3">
-					<button
-						type="button"
-						onClick={onDelete}
-						disabled={busy}
-						className="flex items-center gap-1.5 rounded-lg border border-destructive/40 px-3 py-1.5 text-[13px] font-medium text-destructive transition-colors hover:border-destructive hover:bg-destructive/[0.06] disabled:pointer-events-none disabled:opacity-60"
-					>
-						{isDeleting
-							? <Loader2 className="size-3.5 animate-spin" />
-							: <Trash2 className="size-3.5" />
-						}
-						{__('Delete', 'all-feedback')}
-					</button>
-				</div>
+				{/* Delete button — only when all selected are trashed */}
+				{showDelete && (
+					<div className="px-3 py-3">
+						<button
+							type="button"
+							onClick={onDelete}
+							disabled={busy}
+							className="flex items-center gap-1.5 rounded-lg border border-destructive/40 px-3 py-1.5 text-[13px] font-medium text-destructive transition-colors hover:border-destructive hover:bg-destructive/[0.06] disabled:pointer-events-none disabled:opacity-60"
+						>
+							{isDeleting
+								? <Loader2 className="size-3.5 animate-spin" />
+								: <Trash2 className="size-3.5" />
+							}
+							{__('Delete', 'all-feedback')}
+						</button>
+					</div>
+				)}
 
-				{/* Divider */}
+				{/* Divider before clear */}
 				<div className="h-5 w-px shrink-0 bg-border/60" />
 
 				{/* Clear button */}

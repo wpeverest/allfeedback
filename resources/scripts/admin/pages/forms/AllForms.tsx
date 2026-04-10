@@ -191,6 +191,12 @@ const AllForms = () => {
 	const toggleOne   = (id: number) =>
 		setChecked((prev) => prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]);
 
+	/* ── Derive bulk action visibility from the actual selection ───────── */
+	const checkedSurveys      = surveys.filter((s) => checked.includes(s.id));
+	const allSelectedTrashed  = checkedSurveys.length > 0 && checkedSurveys.every((s) => s.status === 'trashed');
+	const anySelectedTrashed  = checkedSurveys.some((s) => s.status === 'trashed');
+	const anySelectedNotTrashed = checkedSurveys.some((s) => s.status !== 'trashed');
+
 	/* ── Create mutation ───────────────────────────────────────────────── */
 	const createMutation = useMutation({
 		mutationFn: () => surveysApi.create({ title: __('Untitled Form', 'all-feedback') }),
@@ -587,14 +593,16 @@ const AllForms = () => {
 															</DropdownMenuItem>
 														)}
 
-														{/* Delete */}
-														<DropdownMenuItem
-															destructive
-															onSelect={() => setConfirmDeleteId(survey.id)}
-														>
-															<Trash2 className="size-3.5" />
-															{__('Delete', 'all-feedback')}
-														</DropdownMenuItem>
+														{/* Delete — only for trashed forms */}
+														{survey.status === 'trashed' && (
+															<DropdownMenuItem
+																destructive
+																onSelect={() => setConfirmDeleteId(survey.id)}
+															>
+																<Trash2 className="size-3.5" />
+																{__('Delete', 'all-feedback')}
+															</DropdownMenuItem>
+														)}
 													</DropdownMenuContent>
 												</DropdownMenu>
 											</div>
@@ -623,7 +631,9 @@ const AllForms = () => {
 			{/* ── Bulk-action bar ───────────────────────────────────────── */}
 			<BulkActionBar
 				count={checked.length}
-				showRestore={status === 'trashed'}
+				showTrash={anySelectedNotTrashed}
+				showDelete={allSelectedTrashed}
+				showRestore={anySelectedTrashed}
 				isDeleting={bulkDeleteMutation.isPending}
 				isTrashing={bulkTrashMutation.isPending}
 				isRestoring={bulkRestoreMutation.isPending}
