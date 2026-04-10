@@ -1,7 +1,15 @@
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { BulkActionBar } from '@/components/ui/bulk-action-bar';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
+import { Pagination } from '@/components/ui/pagination';
 import {
 	Select,
 	SelectContent,
@@ -9,227 +17,427 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '@/components/ui/select';
+import { surveysApi } from '@/admin/api/surveys';
+import { surveysQuery } from '@/admin/queries/surveys';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import { cn } from '@/lib/utils';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { __ } from '@wordpress/i18n';
-import { ArrowUpDown, ChevronLeft, ChevronRight, Eye, MessageSquare, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown, Edit2, MessageSquare, MoreVertical, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import type { SurveyResponse } from '@/admin/api/surveys';
 
-type Rating = 1 | 2 | 3 | 4 | 5;
+/* ── Shared text style ───────────────────────────────────────────────────── */
+const cellCls = 'text-[14px] font-normal leading-[20px] text-[oklch(0.446_0.03_256.802)]';
 
-interface Response {
-	id:          number;
-	form:        string;
-	rating:      Rating;
-	excerpt:     string;
-	submittedAt: string;
-}
+/* ── Helpers ─────────────────────────────────────────────────────────────── */
 
-const RATING_BADGE: Record<Rating, { variant: 'success' | 'info' | 'secondary' | 'warning' | 'danger' }> = {
-	5: { variant: 'success'   },
-	4: { variant: 'info'      },
-	3: { variant: 'secondary' },
-	2: { variant: 'warning'   },
-	1: { variant: 'danger'    },
+const getResponseSummary = (data: Record<string, unknown> | null): string => {
+	if (!data) return '—';
+	const vals = Object.values(data).filter((v) => v !== null && v !== undefined && v !== '');
+	if (!vals.length) return '—';
+	const first = vals[0];
+	if (Array.isArray(first)) return first.join(', ');
+	return String(first);
 };
 
-const PER_PAGE_OPTIONS = ['10', '25', '50'];
+/* ── Skeleton row ────────────────────────────────────────────────────────── */
+const SkeletonRow = ({ showForm }: { showForm: boolean }) => (
+	<tr className="border-b border-border">
+		<td className="w-12 px-4 py-5"><div className="size-[16px] animate-pulse rounded-[4px] bg-muted" /></td>
+		<td className="w-16 px-4 py-5"><div className="h-4 w-8 animate-pulse rounded bg-muted" /></td>
+		{showForm && <td className="w-[180px] px-4 py-5"><div className="h-4 w-28 animate-pulse rounded bg-muted" /></td>}
+		<td className="w-[220px] px-4 py-5"><div className="h-4 w-36 animate-pulse rounded bg-muted" /></td>
+		<td className="w-36 px-4 py-5"><div className="h-4 w-24 animate-pulse rounded bg-muted" /></td>
+		<td className="w-24 px-4 py-5"><div className="size-7 animate-pulse rounded-lg bg-muted" /></td>
+	</tr>
+);
 
+/* ── Responses ───────────────────────────────────────────────────────────── */
 const Responses = () => {
-	const [search,  setSearch]  = useState('');
-	const [form,    setForm]    = useState('all');
-	const [rating,  setRating]  = useState('all');
-	const [perPage, setPerPage] = useState('10');
-	const [page,    setPage]    = useState(1);
-	const [checked, setChecked] = useState<number[]>([]);
+	const queryClient = useQueryClient();
 
-	const responses: Response[] = [];
+	const [selectedSurveyId, setSelectedSurveyId] = useState<number | null>(null);
+	const [search,           setSearch]           = useState('');
+	const [page,             setPage]             = useState(1);
+	const [perPage,          setPerPage]          = useState(10);
+	const [sortBy,           setSortBy]           = useState<'id' | 'created_at'>('created_at');
+	const [order,            setOrder]            = useState<'ASC' | 'DESC'>('DESC');
+	const [checked,          setChecked]          = useState<number[]>([]);
+	const [confirmDelete,    setConfirmDelete]    = useState<{ id: number; surveyId: number } | null>(null);
+	const [bulkConfirmOpen,  setBulkConfirmOpen]  = useState(false);
 
-	const filtered = responses.filter((r) => {
-		const matchSearch = r.excerpt.toLowerCase().includes(search.toLowerCase());
-		const matchForm   = form === 'all' || r.form === form;
-		const matchRating = rating === 'all' || r.rating === Number(rating);
-		return matchSearch && matchForm && matchRating;
+	const debouncedSearch = useDebouncedValue(search, 300);
+
+	/* Reset page when search settles */
+	useEffect(() => { setPage(1); }, [debouncedSearch]);
+
+	/* ── Fetch surveys for the form selector ── */
+	const { data: surveysData } = useQuery({
+		...surveysQuery({ per_page: 100 }),
+		placeholderData: keepPreviousData,
+	});
+	const allSurveys = surveysData?.surveys ?? [];
+
+	/* Survey title lookup for "All Forms" view */
+	const surveyTitleMap = Object.fromEntries(allSurveys.map((s) => [s.id, s.title]));
+
+	/* ── Fetch responses ── */
+	const queryParams = { page, per_page: perPage };
+
+	const allResponsesQuery = useQuery({
+		queryKey: ['responses', 'all', queryParams],
+		queryFn:  () => surveysApi.listAllResponses(queryParams),
+		enabled:  selectedSurveyId === null,
+		placeholderData: keepPreviousData,
 	});
 
-	const perPageNum = Number(perPage);
-	const total      = filtered.length;
-	const totalPages = Math.max(1, Math.ceil(total / perPageNum));
-	const start      = total === 0 ? 0 : (page - 1) * perPageNum + 1;
-	const end        = Math.min(page * perPageNum, total);
-	const paginated  = filtered.slice((page - 1) * perPageNum, page * perPageNum);
+	const surveyResponsesQuery = useQuery({
+		queryKey: ['responses', selectedSurveyId, queryParams],
+		queryFn:  () => surveysApi.listResponses(selectedSurveyId!, queryParams),
+		enabled:  selectedSurveyId !== null,
+		placeholderData: keepPreviousData,
+	});
 
-	const allChecked = paginated.length > 0 && paginated.every((r) => checked.includes(r.id));
-	const toggleAll  = () => setChecked(allChecked ? [] : paginated.map((r) => r.id));
-	const toggleOne  = (id: number) =>
+	const activeQuery  = selectedSurveyId === null ? allResponsesQuery : surveyResponsesQuery;
+	const { data, isLoading, isError, isFetching } = activeQuery;
+
+	const responses  = data?.responses ?? [];
+	const total      = data?.total     ?? 0;
+	const totalPages = Math.max(1, Math.ceil(total / perPage));
+	const showForm   = selectedSurveyId === null;
+	const numCols    = showForm ? 6 : 5;
+
+	/* ── Sort (client-side within current page) ── */
+	const sorted = [...responses].sort((a, b) => {
+		const valA = sortBy === 'id' ? a.id : new Date(a.created_at).getTime();
+		const valB = sortBy === 'id' ? b.id : new Date(b.created_at).getTime();
+		return order === 'DESC' ? valB - valA : valA - valB;
+	});
+
+	/* ── Filter responses by search text ── */
+	const filtered = debouncedSearch.trim()
+		? sorted.filter((r) =>
+			getResponseSummary(r.response_data).toLowerCase().includes(debouncedSearch.toLowerCase()),
+		)
+		: sorted;
+
+	/* ── Selection ── */
+	const allChecked  = responses.length > 0 && responses.every((r) => checked.includes(r.id));
+	const someChecked = checked.length > 0 && !allChecked;
+	const toggleAll   = () => setChecked(allChecked ? [] : responses.map((r) => r.id));
+	const toggleOne   = (id: number) =>
 		setChecked((prev) => prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]);
+
+	/* ── Single delete ── */
+	const deleteMutation = useMutation({
+		mutationFn: ({ id, surveyId }: { id: number; surveyId: number }) =>
+			surveysApi.deleteResponse(surveyId, id),
+		onSuccess: (_, { id }) => {
+			void queryClient.invalidateQueries({ queryKey: ['responses'] });
+			setChecked((prev) => prev.filter((i) => i !== id));
+			setConfirmDelete(null);
+			toast.success(__('Response deleted.', 'all-feedback'));
+		},
+		onError: () => {
+			setConfirmDelete(null);
+			toast.error(__('Failed to delete response. Please try again.', 'all-feedback'));
+		},
+	});
+
+	/* ── Bulk delete ── */
+	const bulkDeleteMutation = useMutation({
+		mutationFn: (ids: number[]) =>
+			Promise.all(
+				ids.map((id) => {
+					const surveyId = responses.find((r) => r.id === id)?.survey_id ?? selectedSurveyId!;
+					return surveysApi.deleteResponse(surveyId, id);
+				}),
+			),
+		onSuccess: (_, ids) => {
+			void queryClient.invalidateQueries({ queryKey: ['responses'] });
+			setChecked([]);
+			setBulkConfirmOpen(false);
+			toast.success(
+				ids.length === 1
+					? __('1 response deleted.', 'all-feedback')
+					: `${ids.length} ${__('responses deleted.', 'all-feedback')}`,
+			);
+		},
+		onError: () => {
+			setBulkConfirmOpen(false);
+			toast.error(__('Failed to delete responses. Please try again.', 'all-feedback'));
+		},
+	});
+
+	/* ── Column header ── */
+	const colHeadCls = 'flex items-center gap-1 text-[12px] font-semibold uppercase tracking-wide leading-[16px] select-none text-[oklch(0.446_0.03_256.802)]';
+
+	const ColHead = ({ label, col }: { label: string; col?: 'id' | 'created_at' }) => {
+		const isActive = col !== undefined && sortBy === col;
+		const Icon     = isActive ? (order === 'DESC' ? ArrowDown : ArrowUp) : ArrowUpDown;
+		const sortable = col !== undefined;
+		const handleClick = () => {
+			if (!sortable) return;
+			if (sortBy === col) {
+				setOrder((o) => o === 'DESC' ? 'ASC' : 'DESC');
+			} else {
+				setSortBy(col);
+				setOrder('DESC');
+			}
+		};
+		return (
+			<span
+				role={sortable ? 'button' : undefined}
+				tabIndex={sortable ? 0 : undefined}
+				onClick={sortable ? handleClick : undefined}
+				onKeyDown={sortable ? (e) => { if (e.key === 'Enter' || e.key === ' ') handleClick(); } : undefined}
+				className={cn(colHeadCls, sortable ? 'cursor-pointer transition-colors hover:text-foreground' : '', isActive ? 'text-foreground' : '')}
+			>
+				{label}
+				{sortable && <Icon className="size-3 shrink-0" />}
+			</span>
+		);
+	};
 
 	return (
 		<div className="p-5 md:p-6">
 
-			{/* Filter bar */}
-			<div className="mb-4 flex flex-wrap items-center gap-3 py-1">
-				<div className="relative w-[260px]">
-					<svg className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-						<circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-					</svg>
-					<Input
-						value={search}
-						onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-						placeholder={__('Search...', 'all-feedback')}
-						className="pl-9"
-					/>
-				</div>
+			{/* ── Single delete confirm ── */}
+			<ConfirmDialog
+				open={confirmDelete !== null}
+				onOpenChange={(open) => { if (!open && !deleteMutation.isPending) setConfirmDelete(null); }}
+				onConfirm={() => { if (confirmDelete) deleteMutation.mutate(confirmDelete); }}
+				title={__('Delete response?', 'all-feedback')}
+				description={__('This action cannot be undone. The response will be permanently removed.', 'all-feedback')}
+				confirmLabel={__('Delete', 'all-feedback')}
+				cancelLabel={__('Cancel', 'all-feedback')}
+				isPending={deleteMutation.isPending}
+			/>
 
-				<Select value={form} onValueChange={(v) => { setForm(v); setPage(1); }}>
-					<SelectTrigger className="w-[160px]">
+			{/* ── Bulk delete confirm ── */}
+			<ConfirmDialog
+				open={bulkConfirmOpen}
+				onOpenChange={(open) => { if (!open && !bulkDeleteMutation.isPending) setBulkConfirmOpen(false); }}
+				onConfirm={() => bulkDeleteMutation.mutate(checked)}
+				title={__('Delete selected responses?', 'all-feedback')}
+				description={__('This action cannot be undone. The selected responses will be permanently removed.', 'all-feedback')}
+				confirmLabel={__('Delete', 'all-feedback')}
+				cancelLabel={__('Cancel', 'all-feedback')}
+				isPending={bulkDeleteMutation.isPending}
+			/>
+
+			{/* ── Toolbar ── */}
+			<div className="mb-4 flex flex-wrap items-center gap-3 py-1">
+
+				{/* Form selector */}
+				<Select
+					value={selectedSurveyId !== null ? String(selectedSurveyId) : 'all'}
+					onValueChange={(v) => {
+						setSelectedSurveyId(v === 'all' ? null : Number(v));
+						setPage(1);
+						setChecked([]);
+					}}
+				>
+					<SelectTrigger className="w-[220px]">
 						<SelectValue placeholder={__('All Forms', 'all-feedback')} />
 					</SelectTrigger>
 					<SelectContent>
 						<SelectItem value="all">{__('All Forms', 'all-feedback')}</SelectItem>
+						{allSurveys.map((s) => (
+							<SelectItem key={s.id} value={String(s.id)}>
+								{s.title}
+							</SelectItem>
+						))}
 					</SelectContent>
 				</Select>
 
-				<Select value={rating} onValueChange={(v) => { setRating(v); setPage(1); }}>
-					<SelectTrigger className="w-[150px]">
-						<SelectValue placeholder={__('All Ratings', 'all-feedback')} />
-					</SelectTrigger>
-					<SelectContent>
-						<SelectItem value="all">{__('All Ratings', 'all-feedback')}</SelectItem>
-						<SelectItem value="5">★★★★★ 5</SelectItem>
-						<SelectItem value="4">★★★★☆ 4</SelectItem>
-						<SelectItem value="3">★★★☆☆ 3</SelectItem>
-						<SelectItem value="2">★★☆☆☆ 2</SelectItem>
-						<SelectItem value="1">★☆☆☆☆ 1</SelectItem>
-					</SelectContent>
-				</Select>
+				{/* Search — same style as AllForms */}
+				<div className="relative w-[260px]">
+					<svg
+						className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
+						fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"
+					>
+						<circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+					</svg>
+					<Input
+						value={search}
+						onChange={(e) => setSearch(e.target.value)}
+						placeholder={__('Search responses…', 'all-feedback')}
+						className="pl-9"
+					/>
+				</div>
 			</div>
 
+			{/* ── Table card ── */}
 			<div className="rounded-xl border border-border bg-card">
-
-				{/* Table */}
 				<div className="overflow-x-auto">
-					<table className="w-full text-sm">
+					<table className="w-full table-fixed">
 						<thead>
 							<tr className="border-b border-border bg-muted/30">
-								<th className="w-10 px-4 py-3 text-left">
-									<input
-										type="checkbox"
-										checked={allChecked}
-										onChange={toggleAll}
-										className="size-4 cursor-pointer rounded accent-primary"
+								<th className="w-12 px-4 py-4 text-left">
+									<Checkbox
+										checked={someChecked ? 'indeterminate' : allChecked}
+										onCheckedChange={toggleAll}
+										disabled={isLoading || responses.length === 0}
 									/>
 								</th>
-								<th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-									{__('Form', 'all-feedback')}
+								<th className="w-16 px-4 py-4 text-left">
+									<ColHead label={__('ID', 'all-feedback')} col="id" />
 								</th>
-								<th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-									{__('Response', 'all-feedback')}
+								{showForm && (
+									<th className="w-[180px] px-4 py-4 text-left">
+										<ColHead label={__('Form', 'all-feedback')} />
+									</th>
+								)}
+								<th className="w-[220px] px-4 py-4 text-left">
+									<ColHead label={__('Response', 'all-feedback')} />
 								</th>
-								<th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-									{__('Rating', 'all-feedback')}
+								<th className="w-36 px-4 py-4 text-left">
+									<ColHead label={__('Submitted', 'all-feedback')} col="created_at" />
 								</th>
-								<th className="px-4 py-3 text-left">
-									<button type="button" className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground">
-										{__('Submitted', 'all-feedback')}
-										<ArrowUpDown className="size-3" />
-									</button>
-								</th>
-								<th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-									{__('Actions', 'all-feedback')}
+								<th className="w-24 px-4 py-4 text-left">
+									<ColHead label={__('Actions', 'all-feedback')} />
 								</th>
 							</tr>
 						</thead>
+
 						<tbody>
-							{paginated.length === 0 ? (
-								<tr>
-									<td colSpan={6}>
-										<EmptyState
-											icon={MessageSquare}
-											title={search || form !== 'all' || rating !== 'all'
-												? __('No responses match your filters.', 'all-feedback')
-												: __('No responses yet', 'all-feedback')
-											}
-											description={search || form !== 'all' || rating !== 'all'
-												? __('Try adjusting your search or filter criteria.', 'all-feedback')
-												: __('Responses will appear here once visitors submit your forms.', 'all-feedback')
-											}
-										/>
-									</td>
-								</tr>
-							) : (
-								paginated.map((response) => {
-									const badge = RATING_BADGE[response.rating];
-									return (
-										<tr key={response.id} className="border-b border-border last:border-0 hover:bg-muted/20">
-											<td className="px-4 py-3">
-												<input
-													type="checkbox"
-													checked={checked.includes(response.id)}
-													onChange={() => toggleOne(response.id)}
-													className="size-4 cursor-pointer rounded accent-primary"
-												/>
-											</td>
-											<td className="px-4 py-3 font-medium text-foreground">{response.form}</td>
-											<td className="max-w-xs px-4 py-3 text-muted-foreground">
-												<span className="line-clamp-1">{response.excerpt}</span>
-											</td>
-											<td className="px-4 py-3">
-												<Badge variant={badge.variant}>{response.rating} ★</Badge>
-											</td>
-											<td className="px-4 py-3 text-muted-foreground">
-												{new Date(response.submittedAt).toLocaleDateString()}
-											</td>
-											<td className="px-4 py-3">
-												<div className="flex items-center justify-end gap-1">
-													<Button variant="ghost" size="icon-sm">
-														<Eye className="size-3.5" />
-													</Button>
-													<Button variant="ghost" size="icon-sm" className="text-destructive hover:text-destructive">
-														<Trash2 className="size-3.5" />
-													</Button>
-												</div>
-											</td>
-										</tr>
-									);
-								})
+							{/* Loading skeletons */}
+							{isLoading && Array.from({ length: 5 }, (_, i) => <SkeletonRow key={i} showForm={showForm} />)}
+
+							{/* Error */}
+							{isError && !isLoading && (
+								<tr><td colSpan={numCols}>
+									<EmptyState
+										icon={AlertCircle}
+										title={__('Failed to load responses', 'all-feedback')}
+										description={__('There was a problem fetching responses. Please try again.', 'all-feedback')}
+									/>
+								</td></tr>
 							)}
+
+							{/* Empty */}
+							{!isLoading && !isError && responses.length === 0 && (
+								<tr><td colSpan={numCols}>
+									<EmptyState
+										icon={MessageSquare}
+										title={__('No responses yet', 'all-feedback')}
+										description={__('Responses will appear here once visitors submit forms.', 'all-feedback')}
+									/>
+								</td></tr>
+							)}
+
+							{/* No search match */}
+							{!isLoading && !isError && responses.length > 0 && filtered.length === 0 && (
+								<tr><td colSpan={numCols}>
+									<EmptyState
+										icon={MessageSquare}
+										title={__('No responses match your search', 'all-feedback')}
+										description={__('Try a different keyword.', 'all-feedback')}
+									/>
+								</td></tr>
+							)}
+
+							{/* Data rows */}
+							{!isLoading && !isError && filtered.map((response: SurveyResponse) => {
+								const isSelected = checked.includes(response.id);
+								const summary    = getResponseSummary(response.response_data);
+								return (
+									<tr
+										key={response.id}
+										className={cn(
+											'border-b border-border last:border-0 transition-colors',
+											isSelected ? 'bg-primary/[0.03]' : 'hover:bg-muted/20',
+										)}
+									>
+										<td className="w-12 px-4 py-5">
+											<Checkbox checked={isSelected} onCheckedChange={() => toggleOne(response.id)} />
+										</td>
+										<td className="w-16 px-4 py-5">
+											<span className={cn(cellCls, 'tabular-nums text-foreground/40')}>
+												#{response.id}
+											</span>
+										</td>
+										{showForm && (
+											<td className="w-[180px] px-4 py-5">
+												<button
+													type="button"
+													className="group/name flex min-w-0 items-center gap-1.5 text-left"
+													onClick={() => { window.location.hash = `/builder/?id=${response.survey_id}`; }}
+												>
+													<span className={cn(cellCls, 'truncate font-medium underline-offset-2 transition-all group-hover/name:text-primary group-hover/name:underline')}>
+														{surveyTitleMap[response.survey_id] ?? `#${response.survey_id}`}
+													</span>
+													<Edit2 className="size-3 shrink-0 opacity-0 transition-all group-hover/name:text-primary group-hover/name:opacity-60" />
+												</button>
+											</td>
+										)}
+										<td className="w-[220px] px-4 py-5">
+											<span className={cn(cellCls, 'line-clamp-1 block')}>{summary}</span>
+										</td>
+										<td className="w-36 px-4 py-5">
+											<span className={cellCls}>
+												{new Date(response.created_at).toLocaleDateString()}
+											</span>
+										</td>
+										<td className="w-24 px-4 py-5">
+											<div className="flex items-center gap-1">
+												<DropdownMenu>
+													<DropdownMenuTrigger asChild>
+														<button
+															type="button"
+															style={{ border: '1.5px solid #E2E2E8' }}
+															className="flex size-7 shrink-0 items-center justify-center rounded-lg text-foreground/50 transition-colors hover:bg-muted/50 hover:text-foreground"
+														>
+															<MoreVertical className="size-3.5" />
+														</button>
+													</DropdownMenuTrigger>
+													<DropdownMenuContent>
+														<DropdownMenuItem
+															destructive
+															onSelect={() => setConfirmDelete({ id: response.id, surveyId: response.survey_id })}
+														>
+															<Trash2 className="size-3.5" />
+															{__('Delete', 'all-feedback')}
+														</DropdownMenuItem>
+													</DropdownMenuContent>
+												</DropdownMenu>
+											</div>
+										</td>
+									</tr>
+								);
+							})}
 						</tbody>
 					</table>
 				</div>
 			</div>
 
-			{/* Footer */}
-			<div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
-				<span>
-					{__('Showing', 'all-feedback')} {start} - {end} {__('of', 'all-feedback')} {total}
-				</span>
-				<div className="flex items-center gap-3">
-					<div className="flex items-center gap-2">
-						<span className="text-sm">{__('Responses per page', 'all-feedback')}</span>
-						<Select value={perPage} onValueChange={(v) => { setPerPage(v); setPage(1); }}>
-							<SelectTrigger className="h-8 w-16 text-xs">
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								{PER_PAGE_OPTIONS.map((n) => (
-									<SelectItem key={n} value={n}>{n}</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					</div>
-					<div className="flex items-center gap-1">
-						<Button variant="ghost" size="icon-sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-							<ChevronLeft className="size-3.5" />
-						</Button>
-						<span className="flex size-7 items-center justify-center rounded-md border border-border text-xs font-medium text-foreground">
-							{page}
-						</span>
-						<Button variant="ghost" size="icon-sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
-							<ChevronRight className="size-3.5" />
-						</Button>
-					</div>
-				</div>
-			</div>
+			{/* ── Pagination ── */}
+			<Pagination
+				className="mt-6"
+				page={page}
+				totalPages={totalPages}
+				total={total}
+				perPage={perPage}
+				perPageOptions={[10, 25, 50]}
+				isLoading={isFetching}
+				onPageChange={setPage}
+				onPerPageChange={(n) => { setPerPage(n); setPage(1); }}
+			/>
 
+			{/* ── Bulk action bar ── */}
+			<BulkActionBar
+				count={checked.length}
+				showDelete={checked.length > 0}
+				onDelete={() => setBulkConfirmOpen(true)}
+				onTrash={() => {}}
+				onRestore={() => {}}
+				onClone={() => {}}
+				onClear={() => setChecked([])}
+				isDeleting={bulkDeleteMutation.isPending}
+			/>
 		</div>
 	);
 };

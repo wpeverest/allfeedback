@@ -21,9 +21,9 @@ import type { SurveyFormSchema, SurveyStatus } from '@/admin/api/surveys';
 const WP_ELEMENTS = ['#wpadminbar', '#adminmenuwrap', '#adminmenuback'] as const;
 
 const TABS: { value: BuilderTab; label: string; Icon: typeof LayoutGrid; pro?: boolean }[] = [
-	{ value: 'builder', label: __('Builder', 'all-feedback'), Icon: LayoutGrid },
-	{ value: 'settings', label: __('Settings', 'all-feedback'), Icon: Settings2 },
-	{ value: 'styling', label: __('Styling', 'all-feedback'), Icon: Palette, pro: true },
+	{ value: 'builder',  label: __('Builder',  'all-feedback'), Icon: LayoutGrid },
+	{ value: 'settings', label: __('Settings', 'all-feedback'), Icon: Settings2  },
+	{ value: 'styling',  label: __('Styling',  'all-feedback'), Icon: Palette,   pro: true },
 ];
 
 /** Deserialize API form_schema back into builder FormSection[] */
@@ -718,10 +718,11 @@ const FormBuilder = () => {
 								</div>
 							</div>
 						)}
+
 					</div>
 				</div>
 
- 				<div
+				<div
 					className="group relative flex w-3 shrink-0 cursor-col-resize items-center justify-center border-x border-border bg-white transition-colors hover:bg-muted/40"
 					onMouseDown={startResize}
 				>
@@ -731,7 +732,7 @@ const FormBuilder = () => {
 					</div>
 				</div>
 
- 				<div
+				<div
 					className="preview-panel-wrapper shrink-0 overflow-hidden"
 					style={{ '--preview-width': `${previewWidth}px` } as React.CSSProperties}
 				>
@@ -740,6 +741,7 @@ const FormBuilder = () => {
 						settings={settings}
 						device={previewDevice}
 						onDeviceChange={setPreviewDevice}
+						surveyId={formId ?? undefined}
 					/>
 				</div>
 			</div>

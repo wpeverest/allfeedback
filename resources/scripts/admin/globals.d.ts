@@ -24,6 +24,9 @@ declare const __ALLFB_ADMIN__: {
 	/** WP REST API nonce — passed to every API request via wp_create_nonce('wp_rest'). */
 	nonce: string;
 
+	/** Public submission nonce — wp_create_nonce('allfeedback_submit'). */
+	submitNonce: string;
+
 	/** Plugin version string, e.g. "1.0.0". */
 	version: string;
 };

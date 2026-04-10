@@ -119,6 +119,70 @@ class ResponseManager {
 		);
 	}
 
+	/**
+	 * Return a paginated list of all responses across every survey.
+	 *
+	 * @param int    $perPage  Maximum rows to return.
+	 * @param int    $offset   Number of rows to skip.
+	 * @param string $dateFrom Optional lower-bound date (Y-m-d). Empty string = no bound.
+	 * @param string $dateTo   Optional upper-bound date (Y-m-d). Empty string = no bound.
+	 * @return object[]
+	 * @since 1.0.0
+	 */
+	public function findAll(
+		int $perPage    = 20,
+		int $offset     = 0,
+		string $dateFrom = '',
+		string $dateTo   = ''
+	): array {
+		global $wpdb;
+
+		[ $where, $values ] = $this->buildWhereAll( $dateFrom, $dateTo );
+
+		$table    = $this->table();
+		$values[] = $perPage;
+		$values[] = $offset;
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT * FROM {$table} {$where} ORDER BY created_at DESC LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$values
+			)
+		);
+
+		return $rows ?: [];
+	}
+
+	/**
+	 * Count all responses across every survey.
+	 *
+	 * @param string $dateFrom Optional lower-bound date (Y-m-d).
+	 * @param string $dateTo   Optional upper-bound date (Y-m-d).
+	 * @return int
+	 * @since 1.0.0
+	 */
+	public function countAll( string $dateFrom = '', string $dateTo = '' ): int {
+		global $wpdb;
+
+		[ $where, $values ] = $this->buildWhereAll( $dateFrom, $dateTo );
+
+		$table = $this->table();
+
+		if ( empty( $values ) ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		}
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		return (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$table} {$where}", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$values
+			)
+		);
+	}
+
 	// ------------------------------------------------------------------
 	// Write
 	// ------------------------------------------------------------------
@@ -245,6 +309,33 @@ class ResponseManager {
 	private function table(): string {
 		global $wpdb;
 		return $wpdb->prefix . self::TABLE;
+	}
+
+	/**
+	 * Build a WHERE clause for optional date bounds only (all surveys).
+	 *
+	 * @param string $dateFrom
+	 * @param string $dateTo
+	 * @return array{0: string, 1: array<int, mixed>}
+	 * @since 1.0.0
+	 */
+	private function buildWhereAll( string $dateFrom, string $dateTo ): array {
+		$conditions = [];
+		$values     = [];
+
+		if ( $dateFrom !== '' ) {
+			$conditions[] = 'DATE(created_at) >= %s';
+			$values[]     = $dateFrom;
+		}
+
+		if ( $dateTo !== '' ) {
+			$conditions[] = 'DATE(created_at) <= %s';
+			$values[]     = $dateTo;
+		}
+
+		$where = ! empty( $conditions ) ? 'WHERE ' . implode( ' AND ', $conditions ) : '';
+
+		return [ $where, $values ];
 	}
 
 	/**

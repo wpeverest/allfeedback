@@ -51,6 +51,30 @@ class ResponsesController extends RestController {
 	 * @since 1.0.0
 	 */
 	public function registerRoutes(): void {
+		// Global responses — all surveys.
+		register_rest_route(
+			$this->namespace,
+			'/responses',
+			[
+				[
+					'methods'             => \WP_REST_Server::READABLE,
+					'callback'            => [ $this, 'indexAll' ],
+					'permission_callback' => [ $this, 'adminPermission' ],
+					'args'                => array_merge(
+						$this->paginationArgs( defaultPerPage: 20, maxPerPage: 100 ),
+						[
+							'date_from' => $this->argString(
+								description: __( 'Filter responses on or after this date (Y-m-d).', 'all-feedback' ),
+							),
+							'date_to'   => $this->argString(
+								description: __( 'Filter responses on or before this date (Y-m-d).', 'all-feedback' ),
+							),
+						]
+					),
+				],
+			]
+		);
+
 		register_rest_route(
 			$this->namespace,
 			'/' . $this->restBase . '/(?P<id>\d+)/responses',
@@ -105,6 +129,35 @@ class ResponsesController extends RestController {
 	// ------------------------------------------------------------------
 	// Route handlers
 	// ------------------------------------------------------------------
+
+	/**
+	 * GET /all-feedback/v1/responses
+	 *
+	 * Return a paginated list of all responses across every survey.
+	 *
+	 * @param \WP_REST_Request $request Full request data.
+	 * @return \WP_REST_Response|\WP_Error
+	 * @since 1.0.0
+	 */
+	public function indexAll( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		$page     = max( 1, (int) ( $request->get_param( 'page' ) ?? 1 ) );
+		$perPage  = min( 100, max( 1, (int) ( $request->get_param( 'per_page' ) ?? 20 ) ) );
+		$offset   = ( $page - 1 ) * $perPage;
+		$dateFrom = sanitize_text_field( (string) ( $request->get_param( 'date_from' ) ?? '' ) );
+		$dateTo   = sanitize_text_field( (string) ( $request->get_param( 'date_to' ) ?? '' ) );
+
+		$responses = $this->responseManager->findAll( $perPage, $offset, $dateFrom, $dateTo );
+		$total     = $this->responseManager->countAll( $dateFrom, $dateTo );
+
+		return $this->successResponse(
+			[
+				'responses' => array_map( [ $this, 'prepareResponse' ], $responses ),
+				'total'     => $total,
+				'page'      => $page,
+				'per_page'  => $perPage,
+			]
+		);
+	}
 
 	/**
 	 * GET /all-feedback/v1/surveys/{id}/responses

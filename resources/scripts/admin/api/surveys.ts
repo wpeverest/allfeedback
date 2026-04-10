@@ -87,6 +87,46 @@ export type BulkDeleteResponse = {
 	failed:  number[];
 };
 
+export type SurveyResponse = {
+	id:            number;
+	survey_id:     number;
+	response_data: Record<string, unknown> | null;
+	score:         number | null;
+	page_url:      string | null;
+	device_type:   string | null;
+	user_id:       number | null;
+	consent_given: boolean;
+	created_at:    string;
+};
+
+export type ResponseListResponse = PaginatedMeta & {
+	responses: SurveyResponse[];
+};
+
+export type ResponseListParams = PaginationParams & {
+	date_from?: string;
+	date_to?:   string;
+};
+
+export type DeleteResponseResult = {
+	deleted: boolean;
+	id:      number;
+};
+
+export type SubmitFormData = {
+	nonce:         string;
+	response_data: Record<string, unknown>;
+	score?:        number;
+	page_url?:     string;
+	device_type?:  string;
+};
+
+export type SubmitFormResult = {
+	id:         number;
+	survey_id:  number;
+	created_at: string;
+};
+
 export type ContentSearchItem = {
 	id:    number;
 	title: string;
@@ -147,4 +187,16 @@ export const surveysApi = {
 
 	contentSearch: (params?: ContentSearchParams) =>
 		request<ContentSearchResponse>('/content-search' + toQuery(params)),
+
+	listAllResponses: (params?: ResponseListParams) =>
+		request<ResponseListResponse>('/responses' + toQuery(params)),
+
+	listResponses: (surveyId: number, params?: ResponseListParams) =>
+		request<ResponseListResponse>(`/surveys/${surveyId}/responses` + toQuery(params)),
+
+	deleteResponse: (surveyId: number, responseId: number) =>
+		request<DeleteResponseResult>(`/surveys/${surveyId}/responses/${responseId}`, { method: 'DELETE' }),
+
+	submit: (surveyId: number, data: SubmitFormData) =>
+		request<SubmitFormResult>(`/surveys/${surveyId}/submit`, { method: 'POST', data }),
 };

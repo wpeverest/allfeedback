@@ -1,14 +1,19 @@
+import { surveysApi } from '@/admin/api/surveys';
+import type { SubmitFormData } from '@/admin/api/surveys';
 import { cn } from '@/lib/utils';
-import { ArrowLeft, ArrowRight, CheckCircle2, ChevronLeft, ChevronRight, Eye, Globe, Lock, MessageSquare, Minus, Monitor, MoreHorizontal, Plus, RotateCw, Smartphone, Star, Tablet, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import type { FormField, FormSection, FormSettings, PreviewDevice } from './types';
+import { useMutation } from '@tanstack/react-query';
 import { __ } from '@wordpress/i18n';
+import { ArrowLeft, ArrowRight, CheckCircle2, ChevronLeft, ChevronRight, Eye, Globe, Loader2, Lock, MessageSquare, Minus, Monitor, MoreHorizontal, Plus, RotateCw, Smartphone, Star, Tablet, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import type { FormField, FormSection, FormSettings, PreviewDevice } from './types';
 
 interface PreviewPanelProps {
 	sections:       FormSection[];
 	settings:       FormSettings;
 	device:         PreviewDevice;
 	onDeviceChange: (device: PreviewDevice) => void;
+	surveyId?:      number;
 }
 
 const DEVICES: { value: PreviewDevice; Icon: typeof Monitor; label: string }[] = [
@@ -328,6 +333,7 @@ interface WidgetBodyProps {
 	onMinimize:    () => void;
 	onClose:       () => void;
 	onChange:      (fieldId: string, value: string | string[]) => void;
+	isSubmitting:  boolean;
 	onNext:        () => void;
 	onBack:        () => void;
 	onSubmit:      () => void;
@@ -337,12 +343,28 @@ interface WidgetBodyProps {
 const WidgetBody = ({
 	steps, stepIndex, totalSteps, hasSteps, isLastStep, currentFields,
 	isSubmitted, fieldValues, fieldErrors, isMinimized, isClosed, showControls, settings,
-	onMinimize, onClose, onChange, onNext, onBack, onSubmit, onResubmit,
-}: WidgetBodyProps) => (
-	<div className={cn(
-		'overflow-hidden rounded-2xl border border-border/60 shadow-lg transition-all duration-200 origin-bottom-right',
-		isClosed || isMinimized ? 'pointer-events-none scale-90 opacity-0' : 'scale-100 opacity-100',
-	)}>
+	isSubmitting, onMinimize, onClose, onChange, onNext, onBack, onSubmit, onResubmit,
+}: WidgetBodyProps) => {
+	const handleKeyDown = (e: React.KeyboardEvent) => {
+		if (e.key !== 'Enter') return;
+		if ((e.target as HTMLElement).tagName === 'TEXTAREA') return;
+		if (isSubmitted || isMinimized || isClosed || !hasSteps || isSubmitting) return;
+		e.preventDefault();
+		if (isLastStep) {
+			onSubmit();
+		} else {
+			onNext();
+		}
+	};
+
+	return (
+	<div
+		className={cn(
+			'overflow-hidden rounded-2xl border border-border/60 shadow-lg transition-all duration-200 origin-bottom-right',
+			isClosed || isMinimized ? 'pointer-events-none scale-90 opacity-0' : 'scale-100 opacity-100',
+		)}
+		onKeyDown={handleKeyDown}
+	>
 		{/* Widget header */}
 		<div className="flex items-center justify-end gap-0.5 bg-primary px-2.5 py-1.5">
 			{showControls && (
@@ -445,8 +467,10 @@ const WidgetBody = ({
 								<button
 									type="button"
 									onClick={onSubmit}
-									className="flex-1 rounded-lg bg-primary py-3 text-[11.5px] font-semibold text-white transition-colors hover:bg-brand-600 active:bg-brand-700"
+									disabled={isSubmitting}
+									className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary py-3 text-[11.5px] font-semibold text-white transition-colors hover:bg-brand-600 active:bg-brand-700 disabled:opacity-70"
 								>
+									{isSubmitting && <Loader2 className="size-3 animate-spin" />}
 									{settings.submitLabel || __('Submit', 'all-feedback')}
 								</button>
 							) : (
@@ -464,7 +488,8 @@ const WidgetBody = ({
 			)}
 		</div>
 	</div>
-);
+	);
+};
 
 /* ─── Helpers ────────────────────────────────────────────────────────────── */
 const allFields = (sections: FormSection[]): FormField[] =>
@@ -482,7 +507,7 @@ const getSiteHostname = (): string => {
 };
 
 /* ─── Main component ─────────────────────────────────────────────────────── */
-const PreviewPanel = ({ sections, settings, device, onDeviceChange }: PreviewPanelProps) => {
+const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId }: PreviewPanelProps) => {
 	const steps        = activeSections(sections);
 	const totalSteps   = steps.length;
 	const hasSteps     = totalSteps > 0;
@@ -501,6 +526,23 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange }: PreviewPan
 	const stepIndex    = Math.min(currentStep, Math.max(0, totalSteps - 1));
 	const isLastStep   = stepIndex === totalSteps - 1;
 	const currentFields = steps[stepIndex]?.fields ?? [];
+
+	/* ── Submit mutation ── */
+	const submitMutation = useMutation({
+		mutationFn: (data: SubmitFormData) => surveysApi.submit(surveyId!, data),
+		onSuccess: () => {
+			setIsSubmitted(true);
+		},
+		onError: (error: unknown) => {
+			const status = (error as { data?: { status?: number } })?.data?.status;
+			if (status === 403) {
+				toast.warning(__('Form is not published — response not saved.', 'all-feedback'));
+				setIsSubmitted(true);
+			} else {
+				toast.error(__('Failed to submit. Please try again.', 'all-feedback'));
+			}
+		},
+	});
 
 	/* Reset when sections structure changes */
 	useEffect(() => {
@@ -538,10 +580,26 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange }: PreviewPan
 	const handleSubmit = () => {
 		const errors = validateStep(currentFields);
 		if (Object.keys(errors).length) { setFieldErrors(errors); return; }
-		setIsSubmitted(true);
+		setFieldErrors({});
+
+		if (surveyId) {
+			const scoreField = allFields(sections).find((f) => ['nps', 'star_rating', 'scale'].includes(f.type));
+			const scoreRaw   = scoreField ? fieldValues[scoreField.id] : '';
+			const score      = typeof scoreRaw === 'string' && scoreRaw !== '' ? Number(scoreRaw) : undefined;
+			submitMutation.mutate({
+				nonce:         __ALLFB_ADMIN__.submitNonce,
+				response_data: fieldValues as Record<string, unknown>,
+				...(score !== undefined && !isNaN(score) && { score }),
+				page_url:    window.location.href,
+				device_type: device,
+			});
+		} else {
+			setIsSubmitted(true);
+		}
 	};
 
 	const handleReset = () => {
+		submitMutation.reset();
 		setIsClosed(false);
 		setIsMinimized(false);
 		setIsSubmitted(false);
@@ -553,6 +611,7 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange }: PreviewPan
 	const sharedWidgetProps = {
 		steps, stepIndex, totalSteps, hasSteps, isLastStep, currentFields,
 		isSubmitted, fieldValues, fieldErrors, isMinimized, isClosed, settings,
+		isSubmitting: submitMutation.isPending,
 		onMinimize: () => setIsMinimized(true),
 		onClose:    () => setIsClosed(true),
 		onChange:   handleChange,

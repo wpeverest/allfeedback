@@ -212,6 +212,7 @@ class AdminServiceProvider implements ServiceProvider {
 				'currentUserId' => get_current_user_id(),
 				'isAdmin'       => current_user_can( 'manage_options' ),
 				'nonce'         => wp_create_nonce( 'wp_rest' ),
+				'submitNonce'   => wp_create_nonce( 'allfeedback_submit' ),
 				'version'       => Constants::VERSION,
 			]
 		);
