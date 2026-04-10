@@ -32,12 +32,12 @@ if (localWpPhpBin) {
     console.log(chalk.dim(`Using LocalWP PHP: ${localWpPhpBin}`));
 }
 
-function exec(command) {
+function exec(command, env = spawnEnv) {
     console.log(chalk.cyan(`▶ ${command}`));
 
     return new Promise((resolve, reject) => {
         const [cmd, ...args] = command.split(' ');
-        const child = spawn(cmd, args, { shell: true, stdio: 'pipe', env: spawnEnv });
+        const child = spawn(cmd, args, { shell: true, stdio: 'pipe', env });
 
         child.stdout.on('data', (d) => console.log(chalk.green(d.toString().trim())));
         child.stderr.on('data', (d) => console.error(chalk.red(d.toString().trim())));
@@ -60,20 +60,19 @@ function exec(command) {
 }
 
 const FILES = {
-    'src/**/*':                                    `${BUILD_DIR}/src`,
-    'config/**/*':                                 `${BUILD_DIR}/config`,
-    'database/**/*':                               `${BUILD_DIR}/database`,
-    'languages/**/*':                              `${BUILD_DIR}/languages`,
-    'resources/build/**/*.{js,css,php}':           `${BUILD_DIR}/resources/build`,
-    [`${PLUGIN_SLUG}.php`]:                        BUILD_DIR,
-    'uninstall.php':                               BUILD_DIR,
-    'readme.txt':                                  BUILD_DIR,
-    'composer.json':                               BUILD_DIR,
-    'composer.lock':                               BUILD_DIR,
+    'src/**/*':        `${BUILD_DIR}/src`,
+    'config/**/*':     `${BUILD_DIR}/config`,
+    'database/**/*':   `${BUILD_DIR}/database`,
+    'languages/**/*':  `${BUILD_DIR}/languages`,
+    [`${PLUGIN_SLUG}.php`]: BUILD_DIR,
+    'uninstall.php':   BUILD_DIR,
+    'readme.txt':      BUILD_DIR,
+    'composer.json':   BUILD_DIR,
+    'composer.lock':   BUILD_DIR,
 };
 
 const copyTasks = Object.entries(FILES).map(([source, destination]) => {
-    const taskName = `copy:${path.basename(source.replace('/**/*', '').replace('/**/*.{js,css,php}', ''))}`;
+    const taskName = `copy:${path.basename(source.replace('/**/*', ''))}`;
     const task     = () => src(source, { encoding: false }).pipe(dest(destination));
     task.displayName = taskName;
     return task;
@@ -81,7 +80,12 @@ const copyTasks = Object.entries(FILES).map(([source, destination]) => {
 
 export const release = series(
     function clean()    { return exec('rm -rf build/ release/'); },
-    function build()    { return exec('pnpm build'); },
+    function build() {
+        return exec('pnpm build', {
+            ...spawnEnv,
+            OUTPUT_PATH: `${BUILD_DIR}/resources/build`,
+        });
+    },
     function makePot()  { return exec('pnpm make-pot'); },
     parallel(...copyTasks),
     function composer() {
@@ -89,7 +93,7 @@ export const release = series(
     },
     function compress() {
         return src(
-            ['./build/**/*', '!./build/**/composer.lock', '!./build/**/*.sh'],
+            ['./build/**/*', '!./build/**/*.map', '!./build/**/composer.lock', '!./build/**/*.sh'],
             { encoding: false },
         )
             .pipe(zip(`${PLUGIN_SLUG}.zip`))

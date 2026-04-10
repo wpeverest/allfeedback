@@ -4,6 +4,8 @@ declare const __ALLFB_ADMIN__: {
 
 	pluginUrl: string;
 
+	buildUrl: string;
+
 	currentUserId: number;
 
 	isAdmin: boolean;

@@ -14,9 +14,9 @@ module.exports = {
 
     output: {
         ...defaults.output,
-        filename:   '[name].js',
-        path:       resolve(process.cwd(), 'resources/build'),
-        publicPath: 'auto',
+        filename:      '[name].js',
+        path:          resolve(process.cwd(), process.env.OUTPUT_PATH ?? 'resources/build'),
+        publicPath:    'auto',
     },
 
     watchOptions: {

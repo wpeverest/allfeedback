@@ -209,6 +209,7 @@ class AdminServiceProvider implements ServiceProvider {
 			[
 				'adminUrl'      => admin_url( 'admin.php' ),
 				'pluginUrl'     => Constants::url(),
+				'buildUrl'      => Constants::url( 'resources/build/' ),
 				'currentUserId' => get_current_user_id(),
 				'isAdmin'       => current_user_can( 'manage_options' ),
 				'nonce'         => wp_create_nonce( 'wp_rest' ),

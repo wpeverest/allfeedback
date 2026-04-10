@@ -1,3 +1,6 @@
+declare let __webpack_public_path__: string;
+__webpack_public_path__ = __ALLFB_ADMIN__.buildUrl;
+
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Toaster } from '@/components/ui/sonner';
 import { queryClient } from '@/lib/query-client';
