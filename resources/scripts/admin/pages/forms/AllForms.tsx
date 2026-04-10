@@ -518,7 +518,8 @@ const AllForms = () => {
 													onClick={() => void navigate({
 														to: '/builder/', search: { new: false, id: survey.id },
 													})}
-													className="flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/[0.04] px-2.5 py-1.5 text-[12px] font-medium text-primary/80 transition-colors hover:border-primary/60 hover:bg-primary/[0.08] hover:text-primary"
+													style={{ border: '1.5px solid #E2E2E8' }}
+										className="flex items-center gap-1 rounded-lg bg-primary/[0.04] px-2 py-1 text-[11px] font-medium text-primary/80 transition-colors hover:bg-primary/[0.08] hover:text-primary"
 												>
 													<Edit2 className="size-3" />
 													{__('Edit', 'all-feedback')}
@@ -529,7 +530,7 @@ const AllForms = () => {
 													<DropdownMenuTrigger asChild>
 														<button
 															type="button"
-															style={{ border: '1.5px solid #C4C4CF' }}
+															style={{ border: '1.5px solid #E2E2E8' }}
 																className="flex size-7 shrink-0 items-center justify-center rounded-lg text-foreground/50 transition-colors hover:bg-muted/50 hover:text-foreground"
 														>
 															<MoreVertical className="size-3.5" />
