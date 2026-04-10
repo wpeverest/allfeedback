@@ -476,12 +476,33 @@ Search published pages and posts. Powers the "Select specific pages & posts" pic
 |-------|------|---------|-------------|
 | `search` | string | `""` | Keyword to filter by title |
 | `post_type` | string | `""` (all allowed) | Comma-separated post type slugs, e.g. `page,post` |
-| `page` | int | 1 | Page number |
-| `per_page` | int | 20 | Items per page (max 50) |
+| `page` | int | 1 | Page number (search mode only) |
+| `per_page` | int | 20 | Items per page (max 50, search mode only) |
 
-**Example:** `GET /content-search?search=about&post_type=page`
+**Two operating modes:**
 
-**Example response:**
+**Initial load** (`search` is empty, `page = 1`) — runs one query per post type and returns the 5 most recently published items for each type. This gives the picker an immediately useful list when it first opens. Default: 5 pages + 5 posts = up to 10 items. Controlled by the `allfeedback_content_search_initial_per_type` filter.
+
+**Search mode** (`search` has a value) — single query across all resolved post types, ordered alphabetically by title, fully paginated.
+
+**Initial load example:** `GET /content-search`
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      { "id": 5,  "title": "Shop",     "type": "page", "url": "https://example.com/shop/" },
+      { "id": 2,  "title": "About Us", "type": "page", "url": "https://example.com/about/" },
+      { "id": 12, "title": "Hello world", "type": "post", "url": "https://example.com/hello-world/" }
+    ],
+    "total": 3,
+    "page": 1,
+    "per_page": 5
+  }
+}
+```
+
+**Search example:** `GET /content-search?search=about&post_type=page`
 ```json
 {
   "success": true,
@@ -500,6 +521,7 @@ Search published pages and posts. Powers the "Select specific pages & posts" pic
 **Notes:**
 - Default allowed post types are `page` and `post`. Pro add-ons extend this via the `allfeedback_content_search_post_types` filter.
 - Use the returned `id` values as `settings.target_page_ids` when saving a survey with `target_pages = "specific"`.
+- Initial load uses `no_found_rows = true` — the `total` reflects items actually returned, not the full database count.
 
 ---
 
