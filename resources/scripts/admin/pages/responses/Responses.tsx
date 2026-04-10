@@ -1,3 +1,4 @@
+import { format } from 'date-fns';
 import { BulkActionBar } from '@/components/ui/bulk-action-bar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -381,7 +382,7 @@ const Responses = () => {
 										</td>
 										<td className="w-36 px-4 py-5">
 											<span className={cellCls}>
-												{new Date(response.created_at).toLocaleDateString()}
+												{format(new Date(response.created_at), 'MMM d, yyyy')}
 											</span>
 										</td>
 										<td className="w-24 px-4 py-5">

@@ -1,3 +1,4 @@
+import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { BulkActionBar } from '@/components/ui/bulk-action-bar';
 import { Button } from '@/components/ui/button';
@@ -513,7 +514,7 @@ const AllForms = () => {
 										{/* Created date */}
 										<td className="w-36 px-4 py-5">
 											<span className={cellCls}>
-												{new Date(survey.created_at).toLocaleDateString()}
+												{format(new Date(survey.created_at), 'MMM d, yyyy')}
 											</span>
 										</td>
 

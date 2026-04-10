@@ -1,3 +1,4 @@
+import { format } from 'date-fns';
 import { BulkActionBar } from '@/components/ui/bulk-action-bar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -233,7 +234,7 @@ const ResponsesPanel = ({ surveyId }: ResponsesPanelProps) => {
 											<span className={cn(cellCls, 'line-clamp-1 block')}>{summary}</span>
 										</td>
 										<td className="w-32 px-4 py-4">
-											<span className={cellCls}>{new Date(response.created_at).toLocaleDateString()}</span>
+											<span className={cellCls}>{format(new Date(response.created_at), 'MMM d, yyyy')}</span>
 										</td>
 										<td className="w-24 px-4 py-4">
 											<div className="flex items-center gap-1">
