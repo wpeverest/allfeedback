@@ -369,22 +369,96 @@ Return a paginated list of responses for a survey.
 
 ---
 
-### POST /surveys/{id}/responses
+### DELETE /surveys/{id}/responses/{rid}
 
-Submit a response from the public widget.
+Permanently delete a single response record.
 
-**Permission:** Public — no login required. A valid nonce is required instead.
+**Permission:** `manage_options`
+
+**URL params:**
+- `id` — Survey ID
+- `rid` — Response ID
+
+**Notes:**
+- Returns `404` if the response does not exist or does not belong to the given survey.
+- Deletion is immediate and irreversible. The survey's `response_count` is **not** decremented (it is a cached approximate; recalculate via `GET /surveys/{id}/responses` `total` if an exact count is needed).
+
+**Response:**
+```json
+{ "success": true, "data": { "deleted": true, "id": 42 } }
+```
+
+---
+
+## Submission
+
+### POST /surveys/{id}/submit
+
+Submit a response from the public widget. No authentication required — a valid nonce is used instead.
+
+**Controller:** `SubmitController` — intentionally separate from the admin `ResponsesController` to enforce a clear security boundary.
+
+**Permission:** Public (nonce-gated)
+
+**URL param:** `id` (integer) — survey being answered
+
+**Body (JSON):**
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `nonce` | string | Yes | `wp_create_nonce('allfeedback_submit')` |
+| `nonce` | string | Yes | `wp_create_nonce('allfeedback_submit')` — generated server-side, passed to the widget via `wp_localize_script` |
 | `response_data` | object | Yes | Field answers keyed by field ID |
-| `score` | integer | No | Numeric score (0–10) for NPS/CSAT/CES |
-| `page_url` | string | No | Page URL where the survey appeared |
+| `score` | integer | No | Numeric score 0–100 for NPS / CSAT / CES / star-rating fields |
+| `page_url` | string | No | Full URL of the page where the survey was displayed (max 2083 chars) |
 | `device_type` | string | No | `desktop` \| `tablet` \| `mobile` |
-| `consent_given` | boolean | No | GDPR consent flag |
+| `consent_given` | boolean | No | GDPR data-processing consent flag (default `false`) |
 
-**Response:** `201 Created` — `{ "success": true, "data": { "id": 1 } }`
+**Example body:**
+```json
+{
+  "nonce": "abc123xyz",
+  "response_data": {
+    "fld_1": 9,
+    "fld_2": "Really happy with the product.",
+    "fld_3": "Search engine"
+  },
+  "score": 9,
+  "page_url": "https://example.com/checkout/thank-you",
+  "device_type": "desktop",
+  "consent_given": true
+}
+```
+
+**Success response** `201 Created`:
+```json
+{ "success": true, "data": { "id": 42 } }
+```
+
+**Error responses:**
+
+| Status | Condition |
+|--------|-----------|
+| `403` | Invalid or expired nonce |
+| `403` | Survey is not `published` (draft, paused, archived, trashed) |
+| `403` | Submission blocked by `allfeedback_allow_response_submission` filter |
+| `404` | Survey ID does not exist |
+| `409` | A submission from this visitor's IP has already been recorded |
+| `422` | `response_data` is empty or fails field validation |
+
+**Duplicate detection:**
+Each submission is keyed by an HMAC-SHA256 hash of the visitor's IP address (secret: WordPress `AUTH_KEY`). The raw IP is never stored. The same visitor cannot submit the same survey twice.
+
+**What happens after `201`:**
+
+1. `SubmitResponseService` fires `do_action('allfeedback:response:submitted', $response, $survey)`.
+2. `NotificationServiceProvider` picks this up and dispatches two async email jobs via Action Scheduler:
+   - **`new_response_alert`** → admin email to `notification_email` setting (falls back to `admin_email`).
+   - **`thank_you_respondent`** → respondent email, only sent when `response_data` contains a field whose value is a valid email address.
+3. `do_action('allfeedback_response_submitted', $responseId, $surveyId, $survey)` fires for third-party extensions.
+
+Both email jobs only run when **Settings → Email Notifications** is enabled.
+
+**Extensibility hooks:** see [Response Submission Hooks](#response-submission-hooks).
 
 ---
 
@@ -549,6 +623,76 @@ Controls which post types are searchable. Default: `['page', 'post']`.
 allfeedback_content_search_query_args( array $queryArgs, WP_REST_Request $request ): array
 ```
 Full control over the `WP_Query` arguments. Use to add `meta_query`, `tax_query`, exclude specific IDs, or change sort order.
+
+---
+
+## Response Submission Hooks
+
+These hooks fire during `POST /surveys/{id}/responses`. All are in `ResponsesController::store()`.
+
+### Filters
+
+#### `allfeedback_allow_response_submission`
+
+```
+allfeedback_allow_response_submission( bool $allowed, int $surveyId, object $survey, WP_REST_Request $request ): bool
+```
+
+Return `false` to reject the submission before it reaches the database. Designed for pro-tier blocking features such as reCAPTCHA verification, rate limiting, or geo-restrictions.
+
+**Example — block submissions from a specific country (pro use case):**
+```php
+add_filter( 'allfeedback_allow_response_submission', function ( bool $allowed, int $surveyId, object $survey, WP_REST_Request $request ): bool {
+    // e.g. check IP geolocation via a pro module
+    return $allowed;
+}, 10, 4 );
+```
+
+#### `allfeedback_response_data_before_save`
+
+```
+allfeedback_response_data_before_save( array $responseData, int $surveyId, object $survey ): array
+```
+
+Filters the `response_data` payload **after nonce/duplicate validation but before the domain service saves it**. Use to sanitise field values, strip disallowed HTML, normalise answers, or inject server-side computed fields.
+
+**Example — strip tags from all text answers:**
+```php
+add_filter( 'allfeedback_response_data_before_save', function ( array $data ): array {
+    return array_map( fn( $v ) => is_string( $v ) ? wp_strip_all_tags( $v ) : $v, $data );
+} );
+```
+
+### Actions
+
+#### `allfeedback_response_submitted` *(WordPress action)*
+
+```
+do_action( 'allfeedback_response_submitted', int $responseId, int $surveyId, object $survey )
+```
+
+Fires after a response has been **successfully persisted and the notification pipeline triggered**. Use for custom side-effects: CRM syncs, webhooks, third-party analytics, or loyalty point awards.
+
+**Example — push to an external webhook:**
+```php
+add_action( 'allfeedback_response_submitted', function ( int $responseId, int $surveyId ): void {
+    wp_remote_post( 'https://hooks.example.com/survey', [
+        'body' => wp_json_encode( [ 'response_id' => $responseId, 'survey_id' => $surveyId ] ),
+    ] );
+}, 10, 2 );
+```
+
+#### `allfeedback:response:submitted` *(internal notification bus)*
+
+```
+do_action( 'allfeedback:response:submitted', Response $response, Survey $domainSurvey )
+```
+
+Fired **inside `SubmitResponseService::execute()`** immediately after the response is saved. The `NotificationServiceProvider` listens to this action and dispatches the `new_response_alert` and `thank_you_respondent` email jobs asynchronously via Action Scheduler.
+
+**Email notifications are automatic** — as long as `Settings → Email Notifications` is enabled and the site's `admin_email` (or a custom `notification_email`) is configured.
+
+> **Pro tip:** Use `allfeedback_response_submitted` (underscores) for lightweight third-party hooks. Reserve `allfeedback:response:submitted` (colons) for internal notification infrastructure.
 
 ---
 

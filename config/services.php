@@ -89,6 +89,7 @@ use AllFeedback\API\ApiServiceProvider;
 use AllFeedback\API\Controllers\V1\ContentSearchController;
 use AllFeedback\API\Controllers\V1\ResponsesController;
 use AllFeedback\API\Controllers\V1\SettingsController;
+use AllFeedback\API\Controllers\V1\SubmitController;
 use AllFeedback\API\Controllers\V1\SurveysController;
 use AllFeedback\Frontend\FrontendServiceProvider;
 
@@ -234,6 +235,7 @@ return [
 	// ------------------------------------------------------------------
 	SurveysController::class         => autowire(),
 	ResponsesController::class       => autowire(),
+	SubmitController::class          => autowire(),
 	SettingsController::class        => autowire(),
 	ContentSearchController::class   => autowire(),
 

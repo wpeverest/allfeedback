@@ -14,12 +14,14 @@ use AllFeedback\Support\Logger;
 /**
  * Class ResponsesController
  *
- * REST controller for survey responses.
+ * Admin REST controller for reading and deleting survey responses.
  *
  * Routes registered (all under all-feedback/v1):
- *   GET  /surveys/{id}/responses          → index()  : paginated response list (admin)
- *   POST /surveys/{id}/responses          → store()  : public submission with nonce validation
- *   DELETE /surveys/{id}/responses/{rid}  → destroy(): delete a single response (admin)
+ *   GET    /surveys/{id}/responses          → index()   : paginated response list
+ *   DELETE /surveys/{id}/responses/{rid}    → destroy() : delete a single response
+ *
+ * Public submission is handled by SubmitController (POST /surveys/{id}/submit)
+ * to maintain a clear security boundary between public and admin endpoints.
  *
  * @package AllFeedback\API\Controllers\V1
  * @since   1.0.0
@@ -62,21 +64,12 @@ class ResponsesController extends RestController {
 						$this->paginationArgs( defaultPerPage: 20, maxPerPage: 100 ),
 						[
 							'date_from' => $this->argString(
-								description: __( 'Filter responses created on or after this date (Y-m-d).', 'all-feedback' ),
+								description: __( 'Filter responses on or after this date (Y-m-d).', 'all-feedback' ),
 							),
 							'date_to'   => $this->argString(
-								description: __( 'Filter responses created on or before this date (Y-m-d).', 'all-feedback' ),
+								description: __( 'Filter responses on or before this date (Y-m-d).', 'all-feedback' ),
 							),
 						]
-					),
-				],
-				[
-					'methods'             => \WP_REST_Server::CREATABLE,
-					'callback'            => [ $this, 'store' ],
-					'permission_callback' => [ $this, 'publicPermission' ],
-					'args'                => array_merge(
-						$this->idArg(),
-						$this->submitArgs()
 					),
 				],
 				'schema' => [ $this, 'getPublicItemSchema' ],
@@ -149,84 +142,10 @@ class ResponsesController extends RestController {
 	}
 
 	/**
-	 * POST /all-feedback/v1/surveys/{id}/responses
-	 *
-	 * Accept a public widget submission.
-	 * Validates the nonce, checks for duplicate IP submission, persists the
-	 * response, and increments the survey's cached response count.
-	 *
-	 * @param \WP_REST_Request $request Full request data.
-	 * @return \WP_REST_Response|\WP_Error
-	 * @since 1.0.0
-	 */
-	public function store( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
-		$nonce = sanitize_text_field( (string) ( $request->get_param( 'nonce' ) ?? '' ) );
-
-		if ( ! wp_verify_nonce( $nonce, ResponseManager::NONCE_ACTION ) ) {
-			$this->logger->warning( 'Response submission rejected: invalid nonce.', [ 'survey_id' => (int) $request->get_param( 'id' ) ] );
-			return $this->errorResponse( __( 'Invalid or expired nonce.', 'all-feedback' ), 403 );
-		}
-
-		$surveyId = (int) $request->get_param( 'id' );
-		$survey   = $this->surveyManager->find( $surveyId );
-
-		if ( $survey === null ) {
-			return $this->notFoundResponse( __( 'Survey', 'all-feedback' ) );
-		}
-
-		if ( $survey->status !== 'published' ) {
-			$this->logger->warning(
-				'Response submission rejected: survey not published.',
-				[ 'survey_id' => $surveyId, 'status' => $survey->status ]
-			);
-			return $this->errorResponse( __( 'This survey is not currently accepting responses.', 'all-feedback' ), 403 );
-		}
-
-		$ipHash = $this->responseManager->hashIp();
-
-		if ( $this->responseManager->isDuplicate( $surveyId, $ipHash ) ) {
-			$this->logger->debug( 'Duplicate response blocked.', [ 'survey_id' => $surveyId ] );
-			return $this->errorResponse( __( 'A response from this visitor has already been recorded.', 'all-feedback' ), 409 );
-		}
-
-		$newId = $this->responseManager->insert(
-			[
-				'survey_id'     => $surveyId,
-				'response_data' => wp_json_encode( $request->get_param( 'response_data' ) ),
-				'score'         => $request->get_param( 'score' ) !== null ? (int) $request->get_param( 'score' ) : null,
-				'page_url'      => esc_url_raw( (string) ( $request->get_param( 'page_url' ) ?? '' ) ) ?: null,
-				'device_type'   => sanitize_key( (string) ( $request->get_param( 'device_type' ) ?? '' ) ) ?: null,
-				'ip_hash'       => $ipHash,
-				'user_id'       => is_user_logged_in() ? get_current_user_id() : null,
-				'consent_given' => (bool) $request->get_param( 'consent_given' ) ? 1 : 0,
-				'created_at'    => current_time( 'mysql' ),
-			]
-		);
-
-		if ( $newId === false ) {
-			$this->logger->error( 'Response insert failed at DB layer.', [ 'survey_id' => $surveyId ] );
-			return $this->errorResponse( __( 'Failed to save response.', 'all-feedback' ), 500 );
-		}
-
-		$this->surveyManager->incrementResponseCount( $surveyId );
-
-		$this->logger->info(
-			'Response received.',
-			[
-				'response_id' => $newId,
-				'survey_id'   => $surveyId,
-				'score'       => $request->get_param( 'score' ),
-				'anonymous'   => ! is_user_logged_in(),
-			]
-		);
-
-		return $this->successResponse( [ 'id' => $newId ], 201 );
-	}
-
-	/**
 	 * DELETE /all-feedback/v1/surveys/{id}/responses/{rid}
 	 *
 	 * Permanently delete a single response record.
+	 * Verifies the response belongs to the given survey before deleting.
 	 *
 	 * @param \WP_REST_Request $request Full request data.
 	 * @return \WP_REST_Response|\WP_Error
@@ -307,7 +226,7 @@ class ResponsesController extends RestController {
 					'context'     => [ 'view' ],
 				],
 				'user_id'       => [
-					'description' => __( 'WordPress user ID (null = anonymous).', 'all-feedback' ),
+					'description' => __( 'WordPress user ID (null for anonymous submissions).', 'all-feedback' ),
 					'type'        => [ 'integer', 'null' ],
 					'context'     => [ 'view' ],
 					'readonly'    => true,
@@ -324,49 +243,6 @@ class ResponsesController extends RestController {
 					'readonly'    => true,
 				],
 			],
-		];
-	}
-
-	// ------------------------------------------------------------------
-	// Argument schemas
-	// ------------------------------------------------------------------
-
-	/**
-	 * Body arguments for the public submission endpoint.
-	 *
-	 * @return array<string, array<string, mixed>>
-	 * @since 1.0.0
-	 */
-	private function submitArgs(): array {
-		return [
-			'response_data' => [
-				'description'       => __( 'Field answers keyed by field ID.', 'all-feedback' ),
-				'type'              => 'object',
-				'required'          => true,
-				'sanitize_callback' => null,
-				'validate_callback' => 'rest_validate_request_arg',
-			],
-			'score'         => $this->argInteger(
-				description: __( 'Numeric score for NPS, CSAT, CES, or star rating fields.', 'all-feedback' ),
-				min:         0,
-				max:         100,
-			),
-			'page_url'      => $this->argString(
-				description: __( 'URL of the page where the survey was displayed.', 'all-feedback' ),
-				maxLength:   2083,
-			),
-			'device_type'   => $this->argEnum(
-				description: __( 'Visitor device type at submission time.', 'all-feedback' ),
-				values:      [ 'desktop', 'tablet', 'mobile' ],
-			),
-			'nonce'         => $this->argString(
-				description: __( 'WordPress nonce for submission authentication.', 'all-feedback' ),
-				required:    true,
-			),
-			'consent_given' => $this->argBoolean(
-				description: __( 'Whether the visitor gave GDPR consent.', 'all-feedback' ),
-				default:     false,
-			),
 		];
 	}
 

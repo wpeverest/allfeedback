@@ -7,6 +7,7 @@ namespace AllFeedback\API;
 use AllFeedback\API\Controllers\V1\ContentSearchController;
 use AllFeedback\API\Controllers\V1\ResponsesController;
 use AllFeedback\API\Controllers\V1\SettingsController;
+use AllFeedback\API\Controllers\V1\SubmitController;
 use AllFeedback\API\Controllers\V1\SurveysController;
 use AllFeedback\Core\Container;
 use AllFeedback\Core\ServiceProvider;
@@ -65,9 +66,10 @@ class ApiServiceProvider implements ServiceProvider {
 	 */
 	public function registerRoutes(): void {
 		$controllers = [
-			ResponsesController::class,  // /surveys/{id}/responses — must come before SurveysController
-			SurveysController::class,    // /surveys
-			SettingsController::class,   // /settings
+			SubmitController::class,        // /surveys/{id}/submit    — public, nonce-gated
+			ResponsesController::class,     // /surveys/{id}/responses — admin, must come before SurveysController
+			SurveysController::class,       // /surveys
+			SettingsController::class,      // /settings
 			ContentSearchController::class, // /content-search
 		];
 
