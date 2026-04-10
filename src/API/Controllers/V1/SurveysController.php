@@ -16,14 +16,16 @@ use AllFeedback\Support\Logger;
  * REST controller for the /surveys resource.
  *
  * Routes registered (all under all-feedback/v1):
- *   GET    /surveys                      → index()       : paginated list
- *   POST   /surveys                      → store()       : create
- *   DELETE /surveys                      → destroyMany() : bulk delete
- *   GET    /surveys/{id}                 → show()        : single survey
- *   PUT    /surveys/{id}                 → update()      : full or partial update / autosave
- *   DELETE /surveys/{id}                 → destroy()     : soft or hard delete
- *   POST   /surveys/{id}/duplicate       → duplicate()   : copy survey
- *   POST   /surveys/{id}/publish         → publish()     : set status to published
+ *   GET    /surveys                      → index()                : paginated list
+ *   POST   /surveys                      → store()               : create
+ *   DELETE /surveys/trash                → destroyMany()          : bulk trash
+ *   DELETE /surveys/delete               → destroyManyPermanent() : bulk permanent delete
+ *   GET    /surveys/{id}                 → show()                 : single survey
+ *   PUT    /surveys/{id}                 → update()               : full or partial update / autosave
+ *   DELETE /surveys/{id}/trash           → destroy()              : move to trash
+ *   DELETE /surveys/{id}/delete          → destroyPermanent()     : permanent delete (must be trashed first)
+ *   POST   /surveys/{id}/duplicate       → duplicate()            : copy survey
+ *   POST   /surveys/{id}/publish         → publish()              : set status to published
  *
  * @package AllFeedback\API\Controllers\V1
  * @since   1.0.0
@@ -67,12 +69,6 @@ class SurveysController extends RestController {
 					'permission_callback' => [ $this, 'adminPermission' ],
 					'args'                => $this->writeArgs( required: true ),
 				],
-				[
-					'methods'             => \WP_REST_Server::DELETABLE,
-					'callback'            => [ $this, 'destroyMany' ],
-					'permission_callback' => [ $this, 'adminPermission' ],
-					'args'                => $this->bulkDeleteArgs(),
-				],
 				'schema' => [ $this, 'getPublicItemSchema' ],
 			]
 		);
@@ -93,21 +89,51 @@ class SurveysController extends RestController {
 					'permission_callback' => [ $this, 'adminPermission' ],
 					'args'                => array_merge( $this->idArg(), $this->writeArgs( required: false ) ),
 				],
-				[
-					'methods'             => \WP_REST_Server::DELETABLE,
-					'callback'            => [ $this, 'destroy' ],
-					'permission_callback' => [ $this, 'adminPermission' ],
-					'args'                => array_merge(
-						$this->idArg(),
-						[
-							'force' => $this->argBoolean(
-								description: __( 'Permanently delete instead of archiving.', 'all-feedback' ),
-								default:     false,
-							),
-						]
-					),
-				],
 				'schema' => [ $this, 'getPublicItemSchema' ],
+			]
+		);
+
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->restBase . '/trash',
+			[
+				'methods'             => \WP_REST_Server::DELETABLE,
+				'callback'            => [ $this, 'destroyMany' ],
+				'permission_callback' => [ $this, 'adminPermission' ],
+				'args'                => $this->bulkActionArgs(),
+			]
+		);
+
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->restBase . '/delete',
+			[
+				'methods'             => \WP_REST_Server::DELETABLE,
+				'callback'            => [ $this, 'destroyManyPermanent' ],
+				'permission_callback' => [ $this, 'adminPermission' ],
+				'args'                => $this->bulkActionArgs(),
+			]
+		);
+
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->restBase . '/(?P<id>\d+)/trash',
+			[
+				'methods'             => \WP_REST_Server::DELETABLE,
+				'callback'            => [ $this, 'destroy' ],
+				'permission_callback' => [ $this, 'adminPermission' ],
+				'args'                => $this->idArg(),
+			]
+		);
+
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->restBase . '/(?P<id>\d+)/delete',
+			[
+				'methods'             => \WP_REST_Server::DELETABLE,
+				'callback'            => [ $this, 'destroyPermanent' ],
+				'permission_callback' => [ $this, 'adminPermission' ],
+				'args'                => $this->idArg(),
 			]
 		);
 
@@ -374,40 +400,79 @@ class SurveysController extends RestController {
 	}
 
 	/**
-	 * DELETE /all-feedback/v1/surveys/{id}
+	 * DELETE /all-feedback/v1/surveys/{id}/trash
 	 *
-	 * Soft-delete (archive) or permanently delete a survey.
+	 * Move a survey to the trash (sets status to 'trashed').
+	 * To permanently remove a trashed survey use DELETE /surveys/{id}/delete.
 	 *
 	 * @param \WP_REST_Request $request Full request data.
 	 * @return \WP_REST_Response|\WP_Error
 	 * @since 1.0.0
 	 */
 	public function destroy( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
-		$id    = (int) $request->get_param( 'id' );
-		$force = (bool) $request->get_param( 'force' );
+		$id = (int) $request->get_param( 'id' );
 
 		$survey = $this->manager->find( $id );
 		if ( $survey === null ) {
 			return $this->notFoundResponse( __( 'Survey', 'all-feedback' ) );
 		}
 
-		if ( ! $this->manager->delete( $id, $force ) ) {
-			$this->logger->error( 'Survey deletion failed at DB layer.', [ 'survey_id' => $id, 'force' => $force, 'user_id' => get_current_user_id() ] );
-			return $this->errorResponse( __( 'Failed to delete survey.', 'all-feedback' ), 500 );
+		if ( $survey->status === 'trashed' ) {
+			return $this->errorResponse(
+				__( 'Survey is already in the trash. Use DELETE /surveys/{id}/delete to remove it permanently.', 'all-feedback' ),
+				409
+			);
+		}
+
+		if ( ! $this->manager->trash( $id ) ) {
+			$this->logger->error( 'Survey trash failed at DB layer.', [ 'survey_id' => $id, 'user_id' => get_current_user_id() ] );
+			return $this->errorResponse( __( 'Failed to move survey to trash.', 'all-feedback' ), 500 );
 		}
 
 		$this->logger->info(
-			$force ? 'Survey permanently deleted.' : 'Survey archived.',
+			'Survey moved to trash.',
 			[ 'survey_id' => $id, 'title' => $survey->title, 'user_id' => get_current_user_id() ]
 		);
 
-		return $this->successResponse(
-			[
-				'deleted' => true,
-				'id'      => $id,
-				'force'   => $force,
-			]
+		return $this->successResponse( [ 'trashed' => true, 'id' => $id ] );
+	}
+
+	/**
+	 * DELETE /all-feedback/v1/surveys/{id}/delete
+	 *
+	 * Permanently remove a trashed survey from the database.
+	 * The survey must have status 'trashed' — use DELETE /surveys/{id}/trash first.
+	 *
+	 * @param \WP_REST_Request $request Full request data.
+	 * @return \WP_REST_Response|\WP_Error
+	 * @since 1.0.0
+	 */
+	public function destroyPermanent( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		$id = (int) $request->get_param( 'id' );
+
+		$survey = $this->manager->find( $id );
+		if ( $survey === null ) {
+			return $this->notFoundResponse( __( 'Survey', 'all-feedback' ) );
+		}
+
+		if ( $survey->status !== 'trashed' ) {
+			return $this->errorResponse(
+				__( 'Only trashed surveys can be permanently deleted. Use DELETE /surveys/{id}/trash first.', 'all-feedback' ),
+				409
+			);
+		}
+
+		if ( ! $this->manager->deletePermanent( $id ) ) {
+			$this->logger->error( 'Permanent survey deletion failed at DB layer.', [ 'survey_id' => $id, 'user_id' => get_current_user_id() ] );
+			return $this->errorResponse( __( 'Failed to permanently delete survey.', 'all-feedback' ), 500 );
+		}
+
+		$this->logger->info(
+			'Survey permanently deleted.',
+			[ 'survey_id' => $id, 'title' => $survey->title, 'user_id' => get_current_user_id() ]
 		);
+
+		return $this->successResponse( [ 'deleted' => true, 'id' => $id ] );
 	}
 
 	/**
@@ -455,34 +520,102 @@ class SurveysController extends RestController {
 	}
 
 	/**
-	 * DELETE /all-feedback/v1/surveys
+	 * DELETE /all-feedback/v1/surveys/trash
 	 *
-	 * Bulk-delete multiple surveys by ID.
-	 * Accepts an 'ids' array in the request body. Each survey is soft-deleted
-	 * (archived) by default; pass force=true to permanently delete.
+	 * Bulk-trash multiple surveys by ID.
+	 * Surveys that are already trashed are skipped (not counted as failures).
 	 *
 	 * @param \WP_REST_Request $request Full request data.
 	 * @return \WP_REST_Response|\WP_Error
 	 * @since 1.0.0
 	 */
 	public function destroyMany( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
-		$ids   = array_values( array_filter( array_map( 'absint', (array) ( $request->get_param( 'ids' ) ?? [] ) ) ) );
-		$force = (bool) $request->get_param( 'force' );
+		$ids = array_values( array_filter( array_map( 'absint', (array) ( $request->get_param( 'ids' ) ?? [] ) ) ) );
+
+		if ( empty( $ids ) ) {
+			return $this->errorResponse( __( 'No survey IDs provided.', 'all-feedback' ), 422 );
+		}
+
+		$trashed = 0;
+		$skipped = [];
+		$failed  = [];
+
+		foreach ( $ids as $id ) {
+			$survey = $this->manager->find( $id );
+
+			if ( $survey === null ) {
+				$failed[] = $id;
+				continue;
+			}
+
+			if ( $survey->status === 'trashed' ) {
+				$skipped[] = $id;
+				continue;
+			}
+
+			if ( $this->manager->trash( $id ) ) {
+				++$trashed;
+			} else {
+				$failed[] = $id;
+			}
+		}
+
+		$this->logger->info(
+			'Bulk survey trash completed.',
+			[
+				'requested'     => $ids,
+				'trashed_count' => $trashed,
+				'skipped'       => $skipped,
+				'failed'        => $failed,
+				'user_id'       => get_current_user_id(),
+			]
+		);
+
+		return $this->successResponse(
+			[
+				'trashed' => $trashed,
+				'skipped' => $skipped,
+				'failed'  => $failed,
+			]
+		);
+	}
+
+	/**
+	 * DELETE /all-feedback/v1/surveys/delete
+	 *
+	 * Bulk permanently delete multiple surveys by ID.
+	 * Only surveys with status 'trashed' are deleted — others are skipped.
+	 * Use DELETE /surveys/trash first to move surveys to the trash.
+	 *
+	 * @param \WP_REST_Request $request Full request data.
+	 * @return \WP_REST_Response|\WP_Error
+	 * @since 1.0.0
+	 */
+	public function destroyManyPermanent( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		$ids = array_values( array_filter( array_map( 'absint', (array) ( $request->get_param( 'ids' ) ?? [] ) ) ) );
 
 		if ( empty( $ids ) ) {
 			return $this->errorResponse( __( 'No survey IDs provided.', 'all-feedback' ), 422 );
 		}
 
 		$deleted = 0;
+		$skipped = [];
 		$failed  = [];
 
 		foreach ( $ids as $id ) {
-			if ( $this->manager->find( $id ) === null ) {
+			$survey = $this->manager->find( $id );
+
+			if ( $survey === null ) {
 				$failed[] = $id;
 				continue;
 			}
 
-			if ( $this->manager->delete( $id, $force ) ) {
+			if ( $survey->status !== 'trashed' ) {
+				$skipped[] = $id;
+				continue;
+			}
+
+			if ( $this->manager->deletePermanent( $id ) ) {
 				++$deleted;
 			} else {
 				$failed[] = $id;
@@ -490,12 +623,12 @@ class SurveysController extends RestController {
 		}
 
 		$this->logger->info(
-			'Bulk survey delete completed.',
+			'Bulk survey permanent deletion completed.',
 			[
 				'requested'     => $ids,
 				'deleted_count' => $deleted,
+				'skipped'       => $skipped,
 				'failed'        => $failed,
-				'force'         => $force,
 				'user_id'       => get_current_user_id(),
 			]
 		);
@@ -503,8 +636,8 @@ class SurveysController extends RestController {
 		return $this->successResponse(
 			[
 				'deleted' => $deleted,
+				'skipped' => $skipped,
 				'failed'  => $failed,
-				'force'   => $force,
 			]
 		);
 	}
@@ -659,15 +792,15 @@ class SurveysController extends RestController {
 	}
 
 	/**
-	 * Body arguments for DELETE /surveys (bulk delete).
+	 * Body arguments shared by bulk trash and bulk permanent delete endpoints.
 	 *
 	 * @return array<string, array<string, mixed>>
 	 * @since 1.0.0
 	 */
-	private function bulkDeleteArgs(): array {
+	private function bulkActionArgs(): array {
 		return [
-			'ids'   => [
-				'description' => __( 'Array of survey IDs to delete.', 'all-feedback' ),
+			'ids' => [
+				'description' => __( 'Array of survey IDs to operate on.', 'all-feedback' ),
 				'type'        => 'array',
 				'required'    => true,
 				'items'       => [
@@ -676,10 +809,6 @@ class SurveysController extends RestController {
 				],
 				'minItems'    => 1,
 			],
-			'force' => $this->argBoolean(
-				description: __( 'Permanently delete instead of archiving.', 'all-feedback' ),
-				default:     false,
-			),
 		];
 	}
 

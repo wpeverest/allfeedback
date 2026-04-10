@@ -31,7 +31,7 @@ Returns a paginated list of surveys.
 | `page` | int | 1 | Page number (1-based) |
 | `per_page` | int | 20 | Items per page (max 100) |
 | `search` | string | — | Title keyword filter |
-| `status` | string | `any` | `draft` \| `published` \| `paused` \| `archived` \| `any` |
+| `status` | string | `any` | `draft` \| `published` \| `paused` \| `archived` \| `trashed` \| `any` |
 | `orderby` | string | `created_at` | `id` \| `title` \| `status` \| `response_count` \| `created_at` \| `updated_at` |
 | `order` | string | `DESC` | `ASC` \| `DESC` |
 
@@ -170,25 +170,46 @@ Update a survey. All fields optional — only send what changed (autosave-friend
 | `description` | string | HTML description |
 | `form_schema` | object | Full builder structure |
 | `settings` | object | Full settings object (see Settings Schema) |
-| `status` | string | `draft` \| `published` \| `paused` \| `archived` |
+| `status` | string | `draft` \| `published` \| `paused` \| `archived` \| `trashed` |
 
 **Response:** `200 OK` with the updated survey object.
 
 ---
 
-### DELETE /surveys/{id}
+### DELETE /surveys/{id}/trash
 
-Soft-delete (archive) or permanently delete a survey.
+Move a survey to the trash (`status → trashed`). The row is preserved in the database — responses remain intact.
 
 **Permission:** `manage_options`
 
-| Param | Type | Default | Description |
-|-------|------|---------|-------------|
-| `force` | boolean | `false` | `true` = permanent delete |
+**URL param:** `id` (integer)
+
+**Notes:**
+- Returns `409 Conflict` if the survey is already trashed.
+- To permanently remove a trashed survey, call `DELETE /surveys/{id}/delete`.
 
 **Response:**
 ```json
-{ "success": true, "data": { "deleted": true, "id": 1, "force": false } }
+{ "success": true, "data": { "trashed": true, "id": 1 } }
+```
+
+---
+
+### DELETE /surveys/{id}/delete
+
+Permanently delete a survey from the database. **Irreversible — all responses are also removed.**
+
+**Permission:** `manage_options`
+
+**URL param:** `id` (integer)
+
+**Notes:**
+- Returns `409 Conflict` if the survey is **not** trashed. You must call `DELETE /surveys/{id}/trash` first.
+- This two-step model prevents accidental permanent deletion of active surveys.
+
+**Response:**
+```json
+{ "success": true, "data": { "deleted": true, "id": 1 } }
 ```
 
 ---
@@ -220,6 +241,89 @@ Transition status → `paused`.
 **Permission:** `manage_options`
 
 **Response:** `200 OK` with the updated survey object.
+
+---
+
+### DELETE /surveys/trash
+
+Bulk-move multiple surveys to the trash. Surveys that are already trashed are silently skipped and reported in `skipped`.
+
+**Permission:** `manage_options`
+
+**Body (JSON):**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `ids` | int[] | Yes | Array of survey IDs to trash (min 1 item) |
+
+**Example body:**
+```json
+{ "ids": [2, 3, 5] }
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "trashed": 2,
+    "skipped": [3],
+    "failed":  []
+  }
+}
+```
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `trashed` | int | Number of surveys successfully moved to trash |
+| `skipped` | int[] | IDs that were already trashed — no action taken |
+| `failed` | int[] | IDs that could not be trashed (not found, or DB error) |
+
+**Notes:**
+- Returns `422` if `ids` is empty or missing.
+- Always returns `200 OK` even when some IDs fail — inspect `failed` to detect partial errors.
+
+---
+
+### DELETE /surveys/delete
+
+Bulk permanently delete multiple surveys. **Irreversible — all responses are also removed.**
+Only surveys with status `trashed` are deleted — non-trashed surveys are silently skipped.
+
+**Permission:** `manage_options`
+
+**Body (JSON):**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `ids` | int[] | Yes | Array of survey IDs to permanently delete (min 1 item) |
+
+**Example body:**
+```json
+{ "ids": [2, 3, 5] }
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "deleted": 2,
+    "skipped": [5],
+    "failed":  []
+  }
+}
+```
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `deleted` | int | Number of surveys permanently removed |
+| `skipped` | int[] | IDs that were **not** trashed — no action taken (use `DELETE /surveys/trash` first) |
+| `failed` | int[] | IDs that could not be deleted (not found, or DB error) |
+
+**Notes:**
+- Returns `422` if `ids` is empty or missing.
+- Always returns `200 OK` even when some IDs fail — inspect `failed` to detect partial errors.
 
 ---
 
@@ -487,4 +591,7 @@ Valid values for `field.type` inside `form_schema` (enforced by `SurveysControll
 6. `PUT /surveys/{id}` with `{"settings":{"target_pages":"specific","target_page_ids":[2,5]}}` → target specific pages
 7. `GET /surveys/{id}` → confirm `settings.target_page_ids` is saved
 8. `POST /surveys/{id}/duplicate` → new draft copy
-9. `DELETE /surveys/{id}?force=false` → archived
+9. `DELETE /surveys/{id}/trash` → status becomes `trashed`
+10. `DELETE /surveys/{id}/delete` → permanently removed (must be trashed first; returns 409 otherwise)
+11. `DELETE /surveys/trash` with `{"ids":[2,3]}` → bulk trash; check `trashed`, `skipped`, `failed` in the response
+12. `DELETE /surveys/delete` with `{"ids":[2,3]}` → bulk permanent delete (surveys must be trashed first)

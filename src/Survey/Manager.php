@@ -31,7 +31,7 @@ class Manager {
 	 *
 	 * @since 1.0.0
 	 */
-	public const STATUSES = [ 'draft', 'published', 'archived' ];
+	public const STATUSES = [ 'draft', 'published', 'archived', 'trashed' ];
 
 	/**
 	 * Field types that the form builder may use inside form_schema.
@@ -221,23 +221,31 @@ class Manager {
 	}
 
 	/**
-	 * Delete or archive a survey.
+	 * Move a survey to the trash.
 	 *
-	 * When $force is false the survey is soft-deleted by setting its status
-	 * to 'archived' so historical response data remains intact.
-	 * When $force is true the row is permanently removed from the database.
+	 * Sets status to 'trashed'. The row is preserved in the database so
+	 * response data remains intact. Use deletePermanent() to hard-delete.
 	 *
-	 * @param int  $id    Survey primary key.
-	 * @param bool $force True to permanently delete; false to archive.
+	 * @param int $id Survey primary key.
 	 * @return bool
 	 * @since 1.0.0
 	 */
-	public function delete( int $id, bool $force = false ): bool {
-		global $wpdb;
+	public function trash( int $id ): bool {
+		return $this->updateStatus( $id, 'trashed' );
+	}
 
-		if ( ! $force ) {
-			return $this->updateStatus( $id, 'archived' );
-		}
+	/**
+	 * Permanently delete a survey row from the database.
+	 *
+	 * Should only be called on surveys whose status is already 'trashed'.
+	 * The caller is responsible for verifying that precondition.
+	 *
+	 * @param int $id Survey primary key.
+	 * @return bool
+	 * @since 1.0.0
+	 */
+	public function deletePermanent( int $id ): bool {
+		global $wpdb;
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$result = $wpdb->delete( $this->table(), [ 'id' => $id ], [ '%d' ] );
