@@ -28,10 +28,16 @@ export interface FormSection {
 	fields: FormField[];
 }
 
-export type TargetDevice = 'all' | 'desktop' | 'tablet' | 'mobile';
-export type TargetPages  = 'all' | 'specific';
+export type TargetDevice     = 'all' | 'desktop' | 'tablet' | 'mobile';
+export type TargetPages      = 'all' | 'specific';
+export type UserState        = 'all' | 'logged_in' | 'logged_out';
+export type TriggerType      = 'immediate' | 'time_delay' | 'scroll_depth';
+export type DelayUnit        = 'seconds' | 'minutes' | 'hours';
+export type DisplayFrequency = 'once' | 'until_submit';
+export type DismissUnit      = 'hours' | 'days' | 'weeks';
 
 export interface FormSettings {
+	/* Original fields */
 	thankYouEnabled:     boolean;
 	thankYouTitle:       string;
 	thankYouDescription: string;
@@ -41,6 +47,18 @@ export interface FormSettings {
 	targetDevice:        TargetDevice;
 	targetPages:         TargetPages;
 	targetUrls:          string;
+
+	/* New API fields */
+	userState:        UserState;
+	targetPageIds:    number[];
+	triggerType:      TriggerType;
+	delayValue:       number;
+	delayUnit:        DelayUnit;
+	scrollDepth:      number;
+	displayFrequency: DisplayFrequency;
+	maxImpressions:   number;
+	dismissWaitValue: number;
+	dismissWaitUnit:  DismissUnit;
 }
 
 export const DEFAULT_FORM_SETTINGS: FormSettings = {
@@ -53,8 +71,18 @@ export const DEFAULT_FORM_SETTINGS: FormSettings = {
 	targetDevice:        'all',
 	targetPages:         'all',
 	targetUrls:          '',
+	userState:           'all',
+	targetPageIds:       [],
+	triggerType:         'immediate',
+	delayValue:          0,
+	delayUnit:           'seconds',
+	scrollDepth:         50,
+	displayFrequency:    'until_submit',
+	maxImpressions:      3,
+	dismissWaitValue:    3,
+	dismissWaitUnit:     'days',
 };
 
-export type PreviewMode = 'widget' | 'page' | 'success';
+export type PreviewMode   = 'widget' | 'page' | 'success';
 export type PreviewDevice = 'desktop' | 'tablet' | 'mobile';
-export type BuilderTab = 'builder' | 'settings' | 'styling';
+export type BuilderTab    = 'builder' | 'settings' | 'styling';

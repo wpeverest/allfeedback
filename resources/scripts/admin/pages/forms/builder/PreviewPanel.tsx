@@ -438,7 +438,7 @@ const WidgetBody = ({
 									onClick={onBack}
 									className="flex-1 rounded-lg border border-border py-3 text-[11.5px] font-medium text-foreground/70 transition-colors hover:bg-muted/50"
 								>
-									{__('Back', 'all-feedback')}
+									{settings.backLabel || __('Back', 'all-feedback')}
 								</button>
 							)}
 							{isLastStep ? (
@@ -447,7 +447,7 @@ const WidgetBody = ({
 									onClick={onSubmit}
 									className="flex-1 rounded-lg bg-primary py-3 text-[11.5px] font-semibold text-white transition-colors hover:bg-brand-600 active:bg-brand-700"
 								>
-									{__('Submit', 'all-feedback')}
+									{settings.submitLabel || __('Submit', 'all-feedback')}
 								</button>
 							) : (
 								<button
@@ -455,7 +455,7 @@ const WidgetBody = ({
 									onClick={onNext}
 									className="flex-1 rounded-lg bg-primary py-3 text-[11.5px] font-semibold text-white transition-colors hover:bg-brand-600 active:bg-brand-700"
 								>
-									{__('Next', 'all-feedback')}
+									{settings.nextLabel || __('Next', 'all-feedback')}
 								</button>
 							)}
 						</div>

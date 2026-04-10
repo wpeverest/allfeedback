@@ -7,7 +7,7 @@ import type { PaginatedMeta, PaginationParams } from './client';
 
 // ── Types ──────────────────────────────────────────────────────────────
 
-export type SurveyStatus = 'draft' | 'published' | 'paused' | 'archived';
+export type SurveyStatus = 'draft' | 'published' | 'paused' | 'archived' | 'trashed';
 
 export type Survey = {
 	id:             number;
@@ -65,10 +65,44 @@ export type UpdateSurveyData = Partial<CreateSurveyData> & {
 	status?: SurveyStatus;
 };
 
+export type TrashSurveyResponse = {
+	trashed: boolean;
+	id:      number;
+};
+
 export type DeleteSurveyResponse = {
 	deleted: boolean;
 	id:      number;
-	force:   boolean;
+};
+
+export type BulkTrashResponse = {
+	trashed: number;
+	skipped: number[];
+	failed:  number[];
+};
+
+export type BulkDeleteResponse = {
+	deleted: number;
+	skipped: number[];
+	failed:  number[];
+};
+
+export type ContentSearchItem = {
+	id:    number;
+	title: string;
+	type:  string;
+	url:   string;
+};
+
+export type ContentSearchResponse = PaginatedMeta & {
+	items: ContentSearchItem[];
+};
+
+export type ContentSearchParams = {
+	search?:    string;
+	post_type?: string;
+	page?:      number;
+	per_page?:  number;
 };
 
 // ── API object ─────────────────────────────────────────────────────────
@@ -86,8 +120,21 @@ export const surveysApi = {
 	update: (id: number, data: UpdateSurveyData) =>
 		request<Survey>(`/surveys/${id}`, { method: 'PUT', data }),
 
-	delete: (id: number, force = false) =>
-		request<DeleteSurveyResponse>(`/surveys/${id}${force ? '?force=true' : ''}`, { method: 'DELETE' }),
+	/** Move a single survey to trash (status → trashed). Returns 409 if already trashed. */
+	trash: (id: number) =>
+		request<TrashSurveyResponse>(`/surveys/${id}/trash`, { method: 'DELETE' }),
+
+	/** Permanently delete a single survey. Must be trashed first — returns 409 otherwise. */
+	delete: (id: number) =>
+		request<DeleteSurveyResponse>(`/surveys/${id}/delete`, { method: 'DELETE' }),
+
+	/** Bulk-move surveys to trash. Already-trashed IDs are silently skipped. */
+	bulkTrash: (ids: number[]) =>
+		request<BulkTrashResponse>('/surveys/trash', { method: 'DELETE', data: { ids } }),
+
+	/** Bulk permanently delete surveys. Non-trashed IDs are silently skipped. */
+	bulkDelete: (ids: number[]) =>
+		request<BulkDeleteResponse>('/surveys/delete', { method: 'DELETE', data: { ids } }),
 
 	duplicate: (id: number) =>
 		request<Survey>(`/surveys/${id}/duplicate`, { method: 'POST' }),
@@ -97,4 +144,7 @@ export const surveysApi = {
 
 	pause: (id: number) =>
 		request<Survey>(`/surveys/${id}/pause`, { method: 'POST' }),
+
+	contentSearch: (params?: ContentSearchParams) =>
+		request<ContentSearchResponse>('/content-search' + toQuery(params)),
 };

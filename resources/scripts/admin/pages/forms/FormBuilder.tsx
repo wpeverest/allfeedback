@@ -49,6 +49,54 @@ const deserializeFormSchema = (schema: SurveyFormSchema | null): FormSection[] =
 	}));
 };
 
+/** Serialize FormSettings (camelCase) → API settings object (snake_case) */
+const serializeSettings = (s: FormSettings): Record<string, unknown> => ({
+	submit_label:        s.submitLabel,
+	next_label:          s.nextLabel,
+	back_label:          s.backLabel,
+	user_state:          s.userState,
+	target_pages:        s.targetPages,
+	target_page_ids:     s.targetPageIds,
+	trigger_type:        s.triggerType,
+	delay_value:         s.delayValue,
+	delay_unit:          s.delayUnit,
+	scroll_depth:        s.scrollDepth,
+	display_frequency:   s.displayFrequency,
+	max_impressions:     s.maxImpressions,
+	dismiss_wait_value:  s.dismissWaitValue,
+	dismiss_wait_unit:   s.dismissWaitUnit,
+	// Non-API fields stored as-is
+	thankYouEnabled:     s.thankYouEnabled,
+	thankYouTitle:       s.thankYouTitle,
+	thankYouDescription: s.thankYouDescription,
+	targetDevice:        s.targetDevice,
+	targetUrls:          s.targetUrls,
+});
+
+/** Deserialize API settings object (snake_case) → FormSettings (camelCase) */
+const deserializeSettings = (raw: Record<string, unknown>): Partial<FormSettings> => ({
+	...(raw.submit_label       !== undefined && { submitLabel:        raw.submit_label       as string }),
+	...(raw.next_label         !== undefined && { nextLabel:          raw.next_label         as string }),
+	...(raw.back_label         !== undefined && { backLabel:          raw.back_label         as string }),
+	...(raw.user_state         !== undefined && { userState:          raw.user_state         as FormSettings['userState'] }),
+	...(raw.target_pages       !== undefined && { targetPages:        raw.target_pages       as FormSettings['targetPages'] }),
+	...(raw.target_page_ids    !== undefined && { targetPageIds:      raw.target_page_ids    as number[] }),
+	...(raw.trigger_type       !== undefined && { triggerType:        raw.trigger_type       as FormSettings['triggerType'] }),
+	...(raw.delay_value        !== undefined && { delayValue:         raw.delay_value        as number }),
+	...(raw.delay_unit         !== undefined && { delayUnit:          raw.delay_unit         as FormSettings['delayUnit'] }),
+	...(raw.scroll_depth       !== undefined && { scrollDepth:        raw.scroll_depth       as number }),
+	...(raw.display_frequency  !== undefined && { displayFrequency:   raw.display_frequency  as FormSettings['displayFrequency'] }),
+	...(raw.max_impressions    !== undefined && { maxImpressions:     raw.max_impressions    as number }),
+	...(raw.dismiss_wait_value !== undefined && { dismissWaitValue:   raw.dismiss_wait_value as number }),
+	...(raw.dismiss_wait_unit  !== undefined && { dismissWaitUnit:    raw.dismiss_wait_unit  as FormSettings['dismissWaitUnit'] }),
+	// Non-API fields stored as-is
+	...(raw.thankYouEnabled     !== undefined && { thankYouEnabled:     raw.thankYouEnabled     as boolean }),
+	...(raw.thankYouTitle       !== undefined && { thankYouTitle:       raw.thankYouTitle       as string }),
+	...(raw.thankYouDescription !== undefined && { thankYouDescription: raw.thankYouDescription as string }),
+	...(raw.targetDevice        !== undefined && { targetDevice:        raw.targetDevice        as FormSettings['targetDevice'] }),
+	...(raw.targetUrls          !== undefined && { targetUrls:          raw.targetUrls          as string }),
+});
+
 /** Serialize builder sections into the API form_schema shape */
 const serializeFormSchema = (sections: FormSection[]): SurveyFormSchema => ({
 	version:  '1.0',
@@ -107,7 +155,7 @@ const FormBuilder = () => {
 			const data: Parameters<typeof surveysApi.update>[1] = {
 				title:       value.title,
 				form_schema: serializeFormSchema(value.sections),
-				settings:    value.settings as Record<string, unknown>,
+				settings:    serializeSettings(value.settings),
 			};
 			data.status = isPublishing ? 'published' : 'draft';
 			const updated = await surveysApi.update(formId, data);
@@ -143,6 +191,8 @@ const FormBuilder = () => {
 
 	const [canvasScrolled,    setCanvasScrolled]    = useState(false);
 	const [canvasProgress,    setCanvasProgress]    = useState(0);
+	const [settingsScrolled,  setSettingsScrolled]  = useState(false);
+	const [settingsProgress,  setSettingsProgress]  = useState(0);
 	const [previewDevice,   setPreviewDevice]   = useState<PreviewDevice>('desktop');
 	const [previewWidth,    setPreviewWidth]    = useState(() => Math.round(window.innerWidth * 0.45));
 	const [publishMenuOpen,   setPublishMenuOpen]   = useState(false);
@@ -161,7 +211,7 @@ const FormBuilder = () => {
 		dataInitializedRef.current = true;
 		const loadedSections = deserializeFormSchema(surveyData.form_schema);
 		const loadedSettings = surveyData.settings
-			? { ...DEFAULT_FORM_SETTINGS, ...(surveyData.settings as Partial<FormSettings>) }
+			? { ...DEFAULT_FORM_SETTINGS, ...deserializeSettings(surveyData.settings as Record<string, unknown>) }
 			: DEFAULT_FORM_SETTINGS;
 		setSurveyStatus(surveyData.status);
 		historyRef.current = [loadedSections];
@@ -550,7 +600,7 @@ const FormBuilder = () => {
  					{/* Stepper nav */}
 					<div className={cn(
 						'relative flex h-[72px] shrink-0 items-center justify-center bg-white px-8 transition-shadow duration-150',
-						canvasScrolled && activeTab === 'builder' && 'shadow-[0_1px_0_0_hsl(var(--border)),0_4px_10px_-2px_rgba(0,0,0,0.06)]',
+						((canvasScrolled && activeTab === 'builder') || (settingsScrolled && activeTab === 'settings')) && 'shadow-[0_1px_0_0_hsl(var(--border)),0_4px_10px_-2px_rgba(0,0,0,0.06)]',
 					)}>
 						{TABS.map(({ value, label, Icon, pro }, idx) => {
 							const activeIdx = TABS.findIndex((t) => t.value === activeTab);
@@ -597,6 +647,14 @@ const FormBuilder = () => {
 							/>
 						</div>
 					)}
+					{activeTab === 'settings' && settingsScrolled && (
+						<div className="absolute inset-x-0 bottom-0 h-[2px] bg-border/40">
+							<div
+								className="h-full bg-primary/60 transition-[width] duration-75"
+								style={{ width: `${settingsProgress * 100}%` }}
+							/>
+						</div>
+					)}
 					</div>
 
 					<div className="flex flex-1 overflow-hidden">
@@ -615,6 +673,10 @@ const FormBuilder = () => {
 							<SettingsPanel
 								settings={settings}
 								onChange={handleSettingsChange}
+								onScrollChange={(scrolled, progress) => {
+									setSettingsScrolled(scrolled);
+									setSettingsProgress(progress);
+								}}
 							/>
 						)}
 

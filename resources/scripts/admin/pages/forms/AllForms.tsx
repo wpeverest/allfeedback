@@ -55,7 +55,8 @@ const STATUS_CONFIG: Record<SurveyStatus, {
 	published: { variant: 'success', label: __('Published', 'all-feedback'), dot: 'bg-success' },
 	draft:     { variant: 'info',    label: __('Draft',     'all-feedback'), dot: 'bg-info' },
 	paused:    { variant: 'warning', label: __('Paused',    'all-feedback'), dot: 'bg-warning' },
-	archived:  { variant: 'danger',  label: __('Trash',     'all-feedback'), dot: 'bg-destructive' },
+	archived:  { variant: 'danger',  label: __('Archived',  'all-feedback'), dot: 'bg-muted-foreground/30' },
+	trashed:   { variant: 'danger',  label: __('Trash',     'all-feedback'), dot: 'bg-destructive' },
 };
 
 const STATUS_FILTER_OPTIONS = [
@@ -64,6 +65,7 @@ const STATUS_FILTER_OPTIONS = [
 	{ value: 'draft',     label: __('Draft',       'all-feedback'), dot: 'bg-muted-foreground/40' },
 	{ value: 'paused',    label: __('Paused',      'all-feedback'), dot: 'bg-warning' },
 	{ value: 'archived',  label: __('Archived',    'all-feedback'), dot: 'bg-muted-foreground/30' },
+	{ value: 'trashed',   label: __('Trash',       'all-feedback'), dot: 'bg-destructive' },
 ];
 
 const PER_PAGE_OPTIONS = [10, 25, 50];
@@ -199,7 +201,7 @@ const AllForms = () => {
 
 	/* ── Single delete mutation (permanent) ────────────────────────────── */
 	const deleteMutation = useMutation({
-		mutationFn: (id: number) => surveysApi.delete(id, true),
+		mutationFn: (id: number) => surveysApi.delete(id),
 		onSuccess: () => {
 			void queryClient.invalidateQueries({ queryKey: ['surveys'] });
 			setConfirmDeleteId(null);
@@ -212,9 +214,9 @@ const AllForms = () => {
 		},
 	});
 
-	/* ── Single trash mutation (archive / soft-delete) ─────────────────── */
+	/* ── Single trash mutation (soft-delete) ───────────────────────────── */
 	const trashMutation = useMutation({
-		mutationFn: (id: number) => surveysApi.delete(id, false),
+		mutationFn: (id: number) => surveysApi.trash(id),
 		onSuccess: () => {
 			void queryClient.invalidateQueries({ queryKey: ['surveys'] });
 			toast.success(__('Form moved to trash.', 'all-feedback'));
@@ -224,7 +226,7 @@ const AllForms = () => {
 		},
 	});
 
-	/* ── Restore mutation (archived → draft) ───────────────────────────── */
+	/* ── Restore mutation (trashed → draft) ────────────────────────────── */
 	const restoreMutation = useMutation({
 		mutationFn: (id: number) => surveysApi.update(id, { status: 'draft' }),
 		onSuccess: () => {
@@ -263,31 +265,39 @@ const AllForms = () => {
 
 	/* ── Bulk delete mutation (permanent) ──────────────────────────────── */
 	const bulkDeleteMutation = useMutation({
-		mutationFn: (ids: number[]) => Promise.all(ids.map((id) => surveysApi.delete(id, true))),
-		onSuccess: () => {
+		mutationFn: (ids: number[]) => surveysApi.bulkDelete(ids),
+		onSuccess: (result) => {
 			void queryClient.invalidateQueries({ queryKey: ['surveys'] });
 			setChecked([]);
 			setConfirmBulkDelete(false);
-			toast.success(__('Selected forms permanently deleted.', 'all-feedback'));
+			if (result.failed.length > 0) {
+				toast.warning(__('Some forms could not be deleted.', 'all-feedback'));
+			} else {
+				toast.success(__('Selected forms permanently deleted.', 'all-feedback'));
+			}
 		},
 		onError: () => {
 			setConfirmBulkDelete(false);
-			toast.error(__('Failed to delete some forms. Please try again.', 'all-feedback'));
+			toast.error(__('Failed to delete forms. Please try again.', 'all-feedback'));
 		},
 	});
 
-	/* ── Bulk trash mutation (archive) ─────────────────────────────────── */
+	/* ── Bulk trash mutation ────────────────────────────────────────────── */
 	const bulkTrashMutation = useMutation({
-		mutationFn: (ids: number[]) => Promise.all(ids.map((id) => surveysApi.delete(id, false))),
-		onSuccess: () => {
+		mutationFn: (ids: number[]) => surveysApi.bulkTrash(ids),
+		onSuccess: (result) => {
 			void queryClient.invalidateQueries({ queryKey: ['surveys'] });
 			setChecked([]);
 			setConfirmBulkTrash(false);
-			toast.success(__('Selected forms moved to trash.', 'all-feedback'));
+			if (result.failed.length > 0) {
+				toast.warning(__('Some forms could not be moved to trash.', 'all-feedback'));
+			} else {
+				toast.success(__('Selected forms moved to trash.', 'all-feedback'));
+			}
 		},
 		onError: () => {
 			setConfirmBulkTrash(false);
-			toast.error(__('Failed to trash some forms. Please try again.', 'all-feedback'));
+			toast.error(__('Failed to trash forms. Please try again.', 'all-feedback'));
 		},
 	});
 
@@ -324,7 +334,7 @@ const AllForms = () => {
 				onOpenChange={(open) => { if (!open && !bulkTrashMutation.isPending) setConfirmBulkTrash(false); }}
 				onConfirm={() => bulkTrashMutation.mutate(checked)}
 				title={__('Move selected forms to trash?', 'all-feedback')}
-				description={__('The selected forms will be archived and hidden from this list.', 'all-feedback')}
+				description={__('The selected forms will be moved to trash and hidden from this list.', 'all-feedback')}
 				confirmLabel={__('Move to trash', 'all-feedback')}
 				cancelLabel={__('Cancel', 'all-feedback')}
 				isPending={bulkTrashMutation.isPending}
@@ -355,7 +365,7 @@ const AllForms = () => {
 						<SelectItem value="all">{__('All Status',  'all-feedback')}</SelectItem>
 						<SelectItem value="published">{__('Published', 'all-feedback')}</SelectItem>
 						<SelectItem value="draft">{__('Draft',      'all-feedback')}</SelectItem>
-						<SelectItem value="archived">{__('Trash',   'all-feedback')}</SelectItem>
+						<SelectItem value="trashed">{__('Trash',    'all-feedback')}</SelectItem>
 					</SelectContent>
 				</Select>
 
@@ -538,7 +548,7 @@ const AllForms = () => {
 													</DropdownMenuTrigger>
 													<DropdownMenuContent>
 														{/* Restore — only for trashed forms */}
-														{survey.status === 'archived' && (
+														{survey.status === 'trashed' && (
 															<DropdownMenuItem
 																onSelect={() => restoreMutation.mutate(survey.id)}
 																disabled={restoreMutation.isPending}
@@ -564,7 +574,7 @@ const AllForms = () => {
 														</DropdownMenuItem>
 
 														{/* Trash — hidden when already trashed */}
-														{survey.status !== 'archived' && (
+														{survey.status !== 'trashed' && (
 															<DropdownMenuItem
 																onSelect={() => trashMutation.mutate(survey.id)}
 																disabled={trashMutation.isPending}
@@ -613,7 +623,7 @@ const AllForms = () => {
 			{/* ── Bulk-action bar ───────────────────────────────────────── */}
 			<BulkActionBar
 				count={checked.length}
-				showRestore={status === 'archived'}
+				showRestore={status === 'trashed'}
 				isDeleting={bulkDeleteMutation.isPending}
 				isTrashing={bulkTrashMutation.isPending}
 				isRestoring={bulkRestoreMutation.isPending}
