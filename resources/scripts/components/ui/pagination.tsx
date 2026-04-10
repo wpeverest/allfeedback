@@ -148,7 +148,7 @@ export const Pagination = ({
 				)}
 
 				{/* Page navigation */}
-				<div className="flex items-center gap-1.5">
+				<div className="flex items-center gap-2">
 
 					{/* Prev */}
 					<PageBtn

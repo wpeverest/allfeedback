@@ -40,7 +40,7 @@ export const BulkActionBar = ({
 			<div className="flex items-center rounded-2xl border border-border/80 bg-white/95 shadow-[0_8px_30px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.06)] backdrop-blur-sm">
 
 				{/* Count */}
-				<div className="flex items-center gap-1 px-5 py-3">
+				<div className="flex items-center gap-1 px-6 py-4">
 					<span className="text-[13px] font-semibold tabular-nums text-foreground/80">
 						{count}
 					</span>
@@ -55,7 +55,7 @@ export const BulkActionBar = ({
 				{/* Restore button — only in trash view */}
 				{showRestore && (
 					<>
-						<div className="px-2 py-2.5">
+						<div className="px-3 py-3">
 							<button
 								type="button"
 								onClick={onRestore}
@@ -76,7 +76,7 @@ export const BulkActionBar = ({
 				{/* Trash button — hidden in trash view */}
 				{!showRestore && (
 					<>
-						<div className="px-2 py-2.5">
+						<div className="px-3 py-3">
 							<button
 								type="button"
 								onClick={onTrash}
@@ -95,7 +95,7 @@ export const BulkActionBar = ({
 				)}
 
 				{/* Delete button */}
-				<div className="px-2 py-2.5">
+				<div className="px-3 py-3">
 					<button
 						type="button"
 						onClick={onDelete}
@@ -118,7 +118,7 @@ export const BulkActionBar = ({
 					type="button"
 					onClick={onClear}
 					disabled={busy}
-					className="flex size-11 items-center justify-center text-muted-foreground/50 transition-colors hover:bg-muted/50 hover:text-foreground disabled:pointer-events-none disabled:opacity-60"
+					className="flex size-12 items-center justify-center text-muted-foreground/50 transition-colors hover:bg-muted/50 hover:text-foreground disabled:pointer-events-none disabled:opacity-60"
 					aria-label={__('Clear selection', 'all-feedback')}
 				>
 					<X className="size-3.5" />

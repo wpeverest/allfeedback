@@ -40,7 +40,8 @@ import {
 	RotateCcw,
 	Trash2,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import type { SurveyStatus } from '@/admin/api/surveys';
 
@@ -107,6 +108,7 @@ const AllForms = () => {
 
 	/* ── Filters / sort / pagination ───────────────────────────────────── */
 	const [search,  setSearch]  = useState('');
+	const debouncedSearch       = useDebouncedValue(search, 300);
 	const [status,  setStatus]  = useState('all');
 	const [perPage, setPerPage] = useState(10);
 	const [page,    setPage]    = useState(1);
@@ -125,7 +127,7 @@ const AllForms = () => {
 		per_page: perPage,
 		orderby,
 		order,
-		...(search           && { search }),
+		...(debouncedSearch  && { search: debouncedSearch }),
 		...(status !== 'all' && { status }),
 	};
 
@@ -137,6 +139,9 @@ const AllForms = () => {
 	const surveys    = data?.surveys ?? [];
 	const total      = data?.total   ?? 0;
 	const totalPages = Math.max(1, Math.ceil(total / perPage));
+
+	/* ── Reset page when debounced search settles ─────────────────────── */
+	useEffect(() => { setPage(1); }, [debouncedSearch]);
 
 	/* ── Sort helper ───────────────────────────────────────────────────── */
 	const handleSort = (column: string) => {
@@ -336,7 +341,7 @@ const AllForms = () => {
 					</svg>
 					<Input
 						value={search}
-						onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+						onChange={(e) => setSearch(e.target.value)}
 						placeholder={__('Search forms…', 'all-feedback')}
 						className="pl-9"
 					/>
