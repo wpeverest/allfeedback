@@ -1,4 +1,3 @@
-import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { __ } from '@wordpress/i18n';
 import type { FormSettings, TargetDevice, TargetPages } from './types';
@@ -8,10 +7,26 @@ interface SettingsPanelProps {
 	onChange: (settings: FormSettings) => void;
 }
 
+/** Shared input class — mirrors the canvas-area (FieldEditor) input style */
+const inputCls = [
+	'flex h-9 w-full rounded-lg border border-border/70 bg-transparent px-3 py-1',
+	'text-[13px] text-foreground placeholder:text-muted-foreground/40',
+	'transition-colors focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/10',
+	'disabled:cursor-not-allowed disabled:opacity-50',
+].join(' ');
+
+/** Shared textarea class — same visual language as inputCls */
+const textareaCls = [
+	'flex w-full resize-none rounded-lg border border-border/70 bg-transparent px-3 py-2.5',
+	'text-[13px] text-foreground placeholder:text-muted-foreground/40',
+	'transition-colors focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/10',
+	'disabled:cursor-not-allowed disabled:opacity-50',
+].join(' ');
+
 /** Consistent label + control row */
 const Row = ({ label, children }: { label: string; children: React.ReactNode }) => (
 	<div className="flex flex-wrap items-center gap-y-2">
-		<span className="w-[25%] shrink-0 pr-4 text-[13.5px] text-foreground/80">
+		<span className="w-[25%] shrink-0 pr-4 text-[13px] text-foreground/80">
 			{label}
 		</span>
 		<div className="w-[75%] min-w-[180px]">{children}</div>
@@ -22,7 +37,7 @@ const Row = ({ label, children }: { label: string; children: React.ReactNode }) 
 const Card = ({ title, children }: { title: string; children: React.ReactNode }) => (
 	<div className="overflow-hidden rounded-2xl border border-border/60 bg-white">
 		<div className="border-b border-border/50 px-5 py-4">
-			<h3 className="font-semibold text-foreground" style={{ fontSize: '17px', margin: 0 }}>
+			<h3 className="text-[15px] font-semibold text-foreground" style={{ margin: 0 }}>
 				{title}
 			</h3>
 		</div>
@@ -100,24 +115,27 @@ const SettingsPanel = ({ settings, onChange }: SettingsPanelProps) => {
 				{/* ── Submit Buttons ─────────────────────────────────────── */}
 				<Card title={__('Submit Buttons', 'all-feedback')}>
 					<Row label={__('Submit label', 'all-feedback')}>
-						<Input
+						<input
 							value={settings.submitLabel}
 							onChange={(e) => update({ submitLabel: e.target.value })}
 							placeholder="Submit"
+							className={inputCls}
 						/>
 					</Row>
 					<Row label={__('Next label', 'all-feedback')}>
-						<Input
+						<input
 							value={settings.nextLabel}
 							onChange={(e) => update({ nextLabel: e.target.value })}
 							placeholder="Next"
+							className={inputCls}
 						/>
 					</Row>
 					<Row label={__('Back label', 'all-feedback')}>
-						<Input
+						<input
 							value={settings.backLabel}
 							onChange={(e) => update({ backLabel: e.target.value })}
 							placeholder="Back"
+							className={inputCls}
 						/>
 					</Row>
 				</Card>
@@ -152,7 +170,7 @@ const SettingsPanel = ({ settings, onChange }: SettingsPanelProps) => {
 										onChange={(e) => update({ targetUrls: e.target.value })}
 										placeholder={__('https://example.com/contact\nhttps://example.com/pricing', 'all-feedback')}
 										rows={3}
-										className="flex w-full resize-none rounded-lg border border-transparent bg-muted/60 px-3 py-2.5 text-[14px] text-foreground placeholder:text-muted-foreground transition-colors focus:border-border focus:bg-white focus:outline-none focus:ring-0 disabled:cursor-not-allowed disabled:opacity-50"
+										className={textareaCls}
 									/>
 									<p className="mt-1.5 text-[12px] text-muted-foreground/60">
 										{__('One URL per line. Supports wildcards, e.g. /blog/*', 'all-feedback')}
@@ -179,10 +197,11 @@ const SettingsPanel = ({ settings, onChange }: SettingsPanelProps) => {
 						<div className="overflow-hidden">
 							<div className="space-y-4 pt-1">
 								<Row label={__('Title', 'all-feedback')}>
-									<Input
+									<input
 										value={settings.thankYouTitle}
 										onChange={(e) => update({ thankYouTitle: e.target.value })}
 										placeholder={__('Thank you!', 'all-feedback')}
+										className={inputCls}
 									/>
 								</Row>
 								<Row label={__('Description', 'all-feedback')}>
@@ -191,7 +210,7 @@ const SettingsPanel = ({ settings, onChange }: SettingsPanelProps) => {
 										onChange={(e) => update({ thankYouDescription: e.target.value })}
 										placeholder={__('Your response has been recorded.', 'all-feedback')}
 										rows={3}
-										className="flex w-full resize-none rounded-lg border border-transparent bg-muted/60 px-3 py-2.5 text-[14px] text-foreground placeholder:text-muted-foreground transition-colors focus:border-border focus:bg-white focus:outline-none focus:ring-0 disabled:cursor-not-allowed disabled:opacity-50"
+										className={textareaCls}
 									/>
 								</Row>
 							</div>

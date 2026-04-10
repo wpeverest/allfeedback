@@ -79,6 +79,8 @@ const FormBuilder = () => {
 	const queryClient = useQueryClient();
 	const { new: isNewForm, id: formId } = Route.useSearch();
 
+	const [activeTab, setActiveTab] = useState<BuilderTab>('builder');
+
 	/* ── Remote survey data ─────────────────────────────────────────── */
 	// The route loader (builder.index.tsx) pre-fetches this into cache before the
 	// component mounts, so surveyData is available on the very first render and
@@ -139,7 +141,6 @@ const FormBuilder = () => {
 	const titleSnapshotRef                    = useRef('');
 	const titleInputRef                       = useRef<HTMLInputElement>(null);
 
-	const [activeTab,         setActiveTab]         = useState<BuilderTab>('builder');
 	const [canvasScrolled,    setCanvasScrolled]    = useState(false);
 	const [canvasProgress,    setCanvasProgress]    = useState(0);
 	const [previewDevice,   setPreviewDevice]   = useState<PreviewDevice>('desktop');
@@ -582,11 +583,6 @@ const FormBuilder = () => {
 											)} />
 										</span>
 										{label}
-										{pro && (
-											<span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold uppercase leading-none text-amber-600">
-												PRO
-											</span>
-										)}
 									</button>
 								</Fragment>
 							);
