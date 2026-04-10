@@ -86,6 +86,7 @@ use AllFeedback\Infrastructure\Taxonomies\SurveyCategory;
 // ── API ───────────────────────────────────────────────────────────────────────
 use AllFeedback\Admin\AdminServiceProvider;
 use AllFeedback\API\ApiServiceProvider;
+use AllFeedback\API\Controllers\V1\ContentSearchController;
 use AllFeedback\API\Controllers\V1\ResponsesController;
 use AllFeedback\API\Controllers\V1\SettingsController;
 use AllFeedback\API\Controllers\V1\SurveysController;
@@ -234,6 +235,7 @@ return [
 	SurveysController::class         => autowire(),
 	ResponsesController::class       => autowire(),
 	SettingsController::class        => autowire(),
+	ContentSearchController::class   => autowire(),
 
 	// ------------------------------------------------------------------
 	// Service providers

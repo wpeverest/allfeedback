@@ -200,12 +200,30 @@ class SurveysController extends RestController {
 			}
 		}
 
+		$settings = $request->get_param( 'settings' );
+		if ( $settings !== null ) {
+			$settingsCheck = $this->validateSettings( $settings );
+			if ( is_wp_error( $settingsCheck ) ) {
+				return $settingsCheck;
+			}
+			/**
+			 * Filter the settings object immediately before it is persisted.
+			 *
+			 * Pro add-ons can use this to inject or transform settings values
+			 * (e.g. pro-only trigger types, custom targeting rules).
+			 *
+			 * @param mixed            $settings Normalised settings array.
+			 * @param \WP_REST_Request $request  The current REST request.
+			 * @since 1.0.0
+			 */
+			$settings = apply_filters( 'allfeedback_settings_before_save', $settings, $request );
+		}
+
 		$data = [
 			'title'       => sanitize_text_field( (string) $request->get_param( 'title' ) ),
 			'description' => wp_kses_post( (string) ( $request->get_param( 'description' ) ?? '' ) ),
 			'form_schema' => $this->encodeJsonParam( $formSchema ),
-			'settings'    => $this->encodeJsonParam( $request->get_param( 'settings' ) ),
-			'targeting'   => $this->encodeJsonParam( $request->get_param( 'targeting' ) ),
+			'settings'    => $this->encodeJsonParam( $settings ),
 			'status'      => 'draft',
 			'created_by'  => get_current_user_id() ?: null,
 		];
@@ -300,11 +318,14 @@ class SurveysController extends RestController {
 		}
 
 		if ( array_key_exists( 'settings', $body ) ) {
-			$data['settings'] = $this->encodeJsonParam( $request->get_param( 'settings' ) );
-		}
-
-		if ( array_key_exists( 'targeting', $body ) ) {
-			$data['targeting'] = $this->encodeJsonParam( $request->get_param( 'targeting' ) );
+			$settingsRaw   = $request->get_param( 'settings' );
+			$settingsCheck = $this->validateSettings( $settingsRaw );
+			if ( is_wp_error( $settingsCheck ) ) {
+				return $settingsCheck;
+			}
+			/** This filter is documented in store(). */
+			$settingsRaw      = apply_filters( 'allfeedback_settings_before_save', $settingsRaw, $request );
+			$data['settings'] = $this->encodeJsonParam( $settingsRaw );
 		}
 
 		if ( array_key_exists( 'status', $body ) ) {
@@ -526,13 +547,8 @@ class SurveysController extends RestController {
 					'context'     => [ 'view', 'edit' ],
 				],
 				'settings'       => [
-					'description' => __( 'Per-survey configuration: triggers, display frequency, GDPR, thank-you.', 'all-feedback' ),
+					'description' => __( 'Per-survey configuration: submit labels, user targeting, trigger, display frequency.', 'all-feedback' ),
 					'type'        => [ 'object', 'null' ],
-					'context'     => [ 'view', 'edit' ],
-				],
-				'targeting'      => [
-					'description' => __( 'Targeting rules array controlling where the survey appears.', 'all-feedback' ),
-					'type'        => [ 'array', 'null' ],
 					'context'     => [ 'view', 'edit' ],
 				],
 				'status'         => [
@@ -631,11 +647,7 @@ class SurveysController extends RestController {
 				'type'        => [ 'object', 'array', 'string', 'null' ],
 			],
 			'settings'    => [
-				'description' => __( 'Per-survey configuration object.', 'all-feedback' ),
-				'type'        => [ 'object', 'array', 'string', 'null' ],
-			],
-			'targeting'   => [
-				'description' => __( 'Targeting rules array.', 'all-feedback' ),
+				'description' => __( 'Per-survey configuration object (trigger, frequency, targeting, submit labels).', 'all-feedback' ),
 				'type'        => [ 'object', 'array', 'string', 'null' ],
 			],
 			'status'      => $this->argEnum(
@@ -678,15 +690,15 @@ class SurveysController extends RestController {
 	/**
 	 * Serialise a wpdb row into the REST response shape.
 	 *
-	 * JSON columns (form_schema, settings, targeting) are decoded so the
-	 * response body contains structured objects rather than raw strings.
+	 * JSON columns (form_schema, settings) are decoded so the response body
+	 * contains structured objects rather than raw strings.
 	 *
 	 * @param object $survey Raw database row.
 	 * @return array<string, mixed>
 	 * @since 1.0.0
 	 */
 	private function prepareSurvey( object $survey ): array {
-		return [
+		$prepared = [
 			'id'             => (int) $survey->id,
 			'title'          => $survey->title,
 			'description'    => $survey->description,
@@ -696,9 +708,6 @@ class SurveysController extends RestController {
 			'settings'       => isset( $survey->settings ) && $survey->settings !== null
 				? json_decode( $survey->settings, true )
 				: null,
-			'targeting'      => isset( $survey->targeting ) && $survey->targeting !== null
-				? json_decode( $survey->targeting, true )
-				: null,
 			'status'         => $survey->status,
 			'response_count' => (int) $survey->response_count,
 			'created_by'     => isset( $survey->created_by ) && $survey->created_by !== null
@@ -707,6 +716,18 @@ class SurveysController extends RestController {
 			'created_at'     => $survey->created_at,
 			'updated_at'     => $survey->updated_at,
 		];
+
+		/**
+		 * Filter the prepared survey response object before it is returned.
+		 *
+		 * Pro add-ons can use this to append extra fields (e.g. analytics,
+		 * pro-only settings, computed properties) without forking the controller.
+		 *
+		 * @param array<string, mixed> $prepared Serialised survey data.
+		 * @param object               $survey   Raw database row.
+		 * @since 1.0.0
+		 */
+		return apply_filters( 'allfeedback_prepare_survey', $prepared, $survey );
 	}
 
 	// ------------------------------------------------------------------
@@ -755,6 +776,118 @@ class SurveysController extends RestController {
 							__( 'Invalid field type "%s".', 'all-feedback' ),
 							sanitize_key( (string) $field['type'] )
 						),
+						422
+					);
+				}
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Validate the settings object against the canonical settings contract.
+	 *
+	 * All keys are optional — only present keys are validated.
+	 * Unknown keys pass through unmodified (forward-compatibility for pro add-ons).
+	 * Each enum list is filterable so pro features can register new valid values.
+	 *
+	 * @param mixed $settings Raw settings value from the request.
+	 * @return true|\WP_Error
+	 * @since 1.0.0
+	 */
+	private function validateSettings( mixed $settings ): true|\WP_Error {
+		if ( $settings === null || $settings === '' ) {
+			return true;
+		}
+
+		$settings = $this->normaliseJsonParam( $settings );
+
+		if ( $settings === null ) {
+			return $this->errorResponse( __( 'settings must be a valid JSON object.', 'all-feedback' ), 422 );
+		}
+
+		/**
+		 * Each entry: settings key => filterable list of allowed string values.
+		 * Pro add-ons filter the individual lists to register new allowed values
+		 * (e.g. add "exit_intent" to trigger types without touching core code).
+		 *
+		 * @var array<string, string[]>
+		 */
+		$enumRules = [
+			'trigger_type'      => apply_filters(
+				'allfeedback_settings_allowed_trigger_types',
+				[ 'immediate', 'time_delay', 'scroll_depth' ]
+			),
+			'delay_unit'        => apply_filters(
+				'allfeedback_settings_allowed_delay_units',
+				[ 'seconds', 'minutes', 'hours' ]
+			),
+			'display_frequency' => apply_filters(
+				'allfeedback_settings_allowed_display_frequencies',
+				[ 'once', 'until_submit' ]
+			),
+			'dismiss_wait_unit' => apply_filters(
+				'allfeedback_settings_allowed_dismiss_units',
+				[ 'hours', 'days', 'weeks' ]
+			),
+			'user_state'        => apply_filters(
+				'allfeedback_settings_allowed_user_states',
+				[ 'all', 'logged_in', 'logged_out' ]
+			),
+			'target_pages'      => apply_filters(
+				'allfeedback_settings_allowed_target_pages',
+				[ 'all', 'specific' ]
+			),
+		];
+
+		foreach ( $enumRules as $key => $allowed ) {
+			if ( ! array_key_exists( $key, $settings ) ) {
+				continue;
+			}
+			if ( ! in_array( $settings[ $key ], $allowed, true ) ) {
+				return $this->errorResponse(
+					sprintf(
+						/* translators: 1: settings key name  2: submitted value  3: comma-separated allowed values */
+						__( 'Invalid settings.%1$s "%2$s". Allowed: %3$s.', 'all-feedback' ),
+						$key,
+						sanitize_key( (string) $settings[ $key ] ),
+						implode( ', ', $allowed )
+					),
+					422
+				);
+			}
+		}
+
+		// Non-negative integer fields.
+		foreach ( [ 'delay_value', 'scroll_depth', 'max_impressions', 'dismiss_wait_value' ] as $key ) {
+			if ( ! array_key_exists( $key, $settings ) ) {
+				continue;
+			}
+			if ( filter_var( $settings[ $key ], FILTER_VALIDATE_INT ) === false || (int) $settings[ $key ] < 0 ) {
+				return $this->errorResponse(
+					sprintf(
+						/* translators: %s: settings key name */
+						__( 'settings.%s must be a non-negative integer.', 'all-feedback' ),
+						$key
+					),
+					422
+				);
+			}
+		}
+
+		// target_page_ids must be an array of positive integers.
+		if ( array_key_exists( 'target_page_ids', $settings ) ) {
+			if ( ! is_array( $settings['target_page_ids'] ) ) {
+				return $this->errorResponse(
+					__( 'settings.target_page_ids must be an array.', 'all-feedback' ),
+					422
+				);
+			}
+			foreach ( $settings['target_page_ids'] as $pid ) {
+				if ( filter_var( $pid, FILTER_VALIDATE_INT ) === false || (int) $pid < 1 ) {
+					return $this->errorResponse(
+						__( 'settings.target_page_ids must contain only positive integers.', 'all-feedback' ),
 						422
 					);
 				}

@@ -47,7 +47,6 @@ Returns a paginated list of surveys.
         "description": "",
         "form_schema": null,
         "settings": null,
-        "targeting": null,
         "status": "draft",
         "response_count": 0,
         "created_by": 1,
@@ -76,15 +75,13 @@ Create a new survey (always starts as `draft`).
 |-------|------|----------|-------------|
 | `title` | string | Yes | Survey title (max 255 chars) |
 | `description` | string | No | HTML description |
-| `form_schema` | object | No | Builder structure (see schema below) |
-| `settings` | object | No | Trigger/display/GDPR config |
-| `targeting` | object | No | Page targeting rules |
+| `form_schema` | object | No | Builder structure (see Allowed Field Types) |
+| `settings` | object | No | All survey configuration — see Settings Schema |
+| `status` | string | No | `draft` (default) \| `published` \| `paused` \| `archived` |
 
-**Minimal Postman body:**
+**Minimal body:**
 ```json
-{
-  "title": "My First Survey"
-}
+{ "title": "My First Survey" }
 ```
 
 **Full body example:**
@@ -125,20 +122,21 @@ Create a new survey (always starts as `draft`).
     ]
   },
   "settings": {
+    "submit_label": "Submit",
+    "next_label": "Next",
+    "back_label": "Back",
+    "user_state": "all",
+    "target_pages": "all",
+    "target_page_ids": [],
     "trigger_type": "time_delay",
     "delay_value": 3,
     "delay_unit": "seconds",
-    "display_frequency": "once",
-    "max_impressions": 1,
-    "dismiss_behaviour": "hide",
-    "gdpr_consent": false,
-    "consent_label": "",
-    "thankyou_message": "Thanks for your feedback!",
-    "redirect_url": ""
-  },
-  "targeting": [
-    { "type": "all", "value": [] }
-  ]
+    "scroll_depth": 50,
+    "display_frequency": "until_submit",
+    "max_impressions": 3,
+    "dismiss_wait_value": 3,
+    "dismiss_wait_unit": "days"
+  }
 }
 ```
 
@@ -148,13 +146,11 @@ Create a new survey (always starts as `draft`).
 
 ### GET /surveys/{id}
 
-Return a single survey including full `form_schema`, `settings`, and `targeting`.
+Return a single survey including full `form_schema` and `settings`.
 
 **Permission:** `manage_options`
 
 **URL param:** `id` (integer)
-
-**Example:** `GET /surveys/1`
 
 **Response:** `200 OK` with the survey object.
 
@@ -162,11 +158,9 @@ Return a single survey including full `form_schema`, `settings`, and `targeting`
 
 ### PUT /surveys/{id}
 
-Update a survey. All fields are optional — only send what changed (autosave-friendly).
+Update a survey. All fields optional — only send what changed (autosave-friendly).
 
 **Permission:** `manage_options`
-
-**URL param:** `id` (integer)
 
 **Body (JSON) — all optional:**
 
@@ -175,19 +169,8 @@ Update a survey. All fields are optional — only send what changed (autosave-fr
 | `title` | string | Survey title |
 | `description` | string | HTML description |
 | `form_schema` | object | Full builder structure |
-| `settings` | object | Trigger/display/GDPR config |
-| `targeting` | array | Page targeting rules |
+| `settings` | object | Full settings object (see Settings Schema) |
 | `status` | string | `draft` \| `published` \| `paused` \| `archived` |
-
-**Example (autosave form_schema):**
-```json
-{
-  "form_schema": {
-    "version": "1.0",
-    "sections": [...]
-  }
-}
-```
 
 **Response:** `200 OK` with the updated survey object.
 
@@ -199,37 +182,22 @@ Soft-delete (archive) or permanently delete a survey.
 
 **Permission:** `manage_options`
 
-**URL param:** `id` (integer)
-
-**Query params:**
-
 | Param | Type | Default | Description |
 |-------|------|---------|-------------|
-| `force` | boolean | `false` | `true` = permanent delete; `false` = set status to `archived` |
-
-**Example (soft delete):** `DELETE /surveys/1`
-
-**Example (hard delete):** `DELETE /surveys/1?force=true`
+| `force` | boolean | `false` | `true` = permanent delete |
 
 **Response:**
 ```json
-{
-  "success": true,
-  "data": { "deleted": true, "id": 1, "force": false }
-}
+{ "success": true, "data": { "deleted": true, "id": 1, "force": false } }
 ```
 
 ---
 
 ### POST /surveys/{id}/duplicate
 
-Copy a survey. The copy gets "Copy of " prepended to its title and starts as `draft` with `response_count = 0`.
+Copy a survey. The copy gets "Copy of " prepended to its title and starts as `draft`.
 
 **Permission:** `manage_options`
-
-**URL param:** `id` (integer)
-
-**Body:** none required.
 
 **Response:** `201 Created` with the new survey object.
 
@@ -237,15 +205,11 @@ Copy a survey. The copy gets "Copy of " prepended to its title and starts as `dr
 
 ### POST /surveys/{id}/publish
 
-Transition status from `draft` or `paused` → `published`.
+Transition status → `published`.
 
 **Permission:** `manage_options`
 
-**URL param:** `id` (integer)
-
-**Body:** none required.
-
-**Response:** `200 OK` with the updated survey object (status = `published`).
+**Response:** `200 OK` with the updated survey object.
 
 ---
 
@@ -255,11 +219,7 @@ Transition status → `paused`.
 
 **Permission:** `manage_options`
 
-**URL param:** `id` (integer)
-
-**Body:** none required.
-
-**Response:** `200 OK` with the updated survey object (status = `paused`).
+**Response:** `200 OK` with the updated survey object.
 
 ---
 
@@ -271,18 +231,12 @@ Return a paginated list of responses for a survey.
 
 **Permission:** `manage_options`
 
-**URL param:** `id` (integer, survey ID)
-
-**Query params:**
-
 | Param | Type | Default | Description |
 |-------|------|---------|-------------|
 | `page` | int | 1 | Page number |
 | `per_page` | int | 20 | Items per page (max 100) |
 | `date_from` | string | — | Lower bound `Y-m-d` |
 | `date_to` | string | — | Upper bound `Y-m-d` |
-
-**Example:** `GET /surveys/1/responses?date_from=2026-04-01&date_to=2026-04-30`
 
 **Example response:**
 ```json
@@ -317,40 +271,180 @@ Submit a response from the public widget.
 
 **Permission:** Public — no login required. A valid nonce is required instead.
 
-**URL param:** `id` (integer, survey ID)
-
-**Body (JSON):**
-
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `nonce` | string | Yes | Value of `wp_create_nonce('allfeedback_submit')` |
+| `nonce` | string | Yes | `wp_create_nonce('allfeedback_submit')` |
 | `response_data` | object | Yes | Field answers keyed by field ID |
 | `score` | integer | No | Numeric score (0–10) for NPS/CSAT/CES |
 | `page_url` | string | No | Page URL where the survey appeared |
 | `device_type` | string | No | `desktop` \| `tablet` \| `mobile` |
 | `consent_given` | boolean | No | GDPR consent flag |
 
-**Notes:**
-- The survey must have status `published`. Otherwise returns `403`.
-- Duplicate detection uses HMAC-SHA256 of the visitor IP. A second submission from the same IP returns `409`.
-- The nonce will be passed by `wp_localize_script` once `Assets.php` is built. For now, generate it manually or skip this endpoint in Postman.
+**Response:** `201 Created` — `{ "success": true, "data": { "id": 1 } }`
 
-**Example body:**
+---
+
+## Content Search
+
+### GET /content-search
+
+Search published pages and posts. Powers the "Select specific pages & posts" picker in the form builder's Settings tab.
+
+**Permission:** `manage_options`
+
+**Query params:**
+
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `search` | string | `""` | Keyword to filter by title |
+| `post_type` | string | `""` (all allowed) | Comma-separated post type slugs, e.g. `page,post` |
+| `page` | int | 1 | Page number |
+| `per_page` | int | 20 | Items per page (max 50) |
+
+**Example:** `GET /content-search?search=about&post_type=page`
+
+**Example response:**
 ```json
 {
-  "nonce": "abc123",
-  "response_data": { "fld_1": 8 },
-  "score": 8,
-  "page_url": "https://example.com/checkout",
-  "device_type": "desktop",
-  "consent_given": true
+  "success": true,
+  "data": {
+    "items": [
+      { "id": 2,  "title": "About Us",         "type": "page", "url": "https://example.com/about/" },
+      { "id": 14, "title": "About Our Mission", "type": "page", "url": "https://example.com/mission/" }
+    ],
+    "total": 2,
+    "page": 1,
+    "per_page": 20
+  }
 }
 ```
 
-**Response:** `201 Created`
+**Notes:**
+- Default allowed post types are `page` and `post`. Pro add-ons extend this via the `allfeedback_content_search_post_types` filter.
+- Use the returned `id` values as `settings.target_page_ids` when saving a survey with `target_pages = "specific"`.
+
+---
+
+## Settings Schema
+
+All survey configuration is stored in the `settings` JSON column. The `settings` object is accepted and returned on every survey write/read endpoint.
+
+All keys are **optional** — omit any key you do not need. Unknown keys are accepted without error (forward-compatible for pro add-ons).
+
+Validated by `SurveysController::validateSettings()`. Each enum list is filterable for pro extensibility — see WordPress Filters below.
+
+### Submit buttons
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `submit_label` | string | `"Submit"` | Label for the final submit button |
+| `next_label` | string | `"Next"` | Label for the next-page button (multi-page surveys) |
+| `back_label` | string | `"Back"` | Label for the back-page button |
+
+### Targeting — user state
+
+| Key | Type | Allowed | Default | Description |
+|-----|------|---------|---------|-------------|
+| `user_state` | string | `all` · `logged_in` · `logged_out` | `all` | Which visitors see the survey |
+
+### Targeting — where to show
+
+| Key | Type | Allowed | Default | Description |
+|-----|------|---------|---------|-------------|
+| `target_pages` | string | `all` · `specific` | `all` | Show on all pages, or only specified ones |
+| `target_page_ids` | int[] | — | `[]` | WordPress page/post IDs (used when `target_pages = "specific"`). Retrieve IDs from `GET /content-search`. |
+
+### Trigger and delay
+
+| Key | Type | Allowed | Default | Description |
+|-----|------|---------|---------|-------------|
+| `trigger_type` | string | `immediate` · `time_delay` · `scroll_depth` | `immediate` | When the widget appears |
+| `delay_value` | int ≥ 0 | — | `0` | Number of time units to wait (`time_delay` only) |
+| `delay_unit` | string | `seconds` · `minutes` · `hours` | `seconds` | Unit for `delay_value` |
+| `scroll_depth` | int 0–100 | — | `50` | Page percentage scrolled before showing (`scroll_depth` only) |
+
+### How many times to show
+
+| Key | Type | Allowed | Default | Description |
+|-----|------|---------|---------|-------------|
+| `display_frequency` | string | `once` · `until_submit` | `until_submit` | Show once ever, or until the visitor submits |
+| `max_impressions` | int ≥ 0 | — | `3` | Max times shown to a non-submitting visitor (`until_submit` only) |
+| `dismiss_wait_value` | int ≥ 0 | — | `3` | How long to wait before re-showing after dismissal |
+| `dismiss_wait_unit` | string | `hours` · `days` · `weeks` | `days` | Unit for `dismiss_wait_value` |
+
+### Default settings object
+
 ```json
-{ "success": true, "data": { "id": 1 } }
+{
+  "submit_label": "Submit",
+  "next_label": "Next",
+  "back_label": "Back",
+  "user_state": "all",
+  "target_pages": "all",
+  "target_page_ids": [],
+  "trigger_type": "immediate",
+  "delay_value": 0,
+  "delay_unit": "seconds",
+  "scroll_depth": 50,
+  "display_frequency": "until_submit",
+  "max_impressions": 3,
+  "dismiss_wait_value": 3,
+  "dismiss_wait_unit": "days"
+}
 ```
+
+---
+
+## WordPress Filters
+
+All filters follow the `allfeedback_` prefix convention. Pro add-ons use these hooks to extend the free tier without forking core files.
+
+### Settings validation filters
+
+Each filter receives the current allowed-values array and must return an array of strings.
+
+| Filter | Default values | Purpose |
+|--------|----------------|---------|
+| `allfeedback_settings_allowed_trigger_types` | `immediate, time_delay, scroll_depth` | Register pro trigger types (e.g. `exit_intent`, `scroll_up`) |
+| `allfeedback_settings_allowed_delay_units` | `seconds, minutes, hours` | Add new time units |
+| `allfeedback_settings_allowed_display_frequencies` | `once, until_submit` | Add new frequency modes |
+| `allfeedback_settings_allowed_dismiss_units` | `hours, days, weeks` | Add new dismiss-wait units |
+| `allfeedback_settings_allowed_user_states` | `all, logged_in, logged_out` | Add new user state segments |
+| `allfeedback_settings_allowed_target_pages` | `all, specific` | Add new page targeting modes |
+
+**Example — add exit_intent trigger type in a pro plugin:**
+```php
+add_filter( 'allfeedback_settings_allowed_trigger_types', function ( array $types ): array {
+    $types[] = 'exit_intent';
+    return $types;
+} );
+```
+
+### Settings save filter
+
+```
+allfeedback_settings_before_save( mixed $settings, WP_REST_Request $request ): mixed
+```
+Fires after validation, before the settings object is JSON-encoded and written to the database. Use to inject computed values or transform user input.
+
+### Survey response filter
+
+```
+allfeedback_prepare_survey( array $prepared, object $survey ): array
+```
+Fires inside `prepareSurvey()` before the survey object is returned to the client. Use to append pro-only fields (analytics summaries, computed scores, feature flags) without touching the controller.
+
+### Content search filters
+
+```
+allfeedback_content_search_post_types( string[] $postTypes ): string[]
+```
+Controls which post types are searchable. Default: `['page', 'post']`.
+
+```
+allfeedback_content_search_query_args( array $queryArgs, WP_REST_Request $request ): array
+```
+Full control over the `WP_Query` arguments. Use to add `meta_query`, `tax_query`, exclude specific IDs, or change sort order.
 
 ---
 
@@ -363,8 +457,8 @@ Valid values for `field.type` inside `form_schema` (enforced by `SurveysControll
 | `nps` | Metric | `{}` |
 | `csat` | Metric | `{}` |
 | `ces` | Metric | `{}` |
-| `short_text` | Text input | `{ "placeholder": "" }` |
-| `long_text` | Text input | `{ "placeholder": "" }` |
+| `short_text` | Text | `{ "placeholder": "" }` |
+| `long_text` | Text | `{ "placeholder": "" }` |
 | `radio` | Choice | `{ "options": ["…"] }` |
 | `checkboxes` | Choice | `{ "options": ["…"] }` |
 | `dropdown` | Choice | `{ "options": ["…"] }` |
@@ -373,8 +467,6 @@ Valid values for `field.type` inside `form_schema` (enforced by `SurveysControll
 | `email` | Misc | `{ "placeholder": "" }` |
 | `yes_no` | Misc | `{}` |
 
-Every field object must carry a `settings` key (an object, may be empty `{}`). The React builder always emits it; server-side validation does not currently require it but will in a future version.
-
 ---
 
 ## Postman Quick-Start Checklist
@@ -382,16 +474,17 @@ Every field object must carry a `settings` key (an object, may be empty `{}`). T
 1. Log in to WordPress as admin in your browser.
 2. Open browser console → type `__ALLFB_ADMIN__.nonce` → copy the value.
 3. In Postman, set a collection variable `nonce` to that value.
-4. Add a header `X-WP-Nonce: {{nonce}}` to all admin requests.
+4. Add header `X-WP-Nonce: {{nonce}}` to all admin requests.
 5. Set `Content-Type: application/json` on POST/PUT bodies.
-6. Base URL: `https://your-site.local/wp-json/all-feedback/v1` (adjust to your local URL).
+6. Base URL: `https://your-site.local/wp-json/all-feedback/v1`
 
 **Test sequence:**
 1. `POST /surveys` with `{"title":"Test NPS"}` → note the returned `id`
-2. `GET /surveys` → should show the new survey
-3. `PUT /surveys/{id}` with a `form_schema` body
+2. `GET /surveys` → confirm new survey appears
+3. `PUT /surveys/{id}` with a `form_schema` and `settings` body
 4. `POST /surveys/{id}/publish` → status becomes `published`
-5. `GET /surveys/{id}` → confirm status and form_schema
-6. `POST /surveys/{id}/duplicate` → new draft copy
-7. `DELETE /surveys/{id}?force=false` → archived
-8. `GET /surveys?status=archived` → confirm it appears
+5. `GET /content-search?search=home` → verify pages/posts are returned
+6. `PUT /surveys/{id}` with `{"settings":{"target_pages":"specific","target_page_ids":[2,5]}}` → target specific pages
+7. `GET /surveys/{id}` → confirm `settings.target_page_ids` is saved
+8. `POST /surveys/{id}/duplicate` → new draft copy
+9. `DELETE /surveys/{id}?force=false` → archived
