@@ -389,6 +389,8 @@ const FormBuilder = () => {
 								ref={titleInputRef}
 								type="text"
 								value={title}
+								autoFocus
+								onFocus={(e) => e.target.select()}
 								onChange={(e) => { form.setFieldValue('title', e.target.value); setIsDirty(true); }}
 								onKeyDown={(e) => {
 									if (e.key === 'Enter') commitTitle();
@@ -572,8 +574,7 @@ const FormBuilder = () => {
 												: 'text-muted-foreground hover:text-foreground',
 										)}
 									>
-										{/* Circle with icon inside */}
-										<span className={cn(
+ 										<span className={cn(
 											'flex size-10 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-200',
 											isActive ? 'border-primary bg-primary' : 'border-border bg-white group-hover:border-border/80 group-hover:bg-muted/40',
 										)}>
@@ -588,7 +589,6 @@ const FormBuilder = () => {
 							);
 						})}
 
-					{/* Scroll progress bar */}
 					{activeTab === 'builder' && canvasScrolled && (
 						<div className="absolute inset-x-0 bottom-0 h-[2px] bg-border/40">
 							<div

@@ -1,8 +1,17 @@
 import { Badge } from '@/components/ui/badge';
+import { BulkActionBar } from '@/components/ui/bulk-action-bar';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
+import { Pagination } from '@/components/ui/pagination';
 import {
 	Select,
 	SelectContent,
@@ -12,139 +21,323 @@ import {
 } from '@/components/ui/select';
 import { surveysApi } from '@/admin/api/surveys';
 import { surveysQuery } from '@/admin/queries/surveys';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { cn } from '@/lib/utils';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { __ } from '@wordpress/i18n';
-import { AlertCircle, ArrowUpDown, ChevronLeft, ChevronRight, Edit2, FileText, Loader2, Plus, Trash2 } from 'lucide-react';
+import {
+	AlertCircle,
+	Archive,
+	ArrowDown,
+	ArrowUp,
+	ArrowUpDown,
+	Copy,
+	Edit2,
+	FileText,
+	Loader2,
+	MoreVertical,
+	Plus,
+	RotateCcw,
+	Trash2,
+} from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import type { SurveyStatus } from '@/admin/api/surveys';
 
-const STATUS_BADGE: Record<SurveyStatus, { variant: 'success' | 'secondary' | 'outline'; label: string }> = {
-	published: { variant: 'success',   label: __('Published', 'all-feedback') },
-	draft:     { variant: 'outline',   label: __('Draft',     'all-feedback') },
-	paused:    { variant: 'secondary', label: __('Paused',    'all-feedback') },
-	archived:  { variant: 'secondary', label: __('Archived',  'all-feedback') },
+/* ── Status config ───────────────────────────────────────────────────────── */
+
+const STATUS_CONFIG: Record<SurveyStatus, {
+	variant: 'success' | 'secondary' | 'outline' | 'warning' | 'info' | 'danger';
+	label:   string;
+	dot:     string;
+}> = {
+	published: { variant: 'success', label: __('Published', 'all-feedback'), dot: 'bg-success' },
+	draft:     { variant: 'info',    label: __('Draft',     'all-feedback'), dot: 'bg-info' },
+	paused:    { variant: 'warning', label: __('Paused',    'all-feedback'), dot: 'bg-warning' },
+	archived:  { variant: 'danger',  label: __('Trash',     'all-feedback'), dot: 'bg-destructive' },
 };
 
-const PER_PAGE_OPTIONS = ['10', '25', '50'];
+const STATUS_FILTER_OPTIONS = [
+	{ value: 'all',       label: __('All Status',  'all-feedback'), dot: null },
+	{ value: 'published', label: __('Published',   'all-feedback'), dot: 'bg-success' },
+	{ value: 'draft',     label: __('Draft',       'all-feedback'), dot: 'bg-muted-foreground/40' },
+	{ value: 'paused',    label: __('Paused',      'all-feedback'), dot: 'bg-warning' },
+	{ value: 'archived',  label: __('Archived',    'all-feedback'), dot: 'bg-muted-foreground/30' },
+];
 
-/* ── Skeleton row ──────────────────────────────────────────────────────── */
+const PER_PAGE_OPTIONS = [10, 25, 50];
+
+/* ── Cell text ───────────────────────────────────────────────────────────── */
+const cellCls = 'text-[14px] font-normal leading-[20px] text-[oklch(0.446_0.03_256.802)]';
+
+/* ── Skeleton row ────────────────────────────────────────────────────────── */
 const SkeletonRow = () => (
 	<tr className="border-b border-border">
-		<td className="px-4 py-3.5">
-			<div className="size-4 animate-pulse rounded bg-muted" />
+		<td className="w-12 px-4 py-5">
+			<div className="size-[16px] animate-pulse rounded-[4px] bg-muted" />
 		</td>
-		<td className="px-4 py-3.5">
-			<div className="h-4 w-44 animate-pulse rounded bg-muted" />
+		<td className="w-16 px-4 py-5">
+			<div className="h-4 w-8 animate-pulse rounded bg-muted" />
 		</td>
-		<td className="px-4 py-3.5">
-			<div className="h-4 w-12 animate-pulse rounded bg-muted" />
+		<td className="px-4 py-5">
+			<div className="h-4 w-48 animate-pulse rounded bg-muted" />
 		</td>
-		<td className="px-4 py-3.5">
+		<td className="w-28 px-4 py-5">
+			<div className="h-4 w-10 animate-pulse rounded bg-muted" />
+		</td>
+		<td className="w-36 px-4 py-5">
 			<div className="h-4 w-24 animate-pulse rounded bg-muted" />
 		</td>
-		<td className="px-4 py-3.5">
-			<div className="h-5 w-16 animate-pulse rounded-full bg-muted" />
+		<td className="w-32 px-4 py-5">
+			<div className="h-6 w-20 animate-pulse rounded-full bg-muted" />
 		</td>
-		<td className="px-4 py-3.5">
-			<div className="ml-auto flex justify-end gap-1">
-				<div className="size-7 animate-pulse rounded bg-muted" />
-				<div className="size-7 animate-pulse rounded bg-muted" />
+		<td className="w-24 px-4 py-5">
+			<div className="flex items-center gap-1.5">
+				<div className="h-7 w-14 animate-pulse rounded-lg bg-muted" />
+				<div className="size-7 animate-pulse rounded-lg bg-muted" />
 			</div>
 		</td>
 	</tr>
 );
 
+/* ── AllForms ────────────────────────────────────────────────────────────── */
 const AllForms = () => {
-	const navigate     = useNavigate();
-	const queryClient  = useQueryClient();
-	const [search,     setSearch]     = useState('');
-	const [status,     setStatus]     = useState('all');
-	const [perPage,    setPerPage]    = useState('10');
-	const [page,       setPage]       = useState(1);
-	const [checked,         setChecked]         = useState<number[]>([]);
-	const [deletingId,      setDeletingId]      = useState<number | null>(null);
-	const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+	const navigate    = useNavigate();
+	const queryClient = useQueryClient();
 
+	/* ── Filters / sort / pagination ───────────────────────────────────── */
+	const [search,  setSearch]  = useState('');
+	const [status,  setStatus]  = useState('all');
+	const [perPage, setPerPage] = useState(10);
+	const [page,    setPage]    = useState(1);
+	const [orderby, setOrderby] = useState('created_at');
+	const [order,   setOrder]   = useState<'ASC' | 'DESC'>('DESC');
+
+	/* ── Selection / action UI state ───────────────────────────────────── */
+	const [checked,           setChecked]           = useState<number[]>([]);
+	const [confirmDeleteId,   setConfirmDeleteId]   = useState<number | null>(null);
+	const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
+	const [confirmBulkTrash,  setConfirmBulkTrash]  = useState(false);
+
+	/* ── Query ─────────────────────────────────────────────────────────── */
 	const queryParams = {
 		page,
-		per_page: Number(perPage),
+		per_page: perPage,
+		orderby,
+		order,
 		...(search           && { search }),
 		...(status !== 'all' && { status }),
 	};
 
-	const { data, isLoading, isError } = useQuery(surveysQuery(queryParams));
+	const { data, isLoading, isError, isFetching } = useQuery({
+		...surveysQuery(queryParams),
+		placeholderData: keepPreviousData,
+	});
 
 	const surveys    = data?.surveys ?? [];
 	const total      = data?.total   ?? 0;
-	const totalPages = Math.max(1, Math.ceil(total / Number(perPage)));
-	const start      = total === 0 ? 0 : (page - 1) * Number(perPage) + 1;
-	const end        = Math.min(page * Number(perPage), total);
+	const totalPages = Math.max(1, Math.ceil(total / perPage));
+
+	/* ── Sort helper ───────────────────────────────────────────────────── */
+	const handleSort = (column: string) => {
+		if (orderby === column) {
+			setOrder((prev) => (prev === 'DESC' ? 'ASC' : 'DESC'));
+		} else {
+			setOrderby(column);
+			setOrder('DESC');
+		}
+		setPage(1);
+	};
+
+	/**
+	 * Unified column header — uses <span role="button"> for sortable columns
+	 * to avoid WordPress admin's button CSS reset overriding font styles.
+	 */
+	const colHeadCls = 'flex items-center gap-1 text-[12px] font-semibold uppercase tracking-wide leading-[16px] select-none text-[oklch(0.446_0.03_256.802)]';
+
+	const ColHead = ({ column, label, sortable = false }: { column?: string; label: string; sortable?: boolean }) => {
+		const isActive = sortable && column !== undefined && orderby === column;
+		const Icon     = isActive ? (order === 'DESC' ? ArrowDown : ArrowUp) : ArrowUpDown;
+		return (
+			<span
+				role={sortable && column ? 'button' : undefined}
+				tabIndex={sortable && column ? 0 : undefined}
+				onClick={sortable && column ? () => handleSort(column) : undefined}
+				onKeyDown={sortable && column ? (e) => { if (e.key === 'Enter' || e.key === ' ') handleSort(column); } : undefined}
+				className={cn(
+					colHeadCls,
+					sortable && column ? 'cursor-pointer transition-colors' : '',
+					isActive ? 'text-foreground' : '',
+					sortable && column && !isActive ? 'hover:text-foreground' : '',
+				)}
+			>
+				{label}
+				{sortable && <Icon className={cn('size-3 shrink-0', isActive ? 'opacity-100' : 'opacity-35')} />}
+			</span>
+		);
+	};
+
+	/* ── Selection ─────────────────────────────────────────────────────── */
+	const allChecked  = surveys.length > 0 && surveys.every((s) => checked.includes(s.id));
+	const someChecked = checked.length > 0 && !allChecked;
+	const toggleAll   = () => setChecked(allChecked ? [] : surveys.map((s) => s.id));
+	const toggleOne   = (id: number) =>
+		setChecked((prev) => prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]);
 
 	/* ── Create mutation ───────────────────────────────────────────────── */
 	const createMutation = useMutation({
-		mutationFn: () =>
-			surveysApi.create({ title: __('Untitled Form', 'all-feedback') }),
+		mutationFn: () => surveysApi.create({ title: __('Untitled Form', 'all-feedback') }),
 		onSuccess: (survey) => {
-			void navigate({
-				to:     '/builder/',
-				search: { new: true, id: survey.id },
-			});
+			void navigate({ to: '/builder/', search: { new: true, id: survey.id } });
 		},
 	});
 
-	/* ── Delete mutation ───────────────────────────────────────────────── */
+	/* ── Single delete mutation (permanent) ────────────────────────────── */
 	const deleteMutation = useMutation({
-		mutationFn: (id: number) => surveysApi.delete(id),
+		mutationFn: (id: number) => surveysApi.delete(id, true),
 		onSuccess: () => {
 			void queryClient.invalidateQueries({ queryKey: ['surveys'] });
-			setDeletingId(null);
 			setConfirmDeleteId(null);
-			toast.success(__('Form deleted.', 'all-feedback'));
+			setChecked((prev) => prev.filter((id) => id !== confirmDeleteId));
+			toast.success(__('Form permanently deleted.', 'all-feedback'));
 		},
 		onError: () => {
-			setDeletingId(null);
 			setConfirmDeleteId(null);
 			toast.error(__('Failed to delete form. Please try again.', 'all-feedback'));
 		},
 	});
 
-	const handleDeleteConfirm = () => {
-		if (!confirmDeleteId) return;
-		setDeletingId(confirmDeleteId);
-		deleteMutation.mutate(confirmDeleteId);
-	};
+	/* ── Single trash mutation (archive / soft-delete) ─────────────────── */
+	const trashMutation = useMutation({
+		mutationFn: (id: number) => surveysApi.delete(id, false),
+		onSuccess: () => {
+			void queryClient.invalidateQueries({ queryKey: ['surveys'] });
+			toast.success(__('Form moved to trash.', 'all-feedback'));
+		},
+		onError: () => {
+			toast.error(__('Failed to trash form. Please try again.', 'all-feedback'));
+		},
+	});
 
-	/* ── Selection ─────────────────────────────────────────────────────── */
-	const allChecked = surveys.length > 0 && surveys.every((s) => checked.includes(s.id));
-	const toggleAll  = () => setChecked(allChecked ? [] : surveys.map((s) => s.id));
-	const toggleOne  = (id: number) =>
-		setChecked((prev) => prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]);
+	/* ── Restore mutation (archived → draft) ───────────────────────────── */
+	const restoreMutation = useMutation({
+		mutationFn: (id: number) => surveysApi.update(id, { status: 'draft' }),
+		onSuccess: () => {
+			void queryClient.invalidateQueries({ queryKey: ['surveys'] });
+			toast.success(__('Form restored to draft.', 'all-feedback'));
+		},
+		onError: () => {
+			toast.error(__('Failed to restore form. Please try again.', 'all-feedback'));
+		},
+	});
+
+	/* ── Bulk restore mutation ──────────────────────────────────────────── */
+	const bulkRestoreMutation = useMutation({
+		mutationFn: (ids: number[]) => Promise.all(ids.map((id) => surveysApi.update(id, { status: 'draft' }))),
+		onSuccess: () => {
+			void queryClient.invalidateQueries({ queryKey: ['surveys'] });
+			setChecked([]);
+			toast.success(__('Selected forms restored to draft.', 'all-feedback'));
+		},
+		onError: () => {
+			toast.error(__('Failed to restore some forms. Please try again.', 'all-feedback'));
+		},
+	});
+
+	/* ── Clone mutation ────────────────────────────────────────────────── */
+	const cloneMutation = useMutation({
+		mutationFn: (id: number) => surveysApi.duplicate(id),
+		onSuccess: () => {
+			void queryClient.invalidateQueries({ queryKey: ['surveys'] });
+			toast.success(__('Form cloned successfully.', 'all-feedback'));
+		},
+		onError: () => {
+			toast.error(__('Failed to clone form. Please try again.', 'all-feedback'));
+		},
+	});
+
+	/* ── Bulk delete mutation (permanent) ──────────────────────────────── */
+	const bulkDeleteMutation = useMutation({
+		mutationFn: (ids: number[]) => Promise.all(ids.map((id) => surveysApi.delete(id, true))),
+		onSuccess: () => {
+			void queryClient.invalidateQueries({ queryKey: ['surveys'] });
+			setChecked([]);
+			setConfirmBulkDelete(false);
+			toast.success(__('Selected forms permanently deleted.', 'all-feedback'));
+		},
+		onError: () => {
+			setConfirmBulkDelete(false);
+			toast.error(__('Failed to delete some forms. Please try again.', 'all-feedback'));
+		},
+	});
+
+	/* ── Bulk trash mutation (archive) ─────────────────────────────────── */
+	const bulkTrashMutation = useMutation({
+		mutationFn: (ids: number[]) => Promise.all(ids.map((id) => surveysApi.delete(id, false))),
+		onSuccess: () => {
+			void queryClient.invalidateQueries({ queryKey: ['surveys'] });
+			setChecked([]);
+			setConfirmBulkTrash(false);
+			toast.success(__('Selected forms moved to trash.', 'all-feedback'));
+		},
+		onError: () => {
+			setConfirmBulkTrash(false);
+			toast.error(__('Failed to trash some forms. Please try again.', 'all-feedback'));
+		},
+	});
 
 	return (
 		<div className="p-5 md:p-6">
+
+			{/* Single-delete confirm */}
 			<ConfirmDialog
 				open={confirmDeleteId !== null}
 				onOpenChange={(open) => { if (!open && !deleteMutation.isPending) setConfirmDeleteId(null); }}
-				onConfirm={handleDeleteConfirm}
-				title={__('Delete form?', 'all-feedback')}
+				onConfirm={() => { if (confirmDeleteId) deleteMutation.mutate(confirmDeleteId); }}
+				title={__('Permanently delete form?', 'all-feedback')}
 				description={__('This action cannot be undone. All responses collected for this form will also be permanently deleted.', 'all-feedback')}
 				confirmLabel={__('Delete', 'all-feedback')}
 				cancelLabel={__('Cancel', 'all-feedback')}
 				isPending={deleteMutation.isPending}
 			/>
 
-			{/* ── Toolbar ────────────────────────────────────────────────── */}
+			{/* Bulk-delete confirm */}
+			<ConfirmDialog
+				open={confirmBulkDelete}
+				onOpenChange={(open) => { if (!open && !bulkDeleteMutation.isPending) setConfirmBulkDelete(false); }}
+				onConfirm={() => bulkDeleteMutation.mutate(checked)}
+				title={__('Permanently delete selected forms?', 'all-feedback')}
+				description={__('This action cannot be undone. All responses for the selected forms will also be permanently deleted.', 'all-feedback')}
+				confirmLabel={__('Delete all', 'all-feedback')}
+				cancelLabel={__('Cancel', 'all-feedback')}
+				isPending={bulkDeleteMutation.isPending}
+			/>
+
+			{/* Bulk-trash confirm */}
+			<ConfirmDialog
+				open={confirmBulkTrash}
+				onOpenChange={(open) => { if (!open && !bulkTrashMutation.isPending) setConfirmBulkTrash(false); }}
+				onConfirm={() => bulkTrashMutation.mutate(checked)}
+				title={__('Move selected forms to trash?', 'all-feedback')}
+				description={__('The selected forms will be archived and hidden from this list.', 'all-feedback')}
+				confirmLabel={__('Move to trash', 'all-feedback')}
+				cancelLabel={__('Cancel', 'all-feedback')}
+				isPending={bulkTrashMutation.isPending}
+			/>
+
+			{/* ── Toolbar ──────────────────────────────────────────────── */}
 			<div className="mb-4 flex flex-wrap items-center gap-3 py-1">
 				<div className="relative w-[260px]">
-					<svg className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+					<svg
+						className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
+						fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"
+					>
 						<circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
 					</svg>
 					<Input
 						value={search}
 						onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-						placeholder={__('Search...', 'all-feedback')}
+						placeholder={__('Search forms…', 'all-feedback')}
 						className="pl-9"
 					/>
 				</div>
@@ -154,17 +347,15 @@ const AllForms = () => {
 						<SelectValue placeholder={__('All Status', 'all-feedback')} />
 					</SelectTrigger>
 					<SelectContent>
-						<SelectItem value="all">{__('All Status', 'all-feedback')}</SelectItem>
+						<SelectItem value="all">{__('All Status',  'all-feedback')}</SelectItem>
 						<SelectItem value="published">{__('Published', 'all-feedback')}</SelectItem>
-						<SelectItem value="draft">{__('Draft',     'all-feedback')}</SelectItem>
+						<SelectItem value="draft">{__('Draft',      'all-feedback')}</SelectItem>
+						<SelectItem value="archived">{__('Trash',   'all-feedback')}</SelectItem>
 					</SelectContent>
 				</Select>
 
 				<div className="ml-auto">
-					<Button
-						onClick={() => createMutation.mutate()}
-						disabled={createMutation.isPending}
-					>
+					<Button onClick={() => createMutation.mutate()} disabled={createMutation.isPending}>
 						{createMutation.isPending
 							? <Loader2 className="size-4 animate-spin" />
 							: <Plus className="size-4" />
@@ -174,147 +365,222 @@ const AllForms = () => {
 				</div>
 			</div>
 
-			{/* ── Table card ─────────────────────────────────────────────── */}
+			{/* ── Table card ───────────────────────────────────────────── */}
 			<div className="rounded-xl border border-border bg-card">
 				<div className="overflow-x-auto">
-					<table className="w-full text-sm">
+					<table className="w-full table-fixed">
 						<thead>
 							<tr className="border-b border-border bg-muted/30">
-								<th className="w-10 px-4 py-3 text-left">
-									<input
-										type="checkbox"
-										checked={allChecked}
-										onChange={toggleAll}
+								{/* Checkbox — fixed narrow */}
+								<th className="w-12 px-4 py-4 text-left">
+									<Checkbox
+										checked={someChecked ? 'indeterminate' : allChecked}
+										onCheckedChange={toggleAll}
 										disabled={isLoading || surveys.length === 0}
-										className="size-4 cursor-pointer rounded accent-primary disabled:cursor-not-allowed disabled:opacity-50"
 									/>
 								</th>
-								<th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-									{__('Form Name', 'all-feedback')}
+								{/* ID — fixed narrow */}
+								<th className="w-16 px-4 py-4 text-left">
+									<ColHead column="id" label={__('ID', 'all-feedback')} sortable />
 								</th>
-								<th className="px-4 py-3 text-left">
-									<button type="button" className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground">
-										{__('Responses', 'all-feedback')}
-										<ArrowUpDown className="size-3" />
-									</button>
+								{/* Form Name — capped width */}
+								<th className="w-[220px] px-4 py-4 text-left">
+									<ColHead label={__('Form Name', 'all-feedback')} />
 								</th>
-								<th className="px-4 py-3 text-left">
-									<button type="button" className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground">
-										{__('Created Date', 'all-feedback')}
-										<ArrowUpDown className="size-3" />
-									</button>
+								{/* Responses — fixed */}
+								<th className="w-28 px-4 py-4 text-left">
+									<ColHead column="response_count" label={__('Responses', 'all-feedback')} sortable />
 								</th>
-								<th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-									{__('Status', 'all-feedback')}
+								{/* Created — fixed */}
+								<th className="w-36 px-4 py-4 text-left">
+									<ColHead column="created_at" label={__('Created', 'all-feedback')} sortable />
 								</th>
-								<th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-									{__('Actions', 'all-feedback')}
+								{/* Status — fixed */}
+								<th className="w-32 px-4 py-4 text-left">
+									<ColHead label={__('Status', 'all-feedback')} />
+								</th>
+								{/* Actions — minimal fixed */}
+								<th className="w-24 px-4 py-4 text-left">
+									<ColHead label={__('Actions', 'all-feedback')} />
 								</th>
 							</tr>
 						</thead>
 
 						<tbody>
-							{/* Loading skeletons */}
-							{isLoading && Array.from({ length: 6 }, (_, i) => (
-								<SkeletonRow key={i} />
-							))}
+							{/* Loading */}
+							{isLoading && Array.from({ length: 5 }, (_, i) => <SkeletonRow key={i} />)}
 
-							{/* Error state */}
+							{/* Error */}
 							{isError && !isLoading && (
-								<tr>
-									<td colSpan={6}>
-										<EmptyState
-											icon={AlertCircle}
-											title={__('Failed to load forms', 'all-feedback')}
-											description={__('There was a problem fetching your forms. Please try refreshing the page.', 'all-feedback')}
-										/>
-									</td>
-								</tr>
+								<tr><td colSpan={7}>
+									<EmptyState
+										icon={AlertCircle}
+										title={__('Failed to load forms', 'all-feedback')}
+										description={__('There was a problem fetching your forms. Please try refreshing the page.', 'all-feedback')}
+									/>
+								</td></tr>
 							)}
 
-							{/* Empty state */}
+							{/* Empty */}
 							{!isLoading && !isError && surveys.length === 0 && (
-								<tr>
-									<td colSpan={6}>
-										<EmptyState
-											icon={FileText}
-											title={search || status !== 'all'
-												? __('No forms match your filters.', 'all-feedback')
-												: __('No forms yet', 'all-feedback')
-											}
-											description={search || status !== 'all'
-												? __('Try adjusting your search or status filter.', 'all-feedback')
-												: __('Create your first feedback form to start collecting responses.', 'all-feedback')
-											}
-										/>
-									</td>
-								</tr>
+								<tr><td colSpan={7}>
+									<EmptyState
+										icon={FileText}
+										title={search || status !== 'all'
+											? __('No forms match your filters.', 'all-feedback')
+											: __('No forms yet', 'all-feedback')
+										}
+										description={search || status !== 'all'
+											? __('Try adjusting your search or status filter.', 'all-feedback')
+											: __('Create your first feedback form to start collecting responses.', 'all-feedback')
+										}
+									/>
+								</td></tr>
 							)}
 
 							{/* Data rows */}
 							{!isLoading && !isError && surveys.map((survey) => {
-								const badge      = STATUS_BADGE[survey.status] ?? STATUS_BADGE.draft;
-								const isDeleting = deletingId === survey.id;
+								const statusCfg = STATUS_CONFIG[survey.status] ?? STATUS_CONFIG.draft;
+								const isSelected = checked.includes(survey.id);
+
 								return (
 									<tr
 										key={survey.id}
-										className="border-b border-border last:border-0 hover:bg-muted/20"
+										className={cn(
+											'border-b border-border last:border-0 transition-colors',
+											isSelected ? 'bg-primary/[0.03]' : 'hover:bg-muted/20',
+										)}
 									>
-										<td className="px-4 py-3.5">
-											<input
-												type="checkbox"
-												checked={checked.includes(survey.id)}
-												onChange={() => toggleOne(survey.id)}
-												className="size-4 cursor-pointer rounded accent-primary"
+										{/* Checkbox */}
+										<td className="w-12 px-4 py-5">
+											<Checkbox
+												checked={isSelected}
+												onCheckedChange={() => toggleOne(survey.id)}
 											/>
 										</td>
-										<td className="px-4 py-3.5 font-medium">
+
+										{/* ID */}
+										<td className="w-16 px-4 py-5">
+											<span className={cn(cellCls, 'tabular-nums text-foreground/40')}>
+												#{survey.id}
+											</span>
+										</td>
+
+										{/* Form name */}
+										<td className="w-[220px] px-4 py-5">
 											<button
 												type="button"
-												className="text-left text-foreground hover:text-primary hover:underline"
+												className="group/name flex min-w-0 items-center gap-1.5 text-left"
 												onClick={() => void navigate({
-													to:     '/builder/',
-													search: { new: false, id: survey.id },
+													to: '/builder/', search: { new: false, id: survey.id },
 												})}
 											>
-												{survey.title}
+												<span className={cn(cellCls, 'truncate font-medium underline-offset-2 transition-all group-hover/name:text-primary group-hover/name:underline')}>
+													{survey.title}
+												</span>
+												<Edit2 className="size-3 shrink-0 opacity-0 transition-all group-hover/name:text-primary group-hover/name:opacity-60" />
 											</button>
 										</td>
-										<td className="px-4 py-3.5 text-muted-foreground">
-											{survey.response_count.toLocaleString()}
+
+										{/* Responses */}
+										<td className="w-28 px-4 py-5">
+											<span className={cellCls}>
+												{survey.response_count.toLocaleString()}
+											</span>
 										</td>
-										<td className="px-4 py-3.5 text-muted-foreground">
-											{new Date(survey.created_at).toLocaleDateString()}
+
+										{/* Created date */}
+										<td className="w-36 px-4 py-5">
+											<span className={cellCls}>
+												{new Date(survey.created_at).toLocaleDateString()}
+											</span>
 										</td>
-										<td className="px-4 py-3.5">
-											<Badge variant={badge.variant}>{badge.label}</Badge>
+
+										{/* Status */}
+										<td className="w-32 px-4 py-5">
+											<Badge variant={statusCfg.variant}>
+												<span className={cn('size-1.5 rounded-full', statusCfg.dot)} />
+												{statusCfg.label}
+											</Badge>
 										</td>
-										<td className="px-4 py-3.5">
-											<div className="flex items-center justify-end gap-1">
-												<Button
-													variant="ghost"
-													size="icon-sm"
-													title={__('Edit form', 'all-feedback')}
+
+										{/* Actions */}
+										<td className="w-24 px-4 py-5">
+											<div className="flex items-center gap-1">
+												{/* Edit button */}
+												<button
+													type="button"
 													onClick={() => void navigate({
-														to:     '/builder/',
-														search: { new: false, id: survey.id },
+														to: '/builder/', search: { new: false, id: survey.id },
 													})}
+													className="flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/[0.04] px-2.5 py-1.5 text-[12px] font-medium text-primary/80 transition-colors hover:border-primary/60 hover:bg-primary/[0.08] hover:text-primary"
 												>
-													<Edit2 className="size-3.5" />
-												</Button>
-												<Button
-													variant="ghost"
-													size="icon-sm"
-													disabled={isDeleting}
-													className="text-destructive hover:text-destructive"
-													title={__('Delete form', 'all-feedback')}
-													onClick={() => setConfirmDeleteId(survey.id)}
-												>
-													{isDeleting
-														? <Loader2 className="size-3.5 animate-spin" />
-														: <Trash2 className="size-3.5" />
-													}
-												</Button>
+													<Edit2 className="size-3" />
+													{__('Edit', 'all-feedback')}
+												</button>
+
+												{/* More menu */}
+												<DropdownMenu>
+													<DropdownMenuTrigger asChild>
+														<button
+															type="button"
+															style={{ border: '1.5px solid #C4C4CF' }}
+																className="flex size-7 shrink-0 items-center justify-center rounded-lg text-foreground/50 transition-colors hover:bg-muted/50 hover:text-foreground"
+														>
+															<MoreVertical className="size-3.5" />
+														</button>
+													</DropdownMenuTrigger>
+													<DropdownMenuContent>
+														{/* Restore — only for trashed forms */}
+														{survey.status === 'archived' && (
+															<DropdownMenuItem
+																onSelect={() => restoreMutation.mutate(survey.id)}
+																disabled={restoreMutation.isPending}
+															>
+																{restoreMutation.isPending
+																	? <Loader2 className="size-3.5 animate-spin" />
+																	: <RotateCcw className="size-3.5" />
+																}
+																{__('Restore', 'all-feedback')}
+															</DropdownMenuItem>
+														)}
+
+														{/* Clone */}
+														<DropdownMenuItem
+															onSelect={() => cloneMutation.mutate(survey.id)}
+															disabled={cloneMutation.isPending}
+														>
+															{cloneMutation.isPending
+																? <Loader2 className="size-3.5 animate-spin" />
+																: <Copy className="size-3.5" />
+															}
+															{__('Clone', 'all-feedback')}
+														</DropdownMenuItem>
+
+														{/* Trash — hidden when already trashed */}
+														{survey.status !== 'archived' && (
+															<DropdownMenuItem
+																onSelect={() => trashMutation.mutate(survey.id)}
+																disabled={trashMutation.isPending}
+															>
+																{trashMutation.isPending
+																	? <Loader2 className="size-3.5 animate-spin" />
+																	: <Archive className="size-3.5" />
+																}
+																{__('Move to Trash', 'all-feedback')}
+															</DropdownMenuItem>
+														)}
+
+														{/* Delete */}
+														<DropdownMenuItem
+															destructive
+															onSelect={() => setConfirmDeleteId(survey.id)}
+														>
+															<Trash2 className="size-3.5" />
+															{__('Delete', 'all-feedback')}
+														</DropdownMenuItem>
+													</DropdownMenuContent>
+												</DropdownMenu>
 											</div>
 										</td>
 									</tr>
@@ -325,52 +591,32 @@ const AllForms = () => {
 				</div>
 			</div>
 
-			{/* ── Footer ─────────────────────────────────────────────────── */}
-			<div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
-				<span>
-					{isLoading
-						? <span className="inline-block h-4 w-32 animate-pulse rounded bg-muted" />
-						: <>{__('Showing', 'all-feedback')} {start}–{end} {__('of', 'all-feedback')} {total}</>
-					}
-				</span>
+			{/* ── Pagination ───────────────────────────────────────────── */}
+			<Pagination
+				className="mt-6"
+				page={page}
+				totalPages={totalPages}
+				total={total}
+				perPage={perPage}
+				perPageOptions={PER_PAGE_OPTIONS}
+				isLoading={isFetching}
+				onPageChange={setPage}
+				onPerPageChange={(n) => { setPerPage(n); setPage(1); }}
+			/>
 
-				<div className="flex items-center gap-3">
-					<div className="flex items-center gap-2">
-						<span className="text-sm">{__('Forms per page', 'all-feedback')}</span>
-						<Select value={perPage} onValueChange={(v) => { setPerPage(v); setPage(1); }}>
-							<SelectTrigger className="h-8 w-16 text-xs">
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								{PER_PAGE_OPTIONS.map((n) => (
-									<SelectItem key={n} value={n}>{n}</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					</div>
-					<div className="flex items-center gap-1">
-						<Button
-							variant="ghost"
-							size="icon-sm"
-							disabled={page <= 1 || isLoading}
-							onClick={() => setPage((p) => p - 1)}
-						>
-							<ChevronLeft className="size-3.5" />
-						</Button>
-						<span className="flex size-7 items-center justify-center rounded-md border border-border text-xs font-medium text-foreground">
-							{page}
-						</span>
-						<Button
-							variant="ghost"
-							size="icon-sm"
-							disabled={page >= totalPages || isLoading}
-							onClick={() => setPage((p) => p + 1)}
-						>
-							<ChevronRight className="size-3.5" />
-						</Button>
-					</div>
-				</div>
-			</div>
+			{/* ── Bulk-action bar ───────────────────────────────────────── */}
+			<BulkActionBar
+				count={checked.length}
+				showRestore={status === 'archived'}
+				isDeleting={bulkDeleteMutation.isPending}
+				isTrashing={bulkTrashMutation.isPending}
+				isRestoring={bulkRestoreMutation.isPending}
+				onDelete={() => setConfirmBulkDelete(true)}
+				onTrash={() => setConfirmBulkTrash(true)}
+				onRestore={() => bulkRestoreMutation.mutate(checked)}
+				onClone={() => {}}
+				onClear={() => setChecked([])}
+			/>
 		</div>
 	);
 };
