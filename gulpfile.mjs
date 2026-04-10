@@ -1,35 +1,43 @@
-/**
- * Gulp release pipeline
- *
- * Usage:  pnpm release
- *
- * Steps:
- *   1. Clean previous build/ and release/ directories.
- *   2. Run pnpm build (webpack production build).
- *   3. Generate the translation POT file.
- *   4. Copy production files into build/all-feedback/.
- *   5. Run composer install --no-dev inside the build directory.
- *   6. Zip the build into release/all-feedback.zip.
- *   7. Remove the temporary build/ directory.
- */
-
 import chalk from 'chalk';
 import { spawn } from 'child_process';
+import { existsSync, readdirSync } from 'fs';
 import { dest, parallel, series, src } from 'gulp';
 import zip from 'gulp-zip';
+import os from 'os';
 import path from 'path';
 
 const PLUGIN_SLUG = 'all-feedback';
 const BUILD_DIR   = `build/${PLUGIN_SLUG}`;
 
-// ── Shell helper ──────────────────────────────────────────────────────
+function resolveLocalWpPhpBin() {
+    const base = path.join(os.homedir(), 'Library', 'Application Support', 'Local', 'lightning-services');
+    if (!existsSync(base)) return null;
+
+    const bin = readdirSync(base)
+        .filter((d) => /^php-8\.[2-9]/.test(d))
+        .sort()
+        .reverse()
+        .map((d) => path.join(base, d, 'bin', 'darwin-arm64', 'bin'))
+        .find((b) => existsSync(path.join(b, 'php')));
+
+    return bin ?? null;
+}
+
+const localWpPhpBin = resolveLocalWpPhpBin();
+const spawnEnv = localWpPhpBin
+    ? { ...process.env, PATH: `${localWpPhpBin}:${process.env.PATH}` }
+    : process.env;
+
+if (localWpPhpBin) {
+    console.log(chalk.dim(`Using LocalWP PHP: ${localWpPhpBin}`));
+}
 
 function exec(command) {
     console.log(chalk.cyan(`▶ ${command}`));
 
     return new Promise((resolve, reject) => {
         const [cmd, ...args] = command.split(' ');
-        const child = spawn(cmd, args, { shell: true, stdio: 'pipe' });
+        const child = spawn(cmd, args, { shell: true, stdio: 'pipe', env: spawnEnv });
 
         child.stdout.on('data', (d) => console.log(chalk.green(d.toString().trim())));
         child.stderr.on('data', (d) => console.error(chalk.red(d.toString().trim())));
@@ -51,8 +59,6 @@ function exec(command) {
     });
 }
 
-// ── Files to copy into the release build ─────────────────────────────
-
 const FILES = {
     'src/**/*':                                    `${BUILD_DIR}/src`,
     'config/**/*':                                 `${BUILD_DIR}/config`,
@@ -73,8 +79,6 @@ const copyTasks = Object.entries(FILES).map(([source, destination]) => {
     return task;
 });
 
-// ── Release pipeline ─────────────────────────────────────────────────
-
 export const release = series(
     function clean()    { return exec('rm -rf build/ release/'); },
     function build()    { return exec('pnpm build'); },
@@ -84,14 +88,12 @@ export const release = series(
         return exec(`cd ${BUILD_DIR} && composer install --no-dev --optimize-autoloader`);
     },
     function compress() {
-       return src(
-         ['./build/**/*', '!./build/**/composer.lock', '!./build/**/*.sh'],
-         {
-           encoding: false,
-         },
-       )
-         .pipe(zip(`${PLUGIN_SLUG}.zip`))
-         .pipe(dest('./release/'));
+        return src(
+            ['./build/**/*', '!./build/**/composer.lock', '!./build/**/*.sh'],
+            { encoding: false },
+        )
+            .pipe(zip(`${PLUGIN_SLUG}.zip`))
+            .pipe(dest('./release/'));
     },
     function cleanup()  { return exec('rm -rf build/'); },
 );
