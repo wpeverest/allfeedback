@@ -32,6 +32,7 @@ import {
 	ArrowDown,
 	ArrowUp,
 	ArrowUpDown,
+	ArrowUpRight,
 	Copy,
 	Edit2,
 	FileText,
@@ -506,9 +507,20 @@ const AllForms = () => {
 
 										{/* Responses */}
 										<td className="w-28 px-4 py-5">
-											<span className={cellCls}>
-												{survey.response_count.toLocaleString()}
-											</span>
+											{survey.response_count > 0 ? (
+												<button
+													type="button"
+													className="group/resp inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[13px] font-medium tabular-nums text-primary/70 transition-colors hover:bg-primary/[0.06] hover:text-primary"
+													onClick={() => void navigate({ to: '/responses/', search: { surveyId: survey.id } })}
+												>
+													{survey.response_count.toLocaleString()}
+													<ArrowUpRight className="size-3 opacity-50 transition-opacity group-hover/resp:opacity-100" />
+												</button>
+											) : (
+												<span className={cn(cellCls, 'px-2 tabular-nums text-foreground/40')}>
+													0
+												</span>
+											)}
 										</td>
 
 										{/* Created date */}

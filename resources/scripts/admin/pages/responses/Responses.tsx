@@ -23,7 +23,7 @@ import { surveysQuery } from '@/admin/queries/surveys';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { cn } from '@/lib/utils';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { __ } from '@wordpress/i18n';
 import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown, Edit2, MessageSquare, MoreVertical, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -60,8 +60,9 @@ const SkeletonRow = ({ showForm }: { showForm: boolean }) => (
 const Responses = () => {
 	const navigate    = useNavigate();
 	const queryClient = useQueryClient();
+	const { surveyId: initialSurveyId } = useSearch({ from: '/_app/responses/' });
 
-	const [selectedSurveyId, setSelectedSurveyId] = useState<number | null>(null);
+	const [selectedSurveyId, setSelectedSurveyId] = useState<number | null>(initialSurveyId ?? null);
 	const [search,           setSearch]           = useState('');
 	const [page,             setPage]             = useState(1);
 	const [perPage,          setPerPage]          = useState(10);
