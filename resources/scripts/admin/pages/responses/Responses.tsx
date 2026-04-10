@@ -242,7 +242,7 @@ const Responses = () => {
 						setChecked([]);
 					}}
 				>
-					<SelectTrigger className="w-[220px]">
+					<SelectTrigger className="w-full sm:w-[220px]">
 						<SelectValue placeholder={__('All Forms', 'all-feedback')} />
 					</SelectTrigger>
 					<SelectContent>
@@ -256,7 +256,7 @@ const Responses = () => {
 				</Select>
 
 				{/* Search — same style as AllForms */}
-				<div className="relative w-[260px]">
+				<div className="relative w-full sm:w-[260px]">
 					<svg
 						className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
 						fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"

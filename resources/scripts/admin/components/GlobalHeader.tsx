@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { __ } from '@wordpress/i18n';
 import { Menu, MessageSquare, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -23,6 +23,7 @@ const getCurrentPath = (): string => {
 };
 
 const GlobalHeader = () => {
+	const navigate  = useNavigate();
 	const [pathname, setPathname] = useState(getCurrentPath);
 	const [menuOpen, setMenuOpen] = useState(false);
 
@@ -119,9 +120,13 @@ const GlobalHeader = () => {
 						}
 						const active = isActive(item.to);
 						return (
-							<Link
+							<button
 								key={item.to}
-								to={item.to}
+								type="button"
+								onClick={() => {
+									setMenuOpen(false);
+									void navigate({ to: item.to });
+								}}
 								className={cn(
 									'flex w-full items-center px-5 py-3 text-[13px] transition-colors',
 									active
@@ -130,12 +135,9 @@ const GlobalHeader = () => {
 								)}
 							>
 								{item.label}
-							</Link>
+							</button>
 						);
 					})}
-					<p className="px-5 pb-3 pt-2 text-[12px] text-muted-foreground">
-						v{__ALLFB_ADMIN__.version}
-					</p>
 				</nav>
 			)}
 		</header>

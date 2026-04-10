@@ -348,7 +348,7 @@ const AllForms = () => {
 
 			{/* ── Toolbar ──────────────────────────────────────────────── */}
 			<div className="mb-4 flex flex-wrap items-center gap-3 py-1">
-				<div className="relative w-[260px]">
+				<div className="relative w-full sm:w-[260px]">
 					<svg
 						className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
 						fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"
@@ -364,7 +364,7 @@ const AllForms = () => {
 				</div>
 
 				<Select value={status} onValueChange={(v) => { setStatus(v); setPage(1); }}>
-					<SelectTrigger className="w-[150px]">
+					<SelectTrigger className="w-full sm:w-[150px]">
 						<SelectValue placeholder={__('All Status', 'all-feedback')} />
 					</SelectTrigger>
 					<SelectContent>
@@ -375,8 +375,8 @@ const AllForms = () => {
 					</SelectContent>
 				</Select>
 
-				<div className="ml-auto">
-					<Button onClick={() => createMutation.mutate()} disabled={createMutation.isPending}>
+				<div className="w-full sm:ml-auto sm:w-auto">
+					<Button className="w-full sm:w-auto" onClick={() => createMutation.mutate()} disabled={createMutation.isPending}>
 						{createMutation.isPending
 							? <Loader2 className="size-4 animate-spin" />
 							: <Plus className="size-4" />
@@ -528,14 +528,14 @@ const AllForms = () => {
 										{/* Actions */}
 										<td className="w-24 px-4 py-5">
 											<div className="flex items-center gap-1">
-												{/* Edit button */}
+												{/* Edit button — desktop only */}
 												<button
 													type="button"
 													onClick={() => void navigate({
 														to: '/builder/', search: { new: false, id: survey.id },
 													})}
 													style={{ border: '1.5px solid #E2E2E8' }}
-										className="flex items-center gap-1 rounded-lg bg-primary/[0.04] px-2 py-1 text-[11px] font-medium text-primary/80 transition-colors hover:bg-primary/[0.08] hover:text-primary"
+													className="flex max-sm:hidden items-center gap-1 rounded-lg bg-primary/[0.04] px-2 py-1 text-[11px] font-medium text-primary/80 transition-colors hover:bg-primary/[0.08] hover:text-primary"
 												>
 													<Edit2 className="size-3" />
 													{__('Edit', 'all-feedback')}
@@ -547,12 +547,23 @@ const AllForms = () => {
 														<button
 															type="button"
 															style={{ border: '1.5px solid #E2E2E8' }}
-																className="flex size-7 shrink-0 items-center justify-center rounded-lg text-foreground/50 transition-colors hover:bg-muted/50 hover:text-foreground"
+															className="flex size-7 shrink-0 items-center justify-center rounded-lg text-foreground/50 transition-colors hover:bg-muted/50 hover:text-foreground"
 														>
 															<MoreVertical className="size-3.5" />
 														</button>
 													</DropdownMenuTrigger>
 													<DropdownMenuContent>
+														{/* Edit — mobile only */}
+														<DropdownMenuItem
+															className="max-sm:flex sm:hidden"
+															onSelect={() => void navigate({
+																to: '/builder/', search: { new: false, id: survey.id },
+															})}
+														>
+															<Edit2 className="size-3.5" />
+															{__('Edit', 'all-feedback')}
+														</DropdownMenuItem>
+
 														{/* Restore — only for trashed forms */}
 														{survey.status === 'trashed' && (
 															<DropdownMenuItem
