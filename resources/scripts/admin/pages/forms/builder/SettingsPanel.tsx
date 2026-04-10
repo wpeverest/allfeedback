@@ -166,20 +166,21 @@ const NumberWithUnit = <U extends string>({
 
 /* ── Content picker (pages or posts, infinite scroll, portal dropdown) ── */
 
+type PickerItem = { id: number; title: string };
+
 const ContentPicker = ({
-	selectedIds,
+	selected,
 	onChange,
 	postType,
 	placeholder,
 }: {
-	selectedIds:  number[];
-	onChange:     (ids: number[]) => void;
-	postType:     'page' | 'post';
-	placeholder:  string;
+	selected:    PickerItem[];
+	onChange:    (items: PickerItem[]) => void;
+	postType:    'page' | 'post';
+	placeholder: string;
 }) => {
 	const [query,   setQuery]   = useState('');
 	const [open,    setOpen]    = useState(false);
-	const [itemMap, setItemMap] = useState<Record<number, ContentSearchItem>>({});
 	const [dropPos, setDropPos] = useState<React.CSSProperties>({});
 
 	const wrapperRef  = useRef<HTMLDivElement>(null);
@@ -265,15 +266,15 @@ const ContentPicker = ({
 		return () => observer.disconnect();
 	}, [hasNextPage, isFetchingNextPage, fetchNextPage, open, results.length]);
 
+	const selectedIds = selected.map((s) => s.id);
+
 	const select = (item: ContentSearchItem) => {
 		if (selectedIds.includes(item.id)) return;
-		setItemMap((prev) => ({ ...prev, [item.id]: item }));
-		onChange([...selectedIds, item.id]);
-		// Don't clear query — keeps the result list stable and focus intact
+		onChange([...selected, { id: item.id, title: item.title }]);
 		inputRef.current?.focus();
 	};
 
-	const remove = (id: number) => onChange(selectedIds.filter((i) => i !== id));
+	const remove = (id: number) => onChange(selected.filter((s) => s.id !== id));
 
 	const isFirstLoad = isFetching && !isFetchingNextPage && results.length === 0;
 
@@ -327,27 +328,24 @@ const ContentPicker = ({
 	return (
 		<div ref={wrapperRef} className="space-y-2">
 			{/* Selected chips */}
-			{selectedIds.length > 0 && (
+			{selected.length > 0 && (
 				<div className="flex flex-wrap gap-1.5">
-					{selectedIds.map((id) => {
-						const item = itemMap[id];
-						return (
-							<span
-								key={id}
-								className="flex items-center gap-1.5 rounded-lg border border-border/60 bg-muted/40 px-2.5 py-1 text-[12px] text-foreground/80"
+					{selected.map(({ id, title }) => (
+						<span
+							key={id}
+							className="flex items-center gap-1.5 rounded-lg border border-border/60 bg-muted/40 px-2.5 py-1 text-[12px] text-foreground/80"
+						>
+							<FileText className="size-3 shrink-0 text-muted-foreground/60" />
+							<span className="max-w-[140px] truncate">{title}</span>
+							<button
+								type="button"
+								onClick={() => remove(id)}
+								className="ml-0.5 flex size-3.5 shrink-0 items-center justify-center rounded-full text-muted-foreground/60 hover:text-destructive"
 							>
-								<FileText className="size-3 shrink-0 text-muted-foreground/60" />
-								<span className="max-w-[140px] truncate">{item?.title ?? `#${id}`}</span>
-								<button
-									type="button"
-									onClick={() => remove(id)}
-									className="ml-0.5 flex size-3.5 shrink-0 items-center justify-center rounded-full text-muted-foreground/60 hover:text-destructive"
-								>
-									<X className="size-3" />
-								</button>
-							</span>
-						);
-					})}
+								<X className="size-3" />
+							</button>
+						</span>
+					))}
 				</div>
 			)}
 
@@ -509,8 +507,8 @@ const SettingsPanel = ({ settings, onChange, onScrollChange }: SettingsPanelProp
 							<Row label={__('Select pages', 'all-feedback')}>
 								<ContentPicker
 									postType="page"
-									selectedIds={settings.targetPageIds}
-									onChange={(ids) => update({ targetPageIds: ids })}
+									selected={settings.targetPageIds}
+									onChange={(items) => update({ targetPageIds: items })}
 									placeholder={__('Search pages…', 'all-feedback')}
 								/>
 							</Row>
@@ -519,8 +517,8 @@ const SettingsPanel = ({ settings, onChange, onScrollChange }: SettingsPanelProp
 							<Row label={__('Select posts', 'all-feedback')}>
 								<ContentPicker
 									postType="post"
-									selectedIds={settings.targetPostIds}
-									onChange={(ids) => update({ targetPostIds: ids })}
+									selected={settings.targetPostIds}
+									onChange={(items) => update({ targetPostIds: items })}
 									placeholder={__('Search posts…', 'all-feedback')}
 								/>
 							</Row>

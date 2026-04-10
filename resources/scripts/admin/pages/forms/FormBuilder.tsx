@@ -57,11 +57,11 @@ const serializeSettings = (s: FormSettings): Record<string, unknown> => ({
 	user_state:          s.userState,
 	// Map specific_pages / specific_posts → 'specific' for the API
 	target_pages:        s.targetPages === 'all' ? 'all' : 'specific',
-	// Store whichever ID list is active; the other is irrelevant when not selected
+	// API only needs plain IDs — extract from {id,title} objects
 	target_page_ids:     s.targetPages === 'specific_pages'
-		? s.targetPageIds
+		? s.targetPageIds.map((p) => p.id)
 		: s.targetPages === 'specific_posts'
-			? s.targetPostIds
+			? s.targetPostIds.map((p) => p.id)
 			: [],
 	trigger_type:        s.triggerType,
 	delay_value:         s.delayValue,
@@ -77,8 +77,9 @@ const serializeSettings = (s: FormSettings): Record<string, unknown> => ({
 	thankYouDescription: s.thankYouDescription,
 	targetDevice:        s.targetDevice,
 	targetUrls:          s.targetUrls,
-	// Persist the detailed mode so reloading restores the correct picker
+	// Persist the detailed mode + full {id,title} objects so titles survive reload
 	targetPages:         s.targetPages,
+	targetPageIds:       s.targetPageIds,
 	targetPostIds:       s.targetPostIds,
 });
 
@@ -97,8 +98,14 @@ const deserializeSettings = (raw: Record<string, unknown>): Partial<FormSettings
 				: raw.target_pages as FormSettings['targetPages'],
 		}
 	),
-	...(raw.target_page_ids    !== undefined && { targetPageIds:      raw.target_page_ids    as number[] }),
-	...(raw.targetPostIds      !== undefined && { targetPostIds:      raw.targetPostIds      as number[] }),
+	// Prefer persisted {id,title} objects; fall back to bare IDs (title-less, legacy)
+	...(raw.targetPageIds !== undefined
+		? { targetPageIds: raw.targetPageIds as FormSettings['targetPageIds'] }
+		: raw.target_page_ids !== undefined && {
+			targetPageIds: (raw.target_page_ids as number[]).map((id) => ({ id, title: `#${id}` })),
+		}
+	),
+	...(raw.targetPostIds !== undefined && { targetPostIds: raw.targetPostIds as FormSettings['targetPostIds'] }),
 	...(raw.trigger_type       !== undefined && { triggerType:        raw.trigger_type       as FormSettings['triggerType'] }),
 	...(raw.delay_value        !== undefined && { delayValue:         raw.delay_value        as number }),
 	...(raw.delay_unit         !== undefined && { delayUnit:          raw.delay_unit         as FormSettings['delayUnit'] }),

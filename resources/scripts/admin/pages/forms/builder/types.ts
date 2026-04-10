@@ -50,8 +50,8 @@ export interface FormSettings {
 
 	/* New API fields */
 	userState:        UserState;
-	targetPageIds:    number[];
-	targetPostIds:    number[];
+	targetPageIds:    { id: number; title: string }[];
+	targetPostIds:    { id: number; title: string }[];
 	triggerType:      TriggerType;
 	delayValue:       number;
 	delayUnit:        DelayUnit;
