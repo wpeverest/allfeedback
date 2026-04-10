@@ -22,6 +22,7 @@ import { surveysQuery } from '@/admin/queries/surveys';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { cn } from '@/lib/utils';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from '@tanstack/react-router';
 import { __ } from '@wordpress/i18n';
 import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown, Edit2, MessageSquare, MoreVertical, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -56,6 +57,7 @@ const SkeletonRow = ({ showForm }: { showForm: boolean }) => (
 
 /* ── Responses ───────────────────────────────────────────────────────────── */
 const Responses = () => {
+	const navigate    = useNavigate();
 	const queryClient = useQueryClient();
 
 	const [selectedSurveyId, setSelectedSurveyId] = useState<number | null>(null);
@@ -365,7 +367,7 @@ const Responses = () => {
 												<button
 													type="button"
 													className="group/name flex min-w-0 items-center gap-1.5 text-left"
-													onClick={() => { window.location.hash = `/builder/?id=${response.survey_id}`; }}
+													onClick={() => void navigate({ to: '/builder/', search: { new: false, id: response.survey_id } })}
 												>
 													<span className={cn(cellCls, 'truncate font-medium underline-offset-2 transition-all group-hover/name:text-primary group-hover/name:underline')}>
 														{surveyTitleMap[response.survey_id] ?? `#${response.survey_id}`}
