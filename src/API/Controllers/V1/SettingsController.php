@@ -15,21 +15,29 @@ use AllFeedback\Support\Logger;
  *
  * REST controller for plugin-wide settings.
  *
- * Routes registered (all under all-feedback/v1):
- *   GET   /settings → index()  : return the current flat settings object
- *   PATCH /settings → update() : persist one or more settings values
+ * Routes (under all-feedback/v1):
+ *   GET   /settings → index()  : return full three-level settings object
+ *   PATCH /settings → update() : persist one or more pages/sections/fields
  *
- * Response shape (both endpoints):
- *   { "success": true, "data": { "widget_color": "…", "widget_position": "…", … } }
+ * ── Response shape ────────────────────────────────────────────────────
  *
- * The `data` object is a flat key → value map (no nesting). The TypeScript
- * `Settings` type maps to this shape exactly.
+ * ```json
+ * {
+ *   "success": true,
+ *   "data": {
+ *     "general":  { "widget":  { "color": "#6366F1", "position": "bottom-right", … } },
+ *     "advanced": { "privacy": { "disable_user_details": false },
+ *                   "logging": { "enabled": false, "level": "error", "retention_days": 30 },
+ *                   "plugin":  { "delete_on_uninstall": false, "allow_usage_tracking": true } }
+ *   }
+ * }
+ * ```
  *
- * Settings are managed by SettingsManager which stores everything in a single
- * `wp_options` row (`_allfb_settings`) for efficiency.
+ * ── PATCH body — send only what changed ───────────────────────────────
  *
- * Per-survey settings (trigger, targeting, GDPR, etc.) live in the JSON
- * `settings` column on each survey row — see SurveysController for those.
+ * ```json
+ * { "advanced": { "logging": { "enabled": true, "level": "debug" } } }
+ * ```
  *
  * @package AllFeedback\API\Controllers\V1
  * @since   1.0.0
@@ -37,7 +45,7 @@ use AllFeedback\Support\Logger;
 class SettingsController extends RestController {
 
 	/**
-	 * REST resource slug for this controller.
+	 * REST resource slug.
 	 *
 	 * @since 1.0.0
 	 */
@@ -86,14 +94,11 @@ class SettingsController extends RestController {
 	/**
 	 * GET /all-feedback/v1/settings
 	 *
-	 * Return the current plugin-wide settings as a flat key → value object,
-	 * merged with defaults so every key is always present in the response.
+	 * Return the complete three-level settings object merged with defaults.
+	 * Every page, section, and field is always present so the client never
+	 * needs to handle undefined keys.
 	 *
-	 * The TypeScript `Settings` type maps directly to this flat shape — there
-	 * is no `settings` or `schema` wrapper. Clients can use values immediately:
-	 *   `data.widget_color`, `data.logging_enabled`, etc.
-	 *
-	 * @param \WP_REST_Request $request Full request data (unused but required by WP callback contract).
+	 * @param \WP_REST_Request $request Full request data.
 	 * @return \WP_REST_Response
 	 * @since 1.0.0
 	 */
@@ -104,12 +109,11 @@ class SettingsController extends RestController {
 	/**
 	 * PUT|PATCH /all-feedback/v1/settings
 	 *
-	 * Persist one or more plugin-wide settings in a single atomic write.
-	 * Partial updates are fully supported — send only the keys that changed.
-	 * Keys not defined in SettingsManager::DEFAULTS are silently ignored.
+	 * Persist one or more pages / sections / fields in a single atomic write.
+	 * Partial updates are fully supported at every level — send only the
+	 * pages/sections/fields that changed.
 	 *
-	 * The response is the same flat settings object as GET /settings, always
-	 * reflecting the current persisted state after the update.
+	 * The response is the complete settings object after the update.
 	 *
 	 * @param \WP_REST_Request $request Full request data.
 	 * @return \WP_REST_Response|\WP_Error
@@ -127,7 +131,7 @@ class SettingsController extends RestController {
 		$this->logger->info(
 			'Plugin settings updated.',
 			[
-				'keys'    => array_keys( $body ),
+				'pages'   => array_keys( array_filter( $body, 'is_array' ) ),
 				'user_id' => get_current_user_id(),
 			]
 		);
@@ -140,30 +144,51 @@ class SettingsController extends RestController {
 	// ------------------------------------------------------------------
 
 	/**
-	 * JSON Schema for the settings resource.
+	 * JSON Schema for the settings resource (three-level nesting).
 	 *
-	 * Returned at the `schema` key alongside GET/PATCH routes and exposed
-	 * via `GET /wp-json/all-feedback/v1/settings/schema`. WP REST API
-	 * clients and tools like Postman can use this to understand the shape.
+	 * Each page → type:object with properties for each section.
+	 * Each section → type:object with properties for each field.
 	 *
 	 * @return array<string, mixed>
 	 * @since 1.0.0
 	 */
 	public function getPublicItemSchema(): array {
-		$properties = [];
+		$pageProperties = [];
 
-		foreach ( $this->settingsManager->getSchema() as $key => $definition ) {
-			$properties[ $key ] = array_merge(
-				[ 'context' => [ 'view', 'edit' ] ],
-				$definition
-			);
+		foreach ( $this->settingsManager->getSchema() as $page => $pageDef ) {
+			$sectionProperties = [];
+
+			foreach ( $pageDef['sections'] as $section => $sectionDef ) {
+				$fieldProperties = [];
+
+				foreach ( $sectionDef['properties'] as $field => $propDef ) {
+					$fieldProperties[ $field ] = array_merge(
+						[ 'context' => [ 'view', 'edit' ] ],
+						$propDef
+					);
+				}
+
+				$sectionProperties[ $section ] = [
+					'type'        => 'object',
+					'context'     => [ 'view', 'edit' ],
+					'description' => $sectionDef['description'] ?? '',
+					'properties'  => $fieldProperties,
+				];
+			}
+
+			$pageProperties[ $page ] = [
+				'type'        => 'object',
+				'context'     => [ 'view', 'edit' ],
+				'description' => $pageDef['description'] ?? '',
+				'properties'  => $sectionProperties,
+			];
 		}
 
 		return [
 			'$schema'    => 'http://json-schema.org/draft-04/schema#',
 			'title'      => 'allfeedback_settings',
 			'type'       => 'object',
-			'properties' => $properties,
+			'properties' => $pageProperties,
 		];
 	}
 
@@ -172,17 +197,14 @@ class SettingsController extends RestController {
 	// ------------------------------------------------------------------
 
 	/**
-	 * Build the WP REST arg descriptors for PUT|PATCH /settings.
+	 * Build WP REST arg descriptors for PUT|PATCH /settings.
 	 *
-	 * Derived entirely from SettingsManager::getSchema() so there is a single
-	 * source of truth — adding a setting to the schema automatically exposes
-	 * it here with correct WP REST validation.
+	 * Three-level nesting mirrors the schema:
+	 *   page (type:object) → section (type:object) → field (typed arg)
 	 *
-	 * Mapping rules:
-	 *   schema `type: boolean`                  → argBoolean()
-	 *   schema `type: integer`                  → argInteger() with min/max when present
-	 *   schema with `enum` key                  → argEnum()
-	 *   schema `type: string` (no enum)         → argString()
+	 * WordPress validates nested objects since WP 5.6.
+	 * Adding a new page/section/field to SettingsManager::getSchema()
+	 * automatically exposes it here — no manual registration needed.
 	 *
 	 * @return array<string, array<string, mixed>>
 	 * @since 1.0.0
@@ -191,45 +213,89 @@ class SettingsController extends RestController {
 		$schema = $this->settingsManager->getSchema();
 		$args   = [];
 
-		foreach ( $schema as $key => $definition ) {
-			$type        = $definition['type']        ?? 'string';
-			$description = $definition['description'] ?? '';
-			$default     = $definition['default']     ?? null;
+		foreach ( $schema as $page => $pageDef ) {
+			$sectionArgs = [];
 
-			if ( $type === 'boolean' ) {
-				$args[ $key ] = $this->argBoolean(
-					description: $description,
-					default:     (bool) $default,
-				);
-				continue;
+			foreach ( $pageDef['sections'] as $section => $sectionDef ) {
+				$fieldArgs = [];
+
+				foreach ( $sectionDef['properties'] as $field => $propDef ) {
+					$fieldArgs[ $field ] = $this->buildFieldArg( $propDef );
+				}
+
+				$sectionArgs[ $section ] = [
+					'type'              => 'object',
+					'required'          => false,
+					'description'       => $sectionDef['description'] ?? '',
+					'properties'        => $fieldArgs,
+					'validate_callback' => 'rest_validate_request_arg',
+				];
 			}
 
-			if ( $type === 'integer' ) {
-				$args[ $key ] = $this->argInteger(
-					description: $description,
-					min:         $definition['minimum'] ?? 0,
-					max:         isset( $definition['maximum'] ) ? (int) $definition['maximum'] : null,
-					default:     $default,
-				);
-				continue;
-			}
-
-			if ( isset( $definition['enum'] ) ) {
-				$args[ $key ] = $this->argEnum(
-					description: $description,
-					values:      $definition['enum'],
-					default:     $default,
-				);
-				continue;
-			}
-
-			// Plain string (no enum constraint).
-			$args[ $key ] = $this->argString(
-				description: $description,
-				default:     $default,
-			);
+			$args[ $page ] = [
+				'type'              => 'object',
+				'required'          => false,
+				'description'       => $pageDef['description'] ?? '',
+				'properties'        => $sectionArgs,
+				'validate_callback' => 'rest_validate_request_arg',
+			];
 		}
 
 		return $args;
+	}
+
+	/**
+	 * Build a single WP REST field arg descriptor from a schema property entry.
+	 *
+	 * Mapping:
+	 *   type: boolean          → rest_sanitize_boolean
+	 *   type: integer          → absint + optional min/max
+	 *   type: string + enum    → sanitize_key + enum list
+	 *   type: string (no enum) → sanitize_text_field
+	 *
+	 * @param array<string, mixed> $propDef Schema property definition.
+	 * @return array<string, mixed> WP REST arg descriptor.
+	 * @since 1.0.0
+	 */
+	private function buildFieldArg( array $propDef ): array {
+		$type = $propDef['type'] ?? 'string';
+
+		if ( $type === 'boolean' ) {
+			return [
+				'type'              => 'boolean',
+				'sanitize_callback' => 'rest_sanitize_boolean',
+				'validate_callback' => 'rest_validate_request_arg',
+			];
+		}
+
+		if ( $type === 'integer' ) {
+			$arg = [
+				'type'              => 'integer',
+				'sanitize_callback' => 'absint',
+				'validate_callback' => 'rest_validate_request_arg',
+			];
+			if ( isset( $propDef['minimum'] ) ) {
+				$arg['minimum'] = (int) $propDef['minimum'];
+			}
+			if ( isset( $propDef['maximum'] ) ) {
+				$arg['maximum'] = (int) $propDef['maximum'];
+			}
+			return $arg;
+		}
+
+		if ( isset( $propDef['enum'] ) ) {
+			return [
+				'type'              => 'string',
+				'enum'              => $propDef['enum'],
+				'sanitize_callback' => 'sanitize_key',
+				'validate_callback' => 'rest_validate_request_arg',
+			];
+		}
+
+		return [
+			'type'              => 'string',
+			'sanitize_callback' => 'sanitize_text_field',
+			'validate_callback' => 'rest_validate_request_arg',
+		];
 	}
 }
