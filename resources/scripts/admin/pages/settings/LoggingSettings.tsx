@@ -2,18 +2,11 @@ import { settingsApi } from '@/admin/api/settings';
 import type { Settings } from '@/admin/api/settings';
 import { settingsQuery } from '@/admin/queries/settings';
 import { Button } from '@/components/ui/button';
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { __ } from '@wordpress/i18n';
-import { Loader2, Settings2 } from 'lucide-react';
+import { Loader2, ScrollText } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -45,17 +38,15 @@ const Toggle = ({ checked, onChange }: { checked: boolean; onChange: () => void 
 	</button>
 );
 
-const GeneralSettings = () => {
+const LoggingSettings = () => {
 	const queryClient = useQueryClient();
 	const { data, isPending } = useQuery(settingsQuery());
 
-	const [retention, setRetention]               = useState<Settings['data_retention']>('forever');
-	const [deleteOnUninstall, setDeleteOnUninstall] = useState(false);
+	const [enabled, setEnabled] = useState(false);
 
 	useEffect(() => {
 		if (!data) return;
-		setRetention(data.data_retention       ?? 'forever');
-		setDeleteOnUninstall(data.delete_on_uninstall ?? false);
+		setEnabled(data.logging_enabled ?? false);
 	}, [data]);
 
 	const { mutate, isPending: isSaving } = useMutation({
@@ -71,10 +62,7 @@ const GeneralSettings = () => {
 
 	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
-		mutate({
-			data_retention:      retention,
-			delete_on_uninstall: deleteOnUninstall,
-		});
+		mutate({ logging_enabled: enabled });
 	};
 
 	if (isPending) {
@@ -82,15 +70,13 @@ const GeneralSettings = () => {
 			<div>
 				<div className="flex items-center gap-3 border-b border-border/50 px-5 py-4">
 					<Skeleton className="size-9 rounded-xl" />
-					<Skeleton className="h-5 w-28" />
+					<Skeleton className="h-5 w-20" />
 				</div>
 				<div className="space-y-4 p-5">
-					{[1, 2].map((i) => (
-						<div key={i} className="flex items-center gap-4">
-							<Skeleton className="h-4 w-[38%]" />
-							<Skeleton className="h-9 flex-1" />
-						</div>
-					))}
+					<div className="flex items-center gap-4">
+						<Skeleton className="h-4 w-[38%]" />
+						<Skeleton className="h-5 w-9 rounded-full" />
+					</div>
 				</div>
 			</div>
 		);
@@ -100,31 +86,16 @@ const GeneralSettings = () => {
 		<form onSubmit={handleSubmit}>
 			<div className="flex items-center gap-3 border-b border-border/50 px-5 py-4">
 				<div className="flex size-9 items-center justify-center rounded-xl bg-primary/10">
-					<Settings2 className="size-[18px] text-primary" />
+					<ScrollText className="size-[18px] text-primary" />
 				</div>
 				<h3 className="text-[16px] font-semibold text-foreground" style={{ margin: 0 }}>
-					{__('General', 'all-feedback')}
+					{__('Logging', 'all-feedback')}
 				</h3>
 			</div>
 
 			<div className="space-y-4 p-5">
-				<Row label={__('Data retention', 'all-feedback')}>
-					<Select value={retention} onValueChange={(v) => setRetention(v as Settings['data_retention'])}>
-						<SelectTrigger className="w-full">
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="forever">{__('Forever', 'all-feedback')}</SelectItem>
-							<SelectItem value="30d">{__('30 days', 'all-feedback')}</SelectItem>
-							<SelectItem value="90d">{__('90 days', 'all-feedback')}</SelectItem>
-							<SelectItem value="180d">{__('180 days', 'all-feedback')}</SelectItem>
-							<SelectItem value="1y">{__('1 year', 'all-feedback')}</SelectItem>
-						</SelectContent>
-					</Select>
-				</Row>
-
-				<Row label={__('Delete data on uninstall', 'all-feedback')}>
-					<Toggle checked={deleteOnUninstall} onChange={() => setDeleteOnUninstall((v) => !v)} />
+				<Row label={__('Enable logging', 'all-feedback')}>
+					<Toggle checked={enabled} onChange={() => setEnabled((v) => !v)} />
 				</Row>
 			</div>
 
@@ -138,4 +109,4 @@ const GeneralSettings = () => {
 	);
 };
 
-export default GeneralSettings;
+export default LoggingSettings;

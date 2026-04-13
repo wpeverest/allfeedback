@@ -1,7 +1,7 @@
 import type { FileRoutesByFullPath } from '@/admin/routeTree.gen';
 import { Link, Outlet } from '@tanstack/react-router';
 import { __ } from '@wordpress/i18n';
-import { Bell, Key, Palette, Settings2, Sliders } from 'lucide-react';
+import { Layout, ScrollText, Settings2 } from 'lucide-react';
 
 type SettingsPath = Exclude<
 	Extract<keyof FileRoutesByFullPath, `/settings/${string}`>,
@@ -9,53 +9,52 @@ type SettingsPath = Exclude<
 >;
 
 type NavItem = {
-	label:       string;
-	description: string;
-	icon:        React.ComponentType<{ className?: string }>;
-	to:          SettingsPath;
+	label: string;
+	icon:  React.ComponentType<{ className?: string }>;
+	to:    SettingsPath;
 };
 
 const NAV_ITEMS: NavItem[] = [
 	{
-		label:       __('General',       'all-feedback'),
-		description: __('Plugin name, defaults', 'all-feedback'),
-		icon:        Settings2,
-		to:          '/settings/general',
+		label: __('General', 'all-feedback'),
+		icon:  Settings2,
+		to:    '/settings/general',
+	},
+	{
+		label: __('Widget', 'all-feedback'),
+		icon:  Layout,
+		to:    '/settings/widget',
+	},
+	{
+		label: __('Logging', 'all-feedback'),
+		icon:  ScrollText,
+		to:    '/settings/logging',
 	},
 ];
 
-void [Bell, Key, Palette, Sliders];
-
 const Settings = () => {
 	return (
-		<div className="p-5 md:p-6">
+		<div className="p-6 md:p-8">
 			<div className="mx-auto max-w-6xl">
-				<div className="flex flex-col gap-5 lg:flex-row lg:items-start">
+				<div className="flex flex-col gap-6 lg:flex-row lg:items-start">
 
 					<nav
 						aria-label={__('Settings navigation', 'all-feedback')}
-						className="flex gap-1 overflow-x-auto lg:w-56 lg:flex-col lg:shrink-0 lg:gap-0.5"
+						className="flex gap-1 overflow-x-auto rounded-2xl border border-border/60 bg-white p-3 lg:w-64 lg:shrink-0 lg:flex-col lg:gap-1"
 					>
-						{NAV_ITEMS.map(({ label, description, icon: Icon, to }) => (
+						{NAV_ITEMS.map(({ label, icon: Icon, to }) => (
 							<Link
 								key={to}
 								to={to}
-								className="group flex shrink-0 cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-muted data-[status=active]:bg-primary/10 lg:w-full"
+								className="group flex shrink-0 cursor-pointer items-center gap-3 rounded-xl px-4 py-3 text-[14px] font-normal text-foreground/70 transition-colors hover:bg-muted/60 hover:text-foreground data-[status=active]:bg-primary/10 data-[status=active]:text-primary lg:w-full"
 							>
-								<Icon className="size-4 shrink-0 text-muted-foreground group-data-[status=active]:text-primary" />
-								<div className="min-w-0">
-									<p className="truncate font-medium text-foreground group-data-[status=active]:text-primary">
-										{label}
-									</p>
-									<p className="hidden truncate text-xs text-muted-foreground lg:block">
-										{description}
-									</p>
-								</div>
+								<Icon className="size-[18px] shrink-0 text-muted-foreground/50 transition-colors group-data-[status=active]:text-primary" />
+								{label}
 							</Link>
 						))}
 					</nav>
 
-					<div className="min-w-0 flex-1 rounded-xl border border-border bg-card">
+					<div className="min-w-0 flex-1 overflow-hidden rounded-2xl border border-border/60 bg-white">
 						<Outlet />
 					</div>
 				</div>
