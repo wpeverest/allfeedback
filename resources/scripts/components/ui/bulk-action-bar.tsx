@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+﻿import { cn } from '@/lib/utils';
 import { __ } from '@wordpress/i18n';
 import { Archive, Loader2, RotateCcw, Trash2, X } from 'lucide-react';
 
@@ -41,7 +41,6 @@ export const BulkActionBar = ({
 		>
 			<div className="flex items-center rounded-2xl border border-border/80 bg-white/95 shadow-[0_8px_30px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.06)] backdrop-blur-sm">
 
-				{}
 				<div className="flex items-center gap-1 px-6 py-4">
 					<span className="text-[13px] font-semibold tabular-nums text-foreground/80">
 						{count}
@@ -53,7 +52,6 @@ export const BulkActionBar = ({
 
 				{hasActions && <div className="h-5 w-px shrink-0 bg-border/60" />}
 
-				{}
 				{showRestore && (
 					<>
 						<div className="px-3 py-3">
@@ -74,7 +72,6 @@ export const BulkActionBar = ({
 					</>
 				)}
 
-				{}
 				{showTrash && (
 					<>
 						<div className="px-3 py-3">
@@ -95,7 +92,6 @@ export const BulkActionBar = ({
 					</>
 				)}
 
-				{}
 				{showDelete && (
 					<div className="px-3 py-3">
 						<button
@@ -113,10 +109,8 @@ export const BulkActionBar = ({
 					</div>
 				)}
 
-				{}
 				<div className="h-5 w-px shrink-0 bg-border/60" />
 
-				{}
 				<button
 					type="button"
 					onClick={onClear}

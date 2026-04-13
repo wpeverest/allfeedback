@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+﻿import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Loader2, Trash2 } from 'lucide-react';
@@ -26,10 +26,8 @@ export const ConfirmDialog = ({
 }: ConfirmDialogProps) => (
 	<Dialog.Root open={open} onOpenChange={(v) => { if (!isPending) onOpenChange(v); }}>
 		<Dialog.Portal>
-			{}
 			<Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
 
-			{}
 			<Dialog.Content
 				className={cn(
 					'fixed left-1/2 top-1/2 z-50 w-full max-w-[400px] -translate-x-1/2 -translate-y-1/2',
@@ -42,12 +40,10 @@ export const ConfirmDialog = ({
 					'duration-200',
 				)}
 			>
-				{}
 				<div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-destructive/10">
 					<Trash2 className="size-5 text-destructive" />
 				</div>
 
-				{}
 				<div className="text-center">
 					<Dialog.Title className="text-[15px] font-semibold text-foreground">
 						{title}
@@ -57,10 +53,8 @@ export const ConfirmDialog = ({
 					</Dialog.Description>
 				</div>
 
-				{}
 				<div className="my-5 h-px bg-border" />
 
-				{}
 				<div className="flex gap-2">
 					<Dialog.Close asChild>
 						<Button

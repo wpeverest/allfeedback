@@ -1,4 +1,4 @@
-import { format } from 'date-fns';
+﻿import { format } from 'date-fns';
 import { BulkActionBar } from '@/components/ui/bulk-action-bar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -138,7 +138,6 @@ const ResponsesPanel = ({ surveyId }: ResponsesPanelProps) => {
 	return (
 		<div className="flex-1 overflow-y-auto bg-background p-5">
 
-			{}
 			<ConfirmDialog
 				open={confirmDeleteId !== null}
 				onOpenChange={(open) => { if (!open && !deleteMutation.isPending) setConfirmDeleteId(null); }}
@@ -150,7 +149,6 @@ const ResponsesPanel = ({ surveyId }: ResponsesPanelProps) => {
 				isPending={deleteMutation.isPending}
 			/>
 
-			{}
 			<ConfirmDialog
 				open={bulkConfirmOpen}
 				onOpenChange={(open) => { if (!open && !bulkDeleteMutation.isPending) setBulkConfirmOpen(false); }}
@@ -162,7 +160,6 @@ const ResponsesPanel = ({ surveyId }: ResponsesPanelProps) => {
 				isPending={bulkDeleteMutation.isPending}
 			/>
 
-			{}
 			<div className="rounded-xl border border-border bg-card">
 				<div className="overflow-x-auto">
 					<table className="w-full table-fixed">

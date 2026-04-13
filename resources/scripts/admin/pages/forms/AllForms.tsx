@@ -1,4 +1,4 @@
-import { format } from 'date-fns';
+﻿import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { BulkActionBar } from '@/components/ui/bulk-action-bar';
 import { Button } from '@/components/ui/button';
@@ -288,7 +288,6 @@ const AllForms = () => {
 	return (
 		<div className="p-5 md:p-6">
 
-			{}
 			<ConfirmDialog
 				open={confirmDeleteId !== null}
 				onOpenChange={(open) => { if (!open && !deleteMutation.isPending) setConfirmDeleteId(null); }}
@@ -300,7 +299,6 @@ const AllForms = () => {
 				isPending={deleteMutation.isPending}
 			/>
 
-			{}
 			<ConfirmDialog
 				open={confirmBulkDelete}
 				onOpenChange={(open) => { if (!open && !bulkDeleteMutation.isPending) setConfirmBulkDelete(false); }}
@@ -312,7 +310,6 @@ const AllForms = () => {
 				isPending={bulkDeleteMutation.isPending}
 			/>
 
-			{}
 			<ConfirmDialog
 				open={confirmBulkTrash}
 				onOpenChange={(open) => { if (!open && !bulkTrashMutation.isPending) setConfirmBulkTrash(false); }}
@@ -324,7 +321,6 @@ const AllForms = () => {
 				isPending={bulkTrashMutation.isPending}
 			/>
 
-			{}
 			<div className="mb-4 flex flex-wrap items-center gap-3 py-1">
 				<div className="relative w-full sm:w-[260px]">
 					<svg
@@ -364,13 +360,11 @@ const AllForms = () => {
 				</div>
 			</div>
 
-			{}
 			<div className="rounded-xl border border-border bg-card">
 				<div className="overflow-x-auto">
 					<table className="w-full table-fixed">
 						<thead>
 							<tr className="border-b border-border bg-muted/30">
-								{}
 								<th className="w-12 px-4 py-4 text-left">
 									<Checkbox
 										checked={someChecked ? 'indeterminate' : allChecked}
@@ -378,27 +372,21 @@ const AllForms = () => {
 										disabled={isLoading || surveys.length === 0}
 									/>
 								</th>
-								{}
 								<th className="w-16 px-4 py-4 text-left">
 									<ColHead column="id" label={__('ID', 'all-feedback')} sortable />
 								</th>
-								{}
 								<th className="w-[220px] px-4 py-4 text-left">
 									<ColHead label={__('Form Name', 'all-feedback')} />
 								</th>
-								{}
 								<th className="w-28 px-4 py-4 text-left">
 									<ColHead column="response_count" label={__('Responses', 'all-feedback')} sortable />
 								</th>
-								{}
 								<th className="w-36 px-4 py-4 text-left">
 									<ColHead column="created_at" label={__('Created', 'all-feedback')} sortable />
 								</th>
-								{}
 								<th className="w-32 px-4 py-4 text-left">
 									<ColHead label={__('Status', 'all-feedback')} />
 								</th>
-								{}
 								<th className="w-24 px-4 py-4 text-left">
 									<ColHead label={__('Actions', 'all-feedback')} />
 								</th>
@@ -406,10 +394,8 @@ const AllForms = () => {
 						</thead>
 
 						<tbody>
-							{}
 							{isLoading && Array.from({ length: 5 }, (_, i) => <SkeletonRow key={i} />)}
 
-							{}
 							{isError && !isLoading && (
 								<tr><td colSpan={7}>
 									<EmptyState
@@ -420,7 +406,6 @@ const AllForms = () => {
 								</td></tr>
 							)}
 
-							{}
 							{!isLoading && !isError && surveys.length === 0 && (
 								<tr><td colSpan={7}>
 									<EmptyState
@@ -437,7 +422,6 @@ const AllForms = () => {
 								</td></tr>
 							)}
 
-							{}
 							{!isLoading && !isError && surveys.map((survey) => {
 								const statusCfg = STATUS_CONFIG[survey.status] ?? STATUS_CONFIG.draft;
 								const isSelected = checked.includes(survey.id);
@@ -450,7 +434,6 @@ const AllForms = () => {
 											isSelected ? 'bg-primary/[0.03]' : 'hover:bg-muted/20',
 										)}
 									>
-										{}
 										<td className="w-12 px-4 py-5">
 											<Checkbox
 												checked={isSelected}
@@ -458,14 +441,12 @@ const AllForms = () => {
 											/>
 										</td>
 
-										{}
 										<td className="w-16 px-4 py-5">
 											<span className={cn(cellCls, 'tabular-nums text-foreground/40')}>
 												#{survey.id}
 											</span>
 										</td>
 
-										{}
 										<td className="w-[220px] px-4 py-5">
 											<button
 												type="button"
@@ -481,7 +462,6 @@ const AllForms = () => {
 											</button>
 										</td>
 
-										{}
 										<td className="w-28 px-4 py-5">
 											{survey.response_count > 0 ? (
 												<button
@@ -499,14 +479,12 @@ const AllForms = () => {
 											)}
 										</td>
 
-										{}
 										<td className="w-36 px-4 py-5">
 											<span className={cellCls}>
 												{format(new Date(survey.created_at), 'MMM d, yyyy')}
 											</span>
 										</td>
 
-										{}
 										<td className="w-32 px-4 py-5">
 											<Badge variant={statusCfg.variant}>
 												<span className={cn('size-1.5 rounded-full', statusCfg.dot)} />
@@ -514,10 +492,8 @@ const AllForms = () => {
 											</Badge>
 										</td>
 
-										{}
 										<td className="w-24 px-4 py-5">
 											<div className="flex items-center gap-1">
-												{}
 												<button
 													type="button"
 													onClick={() => void navigate({
@@ -530,7 +506,6 @@ const AllForms = () => {
 													{__('Edit', 'all-feedback')}
 												</button>
 
-												{}
 												<DropdownMenu>
 													<DropdownMenuTrigger asChild>
 														<button
@@ -542,7 +517,6 @@ const AllForms = () => {
 														</button>
 													</DropdownMenuTrigger>
 													<DropdownMenuContent>
-														{}
 														<DropdownMenuItem
 															className="max-sm:flex sm:hidden"
 															onSelect={() => void navigate({
@@ -553,7 +527,6 @@ const AllForms = () => {
 															{__('Edit', 'all-feedback')}
 														</DropdownMenuItem>
 
-														{}
 														{survey.status === 'trashed' && (
 															<DropdownMenuItem
 																onSelect={() => restoreMutation.mutate(survey.id)}
@@ -567,7 +540,6 @@ const AllForms = () => {
 															</DropdownMenuItem>
 														)}
 
-														{}
 														<DropdownMenuItem
 															onSelect={() => cloneMutation.mutate(survey.id)}
 															disabled={cloneMutation.isPending}
@@ -579,7 +551,6 @@ const AllForms = () => {
 															{__('Clone', 'all-feedback')}
 														</DropdownMenuItem>
 
-														{}
 														{survey.status !== 'trashed' && (
 															<DropdownMenuItem
 																onSelect={() => trashMutation.mutate(survey.id)}
@@ -593,7 +564,6 @@ const AllForms = () => {
 															</DropdownMenuItem>
 														)}
 
-														{}
 														{survey.status === 'trashed' && (
 															<DropdownMenuItem
 																destructive
@@ -615,7 +585,6 @@ const AllForms = () => {
 				</div>
 			</div>
 
-			{}
 			<Pagination
 				className="mt-6"
 				page={page}
@@ -628,7 +597,6 @@ const AllForms = () => {
 				onPerPageChange={(n) => { setPerPage(n); setPage(1); }}
 			/>
 
-			{}
 			<BulkActionBar
 				count={checked.length}
 				showTrash={anySelectedNotTrashed}

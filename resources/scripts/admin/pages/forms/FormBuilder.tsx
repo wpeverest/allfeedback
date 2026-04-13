@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui/button';
+﻿import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useForm } from '@tanstack/react-form';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -508,7 +508,6 @@ const FormBuilder = () => {
 					</div>
 				)}
 
- 				{}
 				<div className="flex items-center gap-0.5">
 					<button
 						type="button"
@@ -530,7 +529,6 @@ const FormBuilder = () => {
 					</button>
 				</div>
 
-				{}
 				<div ref={shortcutsRef} className="relative">
 					<button
 						type="button"

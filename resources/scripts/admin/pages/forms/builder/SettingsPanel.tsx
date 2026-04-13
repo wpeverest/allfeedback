@@ -1,4 +1,4 @@
-import { surveysApi } from '@/admin/api/surveys';
+﻿import { surveysApi } from '@/admin/api/surveys';
 import type { ContentSearchItem } from '@/admin/api/surveys';
 import {
 	Select,
@@ -321,7 +321,6 @@ const ContentPicker = ({
 
 	return (
 		<div ref={wrapperRef} className="space-y-2">
-			{}
 			{selected.length > 0 && (
 				<div className="flex flex-wrap gap-1.5">
 					{selected.map(({ id, title }) => (
@@ -343,7 +342,6 @@ const ContentPicker = ({
 				</div>
 			)}
 
-			{}
 			<div className="relative">
 				<Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground/50" />
 				<input
@@ -359,7 +357,6 @@ const ContentPicker = ({
 				)}
 			</div>
 
-			{}
 			{typeof document !== 'undefined' && createPortal(dropdown, document.body)}
 		</div>
 	);
@@ -380,7 +377,6 @@ const DISMISS_UNIT_OPTIONS: { value: DismissUnit; label: string }[] = [
 const ProCard = ({ title }: { title: string }) => (
 	<div className="relative overflow-hidden rounded-2xl border border-border/60 bg-white">
 
-		{}
 		<div className="pointer-events-none select-none opacity-60">
 			<div className="flex items-center justify-between border-b border-border/50 px-5 py-3.5">
 				<h3 className="text-[14px] font-semibold text-foreground" style={{ margin: 0 }}>
@@ -440,7 +436,6 @@ const SettingsPanel = ({ settings, onChange, onScrollChange }: SettingsPanelProp
 		<div className="flex-1 overflow-y-auto bg-background p-5" onScroll={handleScroll}>
 			<div className="w-full space-y-4">
 
-				{}
 				<Card title={__('Submit Buttons', 'all-feedback')}>
 					<Row label={__('Submit label', 'all-feedback')}>
 						<input
@@ -468,7 +463,6 @@ const SettingsPanel = ({ settings, onChange, onScrollChange }: SettingsPanelProp
 					</Row>
 				</Card>
 
-				{}
 				<Card title={__('Targeting', 'all-feedback')}>
 					<Row label={__('Show to', 'all-feedback')}>
 						<Select value={settings.userState} onValueChange={(v) => update({ userState: v as UserState })}>
@@ -489,7 +483,6 @@ const SettingsPanel = ({ settings, onChange, onScrollChange }: SettingsPanelProp
 							onChange={(v) => update({ targetPages: v })}
 						/>
 					</Row>
-					{}
 					<div>
 						<Collapse open={settings.targetPages === 'specific_pages'}>
 							<Row label={__('Select pages', 'all-feedback')}>
@@ -514,10 +507,8 @@ const SettingsPanel = ({ settings, onChange, onScrollChange }: SettingsPanelProp
 					</div>
 				</Card>
 
-				{}
 				<ProCard title={__('Display Trigger', 'all-feedback')} />
 
-				{}
 				<Card title={__('Frequency & Limits', 'all-feedback')}>
 					<Row label={__('Display frequency', 'all-feedback')}>
 						<Select value={settings.displayFrequency} onValueChange={(v) => update({ displayFrequency: v as DisplayFrequency })}>
@@ -554,7 +545,6 @@ const SettingsPanel = ({ settings, onChange, onScrollChange }: SettingsPanelProp
 					</Collapse>
 				</Card>
 
-				{}
 				<Card title={__('Thank You Page', 'all-feedback')}>
 					<Row label={__('Enable', 'all-feedback')}>
 						<Toggle

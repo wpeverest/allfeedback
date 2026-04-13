@@ -1,4 +1,4 @@
-import { format } from 'date-fns';
+﻿import { format } from 'date-fns';
 import { BulkActionBar } from '@/components/ui/bulk-action-bar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -193,7 +193,6 @@ const Responses = () => {
 	return (
 		<div className="p-5 md:p-6">
 
-			{}
 			<ConfirmDialog
 				open={confirmDelete !== null}
 				onOpenChange={(open) => { if (!open && !deleteMutation.isPending) setConfirmDelete(null); }}
@@ -205,7 +204,6 @@ const Responses = () => {
 				isPending={deleteMutation.isPending}
 			/>
 
-			{}
 			<ConfirmDialog
 				open={bulkConfirmOpen}
 				onOpenChange={(open) => { if (!open && !bulkDeleteMutation.isPending) setBulkConfirmOpen(false); }}
@@ -217,10 +215,8 @@ const Responses = () => {
 				isPending={bulkDeleteMutation.isPending}
 			/>
 
-			{}
 			<div className="mb-4 flex flex-wrap items-center gap-3 py-1">
 
-				{}
 				<Select
 					value={selectedSurveyId !== null ? String(selectedSurveyId) : 'all'}
 					onValueChange={(v) => {
@@ -242,7 +238,6 @@ const Responses = () => {
 					</SelectContent>
 				</Select>
 
-				{}
 				<div className="relative w-full sm:w-[260px]">
 					<svg
 						className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
@@ -259,7 +254,6 @@ const Responses = () => {
 				</div>
 			</div>
 
-			{}
 			<div className="rounded-xl border border-border bg-card">
 				<div className="overflow-x-auto">
 					<table className="w-full table-fixed">
@@ -293,10 +287,8 @@ const Responses = () => {
 						</thead>
 
 						<tbody>
-							{}
 							{isLoading && Array.from({ length: 5 }, (_, i) => <SkeletonRow key={i} showForm={showForm} />)}
 
-							{}
 							{isError && !isLoading && (
 								<tr><td colSpan={numCols}>
 									<EmptyState
@@ -307,7 +299,6 @@ const Responses = () => {
 								</td></tr>
 							)}
 
-							{}
 							{!isLoading && !isError && responses.length === 0 && (
 								<tr><td colSpan={numCols}>
 									<EmptyState
@@ -318,7 +309,6 @@ const Responses = () => {
 								</td></tr>
 							)}
 
-							{}
 							{!isLoading && !isError && responses.length > 0 && filtered.length === 0 && (
 								<tr><td colSpan={numCols}>
 									<EmptyState
@@ -329,7 +319,6 @@ const Responses = () => {
 								</td></tr>
 							)}
 
-							{}
 							{!isLoading && !isError && filtered.map((response: SurveyResponse) => {
 								const isSelected = checked.includes(response.id);
 								const summary    = getResponseSummary(response.response_data);
@@ -403,7 +392,6 @@ const Responses = () => {
 				</div>
 			</div>
 
-			{}
 			<Pagination
 				className="mt-6"
 				page={page}
@@ -416,7 +404,6 @@ const Responses = () => {
 				onPerPageChange={(n) => { setPerPage(n); setPage(1); }}
 			/>
 
-			{}
 			<BulkActionBar
 				count={checked.length}
 				showDelete={checked.length > 0}

@@ -1,29 +1,23 @@
-import { surveyQuery } from '@/admin/queries/surveys';
+﻿import { surveyQuery } from '@/admin/queries/surveys';
 import { createFileRoute, lazyRouteComponent } from '@tanstack/react-router';
 
 const BuilderPending = () => (
 	<div className="allfb-builder fixed inset-0 z-[99999] flex flex-col bg-background">
-		{}
 		<header className="flex h-[68px] shrink-0 items-center justify-between border-b border-border bg-white px-6">
 			<div className="flex flex-1 items-center gap-2">
-				{}
 				<div className="size-8 animate-pulse rounded-lg bg-muted/60" />
 				<span className="h-5 w-px bg-border" />
-				{}
 				<div className="h-7 w-64 animate-pulse rounded-lg bg-muted/60" />
 			</div>
 			<div className="flex items-center gap-3">
-				{}
 				<div className="flex gap-0.5">
 					<div className="size-8 animate-pulse rounded-lg bg-muted/60" />
 					<div className="size-8 animate-pulse rounded-lg bg-muted/60" />
 				</div>
-				{}
 				<div className="h-10 w-28 animate-pulse rounded-lg bg-muted/60" />
 			</div>
 		</header>
 
-		{}
 		<div className="flex h-[72px] shrink-0 items-center justify-center gap-6 border-b border-border/40 bg-white px-8">
 			{[100, 90, 80].map((w, i) => (
 				<div key={i} className="flex items-center gap-2.5">
@@ -34,9 +28,7 @@ const BuilderPending = () => (
 			))}
 		</div>
 
-		{}
 		<div className="flex flex-1 overflow-hidden">
-			{}
 			<div className="flex flex-1 flex-col gap-4 overflow-y-auto bg-background p-5">
 				{[1, 2].map((n) => (
 					<div key={n} className="overflow-hidden rounded-2xl border border-border/60 bg-white">
@@ -52,10 +44,8 @@ const BuilderPending = () => (
 				))}
 			</div>
 
-			{}
 			<div className="w-3 shrink-0 border-x border-border bg-white" />
 
-			{}
 			<div className="w-[45vw] shrink-0 bg-background p-5">
 				<div className="h-full animate-pulse rounded-2xl bg-muted/60" />
 			</div>

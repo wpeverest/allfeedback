@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+﻿import { cn } from '@/lib/utils';
 import {
 	Select,
 	SelectContent,
@@ -90,7 +90,6 @@ export const Pagination = ({
 	return (
 		<div className={cn('flex flex-wrap items-center justify-between gap-3', className)}>
 
-			{}
 			<span className="text-[13px] text-muted-foreground">
 				{isLoading ? (
 					<span className="inline-block h-4 w-32 animate-pulse rounded bg-muted" />
@@ -104,10 +103,8 @@ export const Pagination = ({
 				)}
 			</span>
 
-			{}
 			<div className="flex items-center gap-3">
 
-				{}
 				{onPerPageChange && (
 					<div className="flex items-center gap-2">
 						<span className="whitespace-nowrap text-[14px] text-muted-foreground">
@@ -129,10 +126,8 @@ export const Pagination = ({
 					</div>
 				)}
 
-				{}
 				<div className="flex items-center gap-2">
 
-					{}
 					<PageBtn
 						onClick={() => onPageChange(page - 1)}
 						disabled={page <= 1 || isLoading}
@@ -141,7 +136,6 @@ export const Pagination = ({
 						<ChevronLeft className="size-[18px]" />
 					</PageBtn>
 
-					{}
 					{slots.map((slot, i) =>
 						slot === 'ellipsis' ? (
 							<span
@@ -164,7 +158,6 @@ export const Pagination = ({
 						),
 					)}
 
-					{}
 					<PageBtn
 						onClick={() => onPageChange(page + 1)}
 						disabled={page >= totalPages || isLoading}

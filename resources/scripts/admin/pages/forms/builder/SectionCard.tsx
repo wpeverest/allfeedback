@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui/button';
+﻿import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { __ } from '@wordpress/i18n';
 import { Check, ChevronDown, Copy, GripVertical, Pencil, Plus, Trash2, X } from 'lucide-react';
@@ -159,7 +159,6 @@ const SectionCard = ({
 					: 'border-border/60',
 			)}
 		>
-			{}
 			<div
 				draggable
 				onDragStart={(e) => {
@@ -182,7 +181,6 @@ const SectionCard = ({
 				onClick={() => setIsCollapsed((v) => !v)}
 				className="flex cursor-pointer items-center border-b border-border/50 bg-white px-5 py-4 transition-colors hover:bg-muted/20"
 			>
-				{}
 				<div className="flex flex-1 items-center gap-2">
 					<span title={__('Drag to reorder', 'all-feedback')} className="cursor-grab text-muted-foreground/40 transition-colors hover:text-muted-foreground/70 active:cursor-grabbing">
 						<GripVertical className="size-4 shrink-0" />
@@ -243,7 +241,6 @@ const SectionCard = ({
 					)}
 				</div>
 
-				{}
 				<div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
 					<Button
 						variant="ghost"
@@ -276,7 +273,6 @@ const SectionCard = ({
 				</div>
 			</div>
 
-			{}
 			<div className={cn('grid transition-[grid-template-rows] duration-200 ease-in-out', isCollapsed ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]')}>
 			<div className="overflow-hidden"><div className="bg-white p-5">
 				{section.fields.length > 0 && (

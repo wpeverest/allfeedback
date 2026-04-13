@@ -1,4 +1,4 @@
-import { computePosition, flip, offset, shift } from '@floating-ui/dom';
+﻿import { computePosition, flip, offset, shift } from '@floating-ui/dom';
 import { Smile, Target, Zap } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { FIELD_TYPES } from './fieldTypes';
@@ -64,7 +64,6 @@ const FieldTypeMenu = ({ triggerRef, onSelect, onClose }: FieldTypeMenuProps) =>
 			className="field-type-menu overflow-hidden rounded-xl border border-border bg-white p-1.5 shadow-dropdown"
 			style={{ visibility: 'hidden' }}
 		>
-			{}
 			{FIELD_TYPES.map(({ type, label, Icon }) => (
 				<button
 					key={type}
@@ -77,10 +76,8 @@ const FieldTypeMenu = ({ triggerRef, onSelect, onClose }: FieldTypeMenuProps) =>
 				</button>
 			))}
 
-			{}
 			<div className="my-1 border-t border-border/60" />
 
-			{}
 			{PRO_FIELD_TYPES.map(({ label, description, Icon }) => (
 				<div
 					key={label}

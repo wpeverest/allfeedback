@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui/button';
+﻿import { Button } from '@/components/ui/button';
 import { __ } from '@wordpress/i18n';
 import { Plus } from 'lucide-react';
 import EmptyCanvasIllustration from './EmptyCanvasIllustration';
@@ -126,7 +126,6 @@ const BuilderCanvas = ({ sections, onSectionsChange, onScrollChange }: BuilderCa
 			<div className="flex flex-1 items-center justify-center bg-background">
 				<div className="flex flex-col items-center">
 					<EmptyCanvasIllustration />
-					{}
 					<Button onClick={addSection} className="-mt-1">
 						<Plus className="size-4" />
 						{__('Add a Section', 'all-feedback')}

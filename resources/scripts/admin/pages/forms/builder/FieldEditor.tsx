@@ -1,4 +1,4 @@
-import { EditorContent, useEditor } from '@tiptap/react';
+﻿import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import HighlightExtension from '@tiptap/extension-highlight';
 import UnderlineExtension from '@tiptap/extension-underline';
@@ -92,19 +92,16 @@ const OptionRow = ({
 			isDragging && 'opacity-40',
 		)}
 	>
-		{}
 		<span className="cursor-grab text-muted-foreground/25 transition-colors hover:text-muted-foreground/60">
 			<GripVertical className="size-3.5" />
 		</span>
 
-		{}
 		<div className={cn(
 			'flex flex-1 items-center gap-2 rounded-lg border px-2.5 py-2 transition-all duration-150',
 			isDragOver && !isDragging
 				? 'border-primary/40 shadow-[0_0_0_3px_hsl(var(--primary)/0.08)]'
 				: 'border-dashed border-border/50 hover:border-border/80 hover:bg-muted/20 focus-within:border-primary/50 focus-within:bg-primary/[0.015]',
 		)}>
-			{}
 			<span className={cn(
 				'flex shrink-0 items-center justify-center border border-border/60 bg-white',
 				fieldType === 'radio' ? 'size-3.5 rounded-full' : 'size-3.5 rounded-[3px]',
@@ -118,7 +115,6 @@ const OptionRow = ({
 			/>
 		</div>
 
-		{}
 		<div className="flex items-center gap-0.5">
 			<button
 				type="button"
@@ -226,7 +222,6 @@ const QuestionEditor = ({ value, onChange, autoFocus, focusTrigger }: QuestionEd
 
 	return (
 		<div>
-			{}
 			<div
 				className={cn(
 					'mb-2 flex items-center gap-px overflow-hidden transition-all duration-150',
@@ -258,7 +253,6 @@ const QuestionEditor = ({ value, onChange, autoFocus, focusTrigger }: QuestionEd
 					</>
 				))}
 
-				{}
 				<span className="mx-1 h-3.5 w-px bg-border/70" />
 				<button
 					type="button"
@@ -269,7 +263,6 @@ const QuestionEditor = ({ value, onChange, autoFocus, focusTrigger }: QuestionEd
 					<span className="text-[10px] font-bold leading-none">T<span className="text-[8px]">✕</span></span>
 				</button>
 
-				{}
 				<span className="mx-1 h-3.5 w-px bg-border/70" />
 				<button
 					type="button"
@@ -281,7 +274,6 @@ const QuestionEditor = ({ value, onChange, autoFocus, focusTrigger }: QuestionEd
 				</button>
 			</div>
 
-			{}
 			<div
 				data-focused={isOpen}
 				className={cn(
@@ -492,7 +484,6 @@ const ScaleConfig = ({
 				focusTrigger={focusTrigger}
 			/>
 
-			{}
 			<div className="space-y-1.5">
 				<label className={labelCls}>{__('Range', 'all-feedback')}</label>
 				<div className="flex w-fit items-center gap-2">
@@ -528,7 +519,6 @@ const ScaleConfig = ({
 				</div>
 			</div>
 
-			{}
 			<div className="grid grid-cols-2 gap-3">
 				<div className="space-y-1.5">
 					<label className={labelCls}>{__('Low label', 'all-feedback')}</label>
@@ -668,7 +658,6 @@ const FieldEditor = ({
 					: 'border-border/60',
 			)}
 		>
-			{}
 			<div
 				draggable
 				onDragStart={(e) => {
@@ -706,7 +695,6 @@ const FieldEditor = ({
 					</span>
 				)}
 
-				{}
 				<button
 					type="button"
 					className="group/title flex w-[180px] shrink-0 items-center gap-2 rounded-md border border-transparent px-2 py-1 text-left transition-colors hover:border-border/50 hover:bg-black/[0.04]"
@@ -724,7 +712,6 @@ const FieldEditor = ({
 				</button>
 
 				<div className="ml-auto flex items-center gap-1">
-					{}
 					<div onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
 						<RequiredSwitch
 							value={field.required}
@@ -732,7 +719,6 @@ const FieldEditor = ({
 						/>
 					</div>
 
-					{}
 					<span className="flex size-6 items-center justify-center rounded transition-colors hover:bg-black/[0.06]">
 						<ChevronDown className={cn(
 							'size-3.5 transition-transform duration-200',
@@ -740,7 +726,6 @@ const FieldEditor = ({
 						)} />
 					</span>
 
-					{}
 					<div
 						className="flex items-center gap-0.5"
 						onClick={(e) => e.stopPropagation()}
@@ -768,13 +753,11 @@ const FieldEditor = ({
 				</div>
 			</div>
 
-			{}
 			<div className={cn(
 				'grid transition-[grid-template-rows] duration-200 ease-in-out',
 				isCollapsed ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]',
 			)}>
 				<div className="overflow-hidden">
-					{}
 					<div className="space-y-3 px-5 py-4">
 						{renderConfig()}
 					</div>

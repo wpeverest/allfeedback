@@ -1,4 +1,4 @@
-import { surveysApi } from '@/admin/api/surveys';
+﻿import { surveysApi } from '@/admin/api/surveys';
 import type { SubmitFormData } from '@/admin/api/surveys';
 import { cn } from '@/lib/utils';
 import { useMutation } from '@tanstack/react-query';
@@ -355,7 +355,6 @@ const WidgetBody = ({
 		)}
 		onKeyDown={handleKeyDown}
 	>
-		{}
 		<div className="flex items-center justify-end gap-0.5 bg-primary px-2.5 py-1.5">
 			{showControls && (
 				<>
@@ -379,7 +378,6 @@ const WidgetBody = ({
 			)}
 		</div>
 
-		{}
 		<div className="bg-white">
 			{isSubmitted ? (
 
@@ -417,7 +415,6 @@ const WidgetBody = ({
 						</div>
 					)}
 
-					{}
 					<div className="max-h-[240px] overflow-y-auto px-4 py-4">
 						{!hasSteps ? (
 							<div className="flex flex-col items-center justify-center py-3">
@@ -441,7 +438,6 @@ const WidgetBody = ({
 						)}
 					</div>
 
-					{}
 					{hasSteps && (
 						<div className="flex items-center gap-2 border-t border-border/40 px-4 py-4 mt-1">
 							{stepIndex > 0 && (
@@ -636,14 +632,12 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId }: 
 
 	return (
 		<div className="flex h-full flex-col bg-white">
-			{}
 			<div className="flex h-[72px] shrink-0 items-center justify-between px-6">
 				<span className="text-[13.5px] font-medium text-foreground">
 					{__('Preview changes', 'all-feedback')}
 				</span>
 
 				<div className="flex items-center gap-2">
-					{}
 					{needsReset && (
 						<button
 							type="button"
@@ -655,7 +649,6 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId }: 
 						</button>
 					)}
 
-					{}
 					<div className="flex items-center rounded-lg border border-border/60 p-0.5">
 						<button
 							type="button"
@@ -687,7 +680,6 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId }: 
 				</div>
 			</div>
 
-			{}
 			{hasSteps && (
 				<div className="flex shrink-0 items-center justify-between border-t border-border/50 bg-muted/20 px-4 py-1.5">
 					<span className="text-[11px] font-medium text-muted-foreground/60">
@@ -719,41 +711,33 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId }: 
 				</div>
 			)}
 
-			{}
 			{viewMode === 'page' ? (
 
 				<div className="flex flex-1 flex-col overflow-hidden bg-background">
 					<div className="flex flex-1 items-start justify-center overflow-hidden p-4">
-						{}
 						<div
 							className="flex h-full flex-col overflow-hidden rounded-xl border border-border/60 bg-white shadow-md"
 							style={{ width: pageMaxW ? `min(${pageMaxW}, 100%)` : '100%' }}
 						>
-							{}
 							<div className="shrink-0 select-none bg-[#dee1e6]">
-								{}
 								<div className="flex items-end px-3 pt-2">
-									{}
 									<div className="flex shrink-0 items-center gap-[5px] pb-[6px] pr-3">
 										<span className="size-[11px] rounded-full bg-[#ff5f57] shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.12)]" />
 										<span className="size-[11px] rounded-full bg-[#ffbd2e] shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.12)]" />
 										<span className="size-[11px] rounded-full bg-[#28c840] shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.12)]" />
 									</div>
 
-									{}
 									<div className="flex min-w-0 max-w-[172px] items-center gap-1.5 rounded-t-[7px] bg-white px-2.5 pb-[6px] pt-[5px]">
 										<Globe className="size-3 shrink-0 text-muted-foreground/50" />
 										<span className="min-w-0 flex-1 truncate text-[10.5px] text-foreground/70">{siteHostname}</span>
 										<X className="size-2.5 shrink-0 text-muted-foreground/35 hover:text-foreground/60" />
 									</div>
 
-									{}
 									<button type="button" className="ml-3 flex size-[18px] self-center items-center justify-center rounded text-foreground/40 hover:bg-black/8 hover:text-foreground/60">
 										<Plus className="size-3" />
 									</button>
 								</div>
 
-								{}
 								<div className="flex items-center gap-0.5 px-2 pb-2 pt-2">
 									<button type="button" className="flex size-[22px] items-center justify-center rounded-full text-foreground/20">
 										<ArrowLeft className="size-3.5" />
@@ -765,7 +749,6 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId }: 
 										<RotateCw className="size-3" />
 									</button>
 
-									{}
 									<div className="mx-1.5 flex flex-1 items-center gap-1.5 rounded-full bg-white/95 px-3 py-[3px] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.10),0_1px_2px_rgba(0,0,0,0.06)]">
 										<Lock className="size-2.5 shrink-0 text-[#1e8e3e]" />
 										<span className="min-w-0 flex-1 truncate text-center text-[10.5px] text-foreground/70">{siteHostname}</span>
@@ -778,17 +761,13 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId }: 
 								</div>
 							</div>
 
-							{}
 							<div className="relative flex-1 overflow-hidden bg-[#f8f9fa]">
-								{}
 								<div className="pointer-events-none absolute inset-0 flex flex-col">
-									{}
 									<div className="flex items-center justify-center bg-foreground/[0.055] px-4 py-[5px]">
 										<p className="text-[7.5px] font-medium leading-[1.5] tracking-wide text-foreground/40 text-center">
 											{__('Approximate preview — position, size, and styling may vary on your live site based on your theme and screen size', 'all-feedback')}
 										</p>
 									</div>
-									{}
 									<div className="flex h-9 shrink-0 items-center gap-3 border-b border-black/5 bg-white px-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
 										<div className="h-2.5 w-14 rounded-full bg-foreground/10" />
 										<div className="flex flex-1 items-center justify-end gap-2.5">
@@ -797,13 +776,11 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId }: 
 											<div className="h-1.5 w-7 rounded-full bg-foreground/8" />
 										</div>
 									</div>
-									{}
 									<div className="flex flex-col items-center gap-2 px-6 pt-7">
 										<div className="h-3 w-3/5 rounded-full bg-foreground/10" />
 										<div className="h-2 w-2/5 rounded-full bg-foreground/[0.07]" />
 										<div className="mt-1.5 h-6 w-20 rounded-md bg-foreground/[0.08]" />
 									</div>
-									{}
 									<div className="mt-5 grid grid-cols-3 gap-2 px-4">
 										{[0, 1, 2].map((i) => (
 											<div key={i} className="rounded-lg bg-white/75 p-2 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
@@ -815,7 +792,6 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId }: 
 									</div>
 								</div>
 
-								{}
 								<button
 									type="button"
 									onClick={() => setIsMinimized(false)}
@@ -828,7 +804,6 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId }: 
 									<MessageSquare className="size-5 text-white" />
 								</button>
 
-								{}
 								<div
 									className={cn(
 										'absolute bottom-5 right-4',
@@ -859,7 +834,6 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId }: 
 				</div>
 			)}
 
-			{}
 			<div className={cn(
 				'flex shrink-0 items-center justify-center gap-1 border-t border-border px-4 py-3 transition-opacity',
 				viewMode === 'widget' && 'pointer-events-none opacity-35',
