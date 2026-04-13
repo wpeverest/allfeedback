@@ -10,6 +10,7 @@ use AllFeedback\Core\Contracts\ServiceProviderInterface;
 use AllFeedback\Infrastructure\Database\Migrator;
 use AllFeedback\Infrastructure\PostTypes\Survey as SurveyPostType;
 use AllFeedback\Infrastructure\Taxonomies\SurveyCategory;
+use AllFeedback\Support\Logger;
 use AllFeedback\Traits\Hooks;
 
 /**
@@ -34,6 +35,7 @@ class CoreServiceProvider implements ServiceProviderInterface {
 		private readonly Migrator $migrator,
 		private readonly SurveyPostType $surveyPostType,
 		private readonly SurveyCategory $surveyCategory,
+		private readonly Logger $logger,
 	) {}
 
 	/**
@@ -42,6 +44,7 @@ class CoreServiceProvider implements ServiceProviderInterface {
 	 * @since 1.0.0
 	 */
 	public function boot(): void {
+		$this->logger->registerShutdownHandler();
 		$this->addAction( 'admin_init', [ $this, 'runPendingMigrations' ] );
 		$this->addAction( 'allfeedback:activated', [ $this, 'onActivation' ] );
 		$this->addAction( 'init', [ $this, 'registerPostTypes' ] );
@@ -66,6 +69,7 @@ class CoreServiceProvider implements ServiceProviderInterface {
 	public function onActivation(): void {
 		$this->migrator->run();
 		$this->roleManager->createRoles();
+		$this->logger->ensureDirectory();
 		$this->doAction( 'allfeedback:activated:complete' );
 	}
 

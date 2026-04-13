@@ -88,6 +88,7 @@ use AllFeedback\Infrastructure\Taxonomies\SurveyCategory;
 use AllFeedback\Admin\AdminServiceProvider;
 use AllFeedback\API\ApiServiceProvider;
 use AllFeedback\API\Controllers\V1\ContentSearchController;
+use AllFeedback\API\Controllers\V1\LogsController;
 use AllFeedback\API\Controllers\V1\ResponsesController;
 use AllFeedback\API\Controllers\V1\SettingsController;
 use AllFeedback\API\Controllers\V1\SubmitController;
@@ -114,7 +115,7 @@ return [
 	// ------------------------------------------------------------------
 	// Support services
 	// ------------------------------------------------------------------
-	Logger::class                    => autowire(),
+	Logger::class                    => autowire( Logger::class ),
 	AssetManager::class              => autowire(),
 	TemplateLoader::class            => autowire(),
 
@@ -248,6 +249,7 @@ return [
 	SubmitController::class          => autowire(),
 	SettingsController::class        => autowire(),
 	ContentSearchController::class   => autowire(),
+	LogsController::class            => autowire(),
 
 	// ------------------------------------------------------------------
 	// Service providers

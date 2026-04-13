@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AllFeedback\API;
 
 use AllFeedback\API\Controllers\V1\ContentSearchController;
+use AllFeedback\API\Controllers\V1\LogsController;
 use AllFeedback\API\Controllers\V1\ResponsesController;
 use AllFeedback\API\Controllers\V1\SettingsController;
 use AllFeedback\API\Controllers\V1\SubmitController;
@@ -71,6 +72,7 @@ class ApiServiceProvider implements ServiceProvider {
 			SurveysController::class,       // /surveys
 			SettingsController::class,      // /settings
 			ContentSearchController::class, // /content-search
+			LogsController::class,          // /logs
 		];
 
 		foreach ( $controllers as $class ) {
