@@ -23,7 +23,7 @@ const Row = ({
 	description?: string;
 	children: React.ReactNode;
 }) => (
-	<div className="flex items-start gap-4 py-0.5">
+	<div className="flex items-start gap-4">
 		<div className="w-[40%] shrink-0">
 			<label className={labelCls}>{label}</label>
 			{description && (
@@ -58,7 +58,7 @@ const Toggle = ({ checked, onChange }: { checked: boolean; onChange: () => void 
 );
 
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
-	<p className="mb-4 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/50">
+	<p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/50">
 		{children}
 	</p>
 );
@@ -193,9 +193,9 @@ const AdvancedSettings = () => {
 				)}
 			</div>
 
-			<div className="p-6">
+			<div className="px-6 pb-6 pt-4">
 
-				<div className="space-y-4">
+				<div className="space-y-3">
 					<SectionLabel>{__('User Privacy', 'all-feedback')}</SectionLabel>
 					<Row
 						label={__('Disable User Details', 'all-feedback')}
@@ -210,7 +210,7 @@ const AdvancedSettings = () => {
 
 				<div className="my-6 border-t border-border/50" />
 
-				<div className="space-y-4">
+				<div className="space-y-3">
 					<SectionLabel>{__('Logging', 'all-feedback')}</SectionLabel>
 					<Row label={__('Enable logging', 'all-feedback')}>
 						<Toggle
@@ -222,7 +222,7 @@ const AdvancedSettings = () => {
 
 				<div className="my-6 border-t border-border/50" />
 
-				<div className="space-y-4">
+				<div className="space-y-3">
 					<SectionLabel>{__('Plugin Management', 'all-feedback')}</SectionLabel>
 					<Row label={__('Delete data on uninstall', 'all-feedback')}>
 						<Toggle

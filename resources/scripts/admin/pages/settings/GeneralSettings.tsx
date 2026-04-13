@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { useForm, useStore } from '@tanstack/react-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { __ } from '@wordpress/i18n';
-import { Loader2, MessageSquare, Pipette, Settings2 } from 'lucide-react';
+import { Globe, Lock, Loader2, MessageSquare, Pipette, Settings2 } from 'lucide-react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
 
@@ -112,63 +112,94 @@ const hexToRgba = (hex: string, alpha: number) => {
 const PositionPicker = ({ value, onChange, color }: { value: Position; onChange: (v: Position) => void; color: string }) => (
 	<div className="space-y-3">
 		<div
-			className="relative overflow-hidden rounded-2xl bg-[#12121f] shadow-lg"
-			style={{ aspectRatio: '16/8', maxWidth: 460 }}
+			className="flex flex-col overflow-hidden rounded-xl border border-border/60 bg-white shadow-md"
+			style={{ aspectRatio: '16/9', maxWidth: 460 }}
 		>
-			<div className="absolute inset-x-0 top-0 z-10 flex h-8 items-center gap-1.5 border-b border-white/[0.07] bg-[#1c1c2e] px-4">
-				<span className="size-2.5 rounded-full bg-[#ff5f57]" />
-				<span className="size-2.5 rounded-full bg-[#ffbd2e]" />
-				<span className="size-2.5 rounded-full bg-[#28c840]" />
-				<div className="ml-3 h-4 flex-1 rounded-full bg-white/[0.06]" />
+			{/* Tab bar */}
+			<div className="shrink-0 select-none bg-[#dee1e6]">
+				<div className="flex items-end px-2.5 pt-1.5">
+					<div className="flex shrink-0 items-center gap-[5px] pb-[5px] pr-2.5">
+						<span className="size-[9px] rounded-full bg-[#ff5f57] shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.12)]" />
+						<span className="size-[9px] rounded-full bg-[#ffbd2e] shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.12)]" />
+						<span className="size-[9px] rounded-full bg-[#28c840] shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.12)]" />
+					</div>
+					<div className="flex items-center gap-1 rounded-t-[5px] bg-white px-2 pb-[5px] pt-[4px]">
+						<Globe className="size-2.5 shrink-0 text-muted-foreground/50" />
+						<span className="text-[9px] text-foreground/60">yoursite.com</span>
+					</div>
+				</div>
+				{/* Address bar */}
+				<div className="flex items-center px-2 pb-1.5 pt-1">
+					<div className="flex flex-1 items-center gap-1 rounded-full bg-white/95 px-2 py-[3px] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.10),0_1px_2px_rgba(0,0,0,0.06)]">
+						<Lock className="size-2 shrink-0 text-[#1e8e3e]" />
+						<span className="flex-1 text-center text-[8.5px] text-foreground/60">yoursite.com</span>
+					</div>
+				</div>
 			</div>
 
-			<div className="absolute inset-x-0 bottom-4 flex items-end px-4">
+			{/* Page content */}
+			<div className="relative flex-1 overflow-hidden bg-[#f8f9fa]">
+				{/* Fake navbar */}
+				<div className="flex h-[22px] shrink-0 items-center gap-2 border-b border-black/[0.06] bg-white px-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+					<div className="h-2 w-10 rounded-full bg-foreground/10" />
+					<div className="flex flex-1 items-center justify-end gap-2">
+						<div className="h-1.5 w-5 rounded-full bg-foreground/[0.08]" />
+						<div className="h-1.5 w-5 rounded-full bg-foreground/[0.08]" />
+						<div className="h-1.5 w-5 rounded-full bg-foreground/[0.08]" />
+					</div>
+				</div>
+
+				{/* Page skeleton */}
+				<div className="pointer-events-none flex flex-col items-center gap-1.5 px-4 pt-3">
+					<div className="h-2 w-2/5 rounded-full bg-foreground/10" />
+					<div className="h-1.5 w-1/4 rounded-full bg-foreground/[0.07]" />
+					<div className="mt-1 h-4 w-14 rounded-md bg-foreground/[0.08]" />
+				</div>
+
+				{/* Widget buttons */}
 				{BOTTOM_POSITIONS.map((pos) => {
 					const isActive = value === pos.value;
 					return (
-						<div key={pos.value} className={cn(
-							'flex flex-1',
-							pos.value === 'bottom-left'  && 'justify-start',
-							pos.value === 'bottom-right' && 'justify-end',
-						)}>
-							<button
-								type="button"
-								title={pos.label}
-								onClick={() => onChange(pos.value)}
-								style={isActive ? { backgroundColor: color, boxShadow: `0 4px 16px ${hexToRgba(color, 0.5)}` } : undefined}
-								className={cn(
-									'flex items-center justify-center rounded-xl transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60',
-									isActive
-										? 'size-11 text-white scale-105'
-										: 'size-10 bg-white/[0.08] text-white/30 hover:bg-white/[0.15] hover:text-white/60 hover:scale-105',
-								)}
-							>
-								<MessageSquare className={cn('transition-all', isActive ? 'size-5' : 'size-4')} />
-							</button>
-						</div>
+						<button
+							key={pos.value}
+							type="button"
+							title={pos.label}
+							onClick={() => onChange(pos.value)}
+							style={isActive ? { backgroundColor: color } : undefined}
+							className={cn(
+								'absolute bottom-3 flex items-center justify-center rounded-xl transition-all duration-200 focus-visible:outline-none',
+								pos.value === 'bottom-left'  && 'left-3',
+								pos.value === 'bottom-right' && 'right-3',
+								isActive
+									? 'size-9 text-white scale-105'
+									: 'size-8 bg-foreground/[0.09] text-foreground/30 hover:bg-foreground/[0.14] hover:text-foreground/50 hover:scale-105',
+							)}
+						>
+							<MessageSquare className={cn('transition-all', isActive ? 'size-4' : 'size-3.5')} />
+						</button>
 					);
 				})}
-			</div>
 
-			<button
-				type="button"
-				title={__('Side tab', 'all-feedback')}
-				onClick={() => onChange('side-tab')}
-				style={value === 'side-tab' ? { backgroundColor: color, boxShadow: `0 4px 16px ${hexToRgba(color, 0.5)}` } : undefined}
-				className={cn(
-					'absolute right-0 top-1/2 -translate-y-1/2 rounded-l-xl transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 flex items-center justify-center',
-					value === 'side-tab'
-						? 'text-white py-4 px-2.5'
-						: 'bg-white/[0.08] text-white/30 hover:bg-white/[0.15] hover:text-white/60 py-3.5 px-2',
-				)}
-			>
-				<span
-					className="select-none text-[11px] font-semibold tracking-widest"
-					style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
+				<button
+					type="button"
+					title={__('Side tab', 'all-feedback')}
+					onClick={() => onChange('side-tab')}
+					style={value === 'side-tab' ? { backgroundColor: color } : undefined}
+					className={cn(
+						'absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center rounded-l-lg transition-all duration-200 focus-visible:outline-none',
+						value === 'side-tab'
+							? 'py-3.5 px-2 text-white'
+							: 'bg-foreground/[0.09] text-foreground/30 hover:bg-foreground/[0.14] hover:text-foreground/50 py-3 px-1.5',
+					)}
 				>
-					{__('Feedback', 'all-feedback')}
-				</span>
-			</button>
+					<span
+						className="select-none text-[9px] font-semibold tracking-widest"
+						style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
+					>
+						{__('Feedback', 'all-feedback')}
+					</span>
+				</button>
+			</div>
 		</div>
 
 		<div className="inline-flex items-center rounded-lg border border-border/60 p-0.5">
@@ -222,7 +253,7 @@ const GeneralSettingsSkeleton = () => (
 			<div className="flex items-start gap-4">
 				<Skeleton className="mt-2 h-4 w-[40%] shrink-0" />
 				<div className="min-w-0 flex-1 space-y-3">
-					<Skeleton className="rounded-2xl" style={{ aspectRatio: '16/8', maxWidth: 460 }} />
+					<Skeleton className="rounded-2xl" style={{ aspectRatio: '16/9', maxWidth: 460 }} />
 					<div className="flex flex-wrap gap-2" style={{ maxWidth: 460 }}>
 						{[...Array(4)].map((_, i) => (
 							<Skeleton key={i} className="h-8 w-[90px] rounded-lg" />
