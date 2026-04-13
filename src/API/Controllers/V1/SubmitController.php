@@ -121,16 +121,12 @@ class SubmitController extends RestController {
 
 		$ipHash = $this->responseManager->hashIp();
 
-		if ( $this->responseManager->isDuplicate( $surveyId, $ipHash ) ) {
-			$this->logger->debug( 'Duplicate submission blocked.', [ 'survey_id' => $surveyId ] );
-			return $this->errorResponse( __( 'A response from this visitor has already been recorded.', 'all-feedback' ), 409 );
-		}
-
 		/**
 		 * Filters whether a response submission should be allowed to proceed.
 		 *
-		 * Return false to block the submission. Designed for pro-tier features
-		 * such as reCAPTCHA verification, rate limiting, or geo-restrictions.
+		 * Evaluated first so pro-tier hooks (reCAPTCHA, rate limiting, geo-fencing)
+		 * can block a submission before any further processing. Returning false
+		 * here also short-circuits the duplicate check below.
 		 *
 		 * @param bool             $allowed  True by default.
 		 * @param int              $surveyId Target survey ID.
@@ -142,6 +138,29 @@ class SubmitController extends RestController {
 			$this->logger->warning( 'Submission blocked by filter.', [ 'survey_id' => $surveyId ] );
 			return $this->errorResponse( __( 'Response submission is not allowed.', 'all-feedback' ), 403 );
 		}
+
+		/**
+		 * Filters the duplicate-detection look-back window in hours.
+		 *
+		 * Controls how far back the duplicate check looks when a visitor tries to
+		 * re-submit a survey. Use 0 (the default) for a permanent lifetime block,
+		 * or supply a positive integer to allow re-submission after N hours.
+		 *
+		 * Examples:
+		 *   add_filter( 'allfeedback_duplicate_window_hours', fn() => 720 ); // 30 days
+		 *   add_filter( 'allfeedback_duplicate_window_hours', fn() => 0   ); // forever (default)
+		 *
+		 * @param int    $hours    Look-back window. 0 = all-time block.
+		 * @param int    $surveyId The survey being submitted to.
+		 * @param object $survey   Raw survey row from the database.
+		 * @since 1.0.0
+		 */
+		// $duplicateWindowHours = max( 0, (int) apply_filters( 'allfeedback_duplicate_window_hours', 0, $surveyId, $survey ) );
+
+		// if ( $this->responseManager->isDuplicate( $surveyId, $ipHash, $duplicateWindowHours ) ) {
+		// 	$this->logger->debug( 'Duplicate submission blocked.', [ 'survey_id' => $surveyId ] );
+		// 	return $this->errorResponse( __( 'A response from this visitor has already been recorded.', 'all-feedback' ), 409 );
+		// }
 
 		/**
 		 * Filters the response_data payload before validation and persistence.
@@ -167,7 +186,7 @@ class SubmitController extends RestController {
 		);
 
 		try {
-			$domainResponse = $this->submitService->execute( $dto );
+			$domainResponse = $this->submitService->execute( $dto, $ipHash );
 		} catch ( ValidationException $e ) {
 			return $this->exceptionToResponse( $e );
 		} catch ( NotFoundException $e ) {

@@ -7,7 +7,7 @@ namespace AllFeedback\Domain\Survey;
 defined( 'ABSPATH' ) || exit;
 
 use AllFeedback\Domain\Shared\Entity;
-use Carbon\CarbonImmutable;
+use DateTimeImmutable;
 
 /**
  * Survey aggregate root.
@@ -27,10 +27,10 @@ class Survey extends Entity {
 	private int $responseCount;
 
 	/** @since 1.0.0 */
-	private CarbonImmutable $createdAt;
+	private DateTimeImmutable $createdAt;
 
 	/** @since 1.0.0 */
-	private ?CarbonImmutable $updatedAt = null;
+	private ?DateTimeImmutable $updatedAt = null;
 
 	/**
 	 * @since 1.0.0
@@ -47,7 +47,7 @@ class Survey extends Entity {
 	) {
 		$this->status        = $status ?? SurveyStatus::Draft;
 		$this->responseCount = $responseCount;
-		$this->createdAt     = CarbonImmutable::now();
+		$this->createdAt     = new DateTimeImmutable();
 	}
 
 	/**
@@ -65,8 +65,8 @@ class Survey extends Entity {
 		SurveyStatus $status,
 		int $responseCount,
 		int $createdBy,
-		CarbonImmutable $createdAt,
-		?CarbonImmutable $updatedAt = null,
+		DateTimeImmutable $createdAt,
+		?DateTimeImmutable $updatedAt = null,
 	): self {
 		$survey                = new self( $title, $description, $formSchema, $settings, $targeting, $createdBy, $status, $responseCount );
 		$survey->id            = $id;
@@ -174,14 +174,14 @@ class Survey extends Entity {
 	/**
 	 * @since 1.0.0
 	 */
-	public function getCreatedAt(): CarbonImmutable {
+	public function getCreatedAt(): DateTimeImmutable {
 		return $this->createdAt;
 	}
 
 	/**
 	 * @since 1.0.0
 	 */
-	public function getUpdatedAt(): ?CarbonImmutable {
+	public function getUpdatedAt(): ?DateTimeImmutable {
 		return $this->updatedAt;
 	}
 
@@ -238,6 +238,6 @@ class Survey extends Entity {
 
 	/** @since 1.0.0 */
 	private function touch(): void {
-		$this->updatedAt = CarbonImmutable::now();
+		$this->updatedAt = new DateTimeImmutable();
 	}
 }

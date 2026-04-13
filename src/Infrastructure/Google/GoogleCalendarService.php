@@ -7,7 +7,7 @@ namespace AllFeedback\Infrastructure\Google;
 defined( 'ABSPATH' ) || exit;
 
 use AllFeedback\Support\Logger;
-use Carbon\CarbonImmutable;
+use DateTimeImmutable;
 use Google\Client as GoogleClient;
 use Google\Service\Calendar;
 use Google\Service\Calendar\ConferenceData;
@@ -257,7 +257,7 @@ class GoogleCalendarService {
 
 		try {
 			$wpTz   = wp_timezone();
-			$offset = $wpTz->getOffset( CarbonImmutable::now( new \DateTimeZone( 'UTC' ) ) );
+			$offset = $wpTz->getOffset( new DateTimeImmutable( 'now', new \DateTimeZone( 'UTC' ) ) );
 			$abbrs  = \DateTimeZone::listAbbreviations();
 
 			foreach ( $abbrs as $zones ) {

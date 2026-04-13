@@ -58,6 +58,7 @@ use AllFeedback\Infrastructure\Database\Repositories\WpdbSurveyRepository;
 // ── Infrastructure — Jobs ─────────────────────────────────────────────────────
 use AllFeedback\Infrastructure\Jobs\ActionSchedulerDispatcher;
 use AllFeedback\Infrastructure\Jobs\ActionSchedulerRunner;
+use AllFeedback\Infrastructure\Jobs\SynchronousJobDispatcher;
 
 // ── Infrastructure — Mail ─────────────────────────────────────────────────────
 use AllFeedback\Infrastructure\Mail\Mailer;
@@ -159,8 +160,17 @@ return [
 	// ------------------------------------------------------------------
 	// Background jobs
 	// ------------------------------------------------------------------
-	JobDispatcher::class             => autowire( ActionSchedulerDispatcher::class ),
+	// Automatically select the async AS dispatcher when Action Scheduler is
+	// loaded (JobServiceProvider::boot() ensures it is loaded first), or fall
+	// back to the synchronous in-process dispatcher when AS is unavailable.
+	JobDispatcher::class             => factory( function () {
+		if ( function_exists( 'as_schedule_single_action' ) ) {
+			return new ActionSchedulerDispatcher();
+		}
+		return new SynchronousJobDispatcher();
+	} ),
 	ActionSchedulerDispatcher::class => autowire(),
+	SynchronousJobDispatcher::class  => autowire(),
 	ActionSchedulerRunner::class     => autowire(),
 	SendNotificationJob::class       => autowire(),
 	SyncCalendarEventJob::class      => autowire(),

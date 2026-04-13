@@ -253,26 +253,40 @@ class ResponseManager {
 
 	/**
 	 * Check whether a response from the same IP already exists for this survey.
-	 * Used for duplicate-submission prevention on the public widget.
 	 *
-	 * @param int    $surveyId Survey primary key.
-	 * @param string $ipHash   Anonymised HMAC-SHA256 IP hash.
+	 * @param int $surveyId        Survey primary key.
+	 * @param string $ipHash       Anonymized HMAC-SHA256 IP hash.
+	 * @param int $windowHours     Look-back window in hours. 0 = all time (no window).
 	 * @return bool
 	 * @since 1.0.0
 	 */
-	public function isDuplicate( int $surveyId, string $ipHash ): bool {
+	public function isDuplicate( int $surveyId, string $ipHash, int $windowHours = 0 ): bool {
 		global $wpdb;
 
 		$table = $this->table();
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$exists = $wpdb->get_var(
-			$wpdb->prepare(
-				"SELECT id FROM {$table} WHERE survey_id = %d AND ip_hash = %s LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$surveyId,
-				$ipHash
-			)
-		);
+		if ( $windowHours > 0 ) {
+			$cutoff = gmdate( 'Y-m-d H:i:s', time() - ( $windowHours * HOUR_IN_SECONDS ) );
+
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$exists = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT id FROM {$table} WHERE survey_id = %d AND ip_hash = %s AND created_at >= %s LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$surveyId,
+					$ipHash,
+					$cutoff
+				)
+			);
+		} else {
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$exists = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT id FROM {$table} WHERE survey_id = %d AND ip_hash = %s LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$surveyId,
+					$ipHash
+				)
+			);
+		}
 
 		return $exists !== null;
 	}

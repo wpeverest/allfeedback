@@ -36,12 +36,13 @@ class SubmitResponseService {
 	/**
 	 * Run the validation pipeline, create a Response aggregate, and persist it.
 	 *
-	 * @param ResponseDTO $dto Validated response payload.
+	 * @param ResponseDTO $dto    Validated response payload.
+	 * @param string      $ipHash HMAC-SHA256 hash of the visitor's IP (computed by the controller).
 	 * @return Response
 	 * @throws NotFoundException   When the referenced survey does not exist.
 	 * @since 1.0.0
 	 */
-	public function execute( ResponseDTO $dto ): Response {
+	public function execute( ResponseDTO $dto, string $ipHash ): Response {
 		$survey = $this->surveyRepository->findById( $dto->surveyId );
 
 		if ( $survey === null ) {
@@ -57,8 +58,6 @@ class SubmitResponseService {
 		];
 
 		$this->runPipeline( $pipeline, $context );
-
-		$ipHash = hash( 'sha256', $_SERVER['REMOTE_ADDR'] ?? '' );
 
 		$response = new Response(
 			surveyId: $dto->surveyId,

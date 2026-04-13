@@ -9,7 +9,7 @@ defined( 'ABSPATH' ) || exit;
 use AllFeedback\Domain\Response\Response;
 use AllFeedback\Domain\Response\ResponseFilter;
 use AllFeedback\Domain\Response\ResponseRepository;
-use Carbon\CarbonImmutable;
+use DateTimeImmutable;
 
 // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
 
@@ -185,7 +185,7 @@ class WpdbResponseRepository implements ResponseRepository {
 			ipHash: $row['ip_hash'] ?? null,
 			userId: isset( $row['user_id'] ) && $row['user_id'] !== null ? (int) $row['user_id'] : null,
 			consentGiven: (bool) ( $row['consent_given'] ?? false ),
-			createdAt: CarbonImmutable::parse( $row['created_at'] ),
+			createdAt: new DateTimeImmutable( (string) $row['created_at'] ),
 		);
 	}
 

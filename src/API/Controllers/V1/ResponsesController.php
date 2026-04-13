@@ -222,6 +222,8 @@ class ResponsesController extends RestController {
 			return $this->errorResponse( __( 'Failed to delete the response.', 'all-feedback' ), 500 );
 		}
 
+		$this->surveyManager->decrementResponseCount( $surveyId );
+
 		$this->logger->info(
 			'Response deleted.',
 			[ 'response_id' => $responseId, 'survey_id' => $surveyId, 'user_id' => get_current_user_id() ]

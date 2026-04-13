@@ -321,6 +321,26 @@ class Manager {
 		return $result !== false;
 	}
 
+	/**
+	 * Atomically decrement the cached response count, clamped to zero.
+	 *
+	 * @param int $id Survey primary key.
+	 * @return bool
+	 * @since 1.0.0
+	 */
+	public function decrementResponseCount( int $id ): bool {
+		global $wpdb;
+
+		$table = $this->table();
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$result = $wpdb->query(
+			$wpdb->prepare( "UPDATE {$table} SET response_count = GREATEST(0, response_count - 1), updated_at = %s WHERE id = %d", current_time( 'mysql' ), $id ) // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		);
+
+		return $result !== false;
+	}
+
 	// ------------------------------------------------------------------
 	// Internal helpers
 	// ------------------------------------------------------------------

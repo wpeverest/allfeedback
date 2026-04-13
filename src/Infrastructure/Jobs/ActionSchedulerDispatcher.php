@@ -16,6 +16,11 @@ use AllFeedback\Core\Jobs\Contracts\JobPayload;
  * and serialised payload, then delegates scheduling to WooCommerce's
  * Action Scheduler library via its `as_*` helper functions.
  *
+ * This class assumes Action Scheduler is available. The DI container
+ * (config/services.php) is responsible for selecting this implementation
+ * only when Action Scheduler is loaded. Use SynchronousJobDispatcher
+ * as the fallback when it is not.
+ *
  * @since 1.0.0
  */
 class ActionSchedulerDispatcher implements JobDispatcher {

@@ -7,7 +7,7 @@ namespace AllFeedback\Domain\Response;
 defined( 'ABSPATH' ) || exit;
 
 use AllFeedback\Domain\Shared\Entity;
-use Carbon\CarbonImmutable;
+use DateTimeImmutable;
 
 /**
  * Response aggregate root.
@@ -21,7 +21,7 @@ use Carbon\CarbonImmutable;
 class Response extends Entity {
 
 	/** @since 1.0.0 */
-	private CarbonImmutable $createdAt;
+	private DateTimeImmutable $createdAt;
 
 	/**
 	 * @since 1.0.0
@@ -36,7 +36,7 @@ class Response extends Entity {
 		private ?int $userId = null,
 		private bool $consentGiven = false,
 	) {
-		$this->createdAt = CarbonImmutable::now();
+		$this->createdAt = new DateTimeImmutable();
 	}
 
 	/**
@@ -54,7 +54,7 @@ class Response extends Entity {
 		?string $ipHash,
 		?int $userId,
 		bool $consentGiven,
-		CarbonImmutable $createdAt,
+		DateTimeImmutable $createdAt,
 	): self {
 		$response            = new self( $surveyId, $responseData, $score, $pageUrl, $deviceType, $ipHash, $userId, $consentGiven );
 		$response->id        = $id;
@@ -139,7 +139,7 @@ class Response extends Entity {
 	 *
 	 * @since 1.0.0
 	 */
-	public function getCreatedAt(): CarbonImmutable {
+	public function getCreatedAt(): DateTimeImmutable {
 		return $this->createdAt;
 	}
 

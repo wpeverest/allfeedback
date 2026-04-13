@@ -10,7 +10,7 @@ use AllFeedback\Domain\Survey\Survey;
 use AllFeedback\Domain\Survey\SurveyFilter;
 use AllFeedback\Domain\Survey\SurveyRepository;
 use AllFeedback\Domain\Survey\SurveyStatus;
-use Carbon\CarbonImmutable;
+use DateTimeImmutable;
 
 // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
 
@@ -224,8 +224,8 @@ class WpdbSurveyRepository implements SurveyRepository {
 			status: SurveyStatus::from( $row['status'] ),
 			responseCount: (int) ( $row['response_count'] ?? 0 ),
 			createdBy: (int) ( $row['created_by'] ?? 0 ),
-			createdAt: CarbonImmutable::parse( $row['created_at'] ),
-			updatedAt: ! empty( $row['updated_at'] ) ? CarbonImmutable::parse( $row['updated_at'] ) : null,
+			createdAt: new DateTimeImmutable( (string) $row['created_at'] ),
+			updatedAt: ! empty( $row['updated_at'] ) ? new DateTimeImmutable( (string) $row['updated_at'] ) : null,
 		);
 	}
 
