@@ -3,13 +3,6 @@ import type { Settings } from '@/admin/api/settings';
 import { settingsQuery } from '@/admin/queries/settings';
 import { useSettingsDirty } from '@/admin/pages/settings/Settings';
 import { Button } from '@/components/ui/button';
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useForm, useStore } from '@tanstack/react-form';
@@ -20,17 +13,28 @@ import { useEffect } from 'react';
 import { toast } from 'sonner';
 
 const labelCls = 'text-[13.5px] font-normal text-foreground/80';
-const textareaCls = [
-	'flex w-full resize-none rounded-lg border border-border/70 bg-transparent px-3 py-2',
-	'text-[13px] text-foreground placeholder:text-muted-foreground/40',
-	'transition-colors focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/10',
-	'disabled:cursor-not-allowed disabled:opacity-50',
-].join(' ');
 
-const Row = ({ label, children, top }: { label: string; children: React.ReactNode; top?: boolean }) => (
-	<div className={cn('flex gap-4', top ? 'items-start' : 'items-center')}>
-		<label className={cn(labelCls, 'w-[40%] shrink-0', top && 'pt-2')}>{label}</label>
-		<div className="min-w-0 flex-1">{children}</div>
+const Row = ({
+	label,
+	description,
+	children,
+}: {
+	label: string;
+	description?: string;
+	children: React.ReactNode;
+}) => (
+	<div className="flex items-start gap-4 py-0.5">
+		<div className="w-[40%] shrink-0">
+			<label className={labelCls}>{label}</label>
+			{description && (
+				<p className="mt-1 text-[12px] leading-relaxed text-muted-foreground/55">
+					{description}
+				</p>
+			)}
+		</div>
+		<div className={cn('min-w-0 flex-1', !description && 'flex items-center')} style={description ? { paddingTop: '2px' } : undefined}>
+			{children}
+		</div>
 	</div>
 );
 
@@ -54,66 +58,66 @@ const Toggle = ({ checked, onChange }: { checked: boolean; onChange: () => void 
 );
 
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
-	<div className="flex items-center gap-3">
-		<span className="text-[11.5px] font-semibold uppercase tracking-widest text-muted-foreground/50">
-			{children}
-		</span>
-		<div className="flex-1 border-t border-border/50" />
-	</div>
+	<p className="mb-4 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/50">
+		{children}
+	</p>
 );
 
 const AdvancedSettingsSkeleton = () => (
 	<div>
-		<div className="flex items-center gap-3 border-b border-border/50 px-5 py-4">
+		<div className="flex items-center gap-3 border-b border-border/50 px-6 py-4">
 			<Skeleton className="size-9 rounded-xl" />
 			<Skeleton className="h-5 w-24" />
 		</div>
 
-		<div className="space-y-5 p-5">
-			<div className="flex items-center gap-3">
-				<Skeleton className="h-2.5 w-8" />
-				<Skeleton className="h-px flex-1" />
+		<div className="p-5">
+			<div className="space-y-4">
+				<Skeleton className="h-2.5 w-20" />
+				<div className="flex items-start gap-4">
+					<div className="w-[40%] shrink-0 space-y-1.5">
+						<Skeleton className="h-4 w-full" />
+						<Skeleton className="h-3 w-4/5" />
+					</div>
+					<Skeleton className="mt-0.5 h-5 w-9 rounded-full" />
+				</div>
 			</div>
 
-			<div className="flex items-center gap-4">
-				<Skeleton className="h-4 w-[40%] shrink-0" />
-				<Skeleton className="h-9 flex-1 rounded-lg" />
+			<div className="my-6 border-t border-border/50" />
+
+			<div className="space-y-4">
+				<Skeleton className="h-2.5 w-14" />
+				<div className="flex items-center gap-4">
+					<Skeleton className="h-4 w-[40%] shrink-0" />
+					<Skeleton className="h-5 w-9 rounded-full" />
+				</div>
 			</div>
 
-			<div className="flex items-center gap-4">
-				<Skeleton className="h-4 w-[40%] shrink-0" />
-				<Skeleton className="h-5 w-9 rounded-full" />
-			</div>
+			<div className="my-6 border-t border-border/50" />
 
-			<div className="flex items-center gap-3">
+			<div className="space-y-4">
 				<Skeleton className="h-2.5 w-28" />
-				<Skeleton className="h-px flex-1" />
-			</div>
-
-			<div className="flex items-center gap-4">
-				<Skeleton className="h-4 w-[40%] shrink-0" />
-				<Skeleton className="h-5 w-9 rounded-full" />
-			</div>
-
-			<div className="flex items-center gap-4">
-				<Skeleton className="h-4 w-[40%] shrink-0" />
-				<Skeleton className="h-5 w-9 rounded-full" />
+				<div className="flex items-center gap-4">
+					<Skeleton className="h-4 w-[40%] shrink-0" />
+					<Skeleton className="h-5 w-9 rounded-full" />
+				</div>
+				<div className="flex items-center gap-4">
+					<Skeleton className="h-4 w-[40%] shrink-0" />
+					<Skeleton className="h-5 w-9 rounded-full" />
+				</div>
 			</div>
 		</div>
 
-		<div className="flex items-center justify-end border-t border-border/50 px-5 py-3.5">
+		<div className="flex items-center justify-end border-t border-border/50 px-6 py-4">
 			<Skeleton className="h-9 w-28 rounded-md" />
 		</div>
 	</div>
 );
 
 const DEFAULT_VALUES = {
-	data_retention:      'forever' as Settings['data_retention'],
-	delete_on_uninstall: false,
-	collect_ip:          true,
-	ip_anonymization:    false,
-	consent_required:    false,
-	consent_text:        __('I agree to allow this website to collect my feedback data.', 'all-feedback'),
+	disable_user_details: false,
+	logging_enabled:      false,
+	delete_on_uninstall:  false,
+	allow_usage_tracking: true,
 };
 
 const AdvancedSettings = () => {
@@ -125,6 +129,7 @@ const AdvancedSettings = () => {
 		mutationFn: (payload: Partial<Settings>) => settingsApi.update(payload),
 		onSuccess: (updated) => {
 			queryClient.setQueryData(settingsQuery().queryKey, updated);
+			setDirty('advanced', false);
 			toast.success(__('Settings saved successfully.', 'all-feedback'));
 		},
 		onError: () => {
@@ -142,12 +147,10 @@ const AdvancedSettings = () => {
 	useEffect(() => {
 		if (!data) return;
 		form.reset({
-			data_retention:      data.data_retention      ?? DEFAULT_VALUES.data_retention,
-			delete_on_uninstall: data.delete_on_uninstall ?? DEFAULT_VALUES.delete_on_uninstall,
-			collect_ip:          data.collect_ip          ?? DEFAULT_VALUES.collect_ip,
-			ip_anonymization:    data.ip_anonymization    ?? DEFAULT_VALUES.ip_anonymization,
-			consent_required:    data.consent_required    ?? DEFAULT_VALUES.consent_required,
-			consent_text:        data.consent_text        ?? DEFAULT_VALUES.consent_text,
+			disable_user_details: data.disable_user_details ?? DEFAULT_VALUES.disable_user_details,
+			logging_enabled:      data.logging_enabled      ?? DEFAULT_VALUES.logging_enabled,
+			delete_on_uninstall:  data.delete_on_uninstall  ?? DEFAULT_VALUES.delete_on_uninstall,
+			allow_usage_tracking: data.allow_usage_tracking ?? DEFAULT_VALUES.allow_usage_tracking,
 		}, { keepDefaultValues: true });
 	}, [data]);
 
@@ -155,8 +158,7 @@ const AdvancedSettings = () => {
 	const isDirty = useStore(form.store, (s) => s.isDirty);
 
 	useEffect(() => {
-		setDirty('advanced', isDirty);
-		return () => setDirty('advanced', false);
+		if (isDirty) setDirty('advanced', true);
 	}, [isDirty, setDirty]);
 
 	useEffect(() => {
@@ -174,7 +176,7 @@ const AdvancedSettings = () => {
 
 	return (
 		<form onSubmit={(e) => { e.preventDefault(); void form.handleSubmit(); }}>
-			<div className="flex items-center gap-3 border-b border-border/50 px-5 py-4">
+			<div className="flex items-center gap-3 border-b border-border/50 px-6 py-4">
 				<div className="flex size-9 items-center justify-center rounded-xl bg-primary/10">
 					<SlidersHorizontal className="size-[18px] text-primary" />
 				</div>
@@ -191,75 +193,54 @@ const AdvancedSettings = () => {
 				)}
 			</div>
 
-			<div className="space-y-5 p-5">
+			<div className="p-6">
 
-				<SectionLabel>{__('Data', 'all-feedback')}</SectionLabel>
-
-				<Row label={__('Data retention', 'all-feedback')}>
-					<Select
-						value={values.data_retention}
-						onValueChange={(v) => form.setFieldValue('data_retention', v as Settings['data_retention'])}
+				<div className="space-y-4">
+					<SectionLabel>{__('User Privacy', 'all-feedback')}</SectionLabel>
+					<Row
+						label={__('Disable User Details', 'all-feedback')}
+						description={__('Disable storing the IP address and User Agent on all forms.', 'all-feedback')}
 					>
-						<SelectTrigger className="w-full">
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="forever">{__('Forever',  'all-feedback')}</SelectItem>
-							<SelectItem value="30d">{__('30 days',  'all-feedback')}</SelectItem>
-							<SelectItem value="90d">{__('90 days',  'all-feedback')}</SelectItem>
-							<SelectItem value="180d">{__('180 days', 'all-feedback')}</SelectItem>
-							<SelectItem value="1y">{__('1 year',   'all-feedback')}</SelectItem>
-						</SelectContent>
-					</Select>
-				</Row>
-
-				<Row label={__('Delete data on uninstall', 'all-feedback')}>
-					<Toggle
-						checked={values.delete_on_uninstall}
-						onChange={() => form.setFieldValue('delete_on_uninstall', !values.delete_on_uninstall)}
-					/>
-				</Row>
-
-				<SectionLabel>{__('GDPR & Privacy', 'all-feedback')}</SectionLabel>
-
-				<Row label={__('Collect IP address', 'all-feedback')}>
-					<Toggle
-						checked={values.collect_ip}
-						onChange={() => form.setFieldValue('collect_ip', !values.collect_ip)}
-					/>
-				</Row>
-
-				{values.collect_ip && (
-					<Row label={__('Anonymize IP address', 'all-feedback')}>
 						<Toggle
-							checked={values.ip_anonymization}
-							onChange={() => form.setFieldValue('ip_anonymization', !values.ip_anonymization)}
+							checked={values.disable_user_details}
+							onChange={() => form.setFieldValue('disable_user_details', !values.disable_user_details)}
 						/>
 					</Row>
-				)}
+				</div>
 
-				<Row label={__('Require consent', 'all-feedback')}>
-					<Toggle
-						checked={values.consent_required}
-						onChange={() => form.setFieldValue('consent_required', !values.consent_required)}
-					/>
-				</Row>
+				<div className="my-6 border-t border-border/50" />
 
-				{values.consent_required && (
-					<Row label={__('Consent message', 'all-feedback')} top>
-						<textarea
-							rows={3}
-							value={values.consent_text}
-							onChange={(e) => form.setFieldValue('consent_text', e.target.value)}
-							placeholder={__('I agree to allow this website to collect my feedback data.', 'all-feedback')}
-							className={textareaCls}
+				<div className="space-y-4">
+					<SectionLabel>{__('Logging', 'all-feedback')}</SectionLabel>
+					<Row label={__('Enable logging', 'all-feedback')}>
+						<Toggle
+							checked={values.logging_enabled}
+							onChange={() => form.setFieldValue('logging_enabled', !values.logging_enabled)}
 						/>
 					</Row>
-				)}
+				</div>
+
+				<div className="my-6 border-t border-border/50" />
+
+				<div className="space-y-4">
+					<SectionLabel>{__('Plugin Management', 'all-feedback')}</SectionLabel>
+					<Row label={__('Delete data on uninstall', 'all-feedback')}>
+						<Toggle
+							checked={values.delete_on_uninstall}
+							onChange={() => form.setFieldValue('delete_on_uninstall', !values.delete_on_uninstall)}
+						/>
+					</Row>
+					<Row label={__('Allow usage tracking', 'all-feedback')}>
+						<Toggle
+							checked={values.allow_usage_tracking}
+							onChange={() => form.setFieldValue('allow_usage_tracking', !values.allow_usage_tracking)}
+						/>
+					</Row>
+				</div>
 
 			</div>
 
-			<div className="flex items-center justify-end border-t border-border/50 px-5 py-3.5">
+			<div className="flex items-center justify-end border-t border-border/50 px-6 py-4">
 				<Button type="submit" disabled={isSaving}>
 					{isSaving && <Loader2 className="animate-spin" />}
 					{isSaving ? __('Saving…', 'all-feedback') : __('Save Changes', 'all-feedback')}

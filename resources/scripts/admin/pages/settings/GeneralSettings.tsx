@@ -93,9 +93,8 @@ const ColorPicker = ({ value, onChange }: { value: string; onChange: (v: string)
 type Position = Settings['widget_position'];
 
 const BOTTOM_POSITIONS: { value: Position; label: string }[] = [
-	{ value: 'bottom-left',   label: __('Bottom left',   'all-feedback') },
-	{ value: 'bottom-center', label: __('Bottom center', 'all-feedback') },
-	{ value: 'bottom-right',  label: __('Bottom right',  'all-feedback') },
+	{ value: 'bottom-left',  label: __('Bottom left',  'all-feedback') },
+	{ value: 'bottom-right', label: __('Bottom right', 'all-feedback') },
 ];
 const ALL_POSITIONS: { value: Position; label: string }[] = [
 	...BOTTOM_POSITIONS,
@@ -129,9 +128,8 @@ const PositionPicker = ({ value, onChange, color }: { value: Position; onChange:
 					return (
 						<div key={pos.value} className={cn(
 							'flex flex-1',
-							pos.value === 'bottom-left'   && 'justify-start',
-							pos.value === 'bottom-center' && 'justify-center',
-							pos.value === 'bottom-right'  && 'justify-end',
+							pos.value === 'bottom-left'  && 'justify-start',
+							pos.value === 'bottom-right' && 'justify-end',
 						)}>
 							<button
 								type="button"
@@ -173,17 +171,17 @@ const PositionPicker = ({ value, onChange, color }: { value: Position; onChange:
 			</button>
 		</div>
 
-		<div className="flex flex-wrap gap-2" style={{ maxWidth: 460 }}>
+		<div className="inline-flex items-center rounded-lg border border-border/60 p-0.5">
 			{ALL_POSITIONS.map((pos) => (
 				<button
 					key={pos.value}
 					type="button"
 					onClick={() => onChange(pos.value)}
 					className={cn(
-						'rounded-lg border px-3 py-1.5 text-[13px] transition-colors',
+						'rounded-md px-4 py-2 text-[13px] font-medium transition-colors',
 						value === pos.value
-							? 'border-primary/30 bg-primary/10 font-medium text-primary'
-							: 'border-border/60 bg-muted/30 text-foreground/70 hover:border-border hover:bg-muted/60',
+							? 'bg-primary/10 text-primary'
+							: 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
 					)}
 				>
 					{pos.label}
@@ -195,7 +193,7 @@ const PositionPicker = ({ value, onChange, color }: { value: Position; onChange:
 
 const GeneralSettingsSkeleton = () => (
 	<div>
-		<div className="flex items-center gap-3 border-b border-border/50 px-5 py-4">
+		<div className="flex items-center gap-3 border-b border-border/50 px-6 py-4">
 			<Skeleton className="size-9 rounded-xl" />
 			<Skeleton className="h-5 w-24" />
 		</div>
@@ -234,7 +232,7 @@ const GeneralSettingsSkeleton = () => (
 			</div>
 		</div>
 
-		<div className="flex items-center justify-end border-t border-border/50 px-5 py-3.5">
+		<div className="flex items-center justify-end border-t border-border/50 px-6 py-4">
 			<Skeleton className="h-9 w-28 rounded-md" />
 		</div>
 	</div>
@@ -254,6 +252,7 @@ const GeneralSettings = () => {
 		mutationFn: (payload: Partial<Settings>) => settingsApi.update(payload),
 		onSuccess: (updated) => {
 			queryClient.setQueryData(settingsQuery().queryKey, updated);
+			setDirty('general', false);
 			toast.success(__('Settings saved successfully.', 'all-feedback'));
 		},
 		onError: () => {
@@ -280,8 +279,7 @@ const GeneralSettings = () => {
 	const isDirty = useStore(form.store, (s) => s.isDirty);
 
 	useEffect(() => {
-		setDirty('general', isDirty);
-		return () => setDirty('general', false);
+		if (isDirty) setDirty('general', true);
 	}, [isDirty, setDirty]);
 
 	useEffect(() => {
@@ -299,7 +297,7 @@ const GeneralSettings = () => {
 
 	return (
 		<form onSubmit={(e) => { e.preventDefault(); void form.handleSubmit(); }}>
-			<div className="flex items-center gap-3 border-b border-border/50 px-5 py-4">
+			<div className="flex items-center gap-3 border-b border-border/50 px-6 py-4">
 				<div className="flex size-9 items-center justify-center rounded-xl bg-primary/10">
 					<Settings2 className="size-[18px] text-primary" />
 				</div>
@@ -316,9 +314,7 @@ const GeneralSettings = () => {
 				)}
 			</div>
 
-			<div className="space-y-5 p-5">
-
-				<SectionLabel>{__('Widget', 'all-feedback')}</SectionLabel>
+			<div className="space-y-4 p-6">
 
 				<Row label={__('Widget color', 'all-feedback')} top>
 					<ColorPicker
@@ -338,7 +334,7 @@ const GeneralSettings = () => {
 
 			</div>
 
-			<div className="flex items-center justify-end border-t border-border/50 px-5 py-3.5">
+			<div className="flex items-center justify-end border-t border-border/50 px-6 py-4">
 				<Button type="submit" disabled={isSaving}>
 					{isSaving && <Loader2 className="animate-spin" />}
 					{isSaving ? __('Saving…', 'all-feedback') : __('Save Changes', 'all-feedback')}

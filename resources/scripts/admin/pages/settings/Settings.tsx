@@ -1,7 +1,7 @@
 import type { FileRoutesByFullPath } from '@/admin/routeTree.gen';
 import { Link, Outlet, useBlocker } from '@tanstack/react-router';
 import { __ } from '@wordpress/i18n';
-import { ScrollText, Settings2, SlidersHorizontal } from 'lucide-react';
+import { Settings2, SlidersHorizontal } from 'lucide-react';
 import { createContext, useCallback, useContext, useState } from 'react';
 
 type SettingsPath = Exclude<
@@ -25,11 +25,6 @@ const NAV_ITEMS: NavItem[] = [
 		label: __('Advanced', 'all-feedback'),
 		icon:  SlidersHorizontal,
 		to:    '/settings/advanced',
-	},
-	{
-		label: __('Logging', 'all-feedback'),
-		icon:  ScrollText,
-		to:    '/settings/logging',
 	},
 ];
 
@@ -78,7 +73,7 @@ const Settings = () => {
 								<Link
 									key={to}
 									to={to}
-									className="group flex shrink-0 cursor-pointer items-center gap-3 rounded-xl px-4 py-3 text-[14px] font-normal text-foreground/70 transition-colors hover:bg-muted/60 hover:text-foreground data-[status=active]:bg-primary/10 data-[status=active]:text-primary lg:w-full"
+									className="group flex shrink-0 cursor-pointer items-center gap-3 rounded-xl px-4 py-3 text-[14px] font-[500] text-foreground/70 transition-colors hover:bg-muted/60 hover:text-foreground data-[status=active]:bg-primary/10 data-[status=active]:text-primary lg:w-full"
 								>
 									<Icon className="size-[18px] shrink-0 text-muted-foreground/50 transition-colors group-data-[status=active]:text-primary" />
 									{label}
@@ -92,6 +87,7 @@ const Settings = () => {
 					</div>
 				</div>
 			</div>
+
 		</SettingsDirtyContext.Provider>
 	);
 };

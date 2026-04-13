@@ -42,7 +42,7 @@ const Toggle = ({ checked, onChange }: { checked: boolean; onChange: () => void 
 
 const LoggingSettingsSkeleton = () => (
 	<div>
-		<div className="flex items-center gap-3 border-b border-border/50 px-5 py-4">
+		<div className="flex items-center gap-3 border-b border-border/50 px-6 py-4">
 			<Skeleton className="size-9 rounded-xl" />
 			<Skeleton className="h-5 w-20" />
 		</div>
@@ -54,7 +54,7 @@ const LoggingSettingsSkeleton = () => (
 			</div>
 		</div>
 
-		<div className="flex items-center justify-end border-t border-border/50 px-5 py-3.5">
+		<div className="flex items-center justify-end border-t border-border/50 px-6 py-4">
 			<Skeleton className="h-9 w-28 rounded-md" />
 		</div>
 	</div>
@@ -71,6 +71,7 @@ const LoggingSettings = () => {
 		mutationFn: (payload: Partial<Settings>) => settingsApi.update(payload),
 		onSuccess: (updated) => {
 			queryClient.setQueryData(settingsQuery().queryKey, updated);
+			setDirty('logging', false);
 			toast.success(__('Settings saved successfully.', 'all-feedback'));
 		},
 		onError: () => {
@@ -92,8 +93,7 @@ const LoggingSettings = () => {
 	const isDirty = useStore(form.store, (s) => s.isDirty);
 
 	useEffect(() => {
-		setDirty('logging', isDirty);
-		return () => setDirty('logging', false);
+		if (isDirty) setDirty('logging', true);
 	}, [isDirty, setDirty]);
 
 	useEffect(() => {
@@ -111,7 +111,7 @@ const LoggingSettings = () => {
 
 	return (
 		<form onSubmit={(e) => { e.preventDefault(); void form.handleSubmit(); }}>
-			<div className="flex items-center gap-3 border-b border-border/50 px-5 py-4">
+			<div className="flex items-center gap-3 border-b border-border/50 px-6 py-4">
 				<div className="flex size-9 items-center justify-center rounded-xl bg-primary/10">
 					<ScrollText className="size-[18px] text-primary" />
 				</div>
@@ -128,7 +128,7 @@ const LoggingSettings = () => {
 				)}
 			</div>
 
-			<div className="space-y-4 p-5">
+			<div className="space-y-4 p-6">
 				<Row label={__('Enable logging', 'all-feedback')}>
 					<Toggle
 						checked={values.logging_enabled}
@@ -137,7 +137,7 @@ const LoggingSettings = () => {
 				</Row>
 			</div>
 
-			<div className="flex items-center justify-end border-t border-border/50 px-5 py-3.5">
+			<div className="flex items-center justify-end border-t border-border/50 px-6 py-4">
 				<Button type="submit" disabled={isSaving}>
 					{isSaving && <Loader2 className="animate-spin" />}
 					{isSaving ? __('Saving…', 'all-feedback') : __('Save Changes', 'all-feedback')}
