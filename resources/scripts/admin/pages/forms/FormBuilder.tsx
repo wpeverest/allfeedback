@@ -157,7 +157,7 @@ const FormBuilder = () => {
 
 	const [surveyStatus, setSurveyStatus] = useState<SurveyStatus>('draft');
 
-	const submitActionRef = useRef<'publish' | 'draft'>('draft');
+	const submitActionRef = useRef<'publish' | 'draft' | 'trashed'>('draft');
 
  	const form = useForm({
 		defaultValues: {
@@ -167,13 +167,13 @@ const FormBuilder = () => {
 		},
 		onSubmit: async ({ value }) => {
 			if (!formId) return;
-			const isPublishing = submitActionRef.current === 'publish';
+			const action = submitActionRef.current;
 			const data: Parameters<typeof surveysApi.update>[1] = {
 				title:       value.title,
 				form_schema: serializeFormSchema(value.sections),
 				settings:    serializeSettings(value.settings),
 			};
-			data.status = isPublishing ? 'published' : 'draft';
+			data.status = action === 'publish' ? 'published' : action === 'trashed' ? 'trashed' : 'draft';
 			const updated = await surveysApi.update(formId, data);
 			setSurveyStatus(updated.status);
 			setIsDirty(false);
@@ -181,9 +181,11 @@ const FormBuilder = () => {
 			queryClient.setQueryData(surveyQuery(formId).queryKey, updated);
 			void queryClient.invalidateQueries({ queryKey: ['surveys'] });
 			toast.success(
-				isPublishing
+				action === 'publish'
 					? __('Form published successfully.', 'all-feedback')
-					: __('Draft saved successfully.', 'all-feedback'),
+					: action === 'trashed'
+						? __('Trashed form saved successfully.', 'all-feedback')
+						: __('Draft saved successfully.', 'all-feedback'),
 			);
 		},
 	});
@@ -414,7 +416,7 @@ const FormBuilder = () => {
 		const handleKeyDown = (e: KeyboardEvent) => {
 			const mod = e.ctrlKey || e.metaKey;
 			if (!mod) return;
-			if (e.key === 's') { e.preventDefault(); submitActionRef.current = surveyStatus === 'published' ? 'publish' : 'draft'; form.handleSubmit().catch(() => {}); return; }
+			if (e.key === 's') { e.preventDefault(); submitActionRef.current = surveyStatus === 'published' ? 'publish' : surveyStatus === 'trashed' ? 'trashed' : 'draft'; form.handleSubmit().catch(() => {}); return; }
 			if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); return; }
 			if (e.key === 'y' || (e.key === 'z' && e.shiftKey)) { e.preventDefault(); redo(); }
 		};
@@ -724,6 +726,7 @@ const FormBuilder = () => {
 						device={previewDevice}
 						onDeviceChange={setPreviewDevice}
 						surveyId={formId ?? undefined}
+						surveyStatus={surveyStatus}
 					/>
 				</div>
 			</div>

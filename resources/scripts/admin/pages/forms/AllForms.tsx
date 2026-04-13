@@ -178,9 +178,8 @@ const AllForms = () => {
 	const toggleOne   = (id: number) =>
 		setChecked((prev) => prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]);
 
-	const checkedSurveys      = surveys.filter((s) => checked.includes(s.id));
-	const allSelectedTrashed  = checkedSurveys.length > 0 && checkedSurveys.every((s) => s.status === 'trashed');
-	const anySelectedTrashed  = checkedSurveys.some((s) => s.status === 'trashed');
+	const checkedSurveys        = surveys.filter((s) => checked.includes(s.id));
+	const allSelectedTrashed    = checkedSurveys.length > 0 && checkedSurveys.every((s) => s.status === 'trashed');
 	const anySelectedNotTrashed = checkedSurveys.some((s) => s.status !== 'trashed');
 
 	const createMutation = useMutation({
@@ -601,7 +600,7 @@ const AllForms = () => {
 				count={checked.length}
 				showTrash={anySelectedNotTrashed}
 				showDelete={allSelectedTrashed}
-				showRestore={anySelectedTrashed}
+				showRestore={allSelectedTrashed}
 				isDeleting={bulkDeleteMutation.isPending}
 				isTrashing={bulkTrashMutation.isPending}
 				isRestoring={bulkRestoreMutation.isPending}

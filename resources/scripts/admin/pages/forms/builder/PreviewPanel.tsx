@@ -1,5 +1,5 @@
 ﻿import { surveysApi } from '@/admin/api/surveys';
-import type { SubmitFormData } from '@/admin/api/surveys';
+import type { SubmitFormData, SurveyStatus } from '@/admin/api/surveys';
 import { cn } from '@/lib/utils';
 import { useMutation } from '@tanstack/react-query';
 import { __ } from '@wordpress/i18n';
@@ -14,6 +14,7 @@ interface PreviewPanelProps {
 	device:         PreviewDevice;
 	onDeviceChange: (device: PreviewDevice) => void;
 	surveyId?:      number;
+	surveyStatus?:  SurveyStatus;
 }
 
 const DEVICES: { value: PreviewDevice; Icon: typeof Monitor; label: string }[] = [
@@ -29,7 +30,7 @@ const DEVICE_MAX_W: Record<PreviewDevice, string> = {
 };
 
 const DEVICE_PAGE_W: Record<PreviewDevice, string | null> = {
-	desktop: null,        
+	desktop: null,
 	tablet:  '768px',
 	mobile:  '390px',
 };
@@ -318,7 +319,7 @@ interface WidgetBodyProps {
 	fieldErrors:   Record<string, string>;
 	isMinimized:   boolean;
 	isClosed:      boolean;
-	showControls:  boolean; 
+	showControls:  boolean;
 	settings:      FormSettings;
 	onMinimize:    () => void;
 	onClose:       () => void;
@@ -491,7 +492,7 @@ const getSiteHostname = (): string => {
 	}
 };
 
-const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId }: PreviewPanelProps) => {
+const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, surveyStatus }: PreviewPanelProps) => {
 	const steps        = activeSections(sections);
 	const totalSteps   = steps.length;
 	const hasSteps     = totalSteps > 0;
@@ -515,15 +516,10 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId }: 
 		mutationFn: (data: SubmitFormData) => surveysApi.submit(surveyId!, data),
 		onSuccess: () => {
 			setIsSubmitted(true);
+			toast.success(__('Response submitted successfully.', 'all-feedback'));
 		},
-		onError: (error: unknown) => {
-			const status = (error as { data?: { status?: number } })?.data?.status;
-			if (status === 403) {
-				toast.warning(__('Form is not published — response not saved.', 'all-feedback'));
-				setIsSubmitted(true);
-			} else {
-				toast.error(__('Failed to submit. Please try again.', 'all-feedback'));
-			}
+		onError: () => {
+			toast.error(__('Failed to submit. Please try again.', 'all-feedback'));
 		},
 	});
 
@@ -564,7 +560,7 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId }: 
 		if (Object.keys(errors).length) { setFieldErrors(errors); return; }
 		setFieldErrors({});
 
-		if (surveyId) {
+		if (surveyId && surveyStatus === 'published') {
 			const scoreField = allFields(sections).find((f) => ['nps', 'star_rating', 'scale'].includes(f.type));
 			const scoreRaw   = scoreField ? fieldValues[scoreField.id] : '';
 			const score      = typeof scoreRaw === 'string' && scoreRaw !== '' ? Number(scoreRaw) : undefined;
@@ -577,6 +573,7 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId }: 
 			});
 		} else {
 			setIsSubmitted(true);
+			toast.success(__('Form preview submitted successfully.', 'all-feedback'));
 		}
 	};
 
@@ -606,7 +603,7 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId }: 
 	const needsReset = isSubmitted || (viewMode === 'page' && (isClosed || isMinimized));
 
 	const adminTotalPages = totalSteps + 1;
-	const adminCurrentPage = isSubmitted ? totalSteps : stepIndex; 
+	const adminCurrentPage = isSubmitted ? totalSteps : stepIndex;
 
 	const adminPrev = () => {
 		if (isSubmitted) {
