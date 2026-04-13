@@ -16,12 +16,20 @@ use AllFeedback\Support\Logger;
  * REST controller for plugin-wide settings.
  *
  * Routes registered (all under all-feedback/v1):
- *   GET   /settings  → index()  : return all current settings with schema
- *   PATCH /settings  → update() : persist one or more settings values
+ *   GET   /settings → index()  : return the current flat settings object
+ *   PATCH /settings → update() : persist one or more settings values
  *
- * Settings live in a single wp_options row managed by SettingsManager.
- * Per-survey settings (trigger, position, GDPR, etc.) are stored in the
- * `settings` JSON blob on each survey row — see SurveysController.
+ * Response shape (both endpoints):
+ *   { "success": true, "data": { "widget_color": "…", "widget_position": "…", … } }
+ *
+ * The `data` object is a flat key → value map (no nesting). The TypeScript
+ * `Settings` type maps to this shape exactly.
+ *
+ * Settings are managed by SettingsManager which stores everything in a single
+ * `wp_options` row (`_allfb_settings`) for efficiency.
+ *
+ * Per-survey settings (trigger, targeting, GDPR, etc.) live in the JSON
+ * `settings` column on each survey row — see SurveysController for those.
  *
  * @package AllFeedback\API\Controllers\V1
  * @since   1.0.0
@@ -29,6 +37,8 @@ use AllFeedback\Support\Logger;
 class SettingsController extends RestController {
 
 	/**
+	 * REST resource slug for this controller.
+	 *
 	 * @since 1.0.0
 	 */
 	protected string $restBase = 'settings';
@@ -59,7 +69,7 @@ class SettingsController extends RestController {
 					'permission_callback' => [ $this, 'adminPermission' ],
 				],
 				[
-					'methods'             => \WP_REST_Server::EDITABLE,
+					'methods'             => \WP_REST_Server::EDITABLE, // PUT + PATCH
 					'callback'            => [ $this, 'update' ],
 					'permission_callback' => [ $this, 'adminPermission' ],
 					'args'                => $this->settingsArgs(),
@@ -76,28 +86,30 @@ class SettingsController extends RestController {
 	/**
 	 * GET /all-feedback/v1/settings
 	 *
-	 * Return all current settings merged with their defaults.
-	 * Also includes the schema so the React Settings page can render
-	 * the correct field type for each setting.
+	 * Return the current plugin-wide settings as a flat key → value object,
+	 * merged with defaults so every key is always present in the response.
 	 *
+	 * The TypeScript `Settings` type maps directly to this flat shape — there
+	 * is no `settings` or `schema` wrapper. Clients can use values immediately:
+	 *   `data.widget_color`, `data.logging_enabled`, etc.
+	 *
+	 * @param \WP_REST_Request $request Full request data (unused but required by WP callback contract).
 	 * @return \WP_REST_Response
 	 * @since 1.0.0
 	 */
 	public function index( \WP_REST_Request $request ): \WP_REST_Response {
-		return $this->successResponse(
-			[
-				'settings' => $this->settingsManager->all(),
-				'schema'   => $this->settingsManager->getSchema(),
-			]
-		);
+		return $this->successResponse( $this->settingsManager->all() );
 	}
 
 	/**
 	 * PUT|PATCH /all-feedback/v1/settings
 	 *
-	 * Persist one or more settings. Keys not defined in SettingsManager::DEFAULTS
-	 * are silently ignored. Partial updates are fully supported — you do not
-	 * need to send every setting on every request.
+	 * Persist one or more plugin-wide settings in a single atomic write.
+	 * Partial updates are fully supported — send only the keys that changed.
+	 * Keys not defined in SettingsManager::DEFAULTS are silently ignored.
+	 *
+	 * The response is the same flat settings object as GET /settings, always
+	 * reflecting the current persisted state after the update.
 	 *
 	 * @param \WP_REST_Request $request Full request data.
 	 * @return \WP_REST_Response|\WP_Error
@@ -114,31 +126,35 @@ class SettingsController extends RestController {
 
 		$this->logger->info(
 			'Plugin settings updated.',
-			[ 'keys' => array_keys( $body ), 'user_id' => get_current_user_id() ]
+			[
+				'keys'    => array_keys( $body ),
+				'user_id' => get_current_user_id(),
+			]
 		);
 
-		return $this->successResponse( [ 'settings' => $this->settingsManager->all() ] );
+		return $this->successResponse( $this->settingsManager->all() );
 	}
 
 	// ------------------------------------------------------------------
-	// Schema
+	// JSON Schema
 	// ------------------------------------------------------------------
 
 	/**
-	 * JSON schema describing the settings resource.
+	 * JSON Schema for the settings resource.
+	 *
+	 * Returned at the `schema` key alongside GET/PATCH routes and exposed
+	 * via `GET /wp-json/all-feedback/v1/settings/schema`. WP REST API
+	 * clients and tools like Postman can use this to understand the shape.
 	 *
 	 * @return array<string, mixed>
 	 * @since 1.0.0
 	 */
 	public function getPublicItemSchema(): array {
-		$schema       = $this->settingsManager->getSchema();
-		$properties   = [];
+		$properties = [];
 
-		foreach ( $schema as $key => $definition ) {
+		foreach ( $this->settingsManager->getSchema() as $key => $definition ) {
 			$properties[ $key ] = array_merge(
-				[
-					'context'  => [ 'view', 'edit' ],
-				],
+				[ 'context' => [ 'view', 'edit' ] ],
 				$definition
 			);
 		}
@@ -152,15 +168,21 @@ class SettingsController extends RestController {
 	}
 
 	// ------------------------------------------------------------------
-	// Argument schemas
+	// Argument schema builders
 	// ------------------------------------------------------------------
 
 	/**
-	 * Build the REST arg descriptors for PUT /settings from the live schema.
+	 * Build the WP REST arg descriptors for PUT|PATCH /settings.
 	 *
-	 * Each schema entry maps directly to the matching argString / argBoolean /
-	 * argInteger / argEnum helper so that WordPress validates the incoming
-	 * values before they reach update().
+	 * Derived entirely from SettingsManager::getSchema() so there is a single
+	 * source of truth — adding a setting to the schema automatically exposes
+	 * it here with correct WP REST validation.
+	 *
+	 * Mapping rules:
+	 *   schema `type: boolean`                  → argBoolean()
+	 *   schema `type: integer`                  → argInteger() with min/max when present
+	 *   schema with `enum` key                  → argEnum()
+	 *   schema `type: string` (no enum)         → argString()
 	 *
 	 * @return array<string, array<string, mixed>>
 	 * @since 1.0.0
@@ -170,39 +192,41 @@ class SettingsController extends RestController {
 		$args   = [];
 
 		foreach ( $schema as $key => $definition ) {
-			$type = $definition['type'] ?? 'string';
+			$type        = $definition['type']        ?? 'string';
+			$description = $definition['description'] ?? '';
+			$default     = $definition['default']     ?? null;
 
 			if ( $type === 'boolean' ) {
 				$args[ $key ] = $this->argBoolean(
-					description: $definition['description'] ?? '',
-					default:     (bool) ( $definition['default'] ?? false ),
+					description: $description,
+					default:     (bool) $default,
 				);
 				continue;
 			}
 
 			if ( $type === 'integer' ) {
 				$args[ $key ] = $this->argInteger(
-					description: $definition['description'] ?? '',
+					description: $description,
 					min:         $definition['minimum'] ?? 0,
-					max:         $definition['maximum'] ?? null,
-					default:     $definition['default'] ?? null,
+					max:         isset( $definition['maximum'] ) ? (int) $definition['maximum'] : null,
+					default:     $default,
 				);
 				continue;
 			}
 
 			if ( isset( $definition['enum'] ) ) {
 				$args[ $key ] = $this->argEnum(
-					description: $definition['description'] ?? '',
+					description: $description,
 					values:      $definition['enum'],
-					default:     $definition['default'] ?? null,
+					default:     $default,
 				);
 				continue;
 			}
 
-			// Plain string.
+			// Plain string (no enum constraint).
 			$args[ $key ] = $this->argString(
-				description: $definition['description'] ?? '',
-				default:     $definition['default'] ?? null,
+				description: $description,
+				default:     $default,
 			);
 		}
 

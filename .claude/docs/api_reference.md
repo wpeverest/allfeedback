@@ -525,7 +525,171 @@ Search published pages and posts. Powers the "Select specific pages & posts" pic
 
 ---
 
-## Settings Schema
+## Plugin Settings
+
+Plugin-wide settings are stored in a single `wp_options` row (`_allfb_settings`) managed by `SettingsManager`.
+Per-survey settings (trigger, targeting, GDPR, etc.) are separate — see [Survey Settings Schema](#survey-settings-schema) below.
+
+### GET /settings
+
+Return the current plugin-wide settings as a **flat key → value object**.
+
+**Permission:** `manage_options`
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "widget_color":         "#6366F1",
+    "widget_position":      "bottom-right",
+    "widget_trigger":       "auto",
+    "widget_delay":         0,
+    "scroll_threshold":     50,
+    "show_on_mobile":       true,
+    "disable_user_details": false,
+    "logging_enabled":      false,
+    "log_level":            "error",
+    "log_retention_days":   30,
+    "delete_on_uninstall":  false,
+    "allow_usage_tracking": true
+  }
+}
+```
+
+Every key is always present — missing stored values fall back to the defaults shown above.
+
+---
+
+### PATCH /settings
+
+Persist one or more settings in a single atomic write. **Partial updates are fully supported** — send only the keys that changed.
+
+**Permission:** `manage_options`
+
+**Body (JSON) — all keys optional:**
+
+#### Widget Appearance
+
+| Key | Type | Default | Allowed values | Description |
+|-----|------|---------|----------------|-------------|
+| `widget_color` | string | `#6366F1` | Any hex string | Primary accent colour for the survey widget |
+| `widget_position` | string | `bottom-right` | `bottom-right` · `bottom-left` · `side-tab` | Trigger button placement on the page |
+| `widget_trigger` | string | `auto` | `auto` · `scroll` · `exit-intent` · `manual` | How the widget surfaces to visitors |
+| `widget_delay` | integer | `0` | 0–3600 | Seconds before auto-showing the widget (`widget_trigger = auto` only) |
+| `scroll_threshold` | integer | `50` | 0–100 | Page percentage scrolled before showing (`widget_trigger = scroll` only) |
+| `show_on_mobile` | boolean | `true` | — | Show the widget on mobile viewports |
+
+#### User Privacy
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `disable_user_details` | boolean | `false` | Disable storing the visitor's IP address and User-Agent on all surveys. Also disables duplicate submission detection. |
+
+#### Logging
+
+| Key | Type | Default | Allowed values | Description |
+|-----|------|---------|----------------|-------------|
+| `logging_enabled` | boolean | `false` | — | Master switch for plugin event logging |
+| `log_level` | string | `error` | `error` · `warning` · `info` · `debug` | Minimum severity to record (`debug` is most verbose) |
+| `log_retention_days` | integer | `30` | 1–365 | Days before log entries are auto-pruned |
+
+#### Plugin Management
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `delete_on_uninstall` | boolean | `false` | Permanently delete all surveys, responses, and settings when the plugin is uninstalled. **Irreversible.** |
+| `allow_usage_tracking` | boolean | `true` | Share anonymised usage statistics with AllFeedback HQ. No personal data is transmitted. |
+
+**Minimal example — update widget color and position only:**
+```json
+{
+  "widget_color":    "#10B981",
+  "widget_position": "bottom-left"
+}
+```
+
+**Full example:**
+```json
+{
+  "widget_color":         "#10B981",
+  "widget_position":      "bottom-left",
+  "widget_trigger":       "scroll",
+  "widget_delay":         0,
+  "scroll_threshold":     60,
+  "show_on_mobile":       true,
+  "disable_user_details": false,
+  "logging_enabled":      true,
+  "log_level":            "warning",
+  "log_retention_days":   14,
+  "delete_on_uninstall":  false,
+  "allow_usage_tracking": true
+}
+```
+
+**Response:** `200 OK` — same flat settings object as GET /settings, reflecting the state **after** the update.
+
+**Error responses:**
+
+| Status | Condition |
+|--------|-----------|
+| `400` | Empty body (no keys sent) |
+| `422` | Invalid enum value (e.g. `widget_position: "top"`) |
+| `422` | Integer out of range (e.g. `log_retention_days: 999`) |
+
+**Notes:**
+- Unknown keys are silently ignored — forward-compatible for pro add-ons.
+- Invalid enum values are rejected by WP REST arg validation before reaching the service layer.
+- The response always reflects the full merged settings (not just the keys you sent).
+
+---
+
+## Extensibility — Plugin Settings
+
+### Add a new setting (pro add-on pattern)
+
+**Step 1 — Extend the schema via filter:**
+```php
+add_filter( 'allfeedback_settings_schema', function ( array $schema ): array {
+    $schema['my_pro_feature_enabled'] = [
+        'type'        => 'boolean',
+        'default'     => false,
+        'description' => 'Enable the pro feature.',
+    ];
+    return $schema;
+} );
+```
+This single filter automatically:
+- Exposes the key in `GET /settings` response
+- Adds WP REST arg validation on `PATCH /settings`
+- Includes it in the JSON Schema at `/settings/schema`
+
+**Step 2 — Persist the default** (add to `SettingsManager::DEFAULTS`):
+If you control the plugin source, add the key there. For external add-ons, use `allfeedback:settings:updated` to react to changes.
+
+### React to settings changes
+
+```php
+// Fires after any PATCH /settings write.
+add_action( 'allfeedback:settings:updated', function ( array $settings ): void {
+    // e.g. clear a cache, toggle a feature flag, sync to a CDN
+    if ( $settings['logging_enabled'] ) {
+        my_plugin_enable_logging( $settings['log_level'] );
+    }
+} );
+```
+
+### React to a full settings reset
+
+```php
+add_action( 'allfeedback:settings:reset', function (): void {
+    // Settings have been wiped — all keys are now at their defaults.
+} );
+```
+
+---
+
+## Survey Settings Schema
 
 All survey configuration is stored in the `settings` JSON column. The `settings` object is accepted and returned on every survey write/read endpoint.
 
