@@ -14,5 +14,48 @@ declare const __ALLFB_ADMIN__: {
 
 	submitNonce: string;
 
+	// Plugin
 	version: string;
+
+	// WordPress Environment
+	homeUrl: string;
+
+	siteUrl: string;
+
+	wpVersion: string;
+
+	isMultisite: boolean;
+
+	wpMemoryLimit: string;
+
+	debug: boolean;
+
+	wpCron: boolean;
+
+	language: string;
+
+	extObjectCache: boolean;
+
+	// Server Environment
+	serverInfo: string;
+
+	mysqlVersion: string;
+
+	phpVersion: string;
+
+	defaultTimezone: string;
+
+	phpPostMaxSize: string;
+
+	phpTimeLimit: string;
+
+	curlVersion: string | null;
+
+	hasFsockopen: boolean;
+
+	hasGzip: boolean;
+
+	hasDomDocument: boolean;
+
+	hasMultibyte: boolean;
 };

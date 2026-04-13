@@ -15,19 +15,21 @@ export const Switch = ({ checked, onCheckedChange, disabled, id, className }: Sw
 		checked={checked}
 		onCheckedChange={onCheckedChange}
 		disabled={disabled}
-		style={{ backgroundColor: checked ? 'var(--primary)' : '#C4C4CF' }}
 		className={cn(
-			'inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent',
-			'transition-colors duration-200',
-			'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-1',
-			'disabled:cursor-not-allowed disabled:opacity-50',
+			'group relative inline-flex h-[22px] w-10 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent',
+			'transition-colors duration-200 ease-in-out',
+			'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2',
+			'disabled:cursor-not-allowed disabled:opacity-40',
+			checked ? 'bg-primary' : 'bg-foreground/[0.14]',
 			className,
 		)}
 	>
 		<SwitchPrimitive.Thumb
 			className={cn(
-				'pointer-events-none block size-4 rounded-full bg-white shadow-sm ring-0 transition-transform duration-200',
-				checked ? 'translate-x-4' : 'translate-x-0',
+				'pointer-events-none block size-[16px] rounded-full bg-white ring-0',
+				'shadow-[0_1px_3px_rgba(0,0,0,0.20),0_1px_1px_rgba(0,0,0,0.10)]',
+				'transition-transform duration-200 ease-in-out',
+				checked ? 'translate-x-[18px]' : 'translate-x-[2px]',
 			)}
 		/>
 	</SwitchPrimitive.Root>

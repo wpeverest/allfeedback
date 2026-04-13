@@ -4,6 +4,7 @@ import { settingsQuery } from '@/admin/queries/settings';
 import { useSettingsDirty } from '@/admin/pages/settings/Settings';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { useForm, useStore } from '@tanstack/react-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -19,25 +20,6 @@ const Row = ({ label, children }: { label: string; children: React.ReactNode }) 
 		<label className={cn(labelCls, 'w-[38%] shrink-0')}>{label}</label>
 		<div className="min-w-0 flex-1">{children}</div>
 	</div>
-);
-
-const Toggle = ({ checked, onChange }: { checked: boolean; onChange: () => void }) => (
-	<button
-		type="button"
-		role="switch"
-		aria-checked={checked}
-		onClick={onChange}
-		className={cn(
-			'relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200',
-			'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
-			checked ? 'bg-primary' : 'bg-muted-foreground/25',
-		)}
-	>
-		<span className={cn(
-			'pointer-events-none inline-block size-4 rounded-full bg-white shadow-sm ring-0 transition-transform duration-200',
-			checked ? 'translate-x-4' : 'translate-x-0',
-		)} />
-	</button>
 );
 
 const LoggingSettingsSkeleton = () => (
@@ -130,9 +112,9 @@ const LoggingSettings = () => {
 
 			<div className="space-y-4 p-6">
 				<Row label={__('Enable logging', 'all-feedback')}>
-					<Toggle
+					<Switch
 						checked={values.logging_enabled}
-						onChange={() => form.setFieldValue('logging_enabled', !values.logging_enabled)}
+						onCheckedChange={(v) => form.setFieldValue('logging_enabled', v)}
 					/>
 				</Row>
 			</div>

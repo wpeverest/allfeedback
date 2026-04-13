@@ -132,6 +132,15 @@ class AdminServiceProvider implements ServiceProvider {
 			callback:    $mountPoint,
 		);
 
+		add_submenu_page(
+			parent_slug: self::MENU_SLUG,
+			page_title:  __( 'Tools', 'all-feedback' ),
+			menu_title:  __( 'Tools', 'all-feedback' ),
+			capability:  'manage_options',
+			menu_slug:   self::MENU_SLUG . '#/tools',
+			callback:    $mountPoint,
+		);
+
 		// Remove the auto-generated duplicate of the top-level entry.
 		remove_submenu_page( self::MENU_SLUG, self::MENU_SLUG );
 	}
@@ -204,6 +213,13 @@ class AdminServiceProvider implements ServiceProvider {
 			return;
 		}
 
+		global $wpdb;
+
+		$curlVersion = function_exists( 'curl_version' ) ? curl_version() : null;
+		$curlStr      = $curlVersion
+			? $curlVersion['version'] . ( ! empty( $curlVersion['ssl_version'] ) ? ', ' . $curlVersion['ssl_version'] : '' )
+			: null;
+
 		$adminData = $this->applyFilters(
 			'allfeedback:admin:script_data',
 			[
@@ -214,7 +230,30 @@ class AdminServiceProvider implements ServiceProvider {
 				'isAdmin'       => current_user_can( 'manage_options' ),
 				'nonce'         => wp_create_nonce( 'wp_rest' ),
 				'submitNonce'   => wp_create_nonce( 'allfeedback_submit' ),
+				// Plugin
 				'version'       => Constants::VERSION,
+				// WordPress Environment
+				'homeUrl'       => get_home_url(),
+				'siteUrl'       => get_site_url(),
+				'wpVersion'     => get_bloginfo( 'version' ),
+				'isMultisite'   => is_multisite(),
+				'wpMemoryLimit' => defined( 'WP_MEMORY_LIMIT' ) ? WP_MEMORY_LIMIT : 'N/A',
+				'debug'         => defined( 'WP_DEBUG' ) && WP_DEBUG,
+				'wpCron'        => ! ( defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON ),
+				'language'      => get_locale(),
+				'extObjectCache' => wp_using_ext_object_cache(),
+				// Server Environment
+				'serverInfo'    => isset( $_SERVER['SERVER_SOFTWARE'] ) ? sanitize_text_field( wp_unslash( $_SERVER['SERVER_SOFTWARE'] ) ) : 'N/A',
+				'mysqlVersion'  => $wpdb->db_version(),
+				'phpVersion'    => PHP_VERSION,
+				'defaultTimezone' => date_default_timezone_get(),
+				'phpPostMaxSize'  => ini_get( 'post_max_size' ) ?: 'N/A',
+				'phpTimeLimit'    => ini_get( 'max_execution_time' ) ?: 'N/A',
+				'curlVersion'    => $curlStr,
+				'hasFsockopen'   => function_exists( 'fsockopen' ) || function_exists( 'curl_init' ),
+				'hasGzip'        => function_exists( 'gzopen' ),
+				'hasDomDocument' => class_exists( 'DOMDocument' ),
+				'hasMultibyte'   => function_exists( 'mb_strtolower' ),
 			]
 		);
 
