@@ -1,17 +1,14 @@
-import { settingsApi } from '@/admin/api/settings';
 import type { Settings } from '@/admin/api/settings';
 import { settingsQuery } from '@/admin/queries/settings';
 import { useSettingsDirty } from '@/admin/pages/settings/Settings';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { useForm, useStore } from '@tanstack/react-form';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { __ } from '@wordpress/i18n';
-import { Loader2, SlidersHorizontal } from 'lucide-react';
-import { useEffect } from 'react';
-import { toast } from 'sonner';
+import { SlidersHorizontal } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 
 const labelCls = 'text-[13.5px] font-normal text-foreground/80';
 
@@ -88,10 +85,6 @@ const AdvancedSettingsSkeleton = () => (
 				</div>
 			</div>
 		</div>
-
-		<div className="flex items-center justify-end border-t border-border/50 px-6 py-4">
-			<Skeleton className="h-9 w-28 rounded-md" />
-		</div>
 	</div>
 );
 
@@ -102,62 +95,84 @@ const DEFAULT_VALUES = {
 	allow_usage_tracking: true,
 };
 
-const AdvancedSettings = () => {
-	const queryClient = useQueryClient();
-	const { data, isPending } = useQuery(settingsQuery());
-	const { isDirty: sharedIsDirty, setDirty } = useSettingsDirty();
+const FORM_KEY = 'advanced';
 
-	const { mutate, isPending: isSaving } = useMutation({
-		mutationFn: (payload: Partial<Settings>) => settingsApi.update(payload),
-		onSuccess: (updated) => {
-			queryClient.setQueryData(settingsQuery().queryKey, updated);
-			setDirty('advanced', false);
-			toast.success(__('Settings saved successfully.', 'all-feedback'));
-		},
-		onError: () => {
-			toast.error(__('Failed to save settings. Please try again.', 'all-feedback'));
-		},
-	});
+type AdvancedPatch = { advanced?: { privacy?: Partial<Settings['advanced']['privacy']>; logging?: Partial<Settings['advanced']['logging']>; plugin?: Partial<Settings['advanced']['plugin']> } };
+
+const AdvancedSettings = () => {
+	const { data, isPending } = useQuery(settingsQuery());
+	const { isDirty: sharedIsDirty, isSaving, setDirty, patches, setPatch } = useSettingsDirty();
+
+ 	const stagedAdv = (patches[FORM_KEY] as AdvancedPatch | undefined)?.advanced;
+	const initValues = stagedAdv
+		? {
+			disable_user_details: stagedAdv.privacy?.disable_user_details ?? DEFAULT_VALUES.disable_user_details,
+			logging_enabled:      stagedAdv.logging?.enabled              ?? DEFAULT_VALUES.logging_enabled,
+			delete_on_uninstall:  stagedAdv.plugin?.delete_on_uninstall   ?? DEFAULT_VALUES.delete_on_uninstall,
+			allow_usage_tracking: stagedAdv.plugin?.allow_usage_tracking  ?? DEFAULT_VALUES.allow_usage_tracking,
+		  }
+		: data
+			? {
+				disable_user_details: data.advanced.privacy.disable_user_details ?? DEFAULT_VALUES.disable_user_details,
+				logging_enabled:      data.advanced.logging.enabled              ?? DEFAULT_VALUES.logging_enabled,
+				delete_on_uninstall:  data.advanced.plugin.delete_on_uninstall   ?? DEFAULT_VALUES.delete_on_uninstall,
+				allow_usage_tracking: data.advanced.plugin.allow_usage_tracking  ?? DEFAULT_VALUES.allow_usage_tracking,
+			  }
+			: DEFAULT_VALUES;
 
 	const form = useForm({
-		defaultValues: DEFAULT_VALUES,
-		onSubmit: async ({ value }) => {
-			mutate(value);
+		defaultValues: initValues,
+		onSubmit: async () => {
+			// saving is handled centrally by Settings.tsx
 		},
 	});
 
+	const markedDirtyRef = useRef(false);
 	useEffect(() => {
-		if (!data) return;
+		if (stagedAdv && !markedDirtyRef.current) {
+			setDirty(FORM_KEY, true);
+			markedDirtyRef.current = true;
+		}
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
+
+	useEffect(() => {
+		if (!data || patches[FORM_KEY]) return;
 		form.reset({
-			disable_user_details: data.disable_user_details ?? DEFAULT_VALUES.disable_user_details,
-			logging_enabled:      data.logging_enabled      ?? DEFAULT_VALUES.logging_enabled,
-			delete_on_uninstall:  data.delete_on_uninstall  ?? DEFAULT_VALUES.delete_on_uninstall,
-			allow_usage_tracking: data.allow_usage_tracking ?? DEFAULT_VALUES.allow_usage_tracking,
+			disable_user_details: data.advanced.privacy.disable_user_details ?? DEFAULT_VALUES.disable_user_details,
+			logging_enabled:      data.advanced.logging.enabled              ?? DEFAULT_VALUES.logging_enabled,
+			delete_on_uninstall:  data.advanced.plugin.delete_on_uninstall   ?? DEFAULT_VALUES.delete_on_uninstall,
+			allow_usage_tracking: data.advanced.plugin.allow_usage_tracking  ?? DEFAULT_VALUES.allow_usage_tracking,
 		}, { keepDefaultValues: true });
-	}, [data]);
+	}, [data]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	const values  = useStore(form.store, (s) => s.values);
 	const isDirty = useStore(form.store, (s) => s.isDirty);
 
 	useEffect(() => {
-		if (isDirty) setDirty('advanced', true);
-	}, [isDirty, setDirty]);
-
-	useEffect(() => {
-		const handler = (e: KeyboardEvent) => {
-			if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-				e.preventDefault();
-				void form.handleSubmit();
-			}
-		};
-		document.addEventListener('keydown', handler);
-		return () => document.removeEventListener('keydown', handler);
-	}, [form]);
+		if (!isDirty) return;
+		// Skip when values still match server data (e.g. right after a save resets the form)
+		const srv = data?.advanced;
+		if (
+			values.disable_user_details === (srv?.privacy.disable_user_details ?? DEFAULT_VALUES.disable_user_details) &&
+			values.logging_enabled      === (srv?.logging.enabled              ?? DEFAULT_VALUES.logging_enabled) &&
+			values.delete_on_uninstall  === (srv?.plugin.delete_on_uninstall   ?? DEFAULT_VALUES.delete_on_uninstall) &&
+			values.allow_usage_tracking === (srv?.plugin.allow_usage_tracking  ?? DEFAULT_VALUES.allow_usage_tracking)
+		) return;
+		setDirty(FORM_KEY, true);
+		setPatch(FORM_KEY, {
+			advanced: {
+				privacy: { disable_user_details: values.disable_user_details },
+				logging: { enabled: values.logging_enabled },
+				plugin:  { delete_on_uninstall: values.delete_on_uninstall, allow_usage_tracking: values.allow_usage_tracking },
+			},
+		} as Record<string, unknown>);
+	}, [values, isDirty]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	if (isPending) return <AdvancedSettingsSkeleton />;
 
 	return (
-		<form onSubmit={(e) => { e.preventDefault(); void form.handleSubmit(); }}>
+		<div>
 			<div className="flex items-center gap-3 border-b border-border/50 px-6 py-4">
 				<div className="flex size-9 items-center justify-center rounded-xl bg-primary/10">
 					<SlidersHorizontal className="size-[18px] text-primary" />
@@ -221,14 +236,7 @@ const AdvancedSettings = () => {
 				</div>
 
 			</div>
-
-			<div className="flex items-center justify-end border-t border-border/50 px-6 py-4">
-				<Button type="submit" disabled={isSaving}>
-					{isSaving && <Loader2 className="animate-spin" />}
-					{isSaving ? __('Saving…', 'all-feedback') : __('Save Changes', 'all-feedback')}
-				</Button>
-			</div>
-		</form>
+		</div>
 	);
 };
 
