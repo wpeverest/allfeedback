@@ -145,6 +145,17 @@ class SettingsManager {
 	 */
 	private ?array $loaded = null;
 
+	/**
+	 * Cached result of the allfeedback_settings_defaults filter.
+	 *
+	 * Computed once per request so filter callbacks do not run on every read/write.
+	 * Reset to null whenever a write occurs so pro defaults stay consistent.
+	 *
+	 * @var array<string, array<string, array<string, mixed>>>|null
+	 * @since 1.0.0
+	 */
+	private ?array $effectiveDefaults = null;
+
 	// ------------------------------------------------------------------
 	// Reads
 	// ------------------------------------------------------------------
@@ -190,24 +201,60 @@ class SettingsManager {
 
 		$parts = explode( '.', $key, 3 );
 
+		$defaults = $this->getDefaults();
+
 		return match ( count( $parts ) ) {
 			1 => $all[ $parts[0] ] ?? null,
 			2 => $all[ $parts[0] ][ $parts[1] ] ?? null,
 			3 => $all[ $parts[0] ][ $parts[1] ][ $parts[2] ]
-				?? self::DEFAULTS[ $parts[0] ][ $parts[1] ][ $parts[2] ]
+				?? $defaults[ $parts[0] ][ $parts[1] ][ $parts[2] ]
 				?? null,
 			default => null,
 		};
 	}
 
 	/**
-	 * Return the raw DEFAULTS constant.
+	 * Return the effective defaults — core DEFAULTS merged with any additions
+	 * registered by pro add-ons via the `allfeedback_settings_defaults` filter.
+	 *
+	 * Result is cached per request. Pro add-ons must add their defaults at
+	 * the same three-level structure as core:
+	 *
+	 * ```php
+	 * add_filter( 'allfeedback_settings_defaults', function ( array $defaults ): array {
+	 *     $defaults['advanced']['notifications'] = [
+	 *         'enabled' => false,
+	 *         'email'   => '',
+	 *     ];
+	 *     return $defaults;
+	 * } );
+	 * ```
+	 *
+	 * Adding a field here AND to `allfeedback_settings_schema` is enough to
+	 * make it fully functional: stored, merged, sanitised, and validated.
 	 *
 	 * @return array<string, array<string, array<string, mixed>>>
 	 * @since 1.0.0
 	 */
 	public function getDefaults(): array {
-		return self::DEFAULTS;
+		if ( $this->effectiveDefaults !== null ) {
+			return $this->effectiveDefaults;
+		}
+
+		/**
+		 * Filter: allfeedback_settings_defaults
+		 *
+		 * Allows pro add-ons to register new pages, sections, or fields so
+		 * they are included in storage, retrieval, and sanitisation — not just
+		 * REST validation. Must follow the page → section → field structure.
+		 *
+		 * @param array<string, array<string, array<string, mixed>>> $defaults Core defaults.
+		 * @return array<string, array<string, array<string, mixed>>>
+		 * @since 1.0.0
+		 */
+		$this->effectiveDefaults = (array) apply_filters( 'allfeedback_settings_defaults', self::DEFAULTS );
+
+		return $this->effectiveDefaults;
 	}
 
 	// ------------------------------------------------------------------
@@ -233,13 +280,11 @@ class SettingsManager {
 
 		[ $page, $section, $field ] = $parts;
 
-		if (
-			! isset( self::DEFAULTS[ $page ][ $section ][ $field ] )
-		) {
+		if ( ! isset( $this->getDefaults()[ $page ][ $section ][ $field ] ) ) {
 			return;
 		}
 
-		$all                              = $this->all();
+		$all                                = $this->all();
 		$all[ $page ][ $section ][ $field ] = $this->sanitize( $page, $section, $field, $value );
 		$this->persist( $all );
 	}
@@ -259,12 +304,14 @@ class SettingsManager {
 	 * @since 1.0.0
 	 */
 	public function setSection( string $page, string $section, array $values ): void {
-		if ( ! isset( self::DEFAULTS[ $page ][ $section ] ) ) {
+		$defaults = $this->getDefaults();
+
+		if ( ! isset( $defaults[ $page ][ $section ] ) ) {
 			return;
 		}
 
 		$all     = $this->all();
-		$allowed = array_intersect_key( $values, self::DEFAULTS[ $page ][ $section ] );
+		$allowed = array_intersect_key( $values, $defaults[ $page ][ $section ] );
 
 		foreach ( $allowed as $field => $value ) {
 			$all[ $page ][ $section ][ $field ] = $this->sanitize( $page, $section, $field, $value );
@@ -291,19 +338,20 @@ class SettingsManager {
 	 * @since 1.0.0
 	 */
 	public function setMultiple( array $settings ): void {
-		$all = $this->all();
+		$defaults = $this->getDefaults();
+		$all      = $this->all();
 
 		foreach ( $settings as $page => $sections ) {
-			if ( ! isset( self::DEFAULTS[ $page ] ) || ! is_array( $sections ) ) {
+			if ( ! isset( $defaults[ $page ] ) || ! is_array( $sections ) ) {
 				continue;
 			}
 
 			foreach ( $sections as $section => $values ) {
-				if ( ! isset( self::DEFAULTS[ $page ][ $section ] ) || ! is_array( $values ) ) {
+				if ( ! isset( $defaults[ $page ][ $section ] ) || ! is_array( $values ) ) {
 					continue;
 				}
 
-				$allowed = array_intersect_key( $values, self::DEFAULTS[ $page ][ $section ] );
+				$allowed = array_intersect_key( $values, $defaults[ $page ][ $section ] );
 
 				foreach ( $allowed as $field => $value ) {
 					$all[ $page ][ $section ][ $field ] = $this->sanitize( $page, $section, $field, $value );
@@ -322,7 +370,8 @@ class SettingsManager {
 	 */
 	public function reset(): void {
 		delete_option( self::OPTION_KEY );
-		$this->loaded = null;
+		$this->loaded           = null;
+		$this->effectiveDefaults = null;
 
 		/**
 		 * Action: allfeedback:settings:reset
@@ -515,7 +564,7 @@ class SettingsManager {
 	private function mergeWithDefaults( array $stored ): array {
 		$merged = [];
 
-		foreach ( self::DEFAULTS as $page => $sections ) {
+		foreach ( $this->getDefaults() as $page => $sections ) {
 			$merged[ $page ] = [];
 
 			foreach ( $sections as $section => $fields ) {
@@ -550,7 +599,7 @@ class SettingsManager {
 	 * @since 1.0.0
 	 */
 	private function sanitize( string $page, string $section, string $field, mixed $value ): mixed {
-		$default = self::DEFAULTS[ $page ][ $section ][ $field ] ?? null;
+		$default = $this->getDefaults()[ $page ][ $section ][ $field ] ?? null;
 
 		if ( is_bool( $default ) ) {
 			return (bool) $value;
@@ -570,7 +619,7 @@ class SettingsManager {
 				isset( self::ENUMS[ $page ][ $section ][ $field ] ) &&
 				! in_array( $sanitised, self::ENUMS[ $page ][ $section ][ $field ], true )
 			) {
-				return self::DEFAULTS[ $page ][ $section ][ $field ];
+				return $this->getDefaults()[ $page ][ $section ][ $field ];
 			}
 
 			return $sanitised;
@@ -590,8 +639,8 @@ class SettingsManager {
 	 * @since 1.0.0
 	 */
 	private function persist( array $settings ): void {
-		// Strip any pages not in DEFAULTS to keep the option row clean.
-		$toStore = array_intersect_key( $settings, self::DEFAULTS );
+		// Strip any pages not in effective defaults to keep the option row clean.
+		$toStore = array_intersect_key( $settings, $this->getDefaults() );
 
 		update_option( self::OPTION_KEY, $toStore, false ); // autoload = false
 		$this->loaded = $toStore;

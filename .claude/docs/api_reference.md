@@ -527,12 +527,26 @@ Search published pages and posts. Powers the "Select specific pages & posts" pic
 
 ## Plugin Settings
 
-Plugin-wide settings are stored in a single `wp_options` row (`_allfb_settings`) managed by `SettingsManager`.
+Plugin-wide settings are stored in a single `wp_options` row (`_allfb_settings`, `autoload = false`) managed by `SettingsManager`.
+
+Settings are organised in **three levels**: **page** → **section** → **field**, mirroring the Settings nav tabs in the admin UI.
+
+```
+general
+  └── widget          (color, position, trigger, delay, scroll_threshold, show_on_mobile)
+advanced
+  ├── privacy         (disable_user_details)
+  ├── logging         (enabled, level, retention_days)
+  └── plugin          (delete_on_uninstall, allow_usage_tracking)
+```
+
 Per-survey settings (trigger, targeting, GDPR, etc.) are separate — see [Survey Settings Schema](#survey-settings-schema) below.
+
+---
 
 ### GET /settings
 
-Return the current plugin-wide settings as a **flat key → value object**.
+Return the full three-level settings object merged with defaults. Every page, section, and field is always present — the server merges stored values with defaults so the client never encounters `undefined` keys.
 
 **Permission:** `manage_options`
 
@@ -541,140 +555,225 @@ Return the current plugin-wide settings as a **flat key → value object**.
 {
   "success": true,
   "data": {
-    "widget_color":         "#6366F1",
-    "widget_position":      "bottom-right",
-    "widget_trigger":       "auto",
-    "widget_delay":         0,
-    "scroll_threshold":     50,
-    "show_on_mobile":       true,
-    "disable_user_details": false,
-    "logging_enabled":      false,
-    "log_level":            "error",
-    "log_retention_days":   30,
-    "delete_on_uninstall":  false,
-    "allow_usage_tracking": true
+    "general": {
+      "widget": {
+        "color":            "#6366F1",
+        "position":         "bottom-right",
+        "trigger":          "auto",
+        "delay":            0,
+        "scroll_threshold": 50,
+        "show_on_mobile":   true
+      }
+    },
+    "advanced": {
+      "privacy": {
+        "disable_user_details": false
+      },
+      "logging": {
+        "enabled":        false,
+        "level":          "error",
+        "retention_days": 30
+      },
+      "plugin": {
+        "delete_on_uninstall":  false,
+        "allow_usage_tracking": true
+      }
+    }
   }
 }
 ```
-
-Every key is always present — missing stored values fall back to the defaults shown above.
 
 ---
 
 ### PATCH /settings
 
-Persist one or more settings in a single atomic write. **Partial updates are fully supported** — send only the keys that changed.
+Persist one or more pages / sections / fields in a single atomic write. **Partial updates are fully supported at every level** — send only the pages, sections, and fields that changed.
 
 **Permission:** `manage_options`
 
-**Body (JSON) — all keys optional:**
+**Body (JSON):** all levels are optional — send the minimal slice that changed.
 
-#### Widget Appearance
+#### `general.widget` — Widget appearance
 
-| Key | Type | Default | Allowed values | Description |
-|-----|------|---------|----------------|-------------|
-| `widget_color` | string | `#6366F1` | Any hex string | Primary accent colour for the survey widget |
-| `widget_position` | string | `bottom-right` | `bottom-right` · `bottom-left` · `side-tab` | Trigger button placement on the page |
-| `widget_trigger` | string | `auto` | `auto` · `scroll` · `exit-intent` · `manual` | How the widget surfaces to visitors |
-| `widget_delay` | integer | `0` | 0–3600 | Seconds before auto-showing the widget (`widget_trigger = auto` only) |
-| `scroll_threshold` | integer | `50` | 0–100 | Page percentage scrolled before showing (`widget_trigger = scroll` only) |
-| `show_on_mobile` | boolean | `true` | — | Show the widget on mobile viewports |
+| Field | Type | Default | Allowed values | Description |
+|-------|------|---------|----------------|-------------|
+| `color` | string | `#6366F1` | Any hex string | Primary accent colour for the survey widget |
+| `position` | string | `bottom-right` | `bottom-right` · `bottom-left` · `side-tab` | Trigger button placement on the page |
+| `trigger` | string | `auto` | `auto` · `scroll` · `exit-intent` · `manual` | How the widget surfaces to visitors |
+| `delay` | integer | `0` | 0–3600 | Seconds before auto-showing the widget (`trigger = auto` only) |
+| `scroll_threshold` | integer | `50` | 0–100 | Page percentage scrolled before showing (`trigger = scroll` only) |
+| `show_on_mobile` | boolean | `true` | — | Render the widget on mobile viewports |
 
-#### User Privacy
+#### `advanced.privacy` — User privacy
 
-| Key | Type | Default | Description |
-|-----|------|---------|-------------|
-| `disable_user_details` | boolean | `false` | Disable storing the visitor's IP address and User-Agent on all surveys. Also disables duplicate submission detection. |
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `disable_user_details` | boolean | `false` | Disable storing visitor IP and User-Agent on all surveys. Also disables duplicate-submission detection. |
 
-#### Logging
+#### `advanced.logging` — Plugin logging
 
-| Key | Type | Default | Allowed values | Description |
-|-----|------|---------|----------------|-------------|
-| `logging_enabled` | boolean | `false` | — | Master switch for plugin event logging |
-| `log_level` | string | `error` | `error` · `warning` · `info` · `debug` | Minimum severity to record (`debug` is most verbose) |
-| `log_retention_days` | integer | `30` | 1–365 | Days before log entries are auto-pruned |
+| Field | Type | Default | Allowed values | Description |
+|-------|------|---------|----------------|-------------|
+| `enabled` | boolean | `false` | — | Master switch for plugin event logging |
+| `level` | string | `error` | `error` · `warning` · `info` · `debug` | Minimum severity to record (`debug` = most verbose) |
+| `retention_days` | integer | `30` | 1–365 | Days before log entries are auto-pruned |
 
-#### Plugin Management
+#### `advanced.plugin` — Plugin management
 
-| Key | Type | Default | Description |
-|-----|------|---------|-------------|
-| `delete_on_uninstall` | boolean | `false` | Permanently delete all surveys, responses, and settings when the plugin is uninstalled. **Irreversible.** |
-| `allow_usage_tracking` | boolean | `true` | Share anonymised usage statistics with AllFeedback HQ. No personal data is transmitted. |
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `delete_on_uninstall` | boolean | `false` | Permanently delete all surveys, responses, and settings on uninstall. **Irreversible.** |
+| `allow_usage_tracking` | boolean | `true` | Share anonymised usage stats with the AllFeedback team. No personal data is transmitted. |
 
-**Minimal example — update widget color and position only:**
+**Example — update widget color and position only:**
 ```json
 {
-  "widget_color":    "#10B981",
-  "widget_position": "bottom-left"
+  "general": {
+    "widget": {
+      "color":    "#10B981",
+      "position": "bottom-left"
+    }
+  }
 }
 ```
 
-**Full example:**
+**Example — enable logging at warning level:**
 ```json
 {
-  "widget_color":         "#10B981",
-  "widget_position":      "bottom-left",
-  "widget_trigger":       "scroll",
-  "widget_delay":         0,
-  "scroll_threshold":     60,
-  "show_on_mobile":       true,
-  "disable_user_details": false,
-  "logging_enabled":      true,
-  "log_level":            "warning",
-  "log_retention_days":   14,
-  "delete_on_uninstall":  false,
-  "allow_usage_tracking": true
+  "advanced": {
+    "logging": {
+      "enabled": true,
+      "level":   "warning"
+    }
+  }
 }
 ```
 
-**Response:** `200 OK` — same flat settings object as GET /settings, reflecting the state **after** the update.
+**Full example — update multiple pages in one request:**
+```json
+{
+  "general": {
+    "widget": {
+      "color":            "#10B981",
+      "position":         "bottom-left",
+      "trigger":          "scroll",
+      "scroll_threshold": 60,
+      "show_on_mobile":   true
+    }
+  },
+  "advanced": {
+    "privacy": { "disable_user_details": false },
+    "logging": { "enabled": true, "level": "warning", "retention_days": 14 },
+    "plugin":  { "delete_on_uninstall": false, "allow_usage_tracking": true }
+  }
+}
+```
+
+**Response:** `200 OK` — full three-level settings object (same shape as `GET /settings`) reflecting the state **after** the update.
 
 **Error responses:**
 
 | Status | Condition |
 |--------|-----------|
-| `400` | Empty body (no keys sent) |
-| `422` | Invalid enum value (e.g. `widget_position: "top"`) |
-| `422` | Integer out of range (e.g. `log_retention_days: 999`) |
+| `422` | Empty body (no data sent) |
+| `422` | Invalid enum value (e.g. `position: "top"`) |
+| `422` | Integer out of range (e.g. `retention_days: 999`) |
 
 **Notes:**
-- Unknown keys are silently ignored — forward-compatible for pro add-ons.
+- Unknown pages, sections, and fields are silently ignored — safe for pro add-ons to send extra keys.
 - Invalid enum values are rejected by WP REST arg validation before reaching the service layer.
-- The response always reflects the full merged settings (not just the keys you sent).
+- The response always reflects the full merged settings, not just the keys you sent.
 
 ---
 
 ## Extensibility — Plugin Settings
 
-### Add a new setting (pro add-on pattern)
+### Add a section or field (pro add-on pattern)
 
-**Step 1 — Extend the schema via filter:**
+Two filters must be used together — one registers the **storage and sanitisation** layer, the other registers the **REST API validation and JSON Schema** layer:
+
+| Filter | Purpose |
+|--------|---------|
+| `allfeedback_settings_defaults` | Makes the field storable, mergeable, and sanitised. **Required.** |
+| `allfeedback_settings_schema` | Exposes the field in REST validation and the JSON Schema endpoint. **Required.** |
+
+**Example — add a `notifications` section to the `advanced` page:**
+
 ```php
+// Step 1: register defaults so the field is stored and sanitised.
+add_filter( 'allfeedback_settings_defaults', function ( array $defaults ): array {
+    $defaults['advanced']['notifications'] = [
+        'enabled' => false,
+        'email'   => '',
+    ];
+    return $defaults;
+} );
+
+// Step 2: register schema so the field passes REST validation.
 add_filter( 'allfeedback_settings_schema', function ( array $schema ): array {
-    $schema['my_pro_feature_enabled'] = [
-        'type'        => 'boolean',
-        'default'     => false,
-        'description' => 'Enable the pro feature.',
+    $schema['advanced']['sections']['notifications'] = [
+        'description' => 'Email notification settings.',
+        'properties'  => [
+            'enabled' => [
+                'type'        => 'boolean',
+                'default'     => false,
+                'description' => 'Send admin email on every new response.',
+            ],
+            'email'   => [
+                'type'        => 'string',
+                'default'     => '',
+                'description' => 'Recipient address (falls back to admin_email).',
+            ],
+        ],
     ];
     return $schema;
 } );
 ```
-This single filter automatically:
-- Exposes the key in `GET /settings` response
-- Adds WP REST arg validation on `PATCH /settings`
-- Includes it in the JSON Schema at `/settings/schema`
 
-**Step 2 — Persist the default** (add to `SettingsManager::DEFAULTS`):
-If you control the plugin source, add the key there. For external add-ons, use `allfeedback:settings:updated` to react to changes.
+After both filters are registered, the field is fully functional with no core changes:
+- Returned by `GET /settings` under `advanced.notifications.*`
+- Accepted by `PATCH /settings` with type validation
+- Stored and retrieved via `SettingsManager::get('advanced.notifications.enabled')`
+- Sanitised automatically based on the PHP type of the default value
+
+**Example — add an entirely new page:**
+
+```php
+add_filter( 'allfeedback_settings_defaults', function ( array $defaults ): array {
+    $defaults['integrations'] = [
+        'zapier' => [ 'webhook_url' => '' ],
+    ];
+    return $defaults;
+} );
+
+add_filter( 'allfeedback_settings_schema', function ( array $schema ): array {
+    $schema['integrations'] = [
+        'description' => 'Third-party integration settings.',
+        'sections'    => [
+            'zapier' => [
+                'description' => 'Zapier webhook settings.',
+                'properties'  => [
+                    'webhook_url' => [
+                        'type'        => 'string',
+                        'default'     => '',
+                        'description' => 'POST new responses to this URL.',
+                    ],
+                ],
+            ],
+        ],
+    ];
+    return $schema;
+} );
+```
 
 ### React to settings changes
 
 ```php
-// Fires after any PATCH /settings write.
+// Fires after any successful PATCH /settings write.
+// $settings is the full three-level array as stored.
 add_action( 'allfeedback:settings:updated', function ( array $settings ): void {
-    // e.g. clear a cache, toggle a feature flag, sync to a CDN
-    if ( $settings['logging_enabled'] ) {
-        my_plugin_enable_logging( $settings['log_level'] );
+    if ( $settings['advanced']['logging']['enabled'] ?? false ) {
+        my_plugin_enable_logging( $settings['advanced']['logging']['level'] );
     }
 } );
 ```
@@ -683,7 +782,7 @@ add_action( 'allfeedback:settings:updated', function ( array $settings ): void {
 
 ```php
 add_action( 'allfeedback:settings:reset', function (): void {
-    // Settings have been wiped — all keys are now at their defaults.
+    // All settings have been wiped — every key is now at its default value.
 } );
 ```
 
