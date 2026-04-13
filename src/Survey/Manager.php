@@ -106,14 +106,17 @@ class Manager {
 
 		[ $where, $values ] = $this->buildWhere( $search, $status );
 
-		$table = $this->table();
-		$values[] = $perPage;
-		$values[] = $offset;
+		$table          = $this->table();
+		$responsesTable = $wpdb->prefix . 'af_responses';
+		$values[]       = $perPage;
+		$values[]       = $offset;
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT * FROM {$table} {$where} ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT id, title, description, form_schema, settings, targeting, status, created_by, created_at, updated_at,
+				        (SELECT COUNT(*) FROM {$responsesTable} WHERE survey_id = {$table}.id) AS response_count
+				 FROM {$table} {$where} ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$values
 			)
 		);

@@ -111,7 +111,10 @@ class SubmitController extends RestController {
 			return $this->notFoundResponse( __( 'Survey', 'all-feedback' ) );
 		}
 
-		if ( $survey->status !== 'published' ) {
+		$isDraft         = $survey->status === 'draft';
+		$isAdminPreview  = $isDraft && current_user_can( 'manage_options' );
+
+		if ( $survey->status !== 'published' && ! $isAdminPreview ) {
 			$this->logger->warning(
 				'Submission rejected: survey not published.',
 				[ 'survey_id' => $surveyId, 'status' => $survey->status ]

@@ -516,7 +516,11 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 		mutationFn: (data: SubmitFormData) => surveysApi.submit(surveyId!, data),
 		onSuccess: () => {
 			setIsSubmitted(true);
-			toast.success(__('Response submitted successfully.', 'all-feedback'));
+			toast.success(
+				surveyStatus === 'draft'
+					? __('Form preview submitted successfully.', 'all-feedback')
+					: __('Response submitted successfully.', 'all-feedback')
+			);
 		},
 		onError: () => {
 			toast.error(__('Failed to submit. Please try again.', 'all-feedback'));
@@ -560,7 +564,7 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 		if (Object.keys(errors).length) { setFieldErrors(errors); return; }
 		setFieldErrors({});
 
-		if (surveyId && surveyStatus === 'published') {
+		if (surveyId) {
 			const scoreField = allFields(sections).find((f) => ['nps', 'star_rating', 'scale'].includes(f.type));
 			const scoreRaw   = scoreField ? fieldValues[scoreField.id] : '';
 			const score      = typeof scoreRaw === 'string' && scoreRaw !== '' ? Number(scoreRaw) : undefined;

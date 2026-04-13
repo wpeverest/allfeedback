@@ -27,7 +27,7 @@ class ValidateSurveyIsActive {
 	 * @since 1.0.0
 	 */
 	public function execute( ResponseContext $context, \Closure $next ): mixed {
-		if ( ! $context->survey->getStatus()->isPublished() ) {
+		if ( ! $context->survey->getStatus()->isPublished() && ! current_user_can( 'manage_options' ) ) {
 			throw ValidationException::withErrors(
 				[ 'survey' => esc_html__( 'This survey is not currently accepting responses.', 'all-feedback' ) ]
 			);
