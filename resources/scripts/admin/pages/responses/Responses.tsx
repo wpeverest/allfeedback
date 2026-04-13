@@ -19,7 +19,7 @@ import {
 	SelectValue,
 } from '@/components/ui/select';
 import { surveysApi } from '@/admin/api/surveys';
-import { surveysQuery } from '@/admin/queries/surveys';
+import { allResponsesQuery, surveyResponsesQuery, surveysQuery } from '@/admin/queries/surveys';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { cn } from '@/lib/utils';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -81,21 +81,19 @@ const Responses = () => {
 
 	const queryParams = { page, per_page: perPage };
 
-	const allResponsesQuery = useQuery({
-		queryKey: ['responses', 'all', queryParams],
-		queryFn:  () => surveysApi.listAllResponses(queryParams),
+	const allResponsesResult = useQuery({
+		...allResponsesQuery(queryParams),
 		enabled:  selectedSurveyId === null,
 		placeholderData: keepPreviousData,
 	});
 
-	const surveyResponsesQuery = useQuery({
-		queryKey: ['responses', selectedSurveyId, queryParams],
-		queryFn:  () => surveysApi.listResponses(selectedSurveyId!, queryParams),
+	const surveyResponsesResult = useQuery({
+		...surveyResponsesQuery(selectedSurveyId ?? 0, queryParams),
 		enabled:  selectedSurveyId !== null,
 		placeholderData: keepPreviousData,
 	});
 
-	const activeQuery  = selectedSurveyId === null ? allResponsesQuery : surveyResponsesQuery;
+	const activeQuery  = selectedSurveyId === null ? allResponsesResult : surveyResponsesResult;
 	const { data, isLoading, isError, isFetching } = activeQuery;
 
 	const responses  = data?.responses ?? [];
@@ -254,7 +252,7 @@ const Responses = () => {
 				</div>
 			</div>
 
-			<div className="rounded-xl border border-border bg-card">
+			<div className={cn('rounded-xl border border-border bg-card transition-opacity', isFetching && !isLoading && 'pointer-events-none opacity-50')}>
 				<div className="overflow-x-auto">
 					<table className="w-full table-fixed">
 						<thead>
