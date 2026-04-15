@@ -108,6 +108,16 @@ export type DeleteResponseResult = {
 	id:      number;
 };
 
+export type BulkDeleteResponsesResult = {
+	deleted: number;
+	failed:  number[];
+};
+
+export type BulkMarkReadResult = {
+	updated: number;
+	failed:  number[];
+};
+
 export type UpdateResponseData = {
 	response_data?: Record<string, unknown> | null;
 	is_read?:       boolean;
@@ -196,6 +206,15 @@ export const surveysApi = {
 
 	deleteResponse: (surveyId: number, responseId: number) =>
 		request<DeleteResponseResult>(`/surveys/${surveyId}/responses/${responseId}`, { method: 'DELETE' }),
+
+	bulkDeleteResponses: (ids: number[]) =>
+		request<BulkDeleteResponsesResult>('/responses/delete', { method: 'DELETE', data: { ids } }),
+
+	bulkMarkResponsesRead: (ids: number[]) =>
+		request<BulkMarkReadResult>('/responses/mark-read', { method: 'POST', data: { ids } }),
+
+	bulkMarkResponsesUnread: (ids: number[]) =>
+		request<BulkMarkReadResult>('/responses/mark-unread', { method: 'POST', data: { ids } }),
 
 	submit: (surveyId: number, data: SubmitFormData) =>
 		request<SubmitFormResult>(`/surveys/${surveyId}/submit`, { method: 'POST', data }),

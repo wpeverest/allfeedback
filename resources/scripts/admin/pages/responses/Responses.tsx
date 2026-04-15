@@ -151,22 +151,20 @@ const Responses = () => {
 	});
 
 	const bulkDeleteMutation = useMutation({
-		mutationFn: (ids: number[]) =>
-			Promise.all(
-				ids.map((id) => {
-					const surveyId = responses.find((r) => r.id === id)?.survey_id ?? selectedSurveyId!;
-					return surveysApi.deleteResponse(surveyId, id);
-				}),
-			),
-		onSuccess: (_, ids) => {
+		mutationFn: (ids: number[]) => surveysApi.bulkDeleteResponses(ids),
+		onSuccess: (result, ids) => {
 			void queryClient.invalidateQueries({ queryKey: ['responses'] });
 			setChecked([]);
 			setBulkConfirmOpen(false);
+			const count = result.deleted;
 			toast.success(
-				ids.length === 1
+				count === 1
 					? __('1 response deleted.', 'all-feedback')
-					: `${ids.length} ${__('responses deleted.', 'all-feedback')}`,
+					: `${count} ${__('responses deleted.', 'all-feedback')}`,
 			);
+			if (result.failed.length > 0) {
+				toast.error(`${result.failed.length} ${__('response(s) could not be deleted.', 'all-feedback')}`);
+			}
 		},
 		onError: () => {
 			setBulkConfirmOpen(false);
@@ -187,14 +185,11 @@ const Responses = () => {
 	});
 
 	const bulkMarkReadMutation = useMutation({
-		mutationFn: (isRead: boolean) =>
-			Promise.all(
-				checked.map((id) => {
-					const surveyId = responses.find((r) => r.id === id)?.survey_id ?? selectedSurveyId!;
-					return surveysApi.updateResponse(surveyId, id, { is_read: isRead });
-				}),
-			),
-		onSuccess: (_, isRead) => {
+		mutationFn: ({ ids, isRead }: { ids: number[]; isRead: boolean }) =>
+			isRead
+				? surveysApi.bulkMarkResponsesRead(ids)
+				: surveysApi.bulkMarkResponsesUnread(ids),
+		onSuccess: (result, { isRead }) => {
 			void queryClient.invalidateQueries({ queryKey: ['responses'] });
 			setChecked([]);
 			toast.success(
@@ -202,6 +197,9 @@ const Responses = () => {
 					? __('Marked as read.', 'all-feedback')
 					: __('Marked as unread.', 'all-feedback'),
 			);
+			if (result.failed.length > 0) {
+				toast.error(`${result.failed.length} ${__('response(s) could not be updated.', 'all-feedback')}`);
+			}
 		},
 		onError: () => {
 			toast.error(__('Failed to update responses. Please try again.', 'all-feedback'));
@@ -532,8 +530,8 @@ const Responses = () => {
 				showMarkRead={checked.length > 0}
 				showMarkUnread={checked.length > 0}
 				showDelete={checked.length > 0}
-				onMarkRead={() => bulkMarkReadMutation.mutate(true)}
-				onMarkUnread={() => bulkMarkReadMutation.mutate(false)}
+				onMarkRead={() => bulkMarkReadMutation.mutate({ ids: checked, isRead: true })}
+				onMarkUnread={() => bulkMarkReadMutation.mutate({ ids: checked, isRead: false })}
 				onDelete={() => setBulkConfirmOpen(true)}
 				onTrash={() => {}}
 				onRestore={() => {}}
