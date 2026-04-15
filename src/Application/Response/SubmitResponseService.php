@@ -34,13 +34,14 @@ class SubmitResponseService {
 	/**
 	 * Run the validation pipeline, create a Response aggregate, and persist it.
 	 *
-	 * @param ResponseDTO $dto    Validated response payload.
-	 * @param string      $ipHash HMAC-SHA256 hash of the visitor's IP (computed by the controller).
+	 * @param ResponseDTO $dto       Validated response payload.
+	 * @param string      $ipHash   HMAC-SHA256 hash of the visitor's IP (computed by the controller).
+	 * @param string|null $ipAddress Raw IP address, or null when privacy mode is active.
 	 * @return Response
 	 * @throws NotFoundException   When the referenced survey does not exist.
 	 * @since 1.0.0
 	 */
-	public function execute( ResponseDTO $dto, string $ipHash ): Response {
+	public function execute( ResponseDTO $dto, string $ipHash, ?string $ipAddress = null ): Response {
 		$survey = $this->surveyRepository->findById( $dto->surveyId );
 
 		if ( $survey === null ) {
@@ -64,8 +65,9 @@ class SubmitResponseService {
 			score: $dto->score,
 			pageUrl: $dto->pageUrl,
 			deviceType: $dto->deviceType,
-			consentGiven: $dto->consentGiven,
 			ipHash: $ipHash,
+			ipAddress: $ipAddress,
+			consentGiven: $dto->consentGiven,
 		);
 
 		$response = $this->responseRepository->save( $response );

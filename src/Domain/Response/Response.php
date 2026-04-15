@@ -33,6 +33,7 @@ class Response extends Entity {
 		private ?string $pageUrl = null,
 		private ?string $deviceType = null,
 		private ?string $ipHash = null,
+		private ?string $ipAddress = null,
 		private ?int $userId = null,
 		private bool $consentGiven = false,
 		private bool $isRead = false,
@@ -53,12 +54,13 @@ class Response extends Entity {
 		?string $pageUrl,
 		?string $deviceType,
 		?string $ipHash,
+		?string $ipAddress,
 		?int $userId,
 		bool $consentGiven,
 		DateTimeImmutable $createdAt,
 		bool $isRead = false,
 	): self {
-		$response            = new self( $surveyId, $responseData, $score, $pageUrl, $deviceType, $ipHash, $userId, $consentGiven, $isRead );
+		$response            = new self( $surveyId, $responseData, $score, $pageUrl, $deviceType, $ipHash, $ipAddress, $userId, $consentGiven, $isRead );
 		$response->id        = $id;
 		$response->createdAt = $createdAt;
 		return $response;
@@ -119,6 +121,15 @@ class Response extends Entity {
 	}
 
 	/**
+	 * Return the raw IP address of the respondent, or null if privacy mode was active.
+	 *
+	 * @since 1.0.0
+	 */
+	public function getIpAddress(): ?string {
+		return $this->ipAddress;
+	}
+
+	/**
 	 * Return the WordPress user id of the respondent, or null for anonymous submissions.
 	 *
 	 * @since 1.0.0
@@ -168,6 +179,7 @@ class Response extends Entity {
 			'page_url'      => $this->pageUrl,
 			'device_type'   => $this->deviceType,
 			'ip_hash'       => $this->ipHash,
+			'ip_address'    => $this->ipAddress,
 			'user_id'       => $this->userId,
 			'consent_given' => $this->consentGiven,
 			'is_read'       => $this->isRead,

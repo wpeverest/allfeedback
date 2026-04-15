@@ -677,6 +677,7 @@ class ResponsesController extends RestController {
 			'page_url'      => $response->getPageUrl(),
 			'device_type'   => $response->getDeviceType(),
 			'user_id'       => $response->getUserId(),
+			'ip_address'    => $response->getIpAddress(),
 			'is_read'       => $response->isRead(),
 			'created_at'    => $response->getCreatedAt()->format( 'Y-m-d H:i:s' ),
 		];

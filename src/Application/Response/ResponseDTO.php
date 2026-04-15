@@ -25,6 +25,7 @@ class ResponseDTO {
 		public readonly ?string $deviceType,
 		public readonly bool $consentGiven,
 		public readonly int $userId,
+		public readonly ?string $ipAddress = null,
 	) {}
 
 	/**
