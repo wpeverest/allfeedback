@@ -247,6 +247,23 @@ class WpdbResponseRepository implements ResponseRepository {
 	}
 
 	/**
+	 * Count all unread Responses across every non-trashed Survey.
+	 *
+	 * @since 1.0.0
+	 */
+	public function countUnread(): int {
+		global $wpdb;
+
+		$surveysTable = $wpdb->prefix . 'af_surveys';
+
+		return (int) $wpdb->get_var(
+			"SELECT COUNT(*) FROM {$this->table}
+			 WHERE is_read = 0
+			   AND survey_id IN (SELECT id FROM {$surveysTable} WHERE status != 'trashed')" // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		);
+	}
+
+	/**
 	 * Return true if a response from the given IP hash already exists for
 	 * the survey within the look-back window.
 	 *

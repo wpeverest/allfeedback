@@ -7,6 +7,7 @@ namespace AllFeedback\Admin;
 use AllFeedback\Core\Constants;
 use AllFeedback\Core\Container;
 use AllFeedback\Core\ServiceProvider;
+use AllFeedback\Domain\Response\ResponseRepository;
 use AllFeedback\Support\AssetManager;
 use AllFeedback\Traits\Hooks;
 use DI\ContainerBuilder;
@@ -40,6 +41,7 @@ class AdminServiceProvider implements ServiceProvider {
 	public function __construct(
 		private readonly Container $container,
 		private readonly AssetManager $assetManager,
+		private readonly ResponseRepository $responseRepository,
 	) {}
 
 	// ServiceProvider::register() — nothing to add to the DI container here.
@@ -114,10 +116,20 @@ class AdminServiceProvider implements ServiceProvider {
 			callback:    $mountPoint,
 		);
 
+		$unreadCount      = $this->responseRepository->countUnread();
+		$responsesTitle   = __( 'Responses', 'all-feedback' );
+
+		if ( $unreadCount > 0 ) {
+			$responsesTitle .= sprintf(
+				' <span class="awaiting-mod count-%1$d"><span class="pending-count">%1$d</span></span>',
+				$unreadCount
+			);
+		}
+
 		add_submenu_page(
 			parent_slug: self::MENU_SLUG,
 			page_title:  __( 'Responses', 'all-feedback' ),
-			menu_title:  __( 'Responses', 'all-feedback' ),
+			menu_title:  $responsesTitle,
 			capability:  'manage_options',
 			menu_slug:   self::MENU_SLUG . '#/responses',
 			callback:    $mountPoint,

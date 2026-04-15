@@ -90,6 +90,15 @@ interface ResponseRepository {
 	public function deleteBySurveyId( int $surveyId ): bool;
 
 	/**
+	 * Count all unread Responses across every non-trashed Survey.
+	 *
+	 * Used to render the unread badge in the WordPress admin sidebar.
+	 *
+	 * @since 1.0.0
+	 */
+	public function countUnread(): int;
+
+	/**
 	 * Return true if a response from the given IP hash already exists for
 	 * the survey within the look-back window.
 	 *
