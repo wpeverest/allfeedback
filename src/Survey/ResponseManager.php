@@ -216,6 +216,33 @@ class ResponseManager {
 	}
 
 	/**
+	 * Update columns on an existing response row.
+	 *
+	 * Only the columns present in $data are touched; everything else is left
+	 * unchanged. Caller must pre-encode JSON columns as strings.
+	 *
+	 * @param int                  $id   Response primary key.
+	 * @param array<string, mixed> $data Column-value map to update.
+	 * @return bool True when at least one row was updated; false on DB error.
+	 * @since 1.0.0
+	 */
+	public function update( int $id, array $data ): bool {
+		global $wpdb;
+
+		$intCols = [ 'score', 'user_id', 'consent_given' ];
+		$formats = [];
+
+		foreach ( array_keys( $data ) as $col ) {
+			$formats[] = in_array( $col, $intCols, true ) ? '%d' : '%s';
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$result = $wpdb->update( $this->table(), $data, [ 'id' => $id ], $formats, [ '%d' ] );
+
+		return $result !== false;
+	}
+
+	/**
 	 * Permanently delete a single response by its primary key.
 	 *
 	 * @param int $id Response primary key.

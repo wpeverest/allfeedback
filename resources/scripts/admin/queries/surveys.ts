@@ -20,3 +20,8 @@ export const surveyResponsesQuery = (surveyId: number, params?: ResponseListPara
 	queryKey: ['responses', surveyId, params ?? {}] as const,
 	queryFn:  () => surveysApi.listResponses(surveyId, params),
 });
+
+export const surveyResponseQuery = (surveyId: number, responseId: number) => ({
+	queryKey: ['responses', surveyId, responseId] as const,
+	queryFn:  () => surveysApi.getResponse(surveyId, responseId),
+});
