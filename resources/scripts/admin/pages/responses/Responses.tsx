@@ -396,9 +396,13 @@ const Responses = () => {
 										<td className="w-16 px-4 py-5">
 											<div className="flex items-center gap-1.5">
 												{!response.is_read && (
-													<span className="size-1.5 shrink-0 rounded-full bg-primary" title={__('Unread', 'all-feedback')} />
+													<span className="size-1.5 shrink-0 rounded-full bg-primary/70" title={__('Unread', 'all-feedback')} />
 												)}
-												<span className={cn(cellCls, 'tabular-nums text-foreground/40')}>
+												<span className={cn(
+													cellCls,
+													'tabular-nums',
+													!response.is_read ? 'font-semibold text-foreground/70' : 'text-foreground/35',
+												)}>
 													#{response.id}
 												</span>
 											</div>
@@ -415,6 +419,7 @@ const Responses = () => {
 													cellCls,
 													'line-clamp-1 underline-offset-2 transition-colors',
 													'group-hover/resp:text-primary group-hover/resp:underline',
+													!response.is_read ? 'font-medium text-foreground' : 'text-foreground/55',
 												)}>
 													{summary}
 												</span>
