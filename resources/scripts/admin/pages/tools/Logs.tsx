@@ -1,65 +1,74 @@
+import { logsApi } from '@/admin/api/logs';
+import type { LogFile, LogFileDetail } from '@/admin/api/logs';
+import { logQuery, logsQuery } from '@/admin/queries/logs';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import apiFetch from '@wordpress/api-fetch';
 import { __ } from '@wordpress/i18n';
-import { ChevronDown, Download, Info, RefreshCw, ScrollText, Trash2 } from 'lucide-react';
-import { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { ChevronDown, Download, RefreshCw, ScrollText, Trash2 } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { toast } from 'sonner';
 
-// ── types ─────────────────────────────────────────────────────────────────────
+// ── types ──────────────────────────────────────────────────────────────────
 
-type LogLevel = 'ERROR' | 'WARNING' | 'INFO' | 'DEBUG';
+type LogLevel = 'ERROR' | 'WARNING' | 'INFO' | 'DEBUG' | 'FATAL';
 
-interface LogEntry {
-	level: LogLevel;
+interface ParsedEntry {
+	level:     LogLevel;
 	timestamp: string;
-	message: string;
+	message:   string;
 }
 
-interface LogFile {
-	name: string;
-	size: string;
-	entries: LogEntry[];
-}
-
-interface LogsData {
-	total_size: string;
-	files: LogFile[];
-}
-
-
-// ── constants ─────────────────────────────────────────────────────────────────
+// ── constants ──────────────────────────────────────────────────────────────
 
 const PAGE_SIZE = 10;
 
-// ── api ───────────────────────────────────────────────────────────────────────
+// Matches: [2026-04-13T10:30:00+00:00] [ERROR] Message …
+const ENTRY_RE = /^\[([^\]]+)\] \[([A-Z]+)\] (.+)$/;
 
-const fetchLogs = (): Promise<{ success: boolean; data: LogsData }> =>
-	apiFetch({ path: '/all-feedback/v1/logs' });
+// ── helpers ────────────────────────────────────────────────────────────────
 
-const deleteFile = (name: string): Promise<{ success: boolean }> =>
-	apiFetch({ path: `/all-feedback/v1/logs/file?name=${encodeURIComponent(name)}`, method: 'DELETE' });
+function parseEntries(content: string): ParsedEntry[] {
+	return content
+		.split('\n')
+		.filter(Boolean)
+		.reduce<ParsedEntry[]>((acc, line) => {
+			const m = line.match(ENTRY_RE);
+			if (m) acc.push({ timestamp: m[1]!, level: m[2] as LogLevel, message: m[3]! });
+			return acc;
+		}, []);
+}
 
-const LOGS_KEY = ['allfb', 'logs'] as const;
+function formatBytes(bytes: number): string {
+	if (bytes < 1024) return `${bytes} B`;
+	const kb = bytes / 1024;
+	if (kb < 1024) return `${kb.toFixed(1)} KB`;
+	return `${(kb / 1024).toFixed(1)} MB`;
+}
 
-// ── level badge ───────────────────────────────────────────────────────────────
+// ── level badge ────────────────────────────────────────────────────────────
 
-const LEVEL_CLASSES: Record<LogLevel, string> = {
+const LEVEL_CLASSES: Record<string, string> = {
 	ERROR:   'bg-destructive/10 text-destructive border-destructive/20',
+	FATAL:   'bg-destructive/10 text-destructive border-destructive/20',
 	WARNING: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
 	INFO:    'bg-primary/10 text-primary border-primary/20',
 	DEBUG:   'bg-muted text-muted-foreground border-border/50',
 };
 
-const LevelBadge = ({ level }: { level: LogLevel }) => (
-	<span className={cn('rounded border px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide', LEVEL_CLASSES[level])}>
+const LevelBadge = ({ level }: { level: string }) => (
+	<span
+		className={cn(
+			'rounded border px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide',
+			LEVEL_CLASSES[level] ?? LEVEL_CLASSES['DEBUG'],
+		)}
+	>
 		{level}
 	</span>
 );
 
-// ── filter tabs ───────────────────────────────────────────────────────────────
+// ── filter tabs ────────────────────────────────────────────────────────────
 
 const FILTERS: { key: LogLevel | 'ALL'; label: string }[] = [
 	{ key: 'ALL',     label: __('All',     'all-feedback') },
@@ -69,7 +78,17 @@ const FILTERS: { key: LogLevel | 'ALL'; label: string }[] = [
 	{ key: 'DEBUG',   label: __('Debug',   'all-feedback') },
 ];
 
-const FilterTab = ({ label, count, active, onClick }: { label: string; count: number; active: boolean; onClick: () => void }) => (
+const FilterTab = ({
+	label,
+	count,
+	active,
+	onClick,
+}: {
+	label:   string;
+	count:   number;
+	active:  boolean;
+	onClick: () => void;
+}) => (
 	<button
 		type="button"
 		onClick={onClick}
@@ -87,33 +106,41 @@ const FilterTab = ({ label, count, active, onClick }: { label: string; count: nu
 	</button>
 );
 
-// ── download helper ───────────────────────────────────────────────────────────
+// ── download helper ────────────────────────────────────────────────────────
 
-const triggerDownload = (filename: string, entries: LogEntry[]) => {
-	const content = entries.map((e) => `[${e.timestamp}] [${e.level.padEnd(7)}] ${e.message}`).join('\n');
-	const blob    = new Blob([content], { type: 'text/plain' });
-	const url     = URL.createObjectURL(blob);
-	const a       = document.createElement('a');
-	a.href        = url;
-	a.download    = filename;
+function triggerDownload(filename: string, content: string): void {
+	const blob = new Blob([content], { type: 'text/plain' });
+	const url  = URL.createObjectURL(blob);
+	const a    = document.createElement('a');
+	a.href     = url;
+	a.download = filename;
 	a.click();
 	URL.revokeObjectURL(url);
-};
+}
 
-// ── log entry ─────────────────────────────────────────────────────────────────
+// ── log entry row ──────────────────────────────────────────────────────────
 
-const LogEntryRow = ({ entry }: { entry: LogEntry }) => (
+const LogEntryRow = ({ entry }: { entry: ParsedEntry }) => (
 	<div className="rounded-lg border border-border/50 px-4 py-3">
 		<div className="flex items-center gap-2.5">
-			<Info className="size-[14px] shrink-0 text-muted-foreground/40" />
 			<LevelBadge level={entry.level} />
 			<span className="text-[12px] text-muted-foreground/60">{entry.timestamp}</span>
 		</div>
-		<p className="mt-2 pl-[22px] font-mono text-[12.5px] text-foreground/80">{entry.message}</p>
+		<p className="mt-2 font-mono text-[12.5px] text-foreground/80">{entry.message}</p>
 	</div>
 );
 
-// ── log file accordion ────────────────────────────────────────────────────────
+// ── log file skeleton ──────────────────────────────────────────────────────
+
+const LogEntriesSkeleton = () => (
+	<div className="space-y-2 border-t border-border/50 p-3">
+		{[...Array(3)].map((_, i) => (
+			<div key={i} className="h-[60px] animate-pulse rounded-lg border border-border/50 bg-muted/30" />
+		))}
+	</div>
+);
+
+// ── log file accordion ─────────────────────────────────────────────────────
 
 const LogFileSection = ({
 	file,
@@ -122,24 +149,44 @@ const LogFileSection = ({
 	isDeleting,
 	defaultOpen,
 }: {
-	file: LogFile;
+	file:         LogFile;
 	activeFilter: LogLevel | 'ALL';
-	onDelete: () => void;
-	isDeleting: boolean;
-	defaultOpen: boolean;
+	onDelete:     () => void;
+	isDeleting:   boolean;
+	defaultOpen:  boolean;
 }) => {
-	const [open, setOpen]         = useState(defaultOpen);
-	const [showAll, setShowAll]   = useState(false);
+	const [open, setOpen]       = useState(defaultOpen);
+	const [showAll, setShowAll] = useState(false);
+
+	// Lazy-load file content when section is first opened.
+	const { data: detail, isFetching } = useQuery({
+		...logQuery(file.id),
+		enabled:   open,
+		staleTime: 5 * 60 * 1000,
+	});
+
+	const allEntries = useMemo(
+		() => (detail ? parseEntries(detail.content) : []),
+		[detail],
+	);
 
 	const filtered = activeFilter === 'ALL'
-		? file.entries
-		: file.entries.filter((e) => e.level === activeFilter);
-
-	// hide the entire section if no entries match the active filter
-	if (filtered.length === 0) return null;
+		? allEntries
+		: allEntries.filter((e) => e.level === activeFilter);
 
 	const visible   = showAll ? filtered : filtered.slice(0, PAGE_SIZE);
 	const remaining = filtered.length - PAGE_SIZE;
+
+	const handleDownload = () => {
+		if (detail) {
+			triggerDownload(file.name, detail.content);
+			return;
+		}
+		// Content not yet loaded — fetch it on demand.
+		logsApi.get(file.id)
+			.then((d: LogFileDetail) => triggerDownload(file.name, d.content))
+			.catch(() => toast.error(__('Failed to download log file.', 'all-feedback')));
+	};
 
 	return (
 		<div className={cn('rounded-lg border border-border/50 transition-opacity', isDeleting && 'opacity-50')}>
@@ -149,13 +196,16 @@ const LogFileSection = ({
 				onClick={() => setOpen((o) => !o)}
 			>
 				<ChevronDown
-					className={cn('size-[14px] shrink-0 text-muted-foreground/50 transition-transform', !open && '-rotate-90')}
+					className={cn(
+						'size-[14px] shrink-0 text-muted-foreground/50 transition-transform',
+						!open && '-rotate-90',
+					)}
 				/>
 				<span className="flex-1 font-mono text-[12.5px] font-medium text-foreground/80">
 					{file.name}
 				</span>
 				<span className="text-[12px] text-muted-foreground/50">
-					{filtered.length} {__('entries', 'all-feedback')} · {file.size}
+					{file.entries} {__('entries', 'all-feedback')} · {file.size}
 				</span>
 
 				{/* download & delete — stop propagation so they don't toggle the accordion */}
@@ -163,7 +213,7 @@ const LogFileSection = ({
 					<button
 						type="button"
 						title={__('Download', 'all-feedback')}
-						onClick={() => triggerDownload(file.name, file.entries)}
+						onClick={handleDownload}
 						className="flex size-7 items-center justify-center rounded-md text-muted-foreground/50 transition-colors hover:bg-muted hover:text-foreground"
 					>
 						<Download className="size-3.5" />
@@ -182,27 +232,41 @@ const LogFileSection = ({
 
 			{/* entries */}
 			{open && (
-				<div className="space-y-2 border-t border-border/50 p-3">
-					{visible.map((entry, i) => (
-						<LogEntryRow key={i} entry={entry} />
-					))}
+				isFetching && !detail ? (
+					<LogEntriesSkeleton />
+				) : (
+					<div className="space-y-2 border-t border-border/50 p-3">
+						{filtered.length === 0 ? (
+							<p className="py-4 text-center text-[12.5px] text-muted-foreground/50">
+								{activeFilter === 'ALL'
+									? __('No entries in this log file.', 'all-feedback')
+									: __('No entries match this filter.', 'all-feedback')}
+							</p>
+						) : (
+							<>
+								{visible.map((entry, i) => (
+									<LogEntryRow key={i} entry={entry} />
+								))}
 
-					{!showAll && remaining > 0 && (
-						<button
-							type="button"
-							onClick={() => setShowAll(true)}
-							className="w-full rounded-lg border border-dashed border-border/60 py-2.5 text-[12.5px] text-muted-foreground/60 transition-colors hover:border-border hover:text-foreground"
-						>
-							{__('Show', 'all-feedback')} {remaining} {__('more entries', 'all-feedback')}
-						</button>
-					)}
-				</div>
+								{!showAll && remaining > 0 && (
+									<button
+										type="button"
+										onClick={() => setShowAll(true)}
+										className="w-full rounded-lg border border-dashed border-border/60 py-2.5 text-[12.5px] text-muted-foreground/60 transition-colors hover:border-border hover:text-foreground"
+									>
+										{__('Show', 'all-feedback')} {remaining} {__('more entries', 'all-feedback')}
+									</button>
+								)}
+							</>
+						)}
+					</div>
+				)
 			)}
 		</div>
 	);
 };
 
-// ── empty state ───────────────────────────────────────────────────────────────
+// ── empty state ────────────────────────────────────────────────────────────
 
 const EmptyState = () => (
 	<div className="flex flex-col items-center justify-center gap-2 py-14 text-center">
@@ -214,7 +278,10 @@ const EmptyState = () => (
 		</p>
 		<p className="max-w-xs text-[12.5px] text-muted-foreground/55">
 			{__('Logs will appear here once logging is enabled in ', 'all-feedback')}
-			<Link to="/settings/advanced" className="font-medium !text-primary underline underline-offset-2 hover:!opacity-80">
+			<Link
+				to="/settings/advanced"
+				className="font-medium !text-primary underline underline-offset-2 hover:!opacity-80"
+			>
 				{__('Settings → Advanced', 'all-feedback')}
 			</Link>
 			{'.'}
@@ -222,43 +289,77 @@ const EmptyState = () => (
 	</div>
 );
 
-// ── main component ────────────────────────────────────────────────────────────
+// ── main component ─────────────────────────────────────────────────────────
 
 const Logs = () => {
-	const queryClient                       = useQueryClient();
+	const queryClient = useQueryClient();
+
 	const [activeFilter, setActiveFilter]   = useState<LogLevel | 'ALL'>('ALL');
 	const [deletingFiles, setDeletingFiles] = useState<Set<string>>(new Set());
 
-	const { data: rawData, isPending } = useQuery({
-		queryKey: LOGS_KEY,
-		queryFn:  fetchLogs,
-		select:   (res) => res.data,
-		retry:    false,
+	// Fetch paginated list of log file metadata.
+	const { data: listData, isPending: isListPending } = useQuery({
+		...logsQuery(),
+		staleTime: 30 * 1000,
 	});
 
-	const data       = rawData ?? { total_size: '0 B', files: [] };
-	const allEntries = data.files.flatMap((f) => f.entries);
+	const files = listData?.logs ?? [];
+
+	// Eagerly load content for all files so filter-tab counts are accurate.
+	// staleTime prevents redundant fetches when the user navigates away and back.
+	const fileDetailQueries = useQueries({
+		queries: files.map((file) => ({
+			...logQuery(file.id),
+			staleTime: 5 * 60 * 1000,
+			enabled:   files.length > 0,
+		})),
+	});
+
+	// Aggregate all parsed entries from loaded file contents.
+	const allEntries = useMemo<ParsedEntry[]>(() => {
+		return fileDetailQueries
+			.filter((q) => q.data !== undefined)
+			.flatMap((q) => parseEntries(q.data!.content));
+	}, [fileDetailQueries]);
 
 	const countFor = (level: LogLevel | 'ALL') =>
-		level === 'ALL' ? allEntries.length : allEntries.filter((e) => e.level === level).length;
+		level === 'ALL'
+			? allEntries.length
+			: allEntries.filter((e) => e.level === level).length;
 
-	const handleDeleteFile = (name: string) => {
-		setDeletingFiles((prev) => new Set(prev).add(name));
-		deleteFile(name)
+	const totalBytes = files.reduce((sum, f) => sum + f.bytes, 0);
+
+	const handleDeleteFile = (file: LogFile) => {
+		setDeletingFiles((prev) => new Set(prev).add(file.id));
+
+		logsApi.delete(file.id)
 			.then(() => {
-				queryClient.setQueryData<LogsData>(LOGS_KEY, (old) => {
+				// Remove from list cache immediately.
+				queryClient.setQueryData(logsQuery().queryKey, (old: typeof listData) => {
 					if (!old) return old;
-					return { ...old, files: old.files.filter((f) => f.name !== name) };
+					return {
+						...old,
+						logs:  old.logs.filter((f) => f.id !== file.id),
+						total: old.total - 1,
+					};
 				});
+				// Drop the now-stale content cache entry.
+				queryClient.removeQueries({ queryKey: logQuery(file.id).queryKey });
 				toast.success(__('Log file deleted.', 'all-feedback'));
 			})
 			.catch(() => {
 				toast.error(__('Failed to delete log file.', 'all-feedback'));
 			})
 			.finally(() => {
-				setDeletingFiles((prev) => { const n = new Set(prev); n.delete(name); return n; });
+				setDeletingFiles((prev) => {
+					const next = new Set(prev);
+					next.delete(file.id);
+					return next;
+				});
 			});
 	};
+
+	const isPending = isListPending;
 
 	return (
 		<div>
@@ -272,7 +373,8 @@ const Logs = () => {
 						{__('Activity Logs', 'all-feedback')}
 					</h3>
 					<p className="text-[12px] text-muted-foreground/60" style={{ margin: 0 }}>
-						{data.files.length} {__('files', 'all-feedback')} · {data.total_size}
+						{files.length} {__('files', 'all-feedback')}
+						{files.length > 0 && <> · {formatBytes(totalBytes)}</>}
 					</p>
 				</div>
 				<div className="ml-auto">
@@ -280,7 +382,7 @@ const Logs = () => {
 						variant="outline"
 						size="sm"
 						disabled={isPending}
-						onClick={() => queryClient.invalidateQueries({ queryKey: LOGS_KEY })}
+						onClick={() => queryClient.invalidateQueries({ queryKey: logsQuery().queryKey })}
 					>
 						<RefreshCw className={cn('size-3.5', isPending && 'animate-spin')} />
 						{__('Refresh', 'all-feedback')}
@@ -288,7 +390,7 @@ const Logs = () => {
 				</div>
 			</div>
 
-			{/* filter tabs */}
+			{/* filter tabs — only visible once entries have been loaded */}
 			{allEntries.length > 0 && (
 				<div className="flex items-center gap-2 border-b border-border/50 px-6 py-3.5">
 					{FILTERS.map((f) => (
@@ -305,17 +407,17 @@ const Logs = () => {
 
 			{/* file accordions */}
 			<div className="px-6 pb-4 pt-4">
-				{allEntries.length === 0 ? (
+				{files.length === 0 ? (
 					<EmptyState />
 				) : (
 					<div className="space-y-3">
-						{data.files.map((file, i) => (
+						{files.map((file, i) => (
 							<LogFileSection
-								key={file.name}
+								key={file.id}
 								file={file}
 								activeFilter={activeFilter}
-								onDelete={() => handleDeleteFile(file.name)}
-								isDeleting={deletingFiles.has(file.name)}
+								onDelete={() => handleDeleteFile(file)}
+								isDeleting={deletingFiles.has(file.id)}
 								defaultOpen={i === 0}
 							/>
 						))}
