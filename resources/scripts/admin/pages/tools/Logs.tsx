@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { __ } from '@wordpress/i18n';
 import { ChevronDown, Download, RefreshCw, ScrollText, Trash2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { toast } from 'sonner';
@@ -329,6 +329,36 @@ const Logs = () => {
 
 	const totalBytes = files.reduce((sum, f) => sum + f.bytes, 0);
 
+	const [isDeletingAll, setIsDeletingAll]     = useState(false);
+	const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
+	const confirmTimerRef                         = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	const handleDeleteAll = () => {
+		if (!confirmDeleteAll) {
+			setConfirmDeleteAll(true);
+			confirmTimerRef.current = setTimeout(() => setConfirmDeleteAll(false), 3000);
+			return;
+		}
+
+		if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
+		setConfirmDeleteAll(false);
+		setIsDeletingAll(true);
+
+		logsApi.bulkDelete(files.map((f) => f.id))
+			.then(() => {
+				queryClient.setQueryData(logsQuery().queryKey, (old: typeof listData) => {
+					if (!old) return old;
+					return { ...old, logs: [], total: 0 };
+				});
+				files.forEach((f) => queryClient.removeQueries({ queryKey: logQuery(f.id).queryKey }));
+				toast.success(__('All log files deleted.', 'all-feedback'));
+			})
+			.catch(() => {
+				toast.error(__('Failed to delete all log files.', 'all-feedback'));
+			})
+			.finally(() => setIsDeletingAll(false));
+	};
+
 	const handleDeleteFile = (file: LogFile) => {
 		setDeletingFiles((prev) => new Set(prev).add(file.id));
 
@@ -377,7 +407,22 @@ const Logs = () => {
 						{files.length > 0 && <> · {formatBytes(totalBytes)}</>}
 					</p>
 				</div>
-				<div className="ml-auto">
+				<div className="ml-auto flex items-center gap-2">
+					{files.length > 0 && (
+						<Button
+							variant="outline"
+							size="sm"
+							disabled={isDeletingAll || isPending}
+							onClick={handleDeleteAll}
+							className={cn(
+								'border-destructive/60 text-destructive hover:bg-destructive/10 hover:text-destructive',
+								confirmDeleteAll && 'bg-destructive/10',
+							)}
+						>
+							<Trash2 className="size-3.5" />
+							{confirmDeleteAll ? __('Confirm delete all?', 'all-feedback') : __('Delete All', 'all-feedback')}
+						</Button>
+					)}
 					<Button
 						variant="outline"
 						size="sm"
