@@ -19,6 +19,8 @@ import {
 	Globe,
 	Laptop,
 	Loader2,
+	Mail,
+	MailOpen,
 	MessageSquare,
 	Monitor,
 	Pencil,
@@ -420,6 +422,22 @@ const ResponseDetail = () => {
 		form.reset({ response_data: (response?.response_data ?? {}) as Record<string, unknown> });
 	}, [response?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+	// ----- Mark read mutation -----
+	const markReadMutation = useMutation({
+		mutationFn: (isRead: boolean) =>
+			surveysApi.updateResponse(surveyId, Number(responseId), { is_read: isRead }),
+		onSuccess: () => {
+			void queryClient.invalidateQueries({ queryKey: ['responses'] });
+		},
+	});
+
+	// Auto-mark as read when response loads and is unread.
+	useEffect(() => {
+		if (response && !response.is_read) {
+			markReadMutation.mutate(true);
+		}
+	}, [response?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
 	// ----- Save mutation -----
 	const saveMutation = useMutation({
 		mutationFn: (data: Record<string, unknown>) =>
@@ -516,10 +534,24 @@ const ResponseDetail = () => {
 					)}
 
 					{!isEditing ? (
-						<Button variant="outline" className="border-primary text-primary hover:bg-primary/5 hover:text-primary" onClick={() => setIsEditing(true)}>
-							<Pencil className="size-3.5" />
-							{__('Edit response', 'all-feedback')}
-						</Button>
+						<>
+							<button
+								type="button"
+								onClick={() => markReadMutation.mutate(!response.is_read)}
+								disabled={markReadMutation.isPending}
+								title={response.is_read ? __('Mark as unread', 'all-feedback') : __('Mark as read', 'all-feedback')}
+								className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+							>
+								{response.is_read
+									? <Mail className="size-4" />
+									: <MailOpen className="size-4" />
+								}
+							</button>
+							<Button variant="outline" className="border-primary text-primary hover:bg-primary/5 hover:text-primary" onClick={() => setIsEditing(true)}>
+								<Pencil className="size-3.5" />
+								{__('Edit response', 'all-feedback')}
+							</Button>
+						</>
 					) : (
 						<>
 							<Button
@@ -663,6 +695,14 @@ const ResponseDetail = () => {
 						</div>
 
 						<div className="divide-y divide-border">
+							<MetaItem icon={response.is_read ? MailOpen : Mail} label={__('Status', 'all-feedback')}>
+								{response.is_read ? (
+									<span className="text-muted-foreground">{__('Read', 'all-feedback')}</span>
+								) : (
+									<span className="font-medium text-primary">{__('Unread', 'all-feedback')}</span>
+								)}
+							</MetaItem>
+
 							{response.score !== null && (
 								<MetaItem icon={Star} label={__('Score', 'all-feedback')}>
 									<span className="font-semibold tabular-nums">{response.score}</span>

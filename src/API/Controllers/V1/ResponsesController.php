@@ -140,7 +140,12 @@ class ResponsesController extends RestController {
 							'response_data' => [
 								'description' => __( 'Field answers keyed by field ID.', 'all-feedback' ),
 								'type'        => [ 'object', 'array', 'null' ],
-								'required'    => true,
+								'required'    => false,
+							],
+							'is_read'       => [
+								'description' => __( 'Whether the response has been read by an admin.', 'all-feedback' ),
+								'type'        => 'boolean',
+								'required'    => false,
 							],
 						]
 					),
@@ -278,20 +283,34 @@ class ResponsesController extends RestController {
 			return $this->notFoundResponse( __( 'Response', 'all-feedback' ) );
 		}
 
+		$updatePayload = [];
+
+		// Handle response_data if provided.
 		$rawData = $request->get_param( 'response_data' );
+		if ( $rawData !== null ) {
+			if ( $rawData instanceof \stdClass ) {
+				$rawData = (array) $rawData;
+			}
 
-		// Normalise: WP may decode the JSON body as stdClass — cast to array.
-		if ( $rawData instanceof \stdClass ) {
-			$rawData = (array) $rawData;
+			$responseDataJson = wp_json_encode( $rawData );
+
+			if ( $responseDataJson === false ) {
+				return $this->errorResponse( __( 'Invalid response_data: could not encode as JSON.', 'all-feedback' ), 400 );
+			}
+
+			$updatePayload['response_data'] = $responseDataJson;
 		}
 
-		$responseDataJson = $rawData !== null ? wp_json_encode( $rawData ) : null;
-
-		if ( $responseDataJson === false ) {
-			return $this->errorResponse( __( 'Invalid response_data: could not encode as JSON.', 'all-feedback' ), 400 );
+		// Handle is_read if provided.
+		$isRead = $request->get_param( 'is_read' );
+		if ( $isRead !== null ) {
+			$updatePayload['is_read'] = $isRead ? 1 : 0;
 		}
 
-		$updatePayload = [ 'response_data' => $responseDataJson ];
+		// Nothing to update — return current state.
+		if ( empty( $updatePayload ) ) {
+			return $this->successResponse( $this->prepareResponse( $response ) );
+		}
 
 		if ( ! $this->responseManager->update( $responseId, $updatePayload ) ) {
 			$this->logger->error(
@@ -445,6 +464,7 @@ class ResponsesController extends RestController {
 			'device_type'   => $response->device_type,
 			'user_id'       => $response->user_id !== null ? (int) $response->user_id : null,
 			'consent_given' => (bool) $response->consent_given,
+			'is_read'       => (bool) ( $response->is_read ?? false ),
 			'created_at'    => $response->created_at,
 		];
 	}
