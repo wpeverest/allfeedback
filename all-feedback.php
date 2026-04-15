@@ -10,8 +10,8 @@
  * Requires PHP: 8.2
  * Text Domain: all-feedback
  * Domain Path: /languages
- * License:     GNU General Public License v3.0
- * License URI: http://www.gnu.org/licenses/gpl-3.0.html
+ * WordPress Available: yes
+ * Requires License: no
  *
  * @package AllFeedback
  */
@@ -26,6 +26,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+
+// Absolute path to the main plugin file — mirrors EVF_PLUGIN_FILE convention.
+define( 'AF_PLUGIN_FILE', __FILE__ );
 
 $autoloader = __DIR__ . '/vendor/autoload.php';
 
@@ -43,6 +46,37 @@ if ( ! file_exists( $autoloader ) ) {
 }
 
 require_once $autoloader;
+
+// ------------------------------------------------------------------
+// ThemeGrill SDK
+// Versioned loader — whichever installed plugin ships the highest
+// SDK version wins. load.php hooks into `init` to boot start.php.
+// ------------------------------------------------------------------
+
+$tg_sdk_loader = __DIR__ . '/vendor/themegrill/themegrill-sdk/load.php';
+if ( file_exists( $tg_sdk_loader ) ) {
+	require_once $tg_sdk_loader;
+}
+
+/**
+ * Register All Feedback with ThemeGrill SDK.
+ * Fires before `init` so start.php picks it up when it reads the filter.
+ */
+add_filter(
+	'themegrill_sdk_products',
+	function ( $products ) {
+		$products[] = AF_PLUGIN_FILE;
+		return $products;
+	},
+	10,
+	1
+);
+
+/**
+ * Disable SDK promotions and dashboard widgets — we handle our own UI.
+ */
+add_filter( 'themegrill_sdk_ran_promos', '__return_true' );
+add_filter( 'themegrill_sdk_hide_dashboard_widget', '__return_true' );
 
 // ------------------------------------------------------------------
 // Bootstrap

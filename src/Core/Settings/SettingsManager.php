@@ -104,7 +104,7 @@ class SettingsManager {
 			],
 			'logging' => [
 				'enabled'        => false,             // Master switch
-				'level'          => 'error',           // Minimum severity to record
+				'level'          => 'debug',           // Minimum severity to record (debug = capture everything)
 				'retention_days' => 30,                // Days before auto-prune
 			],
 			'plugin'  => [

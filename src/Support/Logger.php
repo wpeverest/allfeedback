@@ -287,7 +287,8 @@ class Logger {
 
 	/**
 	 * Write a log entry to today's log file.
-	 * Gated by advanced.logging.enabled and the configured threshold.
+	 * Gated by advanced.logging.enabled only — all severities are captured
+	 * when logging is on because no level selector is exposed in the UI.
 	 *
 	 * @param string               $level   Severity label.
 	 * @param string               $message Human-readable message.
@@ -296,10 +297,6 @@ class Logger {
 	 */
 	private function log( string $level, string $message, array $context ): void {
 		if ( ! $this->isEnabled() ) {
-			return;
-		}
-
-		if ( ! $this->meetsThreshold( $level ) ) {
 			return;
 		}
 

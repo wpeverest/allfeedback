@@ -438,7 +438,7 @@ const Logs = () => {
 						variant="outline"
 						size="sm"
 						disabled={isListPending}
-						onClick={() => queryClient.invalidateQueries({ queryKey: logsQuery().queryKey })}
+						onClick={() => queryClient.invalidateQueries({ queryKey: ['logs'] })}
 					>
 						<RefreshCw className={cn('size-3.5', isListPending && 'animate-spin')} />
 						{__('Refresh', 'all-feedback')}
