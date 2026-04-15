@@ -171,7 +171,7 @@ class ResponseManager {
 
 		if ( empty( $values ) ) {
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table} {$where}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		}
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -355,14 +355,21 @@ class ResponseManager {
 	/**
 	 * Build a WHERE clause for optional date bounds only (all surveys).
 	 *
+	 * Always excludes responses belonging to trashed surveys via a subquery.
+	 *
 	 * @param string $dateFrom
 	 * @param string $dateTo
 	 * @return array{0: string, 1: array<int, mixed>}
 	 * @since 1.0.0
 	 */
 	private function buildWhereAll( string $dateFrom, string $dateTo ): array {
-		$conditions = [];
-		$values     = [];
+		global $wpdb;
+
+		$surveysTable = $wpdb->prefix . 'af_surveys';
+		$conditions   = [
+			"survey_id IN (SELECT id FROM {$surveysTable} WHERE status != 'trashed')", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		];
+		$values       = [];
 
 		if ( $dateFrom !== '' ) {
 			$conditions[] = 'DATE(created_at) >= %s';
@@ -374,7 +381,7 @@ class ResponseManager {
 			$values[]     = $dateTo;
 		}
 
-		$where = ! empty( $conditions ) ? 'WHERE ' . implode( ' AND ', $conditions ) : '';
+		$where = 'WHERE ' . implode( ' AND ', $conditions );
 
 		return [ $where, $values ];
 	}

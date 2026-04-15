@@ -203,8 +203,22 @@ class ResponsesController extends RestController {
 	public function index( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$surveyId = (int) $request->get_param( 'id' );
 
-		if ( $this->surveyRepository->findById( $surveyId ) === null ) {
+		$survey = $this->surveyRepository->findById( $surveyId );
+
+		if ( $survey === null ) {
 			return $this->notFoundResponse( __( 'Survey', 'all-feedback' ) );
+		}
+
+		if ( $survey->getStatus()->isTrashed() ) {
+			$perPage = min( 100, max( 1, (int) ( $request->get_param( 'per_page' ) ?? 20 ) ) );
+			return $this->successResponse(
+				[
+					'responses' => [],
+					'total'     => 0,
+					'page'      => 1,
+					'per_page'  => $perPage,
+				]
+			);
 		}
 
 		$page     = max( 1, (int) ( $request->get_param( 'page' ) ?? 1 ) );
@@ -418,11 +432,6 @@ class ResponsesController extends RestController {
 					'context'     => [ 'view' ],
 					'readonly'    => true,
 				],
-				'consent_given' => [
-					'description' => __( 'Whether the visitor gave GDPR consent.', 'all-feedback' ),
-					'type'        => 'boolean',
-					'context'     => [ 'view' ],
-				],
 				'is_read'       => [
 					'description' => __( 'Whether an admin has read this response.', 'all-feedback' ),
 					'type'        => 'boolean',
@@ -460,7 +469,6 @@ class ResponsesController extends RestController {
 			'page_url'      => $response->getPageUrl(),
 			'device_type'   => $response->getDeviceType(),
 			'user_id'       => $response->getUserId(),
-			'consent_given' => $response->isConsentGiven(),
 			'is_read'       => $response->isRead(),
 			'created_at'    => $response->getCreatedAt()->format( 'Y-m-d H:i:s' ),
 		];

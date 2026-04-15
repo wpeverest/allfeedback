@@ -7,6 +7,7 @@ namespace AllFeedback\API\Controllers\V1;
 defined( 'ABSPATH' ) || exit;
 
 use AllFeedback\API\RestController;
+use AllFeedback\Domain\Response\ResponseRepository;
 use AllFeedback\Domain\Survey\Survey;
 use AllFeedback\Domain\Survey\SurveyFilter;
 use AllFeedback\Domain\Survey\SurveyRepository;
@@ -57,12 +58,14 @@ class SurveysController extends RestController {
 	protected string $restBase = 'surveys';
 
 	/**
-	 * @param SurveyRepository $surveyRepository Survey aggregate repository.
-	 * @param Logger           $logger           Structured logger.
+	 * @param SurveyRepository   $surveyRepository   Survey aggregate repository.
+	 * @param ResponseRepository $responseRepository Response aggregate repository.
+	 * @param Logger             $logger             Structured logger.
 	 * @since 1.0.0
 	 */
 	public function __construct(
 		private readonly SurveyRepository $surveyRepository,
+		private readonly ResponseRepository $responseRepository,
 		private readonly Logger $logger,
 	) {}
 
@@ -493,6 +496,9 @@ class SurveysController extends RestController {
 			return $this->errorResponse( __( 'Failed to permanently delete survey.', 'all-feedback' ), 500 );
 		}
 
+		// Delete all responses belonging to this survey.
+		$this->responseRepository->deleteBySurveyId( $id );
+
 		$this->logger->info(
 			'Survey permanently deleted.',
 			[ 'survey_id' => $id, 'title' => $survey->getTitle(), 'user_id' => get_current_user_id() ]
@@ -651,6 +657,8 @@ class SurveysController extends RestController {
 
 			if ( $this->surveyRepository->delete( $id ) ) {
 				++$deleted;
+				// Delete all responses belonging to this survey.
+				$this->responseRepository->deleteBySurveyId( $id );
 			} else {
 				$failed[] = $id;
 			}
