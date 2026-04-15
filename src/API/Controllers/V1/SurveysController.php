@@ -7,7 +7,10 @@ namespace AllFeedback\API\Controllers\V1;
 defined( 'ABSPATH' ) || exit;
 
 use AllFeedback\API\RestController;
-use AllFeedback\Survey\Manager;
+use AllFeedback\Domain\Survey\Survey;
+use AllFeedback\Domain\Survey\SurveyFilter;
+use AllFeedback\Domain\Survey\SurveyRepository;
+use AllFeedback\Domain\Survey\SurveyStatus;
 use AllFeedback\Support\Logger;
 
 /**
@@ -33,17 +36,33 @@ use AllFeedback\Support\Logger;
 class SurveysController extends RestController {
 
 	/**
+	 * Valid field types the form builder may use inside form_schema.
+	 *
+	 * Names must match the `type` values emitted by the React builder exactly.
+	 *
+	 * @var string[]
+	 * @since 1.0.0
+	 */
+	private const FIELD_TYPES = [
+		'nps', 'csat', 'ces',
+		'short_text', 'long_text',
+		'radio', 'checkboxes', 'dropdown',
+		'star_rating', 'scale',
+		'email', 'yes_no',
+	];
+
+	/**
 	 * @since 1.0.0
 	 */
 	protected string $restBase = 'surveys';
 
 	/**
-	 * @param Manager $manager Table gateway for the af_surveys table.
-	 * @param Logger  $logger  Structured logger.
+	 * @param SurveyRepository $surveyRepository Survey aggregate repository.
+	 * @param Logger           $logger           Structured logger.
 	 * @since 1.0.0
 	 */
 	public function __construct(
-		private readonly Manager $manager,
+		private readonly SurveyRepository $surveyRepository,
 		private readonly Logger $logger,
 	) {}
 
@@ -80,7 +99,7 @@ class SurveysController extends RestController {
 				[
 					'methods'             => \WP_REST_Server::READABLE,
 					'callback'            => [ $this, 'show' ],
-					'permission_callback' => [ $this, 'adminPermission' ],
+					'permission_callback' => [ $this, 'publicPermission' ],
 					'args'                => $this->idArg(),
 				],
 				[
@@ -158,7 +177,6 @@ class SurveysController extends RestController {
 				'args'                => $this->idArg(),
 			]
 		);
-
 	}
 
 	// ------------------------------------------------------------------
@@ -177,25 +195,22 @@ class SurveysController extends RestController {
 	public function index( \WP_REST_Request $request ): \WP_REST_Response {
 		$page    = max( 1, (int) ( $request->get_param( 'page' ) ?? 1 ) );
 		$perPage = min( 100, max( 1, (int) ( $request->get_param( 'per_page' ) ?? 20 ) ) );
-		$offset  = ( $page - 1 ) * $perPage;
 		$search  = sanitize_text_field( (string) ( $request->get_param( 'search' ) ?? '' ) );
-		$status  = $request->get_param( 'status' );
+		$status  = (string) ( $request->get_param( 'status' ) ?? 'any' );
 		$orderby = sanitize_key( (string) ( $request->get_param( 'orderby' ) ?? 'created_at' ) );
 		$order   = strtoupper( (string) ( $request->get_param( 'order' ) ?? 'DESC' ) );
 
-		$surveys = $this->manager->all(
+		$filter = new SurveyFilter(
+			status:  $status !== 'any' ? SurveyStatus::tryFrom( $status ) : null,
+			page:    $page,
 			perPage: $perPage,
-			offset:  $offset,
 			search:  $search !== '' ? $search : null,
-			status:  $status !== 'any' ? $status : null,
-			orderby: $orderby,
+			orderBy: $orderby,
 			order:   $order,
 		);
 
-		$total = $this->manager->count(
-			search: $search !== '' ? $search : null,
-			status: $status !== 'any' ? $status : null,
-		);
+		$surveys = $this->surveyRepository->findAll( $filter );
+		$total   = $this->surveyRepository->count( $filter );
 
 		return $this->successResponse(
 			[
@@ -245,37 +260,33 @@ class SurveysController extends RestController {
 			$settings = apply_filters( 'allfeedback_settings_before_save', $settings, $request );
 		}
 
-		$data = [
-			'title'       => sanitize_text_field( (string) $request->get_param( 'title' ) ),
-			'description' => wp_kses_post( (string) ( $request->get_param( 'description' ) ?? '' ) ),
-			'form_schema' => $this->encodeJsonParam( $formSchema ),
-			'settings'    => $this->encodeJsonParam( $settings ),
-			'status'      => 'draft',
-			'created_by'  => get_current_user_id() ?: null,
-		];
+		$formSchemaArray = $formSchema !== null ? ( $this->normaliseJsonParam( $formSchema ) ?? [] ) : [];
+		$settingsArray   = $settings !== null ? ( $this->normaliseJsonParam( $settings ) ?? [] ) : [];
 
-		$id = $this->manager->insert( $data );
+		$survey = new Survey(
+			title:       sanitize_text_field( (string) $request->get_param( 'title' ) ),
+			description: wp_kses_post( (string) ( $request->get_param( 'description' ) ?? '' ) ),
+			formSchema:  $formSchemaArray,
+			settings:    $settingsArray,
+			createdBy:   get_current_user_id() ?: 0,
+		);
 
-		if ( $id === false ) {
-			$this->logger->error( 'Survey creation failed at DB layer.', [ 'user_id' => get_current_user_id() ] );
+		try {
+			$survey = $this->surveyRepository->save( $survey );
+		} catch ( \RuntimeException $e ) {
+			$this->logger->error( 'Survey creation failed at DB layer.', [ 'user_id' => get_current_user_id(), 'error' => $e->getMessage() ] );
 			return $this->errorResponse( __( 'Failed to create survey.', 'all-feedback' ), 500 );
 		}
 
-		$survey = $this->manager->find( $id );
-
-		if ( $survey === null ) {
-			return $this->errorResponse( __( 'Failed to retrieve created survey.', 'all-feedback' ), 500 );
-		}
-
-		$schemaStats = $this->schemaStats( $data['form_schema'] ?? null );
+		$schemaStats = $this->schemaStats( $formSchemaArray );
 
 		$this->logger->info(
 			'Survey created.',
 			array_merge(
 				[
-					'survey_id'  => $id,
-					'title'      => $data['title'],
-					'has_schema' => $data['form_schema'] !== null,
+					'survey_id'  => $survey->getId(),
+					'title'      => $survey->getTitle(),
+					'has_schema' => $formSchemaArray !== [],
 					'user_id'    => get_current_user_id(),
 				],
 				$schemaStats
@@ -295,10 +306,14 @@ class SurveysController extends RestController {
 	 * @since 1.0.0
 	 */
 	public function show( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
-		$id     = (int) $request->get_param( 'id' );
-		$survey = $this->manager->find( $id );
+		$survey = $this->surveyRepository->findById( (int) $request->get_param( 'id' ) );
 
 		if ( $survey === null ) {
+			return $this->notFoundResponse( __( 'Survey', 'all-feedback' ) );
+		}
+
+		// Non-admins may only read published surveys (widget / shortcode use-case).
+		if ( ! current_user_can( 'manage_options' ) && ! $survey->getStatus()->isPublished() ) {
 			return $this->notFoundResponse( __( 'Survey', 'all-feedback' ) );
 		}
 
@@ -319,19 +334,21 @@ class SurveysController extends RestController {
 		$id   = (int) $request->get_param( 'id' );
 		$body = $request->get_json_params() ?? [];
 
-		$survey = $this->manager->find( $id );
+		$survey = $this->surveyRepository->findById( $id );
 		if ( $survey === null ) {
 			return $this->notFoundResponse( __( 'Survey', 'all-feedback' ) );
 		}
 
-		$data = [];
+		$changed = false;
 
 		if ( array_key_exists( 'title', $body ) ) {
-			$data['title'] = sanitize_text_field( (string) $request->get_param( 'title' ) );
+			$survey->setTitle( sanitize_text_field( (string) $request->get_param( 'title' ) ) );
+			$changed = true;
 		}
 
 		if ( array_key_exists( 'description', $body ) ) {
-			$data['description'] = wp_kses_post( (string) $request->get_param( 'description' ) );
+			$survey->setDescription( wp_kses_post( (string) $request->get_param( 'description' ) ) );
+			$changed = true;
 		}
 
 		if ( array_key_exists( 'form_schema', $body ) ) {
@@ -340,7 +357,8 @@ class SurveysController extends RestController {
 			if ( is_wp_error( $schemaCheck ) ) {
 				return $schemaCheck;
 			}
-			$data['form_schema'] = $this->encodeJsonParam( $formSchema );
+			$survey->setFormSchema( $this->normaliseJsonParam( $formSchema ) ?? [] );
+			$changed = true;
 		}
 
 		if ( array_key_exists( 'settings', $body ) ) {
@@ -350,53 +368,57 @@ class SurveysController extends RestController {
 				return $settingsCheck;
 			}
 			/** This filter is documented in store(). */
-			$settingsRaw      = apply_filters( 'allfeedback_settings_before_save', $settingsRaw, $request );
-			$data['settings'] = $this->encodeJsonParam( $settingsRaw );
+			$settingsRaw = apply_filters( 'allfeedback_settings_before_save', $settingsRaw, $request );
+			$survey->setSettings( $this->normaliseJsonParam( $settingsRaw ) ?? [] );
+			$changed = true;
 		}
 
 		if ( array_key_exists( 'status', $body ) ) {
-			$status = sanitize_key( (string) $request->get_param( 'status' ) );
-			if ( ! in_array( $status, Manager::STATUSES, true ) ) {
+			$statusStr = sanitize_key( (string) $request->get_param( 'status' ) );
+			$status    = SurveyStatus::tryFrom( $statusStr );
+			if ( $status === null ) {
 				return $this->errorResponse(
 					sprintf(
 						/* translators: %s: Comma-separated list of valid statuses */
 						__( 'Invalid status. Allowed values: %s.', 'all-feedback' ),
-						implode( ', ', Manager::STATUSES )
+						implode( ', ', array_column( SurveyStatus::cases(), 'value' ) )
 					),
 					422
 				);
 			}
-			$data['status'] = $status;
+			match ( $status ) {
+				SurveyStatus::Published => $survey->publish(),
+				SurveyStatus::Archived  => $survey->archive(),
+				SurveyStatus::Trashed   => $survey->trash(),
+				SurveyStatus::Draft     => $survey->restore(),
+			};
+			$changed = true;
 		}
 
-		if ( empty( $data ) ) {
+		if ( ! $changed ) {
 			return $this->successResponse( $this->prepareSurvey( $survey ) );
 		}
 
-		if ( ! $this->manager->update( $id, $data ) ) {
-			$this->logger->error( 'Survey update failed at DB layer.', [ 'survey_id' => $id, 'user_id' => get_current_user_id() ] );
+		try {
+			$survey = $this->surveyRepository->save( $survey );
+		} catch ( \RuntimeException $e ) {
+			$this->logger->error( 'Survey update failed at DB layer.', [ 'survey_id' => $id, 'user_id' => get_current_user_id(), 'error' => $e->getMessage() ] );
 			return $this->errorResponse( __( 'Failed to update survey.', 'all-feedback' ), 500 );
 		}
 
 		$logContext = [
-			'survey_id'   => $id,
-			'changed_keys' => array_keys( $data ),
-			'user_id'     => get_current_user_id(),
+			'survey_id'    => $id,
+			'changed_keys' => array_keys( $body ),
+			'user_id'      => get_current_user_id(),
 		];
 
-		if ( isset( $data['form_schema'] ) ) {
-			$logContext = array_merge( $logContext, $this->schemaStats( $data['form_schema'] ) );
+		if ( array_key_exists( 'form_schema', $body ) ) {
+			$logContext = array_merge( $logContext, $this->schemaStats( $survey->getFormSchema() ) );
 		}
 
 		$this->logger->info( 'Survey updated.', $logContext );
 
-		$updated = $this->manager->find( $id );
-
-		if ( $updated === null ) {
-			return $this->errorResponse( __( 'Failed to retrieve updated survey.', 'all-feedback' ), 500 );
-		}
-
-		return $this->successResponse( $this->prepareSurvey( $updated ) );
+		return $this->successResponse( $this->prepareSurvey( $survey ) );
 	}
 
 	/**
@@ -410,28 +432,32 @@ class SurveysController extends RestController {
 	 * @since 1.0.0
 	 */
 	public function destroy( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
-		$id = (int) $request->get_param( 'id' );
+		$id     = (int) $request->get_param( 'id' );
+		$survey = $this->surveyRepository->findById( $id );
 
-		$survey = $this->manager->find( $id );
 		if ( $survey === null ) {
 			return $this->notFoundResponse( __( 'Survey', 'all-feedback' ) );
 		}
 
-		if ( $survey->status === 'trashed' ) {
+		if ( $survey->getStatus()->isTrashed() ) {
 			return $this->errorResponse(
 				__( 'Survey is already in the trash. Use DELETE /surveys/{id}/delete to remove it permanently.', 'all-feedback' ),
 				409
 			);
 		}
 
-		if ( ! $this->manager->trash( $id ) ) {
-			$this->logger->error( 'Survey trash failed at DB layer.', [ 'survey_id' => $id, 'user_id' => get_current_user_id() ] );
+		$survey->trash();
+
+		try {
+			$this->surveyRepository->save( $survey );
+		} catch ( \RuntimeException $e ) {
+			$this->logger->error( 'Survey trash failed at DB layer.', [ 'survey_id' => $id, 'user_id' => get_current_user_id(), 'error' => $e->getMessage() ] );
 			return $this->errorResponse( __( 'Failed to move survey to trash.', 'all-feedback' ), 500 );
 		}
 
 		$this->logger->info(
 			'Survey moved to trash.',
-			[ 'survey_id' => $id, 'title' => $survey->title, 'user_id' => get_current_user_id() ]
+			[ 'survey_id' => $id, 'title' => $survey->getTitle(), 'user_id' => get_current_user_id() ]
 		);
 
 		return $this->successResponse( [ 'trashed' => true, 'id' => $id ] );
@@ -448,28 +474,28 @@ class SurveysController extends RestController {
 	 * @since 1.0.0
 	 */
 	public function destroyPermanent( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
-		$id = (int) $request->get_param( 'id' );
+		$id     = (int) $request->get_param( 'id' );
+		$survey = $this->surveyRepository->findById( $id );
 
-		$survey = $this->manager->find( $id );
 		if ( $survey === null ) {
 			return $this->notFoundResponse( __( 'Survey', 'all-feedback' ) );
 		}
 
-		if ( $survey->status !== 'trashed' ) {
+		if ( ! $survey->getStatus()->isTrashed() ) {
 			return $this->errorResponse(
 				__( 'Only trashed surveys can be permanently deleted. Use DELETE /surveys/{id}/trash first.', 'all-feedback' ),
 				409
 			);
 		}
 
-		if ( ! $this->manager->deletePermanent( $id ) ) {
+		if ( ! $this->surveyRepository->delete( $id ) ) {
 			$this->logger->error( 'Permanent survey deletion failed at DB layer.', [ 'survey_id' => $id, 'user_id' => get_current_user_id() ] );
 			return $this->errorResponse( __( 'Failed to permanently delete survey.', 'all-feedback' ), 500 );
 		}
 
 		$this->logger->info(
 			'Survey permanently deleted.',
-			[ 'survey_id' => $id, 'title' => $survey->title, 'user_id' => get_current_user_id() ]
+			[ 'survey_id' => $id, 'title' => $survey->getTitle(), 'user_id' => get_current_user_id() ]
 		);
 
 		return $this->successResponse( [ 'deleted' => true, 'id' => $id ] );
@@ -485,22 +511,27 @@ class SurveysController extends RestController {
 	 * @since 1.0.0
 	 */
 	public function duplicate( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
-		$id = (int) $request->get_param( 'id' );
+		$id       = (int) $request->get_param( 'id' );
+		$original = $this->surveyRepository->findById( $id );
 
-		if ( $this->manager->find( $id ) === null ) {
+		if ( $original === null ) {
 			return $this->notFoundResponse( __( 'Survey', 'all-feedback' ) );
 		}
 
-		$newId = $this->manager->duplicate( $id );
+		$copy = new Survey(
+			title:       $original->getTitle() . ' ' . __( '(Copy)', 'all-feedback' ),
+			description: $original->getDescription(),
+			formSchema:  $original->getFormSchema(),
+			settings:    $original->getSettings(),
+			targeting:   $original->getTargeting(),
+			createdBy:   get_current_user_id() ?: 0,
+		);
 
-		if ( $newId === false ) {
+		try {
+			$copy = $this->surveyRepository->save( $copy );
+		} catch ( \RuntimeException $e ) {
+			$this->logger->error( 'Survey duplication failed at DB layer.', [ 'source_id' => $id, 'user_id' => get_current_user_id(), 'error' => $e->getMessage() ] );
 			return $this->errorResponse( __( 'Failed to duplicate survey.', 'all-feedback' ), 500 );
-		}
-
-		$copy = $this->manager->find( $newId );
-
-		if ( $copy === null ) {
-			return $this->errorResponse( __( 'Failed to retrieve duplicated survey.', 'all-feedback' ), 500 );
 		}
 
 		return $this->successResponse( $this->prepareSurvey( $copy ), 201 );
@@ -516,7 +547,7 @@ class SurveysController extends RestController {
 	 * @since 1.0.0
 	 */
 	public function publish( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
-		return $this->transitionStatus( (int) $request->get_param( 'id' ), 'published' );
+		return $this->transitionStatus( (int) $request->get_param( 'id' ), SurveyStatus::Published );
 	}
 
 	/**
@@ -541,21 +572,24 @@ class SurveysController extends RestController {
 		$failed  = [];
 
 		foreach ( $ids as $id ) {
-			$survey = $this->manager->find( $id );
+			$survey = $this->surveyRepository->findById( $id );
 
 			if ( $survey === null ) {
 				$failed[] = $id;
 				continue;
 			}
 
-			if ( $survey->status === 'trashed' ) {
+			if ( $survey->getStatus()->isTrashed() ) {
 				$skipped[] = $id;
 				continue;
 			}
 
-			if ( $this->manager->trash( $id ) ) {
+			$survey->trash();
+
+			try {
+				$this->surveyRepository->save( $survey );
 				++$trashed;
-			} else {
+			} catch ( \RuntimeException ) {
 				$failed[] = $id;
 			}
 		}
@@ -603,19 +637,19 @@ class SurveysController extends RestController {
 		$failed  = [];
 
 		foreach ( $ids as $id ) {
-			$survey = $this->manager->find( $id );
+			$survey = $this->surveyRepository->findById( $id );
 
 			if ( $survey === null ) {
 				$failed[] = $id;
 				continue;
 			}
 
-			if ( $survey->status !== 'trashed' ) {
+			if ( ! $survey->getStatus()->isTrashed() ) {
 				$skipped[] = $id;
 				continue;
 			}
 
-			if ( $this->manager->deletePermanent( $id ) ) {
+			if ( $this->surveyRepository->delete( $id ) ) {
 				++$deleted;
 			} else {
 				$failed[] = $id;
@@ -653,6 +687,8 @@ class SurveysController extends RestController {
 	 * @since 1.0.0
 	 */
 	public function getPublicItemSchema(): array {
+		$statusValues = array_column( SurveyStatus::cases(), 'value' );
+
 		return [
 			'$schema'    => 'http://json-schema.org/draft-04/schema#',
 			'title'      => 'allfeedback_survey',
@@ -687,7 +723,7 @@ class SurveysController extends RestController {
 				'status'         => [
 					'description' => __( 'Survey lifecycle status.', 'all-feedback' ),
 					'type'        => 'string',
-					'enum'        => Manager::STATUSES,
+					'enum'        => $statusValues,
 					'context'     => [ 'view', 'edit' ],
 				],
 				'response_count' => [
@@ -730,6 +766,8 @@ class SurveysController extends RestController {
 	 * @since 1.0.0
 	 */
 	private function collectionArgs(): array {
+		$statusValues = array_column( SurveyStatus::cases(), 'value' );
+
 		return array_merge(
 			$this->paginationArgs( defaultPerPage: 20, maxPerPage: 100 ),
 			[
@@ -738,7 +776,7 @@ class SurveysController extends RestController {
 				),
 				'status'  => $this->argEnum(
 					description: __( 'Filter by survey status.', 'all-feedback' ),
-					values:      array_merge( Manager::STATUSES, [ 'any' ] ),
+					values:      array_merge( $statusValues, [ 'any' ] ),
 					default:     'any',
 				),
 				'orderby' => $this->argEnum(
@@ -763,6 +801,8 @@ class SurveysController extends RestController {
 	 * @since 1.0.0
 	 */
 	private function writeArgs( bool $required ): array {
+		$statusValues = array_column( SurveyStatus::cases(), 'value' );
+
 		return [
 			'title'       => $this->argString(
 				description: __( 'Survey title.', 'all-feedback' ),
@@ -785,7 +825,7 @@ class SurveysController extends RestController {
 			],
 			'status'      => $this->argEnum(
 				description: __( 'Survey lifecycle status.', 'all-feedback' ),
-				values:      Manager::STATUSES,
+				values:      $statusValues,
 				default:     'draft',
 			),
 		];
@@ -817,33 +857,27 @@ class SurveysController extends RestController {
 	// ------------------------------------------------------------------
 
 	/**
-	 * Serialise a wpdb row into the REST response shape.
+	 * Serialise a Survey aggregate into the REST response shape.
 	 *
-	 * JSON columns (form_schema, settings) are decoded so the response body
-	 * contains structured objects rather than raw strings.
-	 *
-	 * @param object $survey Raw database row.
+	 * @param Survey $survey Survey aggregate root.
 	 * @return array<string, mixed>
 	 * @since 1.0.0
 	 */
-	private function prepareSurvey( object $survey ): array {
+	private function prepareSurvey( Survey $survey ): array {
+		$formSchema = $survey->getFormSchema();
+		$settings   = $survey->getSettings();
+
 		$prepared = [
-			'id'             => (int) $survey->id,
-			'title'          => $survey->title,
-			'description'    => $survey->description,
-			'form_schema'    => isset( $survey->form_schema ) && $survey->form_schema !== null
-				? json_decode( $survey->form_schema, true )
-				: null,
-			'settings'       => isset( $survey->settings ) && $survey->settings !== null
-				? json_decode( $survey->settings, true )
-				: null,
-			'status'         => $survey->status,
-			'response_count' => (int) $survey->response_count,
-			'created_by'     => isset( $survey->created_by ) && $survey->created_by !== null
-				? (int) $survey->created_by
-				: null,
-			'created_at'     => $survey->created_at,
-			'updated_at'     => $survey->updated_at,
+			'id'             => $survey->getId(),
+			'title'          => $survey->getTitle(),
+			'description'    => $survey->getDescription(),
+			'form_schema'    => $formSchema !== [] ? $formSchema : null,
+			'settings'       => $settings !== [] ? $settings : null,
+			'status'         => $survey->getStatus()->value,
+			'response_count' => $survey->getResponseCount(),
+			'created_by'     => $survey->getCreatedBy() ?: null,
+			'created_at'     => $survey->getCreatedAt()->format( 'Y-m-d H:i:s' ),
+			'updated_at'     => $survey->getUpdatedAt()?->format( 'Y-m-d H:i:s' ),
 		];
 
 		/**
@@ -853,7 +887,7 @@ class SurveysController extends RestController {
 		 * pro-only settings, computed properties) without forking the controller.
 		 *
 		 * @param array<string, mixed> $prepared Serialised survey data.
-		 * @param object               $survey   Raw database row.
+		 * @param Survey               $survey   Survey aggregate root.
 		 * @since 1.0.0
 		 */
 		return apply_filters( 'allfeedback_prepare_survey', $prepared, $survey );
@@ -862,6 +896,75 @@ class SurveysController extends RestController {
 	// ------------------------------------------------------------------
 	// Internal helpers
 	// ------------------------------------------------------------------
+
+	/**
+	 * Retrieve a survey, change its status, persist, and return the updated representation.
+	 *
+	 * @param int          $id     Survey primary key.
+	 * @param SurveyStatus $status Target status.
+	 * @return \WP_REST_Response|\WP_Error
+	 * @since 1.0.0
+	 */
+	private function transitionStatus( int $id, SurveyStatus $status ): \WP_REST_Response|\WP_Error {
+		$survey = $this->surveyRepository->findById( $id );
+
+		if ( $survey === null ) {
+			return $this->notFoundResponse( __( 'Survey', 'all-feedback' ) );
+		}
+
+		$previousStatus = $survey->getStatus();
+
+		match ( $status ) {
+			SurveyStatus::Published => $survey->publish(),
+			SurveyStatus::Archived  => $survey->archive(),
+			SurveyStatus::Trashed   => $survey->trash(),
+			SurveyStatus::Draft     => $survey->restore(),
+		};
+
+		try {
+			$survey = $this->surveyRepository->save( $survey );
+		} catch ( \RuntimeException $e ) {
+			$this->logger->error(
+				'Survey status transition failed at DB layer.',
+				[ 'survey_id' => $id, 'target_status' => $status->value, 'user_id' => get_current_user_id(), 'error' => $e->getMessage() ]
+			);
+			return $this->errorResponse(
+				sprintf(
+					/* translators: %s: Target status */
+					__( 'Failed to set survey status to %s.', 'all-feedback' ),
+					$status->value
+				),
+				500
+			);
+		}
+
+		$formSchema = $survey->getFormSchema();
+		$hasSchema  = $formSchema !== [];
+
+		if ( $status === SurveyStatus::Published && ! $hasSchema ) {
+			$this->logger->warning(
+				'Survey published without a form schema.',
+				[ 'survey_id' => $id, 'title' => $survey->getTitle(), 'user_id' => get_current_user_id() ]
+			);
+		}
+
+		$this->logger->info(
+			"Survey status changed to {$status->value}.",
+			array_merge(
+				[
+					'survey_id'       => $id,
+					'title'           => $survey->getTitle(),
+					'previous_status' => $previousStatus->value,
+					'new_status'      => $status->value,
+					'has_schema'      => $hasSchema,
+					'user_id'         => get_current_user_id(),
+				],
+				$this->schemaStats( $formSchema )
+			)
+		);
+
+		return $this->successResponse( $this->prepareSurvey( $survey ) );
+	}
 
 	/**
 	 * Validate that form_schema contains valid JSON with allowed field types.
@@ -898,7 +1001,7 @@ class SurveysController extends RestController {
 			foreach ( $section['fields'] as $field ) {
 				$field = (array) $field;
 
-				if ( isset( $field['type'] ) && ! in_array( $field['type'], Manager::FIELD_TYPES, true ) ) {
+				if ( isset( $field['type'] ) && ! in_array( $field['type'], self::FIELD_TYPES, true ) ) {
 					return $this->errorResponse(
 						sprintf(
 							/* translators: %s: Invalid field type value */
@@ -1027,46 +1130,20 @@ class SurveysController extends RestController {
 	}
 
 	/**
-	 * Encode a request parameter as a JSON string for storage.
+	 * Extract section and field counts from a form_schema array.
 	 *
-	 * Accepts arrays (WP JSON body parsing), stdClass objects, or pre-encoded
-	 * JSON strings. Returns null when the parameter is absent or empty.
-	 *
-	 * @param mixed $value Raw parameter value from the request.
-	 * @return string|null
-	 * @since 1.0.0
-	 */
-	private function encodeJsonParam( mixed $value ): ?string {
-		if ( $value === null || $value === '' ) {
-			return null;
-		}
-
-		if ( is_string( $value ) ) {
-			return $value;
-		}
-
-		return wp_json_encode( $value ) ?: null;
-	}
-
-	/**
-	 * Extract section and field counts from a raw form_schema value.
-	 *
-	 * Accepts a JSON string (as stored in the DB after encoding) or an array
-	 * (as received directly from the request). Returns zeroed counts when the
-	 * schema is absent, not an array, or has no sections.
-	 *
-	 * @param mixed $schema Raw form_schema — JSON string, array, or null.
+	 * @param array<string, mixed>|null $schema Decoded form_schema array.
 	 * @return array{section_count: int, field_count: int}
 	 * @since 1.0.0
 	 */
 	private function schemaStats( mixed $schema ): array {
 		$stats = [ 'section_count' => 0, 'field_count' => 0 ];
 
-		if ( $schema === null || $schema === '' ) {
+		if ( $schema === null || $schema === '' || $schema === [] ) {
 			return $stats;
 		}
 
-		$decoded = is_string( $schema ) ? json_decode( $schema, true ) : (array) $schema;
+		$decoded = is_array( $schema ) ? $schema : ( is_string( $schema ) ? json_decode( $schema, true ) : null );
 
 		if ( ! is_array( $decoded ) || empty( $decoded['sections'] ) || ! is_array( $decoded['sections'] ) ) {
 			return $stats;
@@ -1111,69 +1188,5 @@ class SurveysController extends RestController {
 		}
 
 		return null;
-	}
-
-	/**
-	 * Retrieve a survey, change its status, and return the updated representation.
-	 *
-	 * @param int    $id     Survey primary key.
-	 * @param string $status Target status.
-	 * @return \WP_REST_Response|\WP_Error
-	 * @since 1.0.0
-	 */
-	private function transitionStatus( int $id, string $status ): \WP_REST_Response|\WP_Error {
-		$survey = $this->manager->find( $id );
-
-		if ( $survey === null ) {
-			return $this->notFoundResponse( __( 'Survey', 'all-feedback' ) );
-		}
-
-		if ( ! $this->manager->updateStatus( $id, $status ) ) {
-			$this->logger->error(
-				'Survey status transition failed at DB layer.',
-				[ 'survey_id' => $id, 'target_status' => $status, 'user_id' => get_current_user_id() ]
-			);
-			return $this->errorResponse(
-				sprintf(
-					/* translators: %s: Target status */
-					__( 'Failed to set survey status to %s.', 'all-feedback' ),
-					$status
-				),
-				500
-			);
-		}
-
-		$hasSchema   = ! empty( $survey->form_schema );
-		$schemaStats = $this->schemaStats( $survey->form_schema ?? null );
-
-		if ( $status === 'published' && ! $hasSchema ) {
-			$this->logger->warning(
-				'Survey published without a form schema.',
-				[ 'survey_id' => $id, 'title' => $survey->title, 'user_id' => get_current_user_id() ]
-			);
-		}
-
-		$this->logger->info(
-			"Survey status changed to {$status}.",
-			array_merge(
-				[
-					'survey_id'       => $id,
-					'title'           => $survey->title,
-					'previous_status' => $survey->status,
-					'new_status'      => $status,
-					'has_schema'      => $hasSchema,
-					'user_id'         => get_current_user_id(),
-				],
-				$schemaStats
-			)
-		);
-
-		$updated = $this->manager->find( $id );
-
-		if ( $updated === null ) {
-			return $this->errorResponse( __( 'Failed to retrieve updated survey.', 'all-feedback' ), 500 );
-		}
-
-		return $this->successResponse( $this->prepareSurvey( $updated ) );
 	}
 }

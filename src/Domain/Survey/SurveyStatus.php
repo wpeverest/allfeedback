@@ -19,6 +19,7 @@ enum SurveyStatus: string {
 	case Draft     = 'draft';
 	case Published = 'published';
 	case Archived  = 'archived';
+	case Trashed   = 'trashed';
 
 	/**
 	 * Return true when this status is Published (visible to respondents).
@@ -27,5 +28,14 @@ enum SurveyStatus: string {
 	 */
 	public function isPublished(): bool {
 		return $this === self::Published;
+	}
+
+	/**
+	 * Return true when this status is Trashed.
+	 *
+	 * @since 1.0.0
+	 */
+	public function isTrashed(): bool {
+		return $this === self::Trashed;
 	}
 }

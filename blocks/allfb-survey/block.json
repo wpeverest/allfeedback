@@ -1,0 +1,24 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "allfeedback/survey",
+	"version": "1.0.0",
+	"title": "All Feedback Survey",
+	"category": "all-feedback",
+	"icon": "megaphone",
+	"description": "Embed a published All Feedback survey directly in your content.",
+	"keywords": [ "survey", "feedback", "form", "nps" ],
+	"textdomain": "all-feedback",
+	"attributes": {
+		"surveyId": {
+			"type": "number",
+			"default": 0
+		}
+	},
+	"supports": {
+		"html": false,
+		"align": [ "wide", "full" ]
+	},
+	"editorScript": "file:../../resources/build/block-survey.js",
+	"style": "file:../../resources/build/frontend.css"
+}

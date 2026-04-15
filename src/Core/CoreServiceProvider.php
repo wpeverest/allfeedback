@@ -8,8 +8,6 @@ defined( 'ABSPATH' ) || exit;
 
 use AllFeedback\Core\Contracts\ServiceProviderInterface;
 use AllFeedback\Infrastructure\Database\Migrator;
-use AllFeedback\Infrastructure\PostTypes\Survey as SurveyPostType;
-use AllFeedback\Infrastructure\Taxonomies\SurveyCategory;
 use AllFeedback\Support\Logger;
 use AllFeedback\Traits\Hooks;
 
@@ -33,8 +31,6 @@ class CoreServiceProvider implements ServiceProviderInterface {
 	public function __construct(
 		private readonly RoleManager $roleManager,
 		private readonly Migrator $migrator,
-		private readonly SurveyPostType $surveyPostType,
-		private readonly SurveyCategory $surveyCategory,
 		private readonly Logger $logger,
 	) {}
 
@@ -47,7 +43,6 @@ class CoreServiceProvider implements ServiceProviderInterface {
 		$this->logger->registerShutdownHandler();
 		$this->addAction( 'admin_init', [ $this, 'runPendingMigrations' ] );
 		$this->addAction( 'allfeedback:activated', [ $this, 'onActivation' ] );
-		$this->addAction( 'init', [ $this, 'registerPostTypes' ] );
 	}
 
 	/**
@@ -73,13 +68,4 @@ class CoreServiceProvider implements ServiceProviderInterface {
 		$this->doAction( 'allfeedback:activated:complete' );
 	}
 
-	/**
-	 * Register all custom post types and taxonomies.
-	 *
-	 * @since 1.0.0
-	 */
-	public function registerPostTypes(): void {
-		$this->surveyPostType->register();
-		$this->surveyCategory->register();
-	}
 }

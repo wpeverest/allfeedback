@@ -11,7 +11,6 @@ use AllFeedback\API\ApiServiceProvider;
 use AllFeedback\Core\Contracts\ServiceProviderInterface;
 use AllFeedback\Core\Jobs\JobServiceProvider;
 use AllFeedback\Frontend\FrontendServiceProvider;
-use AllFeedback\Infrastructure\Google\GoogleIntegrationProvider;
 use AllFeedback\Infrastructure\Mail\NotificationServiceProvider;
 use AllFeedback\Traits\Hooks;
 
@@ -89,9 +88,11 @@ class AppServiceProvider implements ServiceProviderInterface {
 			$this->container->get( AdminServiceProvider::class )->boot();
 		}
 
-		if ( ! $this->isAdminContext() ) {
-			$this->container->get( FrontendServiceProvider::class )->boot();
-		}
+		// Boot on every request: registers the Gutenberg block (needed in the
+		// block editor = admin context) and shortcodes (needed on the frontend).
+		// Asset enqueueing inside FrontendServiceProvider is guarded by its own
+		// namespaced action and only fires on actual frontend page loads.
+		$this->container->get( FrontendServiceProvider::class )->boot();
 
 		// REST API routes registered on every request.
 		$this->container->get( ApiServiceProvider::class )->boot();
@@ -99,7 +100,6 @@ class AppServiceProvider implements ServiceProviderInterface {
 		// Cross-cutting providers — always boot.
 		$this->container->get( JobServiceProvider::class )->boot();
 		$this->container->get( NotificationServiceProvider::class )->boot();
-		$this->container->get( GoogleIntegrationProvider::class )->boot();
 	}
 
 	/**

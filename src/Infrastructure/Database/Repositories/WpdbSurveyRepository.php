@@ -132,6 +132,28 @@ class WpdbSurveyRepository implements SurveyRepository {
 	}
 
 	/**
+	 * Atomically increment the denormalised response counter by one.
+	 *
+	 * @since 1.0.0
+	 */
+	public function incrementResponseCount( int $id ): void {
+		global $wpdb;
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$wpdb->query( $wpdb->prepare( "UPDATE {$this->table} SET response_count = response_count + 1 WHERE id = %d", $id ) );
+	}
+
+	/**
+	 * Atomically decrement the denormalised response counter (never below zero).
+	 *
+	 * @since 1.0.0
+	 */
+	public function decrementResponseCount( int $id ): void {
+		global $wpdb;
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$wpdb->query( $wpdb->prepare( "UPDATE {$this->table} SET response_count = GREATEST(response_count - 1, 0) WHERE id = %d", $id ) );
+	}
+
+	/**
 	 * Insert a new Survey row and return the reconstituted instance with its assigned id.
 	 *
 	 * @since 1.0.0

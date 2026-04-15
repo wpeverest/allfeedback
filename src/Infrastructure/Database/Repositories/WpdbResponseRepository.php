@@ -132,19 +132,97 @@ class WpdbResponseRepository implements ResponseRepository {
 	}
 
 	/**
-	 * Count all Responses for a given Survey.
+	 * Count all Responses for a given Survey, applying the filter.
 	 *
 	 * @since 1.0.0
 	 */
-	public function countBySurveyId( int $surveyId ): int {
+	public function countBySurveyId( int $surveyId, ResponseFilter $filter ): int {
 		global $wpdb;
 
-		return (int) $wpdb->get_var(
-			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$this->table} WHERE survey_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$surveyId
-			)
+		[ $where, $params ] = $this->buildFilterQuery( $surveyId, $filter );
+
+		$whereClause = 'WHERE ' . implode( ' AND ', $where );
+		$sql         = "SELECT COUNT(*) FROM {$this->table} {$whereClause}"; // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		if ( $params !== [] ) {
+			return (int) $wpdb->get_var( $wpdb->prepare( $sql, ...$params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		}
+
+		return (int) $wpdb->get_var( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+	}
+
+	/**
+	 * Retrieve all Responses across every survey, applying the filter (pagination + date).
+	 *
+	 * @return Response[]
+	 * @since 1.0.0
+	 */
+	public function findAll( ResponseFilter $filter ): array {
+		global $wpdb;
+
+		[ $where, $params ] = $this->buildGlobalFilterQuery( $filter );
+
+		$orderBy = in_array( $filter->orderBy, self::ALLOWED_ORDERBY, true ) ? $filter->orderBy : 'created_at';
+		$order   = strtoupper( $filter->order ) === 'ASC' ? 'ASC' : 'DESC';
+		$limit   = max( 1, $filter->perPage );
+		$offset  = max( 0, ( $filter->page - 1 ) * $limit );
+
+		$whereClause = $where !== [] ? 'WHERE ' . implode( ' AND ', $where ) : '';
+		$sql         = "SELECT * FROM {$this->table} {$whereClause} ORDER BY {$orderBy} {$order} LIMIT %d OFFSET %d"; // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		$params[] = $limit;
+		$params[] = $offset;
+
+		$rows = $wpdb->get_results( $wpdb->prepare( $sql, ...$params ), ARRAY_A ) ?: []; // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+
+		return array_map( [ $this, 'hydrate' ], $rows );
+	}
+
+	/**
+	 * Count all Responses across every survey, applying the filter.
+	 *
+	 * @since 1.0.0
+	 */
+	public function countAll( ResponseFilter $filter ): int {
+		global $wpdb;
+
+		[ $where, $params ] = $this->buildGlobalFilterQuery( $filter );
+
+		$whereClause = $where !== [] ? 'WHERE ' . implode( ' AND ', $where ) : '';
+		$sql         = "SELECT COUNT(*) FROM {$this->table} {$whereClause}"; // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		if ( $params !== [] ) {
+			return (int) $wpdb->get_var( $wpdb->prepare( $sql, ...$params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		}
+
+		return (int) $wpdb->get_var( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+	}
+
+	/**
+	 * Update specific columns of a Response row.
+	 *
+	 * Accepted keys: response_data (JSON string), is_read (0|1).
+	 *
+	 * @param  int                  $id   Response primary key.
+	 * @param  array<string, mixed> $data Column → value pairs to update.
+	 * @since 1.0.0
+	 */
+	public function update( int $id, array $data ): bool {
+		global $wpdb;
+
+		$allowed = [ 'response_data', 'is_read' ];
+		$payload = array_intersect_key( $data, array_flip( $allowed ) );
+
+		if ( empty( $payload ) ) {
+			return true; // nothing to do
+		}
+
+		$formats = array_map(
+			fn( $key ) => $key === 'is_read' ? '%d' : '%s',
+			array_keys( $payload )
 		);
+
+		return $wpdb->update( $this->table, $payload, [ 'id' => $id ], $formats, [ '%d' ] ) !== false;
 	}
 
 	/**
@@ -169,6 +247,44 @@ class WpdbResponseRepository implements ResponseRepository {
 	}
 
 	/**
+	 * Return true if a response from the given IP hash already exists for
+	 * the survey within the look-back window.
+	 *
+	 * @param int    $surveyId    Survey to check against.
+	 * @param string $ipHash      HMAC hash of the visitor IP.
+	 * @param int    $windowHours Look-back window in hours (0 = all-time).
+	 * @since 1.0.0
+	 */
+	public function existsByIpHash( int $surveyId, string $ipHash, int $windowHours = 0 ): bool {
+		global $wpdb;
+
+		if ( $windowHours > 0 ) {
+			$count = (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM {$this->table}
+					 WHERE survey_id = %d
+					   AND ip_hash   = %s
+					   AND created_at >= DATE_SUB( NOW(), INTERVAL %d HOUR )",
+					$surveyId,
+					$ipHash,
+					$windowHours
+				)
+			);
+		} else {
+			$count = (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM {$this->table}
+					 WHERE survey_id = %d AND ip_hash = %s",
+					$surveyId,
+					$ipHash
+				)
+			);
+		}
+
+		return $count > 0;
+	}
+
+	/**
 	 * Hydrate a Response aggregate from a raw database row.
 	 *
 	 * @param array<string, mixed> $row Raw associative array from wpdb.
@@ -186,6 +302,7 @@ class WpdbResponseRepository implements ResponseRepository {
 			userId: isset( $row['user_id'] ) && $row['user_id'] !== null ? (int) $row['user_id'] : null,
 			consentGiven: (bool) ( $row['consent_given'] ?? false ),
 			createdAt: new DateTimeImmutable( (string) $row['created_at'] ),
+			isRead: (bool) ( $row['is_read'] ?? false ),
 		);
 	}
 
@@ -203,6 +320,29 @@ class WpdbResponseRepository implements ResponseRepository {
 			$where[]  = 'user_id = %d';
 			$params[] = $filter->userId;
 		}
+
+		if ( $filter->dateFrom !== null && $filter->dateFrom !== '' ) {
+			$where[]  = 'DATE(created_at) >= %s';
+			$params[] = $filter->dateFrom;
+		}
+
+		if ( $filter->dateTo !== null && $filter->dateTo !== '' ) {
+			$where[]  = 'DATE(created_at) <= %s';
+			$params[] = $filter->dateTo;
+		}
+
+		return [ $where, $params ];
+	}
+
+	/**
+	 * Build WHERE conditions for global response queries (no survey_id constraint).
+	 *
+	 * @return array{0: string[], 1: mixed[]}
+	 * @since 1.0.0
+	 */
+	private function buildGlobalFilterQuery( ResponseFilter $filter ): array {
+		$where  = [];
+		$params = [];
 
 		if ( $filter->dateFrom !== null && $filter->dateFrom !== '' ) {
 			$where[]  = 'DATE(created_at) >= %s';
