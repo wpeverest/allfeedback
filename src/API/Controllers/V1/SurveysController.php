@@ -7,15 +7,11 @@ namespace AllFeedback\API\Controllers\V1;
 defined( 'ABSPATH' ) || exit;
 
 use AllFeedback\API\RestController;
-<<<<<<< HEAD
+use AllFeedback\Domain\Response\ResponseRepository;
 use AllFeedback\Domain\Survey\Survey;
 use AllFeedback\Domain\Survey\SurveyFilter;
 use AllFeedback\Domain\Survey\SurveyRepository;
 use AllFeedback\Domain\Survey\SurveyStatus;
-=======
-use AllFeedback\Survey\Manager;
-use AllFeedback\Survey\ResponseManager;
->>>>>>> ee6f522 (fix:when form is delete the associated reponse of that form is not deleting)
 use AllFeedback\Support\Logger;
 
 /**
@@ -62,23 +58,14 @@ class SurveysController extends RestController {
 	protected string $restBase = 'surveys';
 
 	/**
-<<<<<<< HEAD
-	 * @param SurveyRepository $surveyRepository Survey aggregate repository.
-	 * @param Logger           $logger           Structured logger.
+	 * @param SurveyRepository   $surveyRepository   Survey aggregate repository.
+	 * @param ResponseRepository $responseRepository Response aggregate repository.
+	 * @param Logger             $logger             Structured logger.
 	 * @since 1.0.0
 	 */
 	public function __construct(
 		private readonly SurveyRepository $surveyRepository,
-=======
-	 * @param Manager         $manager         Table gateway for the af_surveys table.
-	 * @param ResponseManager $responseManager Table gateway for the af_responses table.
-	 * @param Logger          $logger          Structured logger.
-	 * @since 1.0.0
-	 */
-	public function __construct(
-		private readonly Manager $manager,
-		private readonly ResponseManager $responseManager,
->>>>>>> ee6f522 (fix:when form is delete the associated reponse of that form is not deleting)
+		private readonly ResponseRepository $responseRepository,
 		private readonly Logger $logger,
 	) {}
 
@@ -510,7 +497,7 @@ class SurveysController extends RestController {
 		}
 
 		// Delete all responses belonging to this survey.
-		$this->responseManager->deleteBySurvey( $id );
+		$this->responseRepository->deleteBySurveyId( $id );
 
 		$this->logger->info(
 			'Survey permanently deleted.',
@@ -671,7 +658,7 @@ class SurveysController extends RestController {
 			if ( $this->surveyRepository->delete( $id ) ) {
 				++$deleted;
 				// Delete all responses belonging to this survey.
-				$this->responseManager->deleteBySurvey( $id );
+				$this->responseRepository->deleteBySurveyId( $id );
 			} else {
 				$failed[] = $id;
 			}
