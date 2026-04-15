@@ -11,8 +11,9 @@ use AllFeedback\Application\Response\ResponseDTO;
 use AllFeedback\Application\Response\SubmitResponseService;
 use AllFeedback\Core\Exceptions\NotFoundException;
 use AllFeedback\Core\Exceptions\ValidationException;
-use AllFeedback\Survey\Manager;
-use AllFeedback\Survey\ResponseManager;
+use AllFeedback\Core\Settings\SettingsManager;
+use AllFeedback\Domain\Response\ResponseRepository;
+use AllFeedback\Domain\Survey\SurveyRepository;
 use AllFeedback\Support\Logger;
 
 /**
@@ -49,16 +50,25 @@ class SubmitController extends RestController {
 	protected string $restBase = 'surveys';
 
 	/**
-	 * @param Manager               $surveyManager   Table gateway for af_surveys.
-	 * @param ResponseManager       $responseManager Table gateway for af_responses.
-	 * @param SubmitResponseService $submitService   Use-case service for response submission.
-	 * @param Logger                $logger          Structured logger.
+	 * Nonce action used to authenticate public widget submissions.
+	 *
+	 * @since 1.0.0
+	 */
+	public const NONCE_ACTION = 'allfeedback_submit';
+
+	/**
+	 * @param SurveyRepository      $surveyRepository  Survey repository for existence and status checks.
+	 * @param ResponseRepository    $responseRepository Response repository for duplicate detection.
+	 * @param SubmitResponseService  $submitService     Use-case service for response submission.
+	 * @param SettingsManager       $settingsManager   Settings for privacy flags.
+	 * @param Logger                $logger            Structured logger.
 	 * @since 1.0.0
 	 */
 	public function __construct(
-		private readonly Manager $surveyManager,
-		private readonly ResponseManager $responseManager,
+		private readonly SurveyRepository $surveyRepository,
+		private readonly ResponseRepository $responseRepository,
 		private readonly SubmitResponseService $submitService,
+		private readonly SettingsManager $settingsManager,
 		private readonly Logger $logger,
 	) {}
 
@@ -96,7 +106,7 @@ class SubmitController extends RestController {
 	public function handle( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$nonce = sanitize_text_field( (string) ( $request->get_param( 'nonce' ) ?? '' ) );
 
-		if ( ! wp_verify_nonce( $nonce, ResponseManager::NONCE_ACTION ) ) {
+		if ( ! wp_verify_nonce( $nonce, self::NONCE_ACTION ) ) {
 			$this->logger->warning(
 				'Submission rejected: invalid nonce.',
 				[ 'survey_id' => (int) $request->get_param( 'id' ) ]
@@ -105,24 +115,24 @@ class SubmitController extends RestController {
 		}
 
 		$surveyId = (int) $request->get_param( 'id' );
-		$survey   = $this->surveyManager->find( $surveyId );
+		$survey   = $this->surveyRepository->findById( $surveyId );
 
 		if ( $survey === null ) {
 			return $this->notFoundResponse( __( 'Survey', 'all-feedback' ) );
 		}
 
-		$isDraft         = $survey->status === 'draft';
-		$isAdminPreview  = $isDraft && current_user_can( 'manage_options' );
+		$isDraft        = $survey->getStatus()->value === 'draft';
+		$isAdminPreview = $isDraft && current_user_can( 'manage_options' );
 
-		if ( $survey->status !== 'published' && ! $isAdminPreview ) {
+		if ( ! $survey->getStatus()->isPublished() && ! $isAdminPreview ) {
 			$this->logger->warning(
 				'Submission rejected: survey not published.',
-				[ 'survey_id' => $surveyId, 'status' => $survey->status ]
+				[ 'survey_id' => $surveyId, 'status' => $survey->getStatus()->value ]
 			);
 			return $this->errorResponse( __( 'This survey is not currently accepting responses.', 'all-feedback' ), 403 );
 		}
 
-		$ipHash = $this->responseManager->hashIp();
+		$ipHash = $this->hashIp();
 
 		/**
 		 * Filters whether a response submission should be allowed to proceed.
@@ -142,28 +152,29 @@ class SubmitController extends RestController {
 			return $this->errorResponse( __( 'Response submission is not allowed.', 'all-feedback' ), 403 );
 		}
 
-		/**
-		 * Filters the duplicate-detection look-back window in hours.
-		 *
-		 * Controls how far back the duplicate check looks when a visitor tries to
-		 * re-submit a survey. Use 0 (the default) for a permanent lifetime block,
-		 * or supply a positive integer to allow re-submission after N hours.
-		 *
-		 * Examples:
-		 *   add_filter( 'allfeedback_duplicate_window_hours', fn() => 720 ); // 30 days
-		 *   add_filter( 'allfeedback_duplicate_window_hours', fn() => 0   ); // forever (default)
-		 *
-		 * @param int    $hours    Look-back window. 0 = all-time block.
-		 * @param int    $surveyId The survey being submitted to.
-		 * @param object $survey   Raw survey row from the database.
-		 * @since 1.0.0
-		 */
-		// $duplicateWindowHours = max( 0, (int) apply_filters( 'allfeedback_duplicate_window_hours', 0, $surveyId, $survey ) );
+		// Skip duplicate detection when IP/User-Agent storage is disabled by privacy settings,
+		// or when an admin is submitting (e.g. previewing a survey in the builder).
+		$disableUserDetails = (bool) $this->settingsManager->get( 'advanced.privacy.disable_user_details' );
 
-		// if ( $this->responseManager->isDuplicate( $surveyId, $ipHash, $duplicateWindowHours ) ) {
-		// 	$this->logger->debug( 'Duplicate submission blocked.', [ 'survey_id' => $surveyId ] );
-		// 	return $this->errorResponse( __( 'A response from this visitor has already been recorded.', 'all-feedback' ), 409 );
-		// }
+		if ( ! $disableUserDetails && $ipHash !== '' && ! current_user_can( 'manage_options' ) ) {
+			/**
+			 * Filter: allfeedback_duplicate_window_hours
+			 *
+			 * Controls how far back the duplicate check looks. Use 0 (default)
+			 * for a permanent all-time block, or a positive integer for a
+			 * rolling window (e.g. 720 = allow re-submission after 30 days).
+			 *
+			 * @param int $hours    Look-back window in hours. 0 = all-time.
+			 * @param int $surveyId The survey being submitted to.
+			 * @since 1.0.0
+			 */
+			$duplicateWindowHours = max( 0, (int) apply_filters( 'allfeedback_duplicate_window_hours', 0, $surveyId ) );
+
+			if ( $this->responseRepository->existsByIpHash( $surveyId, $ipHash, $duplicateWindowHours ) ) {
+				$this->logger->debug( 'Duplicate submission blocked.', [ 'survey_id' => $surveyId ] );
+				return $this->errorResponse( __( 'A response from this visitor has already been recorded.', 'all-feedback' ), 409 );
+			}
+		}
 
 		/**
 		 * Filters the response_data payload before validation and persistence.
@@ -235,6 +246,25 @@ class SubmitController extends RestController {
 	 * @return array<string, array<string, mixed>>
 	 * @since 1.0.0
 	 */
+	/**
+	 * Hash the visitor's IP address for anonymised duplicate detection.
+	 *
+	 * HMAC-SHA256 with the WordPress auth key as the secret so the hash
+	 * cannot be reversed to recover the original IP while still being unique
+	 * per visitor per install.
+	 *
+	 * @return string 64-character hex digest.
+	 * @since 1.0.0
+	 */
+	private function hashIp(): string {
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+		$raw    = (string) ( $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '' );
+		$ip     = sanitize_text_field( trim( explode( ',', $raw )[0] ) );
+		$secret = defined( 'AUTH_KEY' ) ? AUTH_KEY : 'allfeedback';
+
+		return hash_hmac( 'sha256', $ip, $secret );
+	}
+
 	private function submitArgs(): array {
 		return [
 			'nonce'         => $this->argString(

@@ -58,6 +58,7 @@ module.exports = {
     entry: {
         admin:    resolve(process.cwd(), 'resources/scripts/admin',    'index.tsx'),
         frontend: resolve(process.cwd(), 'resources/scripts/frontend', 'index.ts'),
+        block:    resolve(process.cwd(), 'resources/scripts/block',    'index.tsx'),
     },
 
     resolve: {

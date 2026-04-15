@@ -1,5 +1,5 @@
 import { settingsApi } from '@/admin/api/settings';
-import type { Settings } from '@/admin/api/settings';
+import type { SettingsUpdatePayload } from '@/admin/api/settings';
 import { settingsQuery } from '@/admin/queries/settings';
 import { useSettingsDirty } from '@/admin/pages/settings/Settings';
 import { Button } from '@/components/ui/button';
@@ -108,7 +108,7 @@ const AdvancedSettings = () => {
 	const { isDirty: sharedIsDirty, setDirty } = useSettingsDirty();
 
 	const { mutate, isPending: isSaving } = useMutation({
-		mutationFn: (payload: Partial<Settings>) => settingsApi.update(payload),
+		mutationFn: (payload: SettingsUpdatePayload) => settingsApi.update(payload),
 		onSuccess: (updated) => {
 			queryClient.setQueryData(settingsQuery().queryKey, updated);
 			setDirty('advanced', false);
@@ -122,17 +122,26 @@ const AdvancedSettings = () => {
 	const form = useForm({
 		defaultValues: DEFAULT_VALUES,
 		onSubmit: async ({ value }) => {
-			mutate(value);
+			mutate({
+				advanced: {
+					privacy: { disable_user_details: value.disable_user_details },
+					logging: { enabled: value.logging_enabled },
+					plugin:  {
+						delete_on_uninstall:  value.delete_on_uninstall,
+						allow_usage_tracking: value.allow_usage_tracking,
+					},
+				},
+			});
 		},
 	});
 
 	useEffect(() => {
 		if (!data) return;
 		form.reset({
-			disable_user_details: data.disable_user_details ?? DEFAULT_VALUES.disable_user_details,
-			logging_enabled:      data.logging_enabled      ?? DEFAULT_VALUES.logging_enabled,
-			delete_on_uninstall:  data.delete_on_uninstall  ?? DEFAULT_VALUES.delete_on_uninstall,
-			allow_usage_tracking: data.allow_usage_tracking ?? DEFAULT_VALUES.allow_usage_tracking,
+			disable_user_details: data.advanced?.privacy?.disable_user_details ?? DEFAULT_VALUES.disable_user_details,
+			logging_enabled:      data.advanced?.logging?.enabled              ?? DEFAULT_VALUES.logging_enabled,
+			delete_on_uninstall:  data.advanced?.plugin?.delete_on_uninstall   ?? DEFAULT_VALUES.delete_on_uninstall,
+			allow_usage_tracking: data.advanced?.plugin?.allow_usage_tracking  ?? DEFAULT_VALUES.allow_usage_tracking,
 		}, { keepDefaultValues: true });
 	}, [data]);
 

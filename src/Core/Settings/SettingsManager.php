@@ -622,6 +622,11 @@ class SettingsManager {
 				return $this->getDefaults()[ $page ][ $section ][ $field ];
 			}
 
+			// Validate hex color fields (must be #rrggbb or #rgb).
+			if ( $field === 'color' && ! preg_match( '/^#([0-9a-fA-F]{3}){1,2}$/', $sanitised ) ) {
+				return $this->getDefaults()[ $page ][ $section ][ $field ];
+			}
+
 			return $sanitised;
 		}
 

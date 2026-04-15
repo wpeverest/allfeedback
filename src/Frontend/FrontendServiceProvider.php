@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace AllFeedback\Frontend;
 
+use AllFeedback\API\Controllers\V1\SubmitController;
 use AllFeedback\Core\Container;
 use AllFeedback\Core\ServiceProvider;
+use AllFeedback\Core\Settings\SettingsManager;
+use AllFeedback\Domain\Survey\SurveyRepository;
 use AllFeedback\Support\AssetManager;
 use AllFeedback\Traits\Hooks;
 use DI\ContainerBuilder;
@@ -29,6 +32,8 @@ class FrontendServiceProvider implements ServiceProvider {
 	public function __construct(
 		private readonly Container $container,
 		private readonly AssetManager $assetManager,
+		private readonly SettingsManager $settingsManager,
+		private readonly TargetingEngine $targetingEngine,
 	) {}
 
 	// ServiceProvider::register() — nothing extra to add here.
@@ -38,8 +43,9 @@ class FrontendServiceProvider implements ServiceProvider {
 	 * Wire up WordPress hooks for the frontend context.
 	 */
 	public function boot(): void {
-		// Register shortcodes after WP is fully loaded.
+		// Register shortcodes and Gutenberg block after WP is fully loaded.
 		$this->addAction( 'init', [ $this, 'registerShortcodes' ] );
+		$this->addAction( 'init', [ $this, 'registerBlock' ] );
 
 		// Listen for the namespaced enqueue action fired by AppServiceProvider.
 		$this->addAction( 'allfeedback:enqueue-assets:frontend', [ $this, 'enqueueAssets' ] );
@@ -55,70 +61,112 @@ class FrontendServiceProvider implements ServiceProvider {
 	 * Usage on a page/post:  [all_feedback]
 	 */
 	public function registerShortcodes(): void {
-		add_shortcode( 'all_feedback', [ $this, 'renderSampleShortcode' ] );
-
-		// Add more shortcodes here as the plugin grows, e.g.:
-		// add_shortcode( 'allfb_form', [ $this, 'renderFormShortcode' ] );
+		add_shortcode( 'allfb_survey', [ $this, 'renderSurveyShortcode' ] );
 	}
 
 	/**
-	 * Render the [all_feedback] shortcode.
+	 * Render the [allfb_survey id="X"] shortcode.
 	 *
-	 * Shortcode attributes are sanitised and merged with defaults before use.
+	 * Outputs a mount point div; the frontend JS bundle fetches and renders
+	 * the survey form inside it, keeping the PHP layer free of HTML concerns.
 	 *
-	 * @param  array<string, string>|string $atts  Shortcode attributes from the editor.
-	 * @param  string|null                  $content Inner content (for enclosing shortcodes).
-	 * @return string                       The HTML to inject in place of the shortcode.
+	 * @param  array<string, string>|string $atts Shortcode attributes.
+	 * @return string                       HTML mount point, or empty string on error.
 	 */
-	public function renderSampleShortcode( array|string $atts, ?string $content = null ): string {
-		// Merge user-supplied attributes with defaults.
-		$atts = shortcode_atts(
-			[
-				'title'    => __( 'Hello from All Feedback!', 'all-feedback' ),
-				'bg_color' => '#f9f9f9',
-			],
-			(array) $atts,
-			'all_feedback'
-		);
+	public function renderSurveyShortcode( array|string $atts ): string {
+		$atts     = shortcode_atts( [ 'id' => 0 ], (array) $atts, 'allfb_survey' );
+		$surveyId = (int) $atts['id'];
+
+		if ( $surveyId <= 0 ) {
+			return '';
+		}
+
+		/** @var SurveyRepository $repo */
+		$repo   = $this->container->get( SurveyRepository::class );
+		$survey = $repo->findById( $surveyId );
+
+		if ( $survey === null || ! $survey->getStatus()->isPublished() ) {
+			return '';
+		}
 
 		/**
-		 * Filter: allfeedback:shortcode:sample:atts
+		 * Filter: allfeedback:shortcode:survey:id
 		 *
-		 * Allows modification of the resolved shortcode attributes.
+		 * Allows advanced use-cases to swap the rendered survey ID at runtime.
 		 *
-		 * @param array<string, string> $atts Resolved attributes.
+		 * @param int $surveyId Resolved survey ID.
 		 */
-		$atts = apply_filters( 'allfeedback:shortcode:sample:atts', $atts );
+		$surveyId = (int) apply_filters( 'allfeedback:shortcode:survey:id', $survey->getId() );
 
-		$title   = esc_html( $atts['title'] );
-		$bgColor = esc_attr( $atts['bg_color'] );
+		$nonce = esc_attr( wp_create_nonce( SubmitController::NONCE_ACTION ) );
 
-		// Mark assets for enqueue on this page load.
-		// (We enqueue unconditionally in enqueueAssets(); use a flag here
-		//  if you only want assets on pages that actually use the shortcode.)
-		ob_start();
-		?>
-		<div class="allfb-sample-widget" style="background:<?php echo $bgColor; ?>;padding:20px;border-radius:6px;">
-			<h3 class="allfb-sample-widget__title"><?php echo $title; ?></h3>
-			<?php if ( ! empty( $content ) ) : ?>
-				<div class="allfb-sample-widget__content">
-					<?php echo wp_kses_post( $content ); ?>
-				</div>
-			<?php else : ?>
-				<p><?php esc_html_e( 'Replace this shortcode renderer in FrontendServiceProvider::renderSampleShortcode().', 'all-feedback' ); ?></p>
-			<?php endif; ?>
+		return sprintf(
+			'<div class="allfb-embed" data-survey-id="%d" data-nonce="%s" role="region" aria-label="%s"></div>',
+			$surveyId,
+			$nonce,
+			esc_attr( $survey->getTitle() )
+		);
+	}
 
-			<?php
-			/**
-			 * Hook: allfeedback:shortcode:sample:after_content
-			 *
-			 * Fired inside the shortcode output, after the main content.
-			 */
-			do_action( 'allfeedback:shortcode:sample:after_content', $atts );
-			?>
-		</div>
-		<?php
-		return (string) ob_get_clean();
+	// ------------------------------------------------------------------
+	// Gutenberg block
+	// ------------------------------------------------------------------
+
+	/**
+	 * Register the allfeedback/survey Gutenberg block.
+	 *
+	 * The block.json declares the editor script and frontend style.
+	 * We supply a render_callback so WordPress uses server-side rendering
+	 * (the block save() returns null in JS).
+	 *
+	 * @since 1.0.0
+	 */
+	public function registerBlock(): void {
+		if ( ! function_exists( 'register_block_type' ) ) {
+			return;
+		}
+
+		register_block_type(
+			\AllFeedback\Core\Constants::path( 'blocks/allfb-survey' ),
+			[
+				'render_callback' => [ $this, 'renderSurveyBlock' ],
+			]
+		);
+	}
+
+	/**
+	 * Server-side render callback for the allfeedback/survey block.
+	 *
+	 * Outputs the same mount-point div as the shortcode; the shared
+	 * frontend.js bundle picks it up and renders the survey form.
+	 *
+	 * @param  array<string, mixed> $attributes Block attributes.
+	 * @return string                           HTML output or empty string.
+	 * @since 1.0.0
+	 */
+	public function renderSurveyBlock( array $attributes ): string {
+		$surveyId = (int) ( $attributes['surveyId'] ?? 0 );
+
+		if ( $surveyId <= 0 ) {
+			return '';
+		}
+
+		/** @var SurveyRepository $repo */
+		$repo   = $this->container->get( SurveyRepository::class );
+		$survey = $repo->findById( $surveyId );
+
+		if ( $survey === null || ! $survey->getStatus()->isPublished() ) {
+			return '';
+		}
+
+		$nonce = esc_attr( wp_create_nonce( SubmitController::NONCE_ACTION ) );
+
+		return sprintf(
+			'<div class="allfb-embed" data-survey-id="%d" data-nonce="%s" role="region" aria-label="%s"></div>',
+			$surveyId,
+			$nonce,
+			esc_attr( $survey->getTitle() )
+		);
 	}
 
 	// ------------------------------------------------------------------
@@ -132,14 +180,30 @@ class FrontendServiceProvider implements ServiceProvider {
 	 * has_shortcode() check to avoid loading assets on every page.
 	 */
 	public function enqueueAssets(): void {
+		/** @var array<string, mixed> $widgetSettings */
+		$widgetSettings = (array) $this->settingsManager->get( 'general.widget' );
+
+		// Determine which survey (if any) targets the current page for the floating widget.
+		$surveyId = $this->targetingEngine->resolveForCurrentPage();
+
+		// Performance gate: skip asset enqueue if no survey targets this page AND
+		// no [allfb_survey] shortcode is present in the page content.
+		// We always enqueue when a targeted survey exists; for shortcodes the
+		// enqueue is triggered by WP's built-in has_shortcode detection.
+		if ( $surveyId === null && ! $this->pageHasEmbed() ) {
+			return;
+		}
+
 		// Build the data object that will be inlined before the frontend script.
 		$frontendData = $this->applyFilters(
 			'allfeedback:frontend:script_data',
 			[
-				'siteUrl'  => home_url( '/' ),
-				'nonce'    => wp_create_nonce( 'wp_rest' ),
-				'restUrl'  => rest_url( 'all-feedback/v1/' ),
-				'version'  => \AllFeedback\Core\Constants::VERSION,
+				'siteUrl'     => home_url( '/' ),
+				'restUrl'     => rest_url( 'all-feedback/v1/' ),
+				'nonce'       => wp_create_nonce( 'wp_rest' ),
+				'submitNonce' => wp_create_nonce( SubmitController::NONCE_ACTION ),
+				'version'     => \AllFeedback\Core\Constants::VERSION,
+				'settings'    => array_merge( $widgetSettings, [ 'survey_id' => $surveyId ] ),
 			]
 		);
 
@@ -149,7 +213,7 @@ class FrontendServiceProvider implements ServiceProvider {
 			handle:   'frontend',
 			src:      'frontend.js',
 			localize: [
-				'object_name' => '__RMB__',
+				'object_name' => '__ALLFB__',
 				'data'        => $frontendData,
 			]
 		);
@@ -167,5 +231,32 @@ class FrontendServiceProvider implements ServiceProvider {
 		 * Add-ons can hook here to load their own public assets.
 		 */
 		$this->doAction( 'allfeedback:frontend:enqueue_assets' );
+	}
+
+	// ------------------------------------------------------------------
+	// Internal helpers
+	// ------------------------------------------------------------------
+
+	/**
+	 * Return true if the current singular post/page contains the
+	 * [allfb_survey] shortcode or the allfeedback/survey block,
+	 * so we know to load frontend assets even when the TargetingEngine
+	 * returned no floating-widget survey.
+	 *
+	 * @since 1.0.0
+	 */
+	private function pageHasEmbed(): bool {
+		if ( ! is_singular() ) {
+			return false;
+		}
+
+		$post = get_post();
+
+		if ( ! $post instanceof \WP_Post ) {
+			return false;
+		}
+
+		return has_shortcode( $post->post_content, 'allfb_survey' )
+			|| has_block( 'allfeedback/survey', $post );
 	}
 }

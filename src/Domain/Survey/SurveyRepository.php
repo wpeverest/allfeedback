@@ -52,4 +52,18 @@ interface SurveyRepository {
 	 * @since 1.0.0
 	 */
 	public function delete( int $id ): bool;
+
+	/**
+	 * Atomically increment the denormalised response counter by one.
+	 *
+	 * @since 1.0.0
+	 */
+	public function incrementResponseCount( int $id ): void;
+
+	/**
+	 * Atomically decrement the denormalised response counter (never below zero).
+	 *
+	 * @since 1.0.0
+	 */
+	public function decrementResponseCount( int $id ): void;
 }

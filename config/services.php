@@ -22,8 +22,6 @@ use AllFeedback\Core\AppServiceProvider;
 use AllFeedback\Core\Cache\CacheManager;
 use AllFeedback\Core\CoreServiceProvider;
 use AllFeedback\Core\Database\Transaction;
-use AllFeedback\Core\Data\CurrencyData;
-use AllFeedback\Core\Data\TimezoneData;
 use AllFeedback\Core\Events\EventDispatcher;
 use AllFeedback\Core\Features\FeatureManager;
 use AllFeedback\Core\I18n\SurveySchemaTranslator;
@@ -65,25 +63,6 @@ use AllFeedback\Infrastructure\Mail\Mailer;
 use AllFeedback\Infrastructure\Mail\NotificationServiceProvider;
 use AllFeedback\Infrastructure\Mail\SendNotificationJob;
 
-// ── Infrastructure — Payment ──────────────────────────────────────────────────
-use AllFeedback\Infrastructure\Payment\OfflinePaymentGateway;
-use AllFeedback\Infrastructure\Payment\PaymentGateway;
-
-// ── Infrastructure — Google ───────────────────────────────────────────────────
-use AllFeedback\Infrastructure\Google\GoogleCalendarService;
-use AllFeedback\Infrastructure\Google\GoogleCredentialManager;
-use AllFeedback\Infrastructure\Google\GoogleIntegrationProvider;
-use AllFeedback\Infrastructure\Google\GoogleOAuthClient;
-use AllFeedback\Infrastructure\Google\GoogleTokenManager;
-use AllFeedback\Infrastructure\Google\SyncCalendarEventJob;
-
-// ── Infrastructure — Cart ─────────────────────────────────────────────────────
-use AllFeedback\Infrastructure\Cart\CartManager;
-
-// ── Infrastructure — Post Types & Taxonomies ──────────────────────────────────
-use AllFeedback\Infrastructure\PostTypes\Survey as SurveyPostType;
-use AllFeedback\Infrastructure\Taxonomies\SurveyCategory;
-
 // ── API ───────────────────────────────────────────────────────────────────────
 use AllFeedback\Admin\AdminServiceProvider;
 use AllFeedback\API\ApiServiceProvider;
@@ -94,10 +73,7 @@ use AllFeedback\API\Controllers\V1\SettingsController;
 use AllFeedback\API\Controllers\V1\SubmitController;
 use AllFeedback\API\Controllers\V1\SurveysController;
 use AllFeedback\Frontend\FrontendServiceProvider;
-
-// ── Legacy survey gateways (still in use by existing controllers) ─────────────
-use AllFeedback\Survey\Manager;
-use AllFeedback\Survey\ResponseManager;
+use AllFeedback\Frontend\TargetingEngine;
 
 // ── Modules ───────────────────────────────────────────────────────────────────
 use AllFeedback\Modules\ModuleLoader;
@@ -148,12 +124,6 @@ return [
 	Pipeline::class                  => autowire(),
 
 	// ------------------------------------------------------------------
-	// Static data
-	// ------------------------------------------------------------------
-	CurrencyData::class              => autowire(),
-	TimezoneData::class              => autowire(),
-
-	// ------------------------------------------------------------------
 	// i18n
 	// ------------------------------------------------------------------
 	SurveySchemaTranslator::class    => autowire(),
@@ -174,7 +144,6 @@ return [
 	SynchronousJobDispatcher::class  => autowire(),
 	ActionSchedulerRunner::class     => autowire(),
 	SendNotificationJob::class       => autowire(),
-	SyncCalendarEventJob::class      => autowire(),
 
 	// ------------------------------------------------------------------
 	// Domain → Infrastructure repository bindings
@@ -205,41 +174,10 @@ return [
 	Mailer::class                    => autowire(),
 
 	// ------------------------------------------------------------------
-	// Infrastructure — Payment
-	// ------------------------------------------------------------------
-	PaymentGateway::class            => autowire( OfflinePaymentGateway::class ),
-	OfflinePaymentGateway::class     => autowire(),
-
-	// ------------------------------------------------------------------
-	// Infrastructure — Google
-	// ------------------------------------------------------------------
-	GoogleTokenManager::class        => autowire(),
-	GoogleCredentialManager::class   => autowire(),
-	GoogleOAuthClient::class         => autowire(),
-	GoogleCalendarService::class     => autowire(),
-
-	// ------------------------------------------------------------------
-	// Infrastructure — Cart
-	// ------------------------------------------------------------------
-	CartManager::class               => autowire(),
-
-	// ------------------------------------------------------------------
-	// Infrastructure — Post types & Taxonomies
-	// ------------------------------------------------------------------
-	SurveyPostType::class            => autowire(),
-	SurveyCategory::class            => autowire(),
-
-	// ------------------------------------------------------------------
 	// Module system
 	// ------------------------------------------------------------------
 	ModuleRegistry::class            => factory( fn() => ModuleRegistry::getInstance() ),
 	ModuleLoader::class              => autowire(),
-
-	// ------------------------------------------------------------------
-	// Legacy survey table gateways (used by existing controllers)
-	// ------------------------------------------------------------------
-	Manager::class                   => create( Manager::class ),
-	ResponseManager::class           => create( ResponseManager::class ),
 
 	// ------------------------------------------------------------------
 	// REST API controllers
@@ -256,11 +194,11 @@ return [
 	// ------------------------------------------------------------------
 	AdminServiceProvider::class          => autowire(),
 	FrontendServiceProvider::class       => autowire(),
+	TargetingEngine::class               => autowire(),
 	ApiServiceProvider::class            => autowire(),
 	CoreServiceProvider::class           => autowire(),
 	AppServiceProvider::class            => autowire(),
 	NotificationServiceProvider::class   => autowire(),
 	JobServiceProvider::class            => autowire(),
-	GoogleIntegrationProvider::class     => autowire(),
 
 ];

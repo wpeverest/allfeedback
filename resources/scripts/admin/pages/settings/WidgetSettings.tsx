@@ -19,19 +19,17 @@ const Row = ({ label, children }: { label: string; children: React.ReactNode }) 
 	</div>
 );
 
-type Position = Settings['widget_position'];
+type Position = Settings['general']['widget']['position'];
 
 const BOTTOM_POSITIONS: { value: Position; label: string; flex: string }[] = [
-	{ value: 'bottom-left',   label: __('Bottom left',   'all-feedback'), flex: 'justify-start'  },
-	{ value: 'bottom-center', label: __('Bottom center', 'all-feedback'), flex: 'justify-center' },
-	{ value: 'bottom-right',  label: __('Bottom right',  'all-feedback'), flex: 'justify-end'    },
+	{ value: 'bottom-left',  label: __('Bottom left',  'all-feedback'), flex: 'justify-start' },
+	{ value: 'bottom-right', label: __('Bottom right', 'all-feedback'), flex: 'justify-end'   },
 ];
 
 const ALL_POSITIONS: { value: Position; label: string }[] = [
-	{ value: 'bottom-left',   label: __('Bottom left',   'all-feedback') },
-	{ value: 'bottom-center', label: __('Bottom center', 'all-feedback') },
-	{ value: 'bottom-right',  label: __('Bottom right',  'all-feedback') },
-	{ value: 'side-tab',      label: __('Side tab',      'all-feedback') },
+	{ value: 'bottom-left',  label: __('Bottom left',  'all-feedback') },
+	{ value: 'bottom-right', label: __('Bottom right', 'all-feedback') },
+	{ value: 'side-tab',     label: __('Side tab',     'all-feedback') },
 ];
 
 const PositionPicker = ({
@@ -133,11 +131,12 @@ const WidgetSettings = () => {
 
 	useEffect(() => {
 		if (!data) return;
-		setPosition(data.widget_position ?? 'bottom-right');
+		setPosition(data.general?.widget?.position ?? 'bottom-right');
 	}, [data]);
 
 	const { mutate, isPending: isSaving } = useMutation({
-		mutationFn: (payload: Partial<Settings>) => settingsApi.update(payload),
+		mutationFn: (pos: Position) =>
+			settingsApi.update({ general: { widget: { position: pos } } }),
 		onSuccess: (updated) => {
 			queryClient.setQueryData(settingsQuery().queryKey, updated);
 			toast.success(__('Settings saved successfully.', 'all-feedback'));
@@ -149,7 +148,7 @@ const WidgetSettings = () => {
 
 	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
-		mutate({ widget_position: position });
+		mutate(position);
 	};
 
 	if (isPending) {
@@ -165,7 +164,7 @@ const WidgetSettings = () => {
 						<div className="flex-1 space-y-3">
 							<Skeleton className="h-52 w-full max-w-[520px] rounded-2xl" />
 							<div className="flex gap-2">
-								{[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-9 w-24 rounded-lg" />)}
+								{[1, 2, 3].map((i) => <Skeleton key={i} className="h-9 w-24 rounded-lg" />)}
 							</div>
 						</div>
 					</div>

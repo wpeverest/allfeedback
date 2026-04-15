@@ -1,27 +1,48 @@
 import { request } from './client';
 
 export type Settings = {
-	delete_on_uninstall:  boolean;
-	allow_usage_tracking: boolean;
+	general: {
+		widget: {
+			color:            string;
+			position:         'bottom-right' | 'bottom-left' | 'side-tab';
+			trigger:          'auto' | 'scroll' | 'exit-intent' | 'manual';
+			delay:            number;
+			scroll_threshold: number;
+			show_on_mobile:   boolean;
+		};
+	};
+	advanced: {
+		privacy: {
+			disable_user_details: boolean;
+		};
+		logging: {
+			enabled:        boolean;
+			level:          'error' | 'warning' | 'info' | 'debug';
+			retention_days: number;
+		};
+		plugin: {
+			delete_on_uninstall:  boolean;
+			allow_usage_tracking: boolean;
+		};
+	};
+};
 
-	disable_user_details: boolean;
-
-	widget_color:         string;
-	widget_position:      'bottom-right' | 'bottom-left' | 'side-tab';
-	widget_trigger:       'auto' | 'scroll' | 'exit-intent' | 'manual';
-	widget_delay:         number;
-	scroll_threshold:     number;
-	show_on_mobile:       boolean;
-
-	logging_enabled:      boolean;
-	log_level:            'error' | 'warning' | 'info' | 'debug';
-	log_retention_days:   number;
+/** Deeply-partial payload accepted by PATCH /settings. Send only what changed. */
+export type SettingsUpdatePayload = {
+	general?: {
+		widget?: Partial<Settings['general']['widget']>;
+	};
+	advanced?: {
+		privacy?: Partial<Settings['advanced']['privacy']>;
+		logging?: Partial<Settings['advanced']['logging']>;
+		plugin?:  Partial<Settings['advanced']['plugin']>;
+	};
 };
 
 export const settingsApi = {
 	get: () =>
 		request<Settings>('/settings'),
 
-	update: (data: Partial<Settings>) =>
+	update: (data: SettingsUpdatePayload) =>
 		request<Settings>('/settings', { method: 'PATCH', data }),
 };

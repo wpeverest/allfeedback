@@ -1,5 +1,4 @@
 import { settingsApi } from '@/admin/api/settings';
-import type { Settings } from '@/admin/api/settings';
 import { settingsQuery } from '@/admin/queries/settings';
 import { useSettingsDirty } from '@/admin/pages/settings/Settings';
 import { Button } from '@/components/ui/button';
@@ -50,7 +49,8 @@ const LoggingSettings = () => {
 	const { isDirty: sharedIsDirty, setDirty } = useSettingsDirty();
 
 	const { mutate, isPending: isSaving } = useMutation({
-		mutationFn: (payload: Partial<Settings>) => settingsApi.update(payload),
+		mutationFn: (enabled: boolean) =>
+			settingsApi.update({ advanced: { logging: { enabled } } }),
 		onSuccess: (updated) => {
 			queryClient.setQueryData(settingsQuery().queryKey, updated);
 			setDirty('logging', false);
@@ -63,12 +63,12 @@ const LoggingSettings = () => {
 
 	const form = useForm({
 		defaultValues: DEFAULT_VALUES,
-		onSubmit: async ({ value }) => { mutate(value); },
+		onSubmit: async ({ value }) => { mutate(value.logging_enabled); },
 	});
 
 	useEffect(() => {
 		if (!data) return;
-		form.reset({ logging_enabled: data.logging_enabled ?? false }, { keepDefaultValues: true });
+		form.reset({ logging_enabled: data.advanced?.logging?.enabled ?? false }, { keepDefaultValues: true });
 	}, [data]);
 
 	const values  = useStore(form.store, (s) => s.values);

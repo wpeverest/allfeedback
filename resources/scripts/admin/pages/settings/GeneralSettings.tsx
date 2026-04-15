@@ -23,15 +23,6 @@ const Row = ({ label, children, top }: { label: string; children: React.ReactNod
 	</div>
 );
 
-const SectionLabel = ({ children }: { children: React.ReactNode }) => (
-	<div className="flex items-center gap-3">
-		<span className="text-[11.5px] font-semibold uppercase tracking-widest text-muted-foreground/50">
-			{children}
-		</span>
-		<div className="flex-1 border-t border-border/50" />
-	</div>
-);
-
 const COLOR_PRESETS = [
 	'#6366F1', '#3B82F6', '#10B981', '#F59E0B', '#EF4444',
 ];
@@ -90,7 +81,7 @@ const ColorPicker = ({ value, onChange }: { value: string; onChange: (v: string)
 	);
 };
 
-type Position = Settings['widget_position'];
+type Position = Settings['general']['widget']['position'];
 
 const BOTTOM_POSITIONS: { value: Position; label: string }[] = [
 	{ value: 'bottom-left',  label: __('Bottom left',  'all-feedback') },
@@ -100,14 +91,6 @@ const ALL_POSITIONS: { value: Position; label: string }[] = [
 	...BOTTOM_POSITIONS,
 	{ value: 'side-tab', label: __('Side tab', 'all-feedback') },
 ];
-
-const hexToRgba = (hex: string, alpha: number) => {
-	const h = hex.replace('#', '');
-	const r = parseInt(h.slice(0, 2), 16);
-	const g = parseInt(h.slice(2, 4), 16);
-	const b = parseInt(h.slice(4, 6), 16);
-	return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-};
 
 const PositionPicker = ({ value, onChange, color }: { value: Position; onChange: (v: Position) => void; color: string }) => (
 	<div className="space-y-3">
@@ -270,8 +253,8 @@ const GeneralSettingsSkeleton = () => (
 );
 
 const DEFAULT_VALUES = {
-	widget_color:    DEFAULT_WIDGET_COLOR,
-	widget_position: 'bottom-right' as Position,
+	color:    DEFAULT_WIDGET_COLOR,
+	position: 'bottom-right' as Position,
 };
 
 const GeneralSettings = () => {
@@ -280,7 +263,8 @@ const GeneralSettings = () => {
 	const { isDirty: sharedIsDirty, setDirty } = useSettingsDirty();
 
 	const { mutate, isPending: isSaving } = useMutation({
-		mutationFn: (payload: Partial<Settings>) => settingsApi.update(payload),
+		mutationFn: (value: typeof DEFAULT_VALUES) =>
+			settingsApi.update({ general: { widget: value } }),
 		onSuccess: (updated) => {
 			queryClient.setQueryData(settingsQuery().queryKey, updated);
 			setDirty('general', false);
@@ -301,8 +285,8 @@ const GeneralSettings = () => {
 	useEffect(() => {
 		if (!data) return;
 		form.reset({
-			widget_color:     data.widget_color     ?? DEFAULT_VALUES.widget_color,
-			widget_position:  data.widget_position  ?? DEFAULT_VALUES.widget_position,
+			color:    data.general?.widget?.color    ?? DEFAULT_VALUES.color,
+			position: data.general?.widget?.position ?? DEFAULT_VALUES.position,
 		}, { keepDefaultValues: true });
 	}, [data]);
 
@@ -349,16 +333,16 @@ const GeneralSettings = () => {
 
 				<Row label={__('Widget color', 'all-feedback')} top>
 					<ColorPicker
-						value={values.widget_color}
-						onChange={(v) => form.setFieldValue('widget_color', v)}
+						value={values.color}
+						onChange={(v) => form.setFieldValue('color', v)}
 					/>
 				</Row>
 
 				<Row label={__('Position', 'all-feedback')} top>
 					<PositionPicker
-						value={values.widget_position}
-						onChange={(v) => form.setFieldValue('widget_position', v)}
-						color={values.widget_color}
+						value={values.position}
+						onChange={(v) => form.setFieldValue('position', v)}
+						color={values.color}
 					/>
 				</Row>
 
