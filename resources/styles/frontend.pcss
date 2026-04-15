@@ -505,27 +505,36 @@
 }
 
 .allfb-scale__btn--nps {
-  flex:       1;
-  min-width:  0;
-  height:     28px;
-  font-size:  11px;
+  flex:          1;
+  min-width:     0;
+  height:        28px;
+  font-size:     11px;
   border-radius: 6px;
-}
 
-.allfb-scale__btn--detractor.is-active {
-  background: #fca5a5;
-  border-color: #ef4444;
-  color: #991b1b;
-}
-.allfb-scale__btn--passive.is-active {
-  background: #fcd34d;
-  border-color: #f59e0b;
-  color: #92400e;
-}
-.allfb-scale__btn--promoter.is-active {
-  background: #86efac;
-  border-color: #22c55e;
-  color: #14532d;
+  /* Sentiment default tint — visible even before any selection */
+  &.allfb-scale__btn--detractor {
+    color:        #dc2626;
+    border-color: #fca5a5;
+    background:   #fef2f2;
+    &:hover { background: #fee2e2; border-color: #ef4444; }
+    &.is-active { background: #fca5a5; border-color: #ef4444; color: #991b1b; }
+  }
+
+  &.allfb-scale__btn--passive {
+    color:        #d97706;
+    border-color: #fcd34d;
+    background:   #fffbeb;
+    &:hover { background: #fef3c7; border-color: #f59e0b; }
+    &.is-active { background: #fcd34d; border-color: #f59e0b; color: #92400e; }
+  }
+
+  &.allfb-scale__btn--promoter {
+    color:        #16a34a;
+    border-color: #86efac;
+    background:   #f0fdf4;
+    &:hover { background: #dcfce7; border-color: #22c55e; }
+    &.is-active { background: #86efac; border-color: #22c55e; color: #14532d; }
+  }
 }
 
 .allfb-scale__labels {

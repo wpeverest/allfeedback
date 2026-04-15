@@ -46,11 +46,14 @@ export interface PreviewSurvey {
 	title:       string;
 	form_schema: { version: string; sections: PreviewSection[] } | PreviewField[] | null;
 	settings: {
+		// camelCase (in-memory form state)
 		submitLabel?:         string;
 		nextLabel?:           string;
-		backLabel?:           string;
 		thankYouTitle?:       string;
 		thankYouDescription?: string;
+		// snake_case (DB / REST API)
+		submit_label?:        string;
+		next_label?:          string;
 	} | null;
 }
 
@@ -192,7 +195,9 @@ export function surveyPreviewHtml( survey: PreviewSurvey, color = '#6366f1' ): s
 	const isMultiStep = totalSteps > 1;
 	const stepFields  = sections[ 0 ].fields;
 	const ss          = survey.settings ?? {};
-	const btnLabel    = isMultiStep ? ( ss.nextLabel || 'Next' ) : ( ss.submitLabel || 'Submit' );
+	const btnLabel    = isMultiStep
+		? ( ss.nextLabel   || ss.next_label   || 'Next'   )
+		: ( ss.submitLabel || ss.submit_label || 'Submit' );
 
 	// Step indicator — mirrors buildForm()'s stepEl rendering.
 	const stepsHtml = isMultiStep

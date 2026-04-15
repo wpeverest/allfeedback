@@ -62,6 +62,30 @@ interface SurveySettings {
 	submitLabel?:         string;
 	nextLabel?:           string;
 	backLabel?:           string;
+	// snake_case aliases — DB stores labels as submit_label / next_label / back_label
+	submit_label?:        string;
+	next_label?:          string;
+	back_label?:          string;
+}
+
+/**
+ * Normalise raw survey settings from the REST API.
+ *
+ * The form builder serialises some keys as snake_case (submit_label, next_label,
+ * back_label) and others as camelCase (thankYouEnabled, thankYouTitle, …).
+ * This helper presents a uniform view so all call sites read the same keys.
+ * Add new key mappings here — never scatter them across call sites.
+ */
+function normalizeSettings( raw: SurveySettings | null | undefined ) {
+	const s = raw ?? {};
+	return {
+		submitLabel:         ( s.submitLabel         || s.submit_label         || '' ) || 'Submit',
+		nextLabel:           ( s.nextLabel           || s.next_label           || '' ) || 'Next',
+		backLabel:           ( s.backLabel           || s.back_label           || '' ) || 'Back',
+		thankYouEnabled:     s.thankYouEnabled     ?? false,
+		thankYouTitle:       s.thankYouTitle       || 'Thank you!',
+		thankYouDescription: s.thankYouDescription || 'Your response has been recorded.',
+	};
 }
 
 interface Survey {
@@ -137,13 +161,9 @@ async function fetchAndRender(
 		if ( ! json.success || ! json.data ) throw new Error( 'Bad response' );
 
 		const survey   = json.data;
-		const settings = survey.settings ?? {};
-		const tyTitle  = settings.thankYouEnabled && settings.thankYouTitle
-			? settings.thankYouTitle
-			: 'Thank you!';
-		const tyDesc   = settings.thankYouEnabled && settings.thankYouDescription
-			? settings.thankYouDescription
-			: 'Your response has been recorded.';
+		const settings = normalizeSettings( survey.settings );
+		const tyTitle  = settings.thankYouEnabled ? settings.thankYouTitle       : 'Thank you!';
+		const tyDesc   = settings.thankYouEnabled ? settings.thankYouDescription : 'Your response has been recorded.';
 
 		const form = buildForm( cfg, survey, submitNonce, () => {
 			container.innerHTML = thankYouHtml( tyTitle, tyDesc );
@@ -437,10 +457,10 @@ function buildForm(
 		return p;
 	}
 
-	const ss          = survey.settings ?? {};
-	const submitLabel = ss.submitLabel || 'Submit';
-	const nextLabel   = ss.nextLabel   || 'Next';
-	const backLabel   = ss.backLabel   || 'Back';
+	const ss          = normalizeSettings( survey.settings );
+	const submitLabel = ss.submitLabel;
+	const nextLabel   = ss.nextLabel;
+	const backLabel   = ss.backLabel;
 	const totalSteps  = sections.length;
 
 	// ── State ────────────────────────────────────────────────────────────────
