@@ -132,7 +132,7 @@ class SubmitController extends RestController {
 			return $this->errorResponse( __( 'This survey is not currently accepting responses.', 'all-feedback' ), 403 );
 		}
 
-		$ipHash = $this->hashIp();
+		[ $ipHash, $rawIp ] = $this->resolveIp();
 
 		/**
 		 * Filters whether a response submission should be allowed to proceed.
@@ -200,7 +200,7 @@ class SubmitController extends RestController {
 		);
 
 		try {
-			$domainResponse = $this->submitService->execute( $dto, $ipHash );
+			$domainResponse = $this->submitService->execute( $dto, $ipHash, $disableUserDetails ? null : $rawIp );
 		} catch ( ValidationException $e ) {
 			return $this->exceptionToResponse( $e );
 		} catch ( NotFoundException $e ) {
@@ -247,22 +247,22 @@ class SubmitController extends RestController {
 	 * @since 1.0.0
 	 */
 	/**
-	 * Hash the visitor's IP address for anonymised duplicate detection.
+	 * Resolve the visitor's IP address and return both the HMAC-SHA256 hash
+	 * and the raw sanitised IP string.
 	 *
-	 * HMAC-SHA256 with the WordPress auth key as the secret so the hash
-	 * cannot be reversed to recover the original IP while still being unique
-	 * per visitor per install.
+	 * The hash is used for duplicate detection; the raw IP is stored only when
+	 * the privacy "disable user details" setting is off.
 	 *
-	 * @return string 64-character hex digest.
+	 * @return array{0: string, 1: string} [ $hash, $rawIp ]
 	 * @since 1.0.0
 	 */
-	private function hashIp(): string {
+	private function resolveIp(): array {
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
 		$raw    = (string) ( $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '' );
 		$ip     = sanitize_text_field( trim( explode( ',', $raw )[0] ) );
 		$secret = defined( 'AUTH_KEY' ) ? AUTH_KEY : 'allfeedback';
 
-		return hash_hmac( 'sha256', $ip, $secret );
+		return [ hash_hmac( 'sha256', $ip, $secret ), $ip ];
 	}
 
 	private function submitArgs(): array {

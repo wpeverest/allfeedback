@@ -60,11 +60,12 @@ class WpdbResponseRepository implements ResponseRepository {
 				'page_url'      => $response->getPageUrl(),
 				'device_type'   => $response->getDeviceType(),
 				'ip_hash'       => $response->getIpHash(),
+				'ip_address'    => $response->getIpAddress(),
 				'user_id'       => $response->getUserId(),
 				'consent_given' => $response->isConsentGiven() ? 1 : 0,
 				'created_at'    => $response->getCreatedAt()->format( 'Y-m-d H:i:s' ),
 			],
-			[ '%d', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%s' ]
+			[ '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%s' ]
 		);
 
 		if ( false === $result ) {
@@ -79,6 +80,7 @@ class WpdbResponseRepository implements ResponseRepository {
 			pageUrl: $response->getPageUrl(),
 			deviceType: $response->getDeviceType(),
 			ipHash: $response->getIpHash(),
+			ipAddress: $response->getIpAddress(),
 			userId: $response->getUserId(),
 			consentGiven: $response->isConsentGiven(),
 			createdAt: $response->getCreatedAt(),
@@ -316,6 +318,7 @@ class WpdbResponseRepository implements ResponseRepository {
 			pageUrl: $row['page_url'] ?? null,
 			deviceType: $row['device_type'] ?? null,
 			ipHash: $row['ip_hash'] ?? null,
+			ipAddress: $row['ip_address'] ?? null,
 			userId: isset( $row['user_id'] ) && $row['user_id'] !== null ? (int) $row['user_id'] : null,
 			consentGiven: (bool) ( $row['consent_given'] ?? false ),
 			createdAt: new DateTimeImmutable( (string) $row['created_at'] ),
