@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d3f7ab41ffc7978a230dde3097f56cb4",
+    "content-hash": "85af71c38df82baaccc9f4623b5a4bdb",
     "packages": [
         {
             "name": "laravel/serializable-closure",
-            "version": "v2.0.10",
+            "version": "v2.0.12",
             "source": {
                 "type": "git",
                 "url": "https://github.com/laravel/serializable-closure.git",
-                "reference": "870fc81d2f879903dfc5b60bf8a0f94a1609e669"
+                "reference": "a6abb4e54f6fcd3138120b9ad497f0bd146f9919"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/laravel/serializable-closure/zipball/870fc81d2f879903dfc5b60bf8a0f94a1609e669",
-                "reference": "870fc81d2f879903dfc5b60bf8a0f94a1609e669",
+                "url": "https://api.github.com/repos/laravel/serializable-closure/zipball/a6abb4e54f6fcd3138120b9ad497f0bd146f9919",
+                "reference": "a6abb4e54f6fcd3138120b9ad497f0bd146f9919",
                 "shasum": ""
             },
             "require": {
@@ -65,7 +65,7 @@
                 "issues": "https://github.com/laravel/serializable-closure/issues",
                 "source": "https://github.com/laravel/serializable-closure"
             },
-            "time": "2026-02-20T19:59:49+00:00"
+            "time": "2026-04-14T13:33:34+00:00"
         },
         {
             "name": "php-di/invoker",
@@ -247,6 +247,45 @@
                 "source": "https://github.com/php-fig/container/tree/2.0.2"
             },
             "time": "2021-11-05T16:47:00+00:00"
+        },
+        {
+            "name": "themegrill/themegrill-sdk",
+            "version": "1.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/themegrill/themegrill-sdk.git",
+                "reference": "bdcd3b56256ce3126054d0dabb22fe8563b0becc"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/themegrill/themegrill-sdk/zipball/bdcd3b56256ce3126054d0dabb22fe8563b0becc",
+                "reference": "bdcd3b56256ce3126054d0dabb22fe8563b0becc",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.2.24"
+            },
+            "require-dev": {
+                "yoast/phpunit-polyfills": "^4.0"
+            },
+            "type": "library",
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-3.0"
+            ],
+            "authors": [
+                {
+                    "name": "themegrill",
+                    "email": "team@themegrill.com",
+                    "homepage": "https://themegrill.com"
+                }
+            ],
+            "description": "ThemeGrill SDK",
+            "support": {
+                "issues": "https://github.com/themegrill/themegrill-sdk/issues",
+                "source": "https://github.com/themegrill/themegrill-sdk/tree/v1.0.1"
+            },
+            "time": "2025-11-12T11:45:29+00:00"
         },
         {
             "name": "woocommerce/action-scheduler",

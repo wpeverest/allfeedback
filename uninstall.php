@@ -4,26 +4,42 @@
  * Uninstall — executed when the plugin is deleted via WP Admin → Plugins.
  *
  * This file is loaded directly by WordPress (NOT through Composer autoload),
- * so we must guard against direct access and require no autoloader.
+ * so we must not rely on the DI container or any plugin class.
  *
- * What this does:
- *  - Drop all custom database tables.
- *  - Delete all plugin wp_options entries.
- *  - Clear the compiled DI container cache from wp-content/cache/.
+ * Cleanup is only performed when the "Delete data on uninstall" setting is
+ * enabled (Settings → Advanced → Plugin Management). If the setting is off,
+ * this file exits immediately so survey data and settings are preserved.
+ *
+ * What gets deleted when the setting is on:
+ *  1. Custom database tables (wp_af_surveys, wp_af_responses)
+ *  2. All plugin wp_options rows
+ *  3. Uploads directory  (wp-content/uploads/allfeedback/)
+ *  4. Compiled DI container cache (wp-content/cache/allfeedback/)
  */
 
 defined( 'WP_UNINSTALL_PLUGIN' ) || exit;
 
+// ------------------------------------------------------------------
+// Guard: only wipe data when the admin explicitly opted in.
+// Read directly from wp_options — no plugin classes are available here.
+// ------------------------------------------------------------------
+$settings = get_option( '_allfb_settings', [] );
+$delete   = isset( $settings['advanced']['plugin']['delete_on_uninstall'] )
+	? (bool) $settings['advanced']['plugin']['delete_on_uninstall']
+	: false;
+
+if ( ! $delete ) {
+	return;
+}
+
 global $wpdb;
 
 // ------------------------------------------------------------------
-// 1. Drop custom tables
-//    List every table created in database/migrations/ here.
+// 1. Drop custom database tables
 // ------------------------------------------------------------------
 $tables = [
-	$wpdb->prefix . 'allfb_items',
-	// Add more tables as you create migrations, e.g.:
-	// $wpdb->prefix . 'allfb_orders',
+	$wpdb->prefix . 'af_responses',
+	$wpdb->prefix . 'af_surveys',
 ];
 
 foreach ( $tables as $table ) {
@@ -47,17 +63,41 @@ foreach ( $options as $option ) {
 }
 
 // ------------------------------------------------------------------
-// 3. Clear compiled DI container cache
+// 3. Delete uploads directory (log files and any other stored files)
+//    Path: wp-content/uploads/allfeedback/
 // ------------------------------------------------------------------
-$cache_dir = WP_CONTENT_DIR . '/cache/all-feedback';
+$uploads_dir = wp_upload_dir()['basedir'] . '/allfeedback';
 
-if ( is_dir( $cache_dir ) ) {
-	$files = new RecursiveIteratorIterator(
-		new RecursiveDirectoryIterator( $cache_dir, RecursiveDirectoryIterator::SKIP_DOTS ),
+allfb_delete_directory( $uploads_dir );
+
+// ------------------------------------------------------------------
+// 4. Clear compiled DI container cache
+//    Path: wp-content/cache/allfeedback/
+// ------------------------------------------------------------------
+$cache_dir = WP_CONTENT_DIR . '/cache/allfeedback';
+
+allfb_delete_directory( $cache_dir );
+
+// ------------------------------------------------------------------
+// Helper: recursively delete a directory and all its contents.
+// ------------------------------------------------------------------
+
+/**
+ * Recursively delete a directory and everything inside it.
+ *
+ * @param string $dir Absolute path to the directory.
+ */
+function allfb_delete_directory( string $dir ): void {
+	if ( ! is_dir( $dir ) ) {
+		return;
+	}
+
+	$iterator = new RecursiveIteratorIterator(
+		new RecursiveDirectoryIterator( $dir, RecursiveDirectoryIterator::SKIP_DOTS ),
 		RecursiveIteratorIterator::CHILD_FIRST
 	);
 
-	foreach ( $files as $file ) {
+	foreach ( $iterator as $file ) {
 		if ( $file->isDir() ) {
 			rmdir( $file->getRealPath() );
 		} else {
@@ -65,5 +105,5 @@ if ( is_dir( $cache_dir ) ) {
 		}
 	}
 
-	rmdir( $cache_dir );
+	rmdir( $dir );
 }
