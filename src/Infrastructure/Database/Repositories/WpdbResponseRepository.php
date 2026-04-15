@@ -199,6 +199,33 @@ class WpdbResponseRepository implements ResponseRepository {
 	}
 
 	/**
+	 * Update specific columns of a Response row.
+	 *
+	 * Accepted keys: response_data (JSON string), is_read (0|1).
+	 *
+	 * @param  int                  $id   Response primary key.
+	 * @param  array<string, mixed> $data Column → value pairs to update.
+	 * @since 1.0.0
+	 */
+	public function update( int $id, array $data ): bool {
+		global $wpdb;
+
+		$allowed = [ 'response_data', 'is_read' ];
+		$payload = array_intersect_key( $data, array_flip( $allowed ) );
+
+		if ( empty( $payload ) ) {
+			return true; // nothing to do
+		}
+
+		$formats = array_map(
+			fn( $key ) => $key === 'is_read' ? '%d' : '%s',
+			array_keys( $payload )
+		);
+
+		return $wpdb->update( $this->table, $payload, [ 'id' => $id ], $formats, [ '%d' ] ) !== false;
+	}
+
+	/**
 	 * Permanently remove a single Response by its primary key.
 	 *
 	 * @since 1.0.0
@@ -275,6 +302,7 @@ class WpdbResponseRepository implements ResponseRepository {
 			userId: isset( $row['user_id'] ) && $row['user_id'] !== null ? (int) $row['user_id'] : null,
 			consentGiven: (bool) ( $row['consent_given'] ?? false ),
 			createdAt: new DateTimeImmutable( (string) $row['created_at'] ),
+			isRead: (bool) ( $row['is_read'] ?? false ),
 		);
 	}
 

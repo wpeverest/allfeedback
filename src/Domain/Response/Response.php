@@ -35,6 +35,7 @@ class Response extends Entity {
 		private ?string $ipHash = null,
 		private ?int $userId = null,
 		private bool $consentGiven = false,
+		private bool $isRead = false,
 	) {
 		$this->createdAt = new DateTimeImmutable();
 	}
@@ -55,8 +56,9 @@ class Response extends Entity {
 		?int $userId,
 		bool $consentGiven,
 		DateTimeImmutable $createdAt,
+		bool $isRead = false,
 	): self {
-		$response            = new self( $surveyId, $responseData, $score, $pageUrl, $deviceType, $ipHash, $userId, $consentGiven );
+		$response            = new self( $surveyId, $responseData, $score, $pageUrl, $deviceType, $ipHash, $userId, $consentGiven, $isRead );
 		$response->id        = $id;
 		$response->createdAt = $createdAt;
 		return $response;
@@ -135,6 +137,15 @@ class Response extends Entity {
 	}
 
 	/**
+	 * Return true when an admin has marked this response as read.
+	 *
+	 * @since 1.0.0
+	 */
+	public function isRead(): bool {
+		return $this->isRead;
+	}
+
+	/**
 	 * Return the UTC timestamp at which the response was submitted.
 	 *
 	 * @since 1.0.0
@@ -159,6 +170,7 @@ class Response extends Entity {
 			'ip_hash'       => $this->ipHash,
 			'user_id'       => $this->userId,
 			'consent_given' => $this->consentGiven,
+			'is_read'       => $this->isRead,
 			'created_at'    => $this->createdAt->format( 'Y-m-d H:i:s' ),
 		];
 	}

@@ -62,6 +62,20 @@ interface ResponseRepository {
 	public function countAll( ResponseFilter $filter ): int;
 
 	/**
+	 * Update specific columns of a Response row by its primary key.
+	 *
+	 * Only the keys present in $data are written; all values must already be
+	 * safe for direct DB insertion (the implementation handles escaping).
+	 *
+	 * Accepted keys: response_data (JSON string), is_read (0|1).
+	 *
+	 * @param  int                  $id   Response primary key.
+	 * @param  array<string, mixed> $data Column → value pairs to update.
+	 * @since 1.0.0
+	 */
+	public function update( int $id, array $data ): bool;
+
+	/**
 	 * Permanently remove a single Response by its primary key.
 	 *
 	 * @since 1.0.0
