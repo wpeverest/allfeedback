@@ -90,6 +90,7 @@ export type SurveyResponse = {
 	device_type:   string | null;
 	user_id:       number | null;
 	consent_given: boolean;
+	is_read:       boolean;
 	created_at:    string;
 };
 
@@ -108,7 +109,8 @@ export type DeleteResponseResult = {
 };
 
 export type UpdateResponseData = {
-	response_data: Record<string, unknown> | null;
+	response_data?: Record<string, unknown> | null;
+	is_read?:       boolean;
 };
 
 export type SubmitFormData = {

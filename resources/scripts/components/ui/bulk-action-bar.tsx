@@ -1,33 +1,41 @@
 ﻿import { cn } from '@/lib/utils';
 import { __ } from '@wordpress/i18n';
-import { Archive, Loader2, RotateCcw, Trash2, X } from 'lucide-react';
+import { Archive, Loader2, Mail, MailOpen, RotateCcw, Trash2, X } from 'lucide-react';
 
 export interface BulkActionBarProps {
-	count:          number;
-	showTrash?:     boolean;
-	showDelete?:    boolean;
-	showRestore?:   boolean;
-	onDelete:       () => void;
-	onTrash:        () => void;
-	onRestore:      () => void;
-	onClone:        () => void;
-	onClear:        () => void;
-	isDeleting?:    boolean;
-	isTrashing?:    boolean;
-	isRestoring?:   boolean;
-	isCloning?:     boolean;
+	count:             number;
+	showTrash?:        boolean;
+	showDelete?:       boolean;
+	showRestore?:      boolean;
+	showMarkRead?:     boolean;
+	showMarkUnread?:   boolean;
+	onDelete:          () => void;
+	onTrash:           () => void;
+	onRestore:         () => void;
+	onClone:           () => void;
+	onClear:           () => void;
+	onMarkRead?:       () => void;
+	onMarkUnread?:     () => void;
+	isDeleting?:       boolean;
+	isTrashing?:       boolean;
+	isRestoring?:      boolean;
+	isCloning?:        boolean;
+	isMarkingRead?:    boolean;
+	isMarkingUnread?:  boolean;
 }
 
 export const BulkActionBar = ({
 	count,
-	showTrash   = false,
-	showDelete  = false,
-	showRestore = false,
-	onDelete, onTrash, onRestore, onClear,
-	isDeleting, isTrashing, isRestoring,
+	showTrash      = false,
+	showDelete     = false,
+	showRestore    = false,
+	showMarkRead   = false,
+	showMarkUnread = false,
+	onDelete, onTrash, onRestore, onClear, onMarkRead, onMarkUnread,
+	isDeleting, isTrashing, isRestoring, isMarkingRead, isMarkingUnread,
 }: BulkActionBarProps) => {
-	const busy        = isDeleting || isTrashing || isRestoring;
-	const hasActions  = showTrash || showDelete || showRestore;
+	const busy        = isDeleting || isTrashing || isRestoring || isMarkingRead || isMarkingUnread;
+	const hasActions  = showTrash || showDelete || showRestore || showMarkRead || showMarkUnread;
 
 	return (
 		<div
@@ -51,6 +59,46 @@ export const BulkActionBar = ({
 				</div>
 
 				{hasActions && <div className="h-5 w-px shrink-0 bg-border/60" />}
+
+				{showMarkRead && (
+					<>
+						<div className="px-3 py-3">
+							<button
+								type="button"
+								onClick={onMarkRead}
+								disabled={busy}
+								className="flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/[0.06] px-3 py-1.5 text-[13px] font-medium text-primary/80 transition-colors hover:border-primary/50 hover:bg-primary/[0.10] hover:text-primary disabled:pointer-events-none disabled:opacity-60"
+							>
+								{isMarkingRead
+									? <Loader2 className="size-3.5 animate-spin" />
+									: <MailOpen className="size-3.5" />
+								}
+								{__('Mark as read', 'all-feedback')}
+							</button>
+						</div>
+						{(showMarkUnread || showRestore || showTrash || showDelete) && <div className="h-5 w-px shrink-0 bg-border/60" />}
+					</>
+				)}
+
+				{showMarkUnread && (
+					<>
+						<div className="px-3 py-3">
+							<button
+								type="button"
+								onClick={onMarkUnread}
+								disabled={busy}
+								className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-muted/40 px-3 py-1.5 text-[13px] font-medium text-foreground/60 transition-colors hover:border-border hover:bg-muted/70 hover:text-foreground disabled:pointer-events-none disabled:opacity-60"
+							>
+								{isMarkingUnread
+									? <Loader2 className="size-3.5 animate-spin" />
+									: <Mail className="size-3.5" />
+								}
+								{__('Mark as unread', 'all-feedback')}
+							</button>
+						</div>
+						{(showRestore || showTrash || showDelete) && <div className="h-5 w-px shrink-0 bg-border/60" />}
+					</>
+				)}
 
 				{showRestore && (
 					<>

@@ -8,6 +8,8 @@ import { Link, Outlet, useBlocker } from '@tanstack/react-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { __ } from '@wordpress/i18n';
 import { Loader2, Settings2, SlidersHorizontal } from 'lucide-react';
+
+const isMac = typeof navigator !== 'undefined' && /mac/i.test(navigator.platform);
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -148,7 +150,19 @@ const Settings = () => {
 
 						<div className="min-w-0 flex-1 overflow-hidden rounded-2xl border border-border/60 bg-white">
 							<Outlet />
-							<div className="flex items-center justify-end border-t border-border/50 px-6 py-4">
+							<div className="flex items-center justify-end gap-3 border-t border-border/50 px-6 py-4">
+								{!isSaving && (
+									<span className="flex items-center gap-1">
+										{(isMac ? ['⌘', 'S'] : ['Ctrl', 'S']).map((k) => (
+											<kbd
+												key={k}
+												className="rounded border border-border bg-muted/60 px-1.5 py-0.5 text-[11px] font-medium leading-none text-muted-foreground/60"
+											>
+												{k}
+											</kbd>
+										))}
+									</span>
+								)}
 								<Button onClick={save} disabled={isSaving}>
 									{isSaving && <Loader2 className="animate-spin" />}
 									{isSaving ? __('Saving…', 'all-feedback') : __('Save Changes', 'all-feedback')}

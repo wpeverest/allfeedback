@@ -7,10 +7,8 @@ namespace AllFeedback\API\Controllers\V1;
 defined( 'ABSPATH' ) || exit;
 
 use AllFeedback\API\RestController;
-use AllFeedback\Domain\Response\Response;
-use AllFeedback\Domain\Response\ResponseFilter;
-use AllFeedback\Domain\Response\ResponseRepository;
-use AllFeedback\Domain\Survey\SurveyRepository;
+use AllFeedback\Survey\Manager;
+use AllFeedback\Survey\ResponseManager;
 use AllFeedback\Support\Logger;
 
 /**
@@ -19,9 +17,8 @@ use AllFeedback\Support\Logger;
  * Admin REST controller for reading and deleting survey responses.
  *
  * Routes registered (all under all-feedback/v1):
- *   GET    /responses                     → indexAll() : paginated list across all surveys
- *   GET    /surveys/{id}/responses        → index()    : paginated response list for one survey
- *   DELETE /surveys/{id}/responses/{rid}  → destroy()  : delete a single response
+ *   GET    /surveys/{id}/responses          → index()   : paginated response list
+ *   DELETE /surveys/{id}/responses/{rid}    → destroy() : delete a single response
  *
  * Public submission is handled by SubmitController (POST /surveys/{id}/submit)
  * to maintain a clear security boundary between public and admin endpoints.
@@ -37,14 +34,14 @@ class ResponsesController extends RestController {
 	protected string $restBase = 'surveys';
 
 	/**
-	 * @param SurveyRepository   $surveyRepository   Repository for survey lookups.
-	 * @param ResponseRepository $responseRepository Repository for response reads and deletes.
-	 * @param Logger             $logger             Structured logger.
+	 * @param Manager         $surveyManager   Table gateway for af_surveys.
+	 * @param ResponseManager $responseManager Table gateway for af_responses.
+	 * @param Logger          $logger          Structured logger.
 	 * @since 1.0.0
 	 */
 	public function __construct(
-		private readonly SurveyRepository $surveyRepository,
-		private readonly ResponseRepository $responseRepository,
+		private readonly Manager $surveyManager,
+		private readonly ResponseManager $responseManager,
 		private readonly Logger $logger,
 	) {}
 
@@ -143,7 +140,12 @@ class ResponsesController extends RestController {
 							'response_data' => [
 								'description' => __( 'Field answers keyed by field ID.', 'all-feedback' ),
 								'type'        => [ 'object', 'array', 'null' ],
-								'required'    => true,
+								'required'    => false,
+							],
+							'is_read'       => [
+								'description' => __( 'Whether the response has been read by an admin.', 'all-feedback' ),
+								'type'        => 'boolean',
+								'required'    => false,
 							],
 						]
 					),
@@ -186,18 +188,12 @@ class ResponsesController extends RestController {
 	public function indexAll( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$page     = max( 1, (int) ( $request->get_param( 'page' ) ?? 1 ) );
 		$perPage  = min( 100, max( 1, (int) ( $request->get_param( 'per_page' ) ?? 20 ) ) );
+		$offset   = ( $page - 1 ) * $perPage;
 		$dateFrom = sanitize_text_field( (string) ( $request->get_param( 'date_from' ) ?? '' ) );
 		$dateTo   = sanitize_text_field( (string) ( $request->get_param( 'date_to' ) ?? '' ) );
 
-		$filter = new ResponseFilter(
-			dateFrom: $dateFrom !== '' ? $dateFrom : null,
-			dateTo:   $dateTo !== '' ? $dateTo : null,
-			page:     $page,
-			perPage:  $perPage,
-		);
-
-		$responses = $this->responseRepository->findAll( $filter );
-		$total     = $this->responseRepository->countAll( $filter );
+		$responses = $this->responseManager->findAll( $perPage, $offset, $dateFrom, $dateTo );
+		$total     = $this->responseManager->countAll( $dateFrom, $dateTo );
 
 		return $this->successResponse(
 			[
@@ -221,24 +217,18 @@ class ResponsesController extends RestController {
 	public function index( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$surveyId = (int) $request->get_param( 'id' );
 
-		if ( $this->surveyRepository->findById( $surveyId ) === null ) {
+		if ( $this->surveyManager->find( $surveyId ) === null ) {
 			return $this->notFoundResponse( __( 'Survey', 'all-feedback' ) );
 		}
 
 		$page     = max( 1, (int) ( $request->get_param( 'page' ) ?? 1 ) );
 		$perPage  = min( 100, max( 1, (int) ( $request->get_param( 'per_page' ) ?? 20 ) ) );
+		$offset   = ( $page - 1 ) * $perPage;
 		$dateFrom = sanitize_text_field( (string) ( $request->get_param( 'date_from' ) ?? '' ) );
 		$dateTo   = sanitize_text_field( (string) ( $request->get_param( 'date_to' ) ?? '' ) );
 
-		$filter = new ResponseFilter(
-			dateFrom: $dateFrom !== '' ? $dateFrom : null,
-			dateTo:   $dateTo !== '' ? $dateTo : null,
-			page:     $page,
-			perPage:  $perPage,
-		);
-
-		$responses = $this->responseRepository->findBySurveyId( $surveyId, $filter );
-		$total     = $this->responseRepository->countBySurveyId( $surveyId, $filter );
+		$responses = $this->responseManager->findBySurvey( $surveyId, $perPage, $offset, $dateFrom, $dateTo );
+		$total     = $this->responseManager->countBySurvey( $surveyId, $dateFrom, $dateTo );
 
 		return $this->successResponse(
 			[
@@ -293,20 +283,34 @@ class ResponsesController extends RestController {
 			return $this->notFoundResponse( __( 'Response', 'all-feedback' ) );
 		}
 
+		$updatePayload = [];
+
+		// Handle response_data if provided.
 		$rawData = $request->get_param( 'response_data' );
+		if ( $rawData !== null ) {
+			if ( $rawData instanceof \stdClass ) {
+				$rawData = (array) $rawData;
+			}
 
-		// Normalise: WP may decode the JSON body as stdClass — cast to array.
-		if ( $rawData instanceof \stdClass ) {
-			$rawData = (array) $rawData;
+			$responseDataJson = wp_json_encode( $rawData );
+
+			if ( $responseDataJson === false ) {
+				return $this->errorResponse( __( 'Invalid response_data: could not encode as JSON.', 'all-feedback' ), 400 );
+			}
+
+			$updatePayload['response_data'] = $responseDataJson;
 		}
 
-		$responseDataJson = $rawData !== null ? wp_json_encode( $rawData ) : null;
-
-		if ( $responseDataJson === false ) {
-			return $this->errorResponse( __( 'Invalid response_data: could not encode as JSON.', 'all-feedback' ), 400 );
+		// Handle is_read if provided.
+		$isRead = $request->get_param( 'is_read' );
+		if ( $isRead !== null ) {
+			$updatePayload['is_read'] = $isRead ? 1 : 0;
 		}
 
-		$updatePayload = [ 'response_data' => $responseDataJson ];
+		// Nothing to update — return current state.
+		if ( empty( $updatePayload ) ) {
+			return $this->successResponse( $this->prepareResponse( $response ) );
+		}
 
 		if ( ! $this->responseManager->update( $responseId, $updatePayload ) ) {
 			$this->logger->error(
@@ -344,13 +348,13 @@ class ResponsesController extends RestController {
 		$surveyId   = (int) $request->get_param( 'id' );
 		$responseId = (int) $request->get_param( 'rid' );
 
-		$response = $this->responseRepository->findById( $responseId );
+		$response = $this->responseManager->find( $responseId );
 
-		if ( $response === null || $response->getSurveyId() !== $surveyId ) {
+		if ( $response === null || (int) $response->survey_id !== $surveyId ) {
 			return $this->notFoundResponse( __( 'Response', 'all-feedback' ) );
 		}
 
-		if ( ! $this->responseRepository->delete( $responseId ) ) {
+		if ( ! $this->responseManager->delete( $responseId ) ) {
 			$this->logger->error(
 				'Response deletion failed at DB layer.',
 				[ 'response_id' => $responseId, 'survey_id' => $surveyId, 'user_id' => get_current_user_id() ]
@@ -358,7 +362,7 @@ class ResponsesController extends RestController {
 			return $this->errorResponse( __( 'Failed to delete the response.', 'all-feedback' ), 500 );
 		}
 
-		$this->surveyRepository->decrementResponseCount( $surveyId );
+		$this->surveyManager->decrementResponseCount( $surveyId );
 
 		$this->logger->info(
 			'Response deleted.',
@@ -403,7 +407,7 @@ class ResponsesController extends RestController {
 				],
 				'score'         => [
 					'description' => __( 'Numeric score for NPS, CSAT, or CES fields.', 'all-feedback' ),
-					'type'        => [ 'number', 'null' ],
+					'type'        => [ 'integer', 'null' ],
 					'context'     => [ 'view' ],
 				],
 				'page_url'      => [
@@ -442,26 +446,26 @@ class ResponsesController extends RestController {
 	// ------------------------------------------------------------------
 
 	/**
-	 * Serialise a Response aggregate into the REST response shape.
+	 * Serialise a wpdb response row into the REST response shape.
 	 *
-	 * @param Response $response Response aggregate root.
+	 * @param object $response Raw database row.
 	 * @return array<string, mixed>
 	 * @since 1.0.0
 	 */
-	private function prepareResponse( Response $response ): array {
-		$responseData = $response->getResponseData();
-		$score        = $response->getScore();
-
+	private function prepareResponse( object $response ): array {
 		return [
-			'id'            => $response->getId(),
-			'survey_id'     => $response->getSurveyId(),
-			'response_data' => $responseData !== [] ? $responseData : null,
-			'score'         => $score !== null ? (int) $score : null,
-			'page_url'      => $response->getPageUrl(),
-			'device_type'   => $response->getDeviceType(),
-			'user_id'       => $response->getUserId(),
-			'consent_given' => $response->isConsentGiven(),
-			'created_at'    => $response->getCreatedAt()->format( 'Y-m-d H:i:s' ),
+			'id'            => (int) $response->id,
+			'survey_id'     => (int) $response->survey_id,
+			'response_data' => isset( $response->response_data ) && $response->response_data !== null
+				? json_decode( $response->response_data, true )
+				: null,
+			'score'         => $response->score !== null ? (int) $response->score : null,
+			'page_url'      => $response->page_url,
+			'device_type'   => $response->device_type,
+			'user_id'       => $response->user_id !== null ? (int) $response->user_id : null,
+			'consent_given' => (bool) $response->consent_given,
+			'is_read'       => (bool) ( $response->is_read ?? false ),
+			'created_at'    => $response->created_at,
 		];
 	}
 }

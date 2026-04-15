@@ -25,7 +25,7 @@ import { cn } from '@/lib/utils';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { __ } from '@wordpress/i18n';
-import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown, Edit2, Eye, MessageSquare, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown, Edit2, Eye, Mail, MailOpen, MessageSquare, MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import type { SurveyResponse } from '@/admin/api/surveys';
@@ -63,6 +63,7 @@ const Responses = () => {
 	const [perPage,          setPerPage]          = useState(10);
 	const [sortBy,           setSortBy]           = useState<'id' | 'created_at'>('created_at');
 	const [order,            setOrder]            = useState<'ASC' | 'DESC'>('DESC');
+	const [readFilter,       setReadFilter]       = useState<'all' | 'read' | 'unread'>('all');
 	const [checked,          setChecked]          = useState<number[]>([]);
 	const [confirmDelete,    setConfirmDelete]    = useState<{ id: number; surveyId: number } | null>(null);
 	const [bulkConfirmOpen,  setBulkConfirmOpen]  = useState(false);
@@ -108,11 +109,17 @@ const Responses = () => {
 		return order === 'DESC' ? valB - valA : valA - valB;
 	});
 
+	const byReadFilter = readFilter === 'read'
+		? sorted.filter((r) => r.is_read)
+		: readFilter === 'unread'
+			? sorted.filter((r) => !r.is_read)
+			: sorted;
+
 	const filtered = debouncedSearch.trim()
-		? sorted.filter((r) =>
+		? byReadFilter.filter((r) =>
 			getResponseSummary(r.response_data).toLowerCase().includes(debouncedSearch.toLowerCase()),
 		)
-		: sorted;
+		: byReadFilter;
 
 	const allChecked  = responses.length > 0 && responses.every((r) => checked.includes(r.id));
 	const someChecked = checked.length > 0 && !allChecked;
@@ -164,6 +171,36 @@ const Responses = () => {
 		onError: () => {
 			setBulkConfirmOpen(false);
 			toast.error(__('Failed to delete responses. Please try again.', 'all-feedback'));
+		},
+	});
+
+	const markReadMutation = useMutation({
+		mutationFn: ({ id, surveyId, isRead }: { id: number; surveyId: number; isRead: boolean }) =>
+			surveysApi.updateResponse(surveyId, id, { is_read: isRead }),
+		onSuccess: () => {
+			void queryClient.invalidateQueries({ queryKey: ['responses'] });
+		},
+	});
+
+	const bulkMarkReadMutation = useMutation({
+		mutationFn: (isRead: boolean) =>
+			Promise.all(
+				checked.map((id) => {
+					const surveyId = responses.find((r) => r.id === id)?.survey_id ?? selectedSurveyId!;
+					return surveysApi.updateResponse(surveyId, id, { is_read: isRead });
+				}),
+			),
+		onSuccess: (_, isRead) => {
+			void queryClient.invalidateQueries({ queryKey: ['responses'] });
+			setChecked([]);
+			toast.success(
+				isRead
+					? __('Marked as read.', 'all-feedback')
+					: __('Marked as unread.', 'all-feedback'),
+			);
+		},
+		onError: () => {
+			toast.error(__('Failed to update responses. Please try again.', 'all-feedback'));
 		},
 	});
 
@@ -258,6 +295,20 @@ const Responses = () => {
 						className="pl-9"
 					/>
 				</div>
+
+				<Select
+					value={readFilter}
+					onValueChange={(v) => { setReadFilter(v as 'all' | 'read' | 'unread'); setPage(1); }}
+				>
+					<SelectTrigger className="w-full sm:w-[160px]">
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="all">{__('All statuses', 'all-feedback')}</SelectItem>
+						<SelectItem value="unread">{__('Unread', 'all-feedback')}</SelectItem>
+						<SelectItem value="read">{__('Read', 'all-feedback')}</SelectItem>
+					</SelectContent>
+				</Select>
 			</div>
 
 			<div className={cn('rounded-xl border border-border bg-card transition-opacity', isFetching && !isLoading && 'pointer-events-none opacity-50')}>
@@ -343,9 +394,14 @@ const Responses = () => {
 
 										{/* ID */}
 										<td className="w-16 px-4 py-5">
-											<span className={cn(cellCls, 'tabular-nums text-foreground/40')}>
-												#{response.id}
-											</span>
+											<div className="flex items-center gap-1.5">
+												{!response.is_read && (
+													<span className="size-1.5 shrink-0 rounded-full bg-primary" title={__('Unread', 'all-feedback')} />
+												)}
+												<span className={cn(cellCls, 'tabular-nums text-foreground/40')}>
+													#{response.id}
+												</span>
+											</div>
 										</td>
 
 										{/* Response summary — clickable, opens detail page */}
@@ -417,6 +473,22 @@ const Responses = () => {
 															{__('Edit', 'all-feedback')}
 														</DropdownMenuItem>
 														<DropdownMenuItem
+															onSelect={() => markReadMutation.mutate({
+																id: response.id,
+																surveyId: response.survey_id,
+																isRead: !response.is_read,
+															})}
+														>
+															{response.is_read
+																? <Mail className="size-3.5" />
+																: <MailOpen className="size-3.5" />
+															}
+															{response.is_read
+																? __('Mark as unread', 'all-feedback')
+																: __('Mark as read', 'all-feedback')
+															}
+														</DropdownMenuItem>
+														<DropdownMenuItem
 															destructive
 															onSelect={() => setConfirmDelete({ id: response.id, surveyId: response.survey_id })}
 														>
@@ -449,12 +521,18 @@ const Responses = () => {
 
 			<BulkActionBar
 				count={checked.length}
+				showMarkRead={checked.length > 0}
+				showMarkUnread={checked.length > 0}
 				showDelete={checked.length > 0}
+				onMarkRead={() => bulkMarkReadMutation.mutate(true)}
+				onMarkUnread={() => bulkMarkReadMutation.mutate(false)}
 				onDelete={() => setBulkConfirmOpen(true)}
 				onTrash={() => {}}
 				onRestore={() => {}}
 				onClone={() => {}}
 				onClear={() => setChecked([])}
+				isMarkingRead={bulkMarkReadMutation.isPending && bulkMarkReadMutation.variables === true}
+				isMarkingUnread={bulkMarkReadMutation.isPending && bulkMarkReadMutation.variables === false}
 				isDeleting={bulkDeleteMutation.isPending}
 			/>
 		</div>

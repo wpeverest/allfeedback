@@ -198,7 +198,7 @@ class ResponseManager {
 	public function insert( array $data ): int|false {
 		global $wpdb;
 
-		$intCols = [ 'survey_id', 'score', 'user_id', 'consent_given' ];
+		$intCols = [ 'survey_id', 'score', 'user_id', 'consent_given', 'is_read' ];
 		$formats = [];
 
 		foreach ( array_keys( $data ) as $col ) {
@@ -229,7 +229,7 @@ class ResponseManager {
 	public function update( int $id, array $data ): bool {
 		global $wpdb;
 
-		$intCols = [ 'score', 'user_id', 'consent_given' ];
+		$intCols = [ 'score', 'user_id', 'consent_given', 'is_read' ];
 		$formats = [];
 
 		foreach ( array_keys( $data ) as $col ) {
