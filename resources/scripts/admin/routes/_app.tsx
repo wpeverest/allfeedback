@@ -14,8 +14,8 @@ function AppLayout() {
 	return (
 		<div className="relative flex min-h-screen flex-col bg-background">
 			{progress !== 0 && (
-				<div className="fixed top-[var(--wp-admin--admin-bar--height,32px)] right-0 left-0 z-[100] h-0.5 bg-border">
-					<Progress value={progress} className="h-full rounded-none bg-primary" />
+				<div className="fixed top-[var(--wp-admin--admin-bar--height,32px)] right-0 left-0 z-[100] h-[3px] bg-primary/15">
+					<Progress value={progress} className="h-full rounded-none bg-primary/60" />
 				</div>
 			)}
 			<GlobalHeader />
@@ -59,8 +59,8 @@ function PendingLayout() {
 					</div>
 				</div>
 			</main>
-			<div className="fixed top-[var(--wp-admin--admin-bar--height,32px)] right-0 left-0 z-[100] h-0.5 bg-border">
-				<Progress value={30} className="h-full rounded-none bg-primary" />
+			<div className="fixed top-[var(--wp-admin--admin-bar--height,32px)] right-0 left-0 z-[100] h-[3px] bg-primary/15">
+				<Progress value={30} className="h-full rounded-none bg-primary/60" />
 			</div>
 		</div>
 	);

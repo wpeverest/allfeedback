@@ -107,6 +107,10 @@ export type DeleteResponseResult = {
 	id:      number;
 };
 
+export type UpdateResponseData = {
+	response_data: Record<string, unknown> | null;
+};
+
 export type SubmitFormData = {
 	nonce:         string;
 	response_data: Record<string, unknown>;
@@ -181,6 +185,12 @@ export const surveysApi = {
 
 	listResponses: (surveyId: number, params?: ResponseListParams) =>
 		request<ResponseListResponse>(`/surveys/${surveyId}/responses` + toQuery(params)),
+
+	getResponse: (surveyId: number, responseId: number) =>
+		request<SurveyResponse>(`/surveys/${surveyId}/responses/${responseId}`),
+
+	updateResponse: (surveyId: number, responseId: number, data: UpdateResponseData) =>
+		request<SurveyResponse>(`/surveys/${surveyId}/responses/${responseId}`, { method: 'PUT', data }),
 
 	deleteResponse: (surveyId: number, responseId: number) =>
 		request<DeleteResponseResult>(`/surveys/${surveyId}/responses/${responseId}`, { method: 'DELETE' }),

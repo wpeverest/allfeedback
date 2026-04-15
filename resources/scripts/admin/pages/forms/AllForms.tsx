@@ -359,7 +359,7 @@ const AllForms = () => {
 				</div>
 			</div>
 
-			<div className="rounded-xl border border-border bg-card">
+			<div className={cn('rounded-xl border border-border bg-card transition-opacity', isFetching && !isLoading && 'pointer-events-none opacity-50')}>
 				<div className="overflow-x-auto">
 					<table className="w-full table-fixed">
 						<thead>

@@ -1,4 +1,4 @@
-﻿import { format } from 'date-fns';
+import { format } from 'date-fns';
 import { BulkActionBar } from '@/components/ui/bulk-action-bar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -19,13 +19,13 @@ import {
 	SelectValue,
 } from '@/components/ui/select';
 import { surveysApi } from '@/admin/api/surveys';
-import { surveysQuery } from '@/admin/queries/surveys';
+import { allResponsesQuery, surveyResponsesQuery, surveysQuery } from '@/admin/queries/surveys';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { cn } from '@/lib/utils';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { __ } from '@wordpress/i18n';
-import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown, Edit2, MessageSquare, MoreVertical, Trash2 } from 'lucide-react';
+import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown, Edit2, Eye, MessageSquare, MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import type { SurveyResponse } from '@/admin/api/surveys';
@@ -45,10 +45,10 @@ const SkeletonRow = ({ showForm }: { showForm: boolean }) => (
 	<tr className="border-b border-border">
 		<td className="w-12 px-4 py-5"><div className="size-[16px] animate-pulse rounded-[4px] bg-muted" /></td>
 		<td className="w-16 px-4 py-5"><div className="h-4 w-8 animate-pulse rounded bg-muted" /></td>
-		{showForm && <td className="w-[180px] px-4 py-5"><div className="h-4 w-28 animate-pulse rounded bg-muted" /></td>}
 		<td className="w-[220px] px-4 py-5"><div className="h-4 w-36 animate-pulse rounded bg-muted" /></td>
+		{showForm && <td className="w-[180px] px-4 py-5"><div className="h-4 w-28 animate-pulse rounded bg-muted" /></td>}
 		<td className="w-36 px-4 py-5"><div className="h-4 w-24 animate-pulse rounded bg-muted" /></td>
-		<td className="w-24 px-4 py-5"><div className="size-7 animate-pulse rounded-lg bg-muted" /></td>
+		<td className="w-36 px-4 py-5"><div className="h-6 w-24 animate-pulse rounded-lg bg-muted" /></td>
 	</tr>
 );
 
@@ -81,21 +81,19 @@ const Responses = () => {
 
 	const queryParams = { page, per_page: perPage };
 
-	const allResponsesQuery = useQuery({
-		queryKey: ['responses', 'all', queryParams],
-		queryFn:  () => surveysApi.listAllResponses(queryParams),
+	const allResponsesResult = useQuery({
+		...allResponsesQuery(queryParams),
 		enabled:  selectedSurveyId === null,
 		placeholderData: keepPreviousData,
 	});
 
-	const surveyResponsesQuery = useQuery({
-		queryKey: ['responses', selectedSurveyId, queryParams],
-		queryFn:  () => surveysApi.listResponses(selectedSurveyId!, queryParams),
+	const surveyResponsesResult = useQuery({
+		...surveyResponsesQuery(selectedSurveyId ?? 0, queryParams),
 		enabled:  selectedSurveyId !== null,
 		placeholderData: keepPreviousData,
 	});
 
-	const activeQuery  = selectedSurveyId === null ? allResponsesQuery : surveyResponsesQuery;
+	const activeQuery  = selectedSurveyId === null ? allResponsesResult : surveyResponsesResult;
 	const { data, isLoading, isError, isFetching } = activeQuery;
 
 	const responses  = data?.responses ?? [];
@@ -121,6 +119,14 @@ const Responses = () => {
 	const toggleAll   = () => setChecked(allChecked ? [] : responses.map((r) => r.id));
 	const toggleOne   = (id: number) =>
 		setChecked((prev) => prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]);
+
+	const openDetail = (response: SurveyResponse, edit = false) => {
+		void navigate({
+			to:     '/responses/$responseId',
+			params: { responseId: String(response.id) },
+			search: { surveyId: response.survey_id, edit },
+		});
+	};
 
 	const deleteMutation = useMutation({
 		mutationFn: ({ id, surveyId }: { id: number; surveyId: number }) =>
@@ -254,7 +260,7 @@ const Responses = () => {
 				</div>
 			</div>
 
-			<div className="rounded-xl border border-border bg-card">
+			<div className={cn('rounded-xl border border-border bg-card transition-opacity', isFetching && !isLoading && 'pointer-events-none opacity-50')}>
 				<div className="overflow-x-auto">
 					<table className="w-full table-fixed">
 						<thead>
@@ -269,18 +275,18 @@ const Responses = () => {
 								<th className="w-16 px-4 py-4 text-left">
 									<ColHead label={__('ID', 'all-feedback')} col="id" />
 								</th>
+								<th className="w-[220px] px-4 py-4 text-left">
+									<ColHead label={__('Response', 'all-feedback')} />
+								</th>
 								{showForm && (
 									<th className="w-[180px] px-4 py-4 text-left">
 										<ColHead label={__('Form', 'all-feedback')} />
 									</th>
 								)}
-								<th className="w-[220px] px-4 py-4 text-left">
-									<ColHead label={__('Response', 'all-feedback')} />
-								</th>
 								<th className="w-36 px-4 py-4 text-left">
 									<ColHead label={__('Submitted', 'all-feedback')} col="created_at" />
 								</th>
-								<th className="w-24 px-4 py-4 text-left">
+								<th className="w-36 px-4 py-4 text-left">
 									<ColHead label={__('Actions', 'all-feedback')} />
 								</th>
 							</tr>
@@ -330,38 +336,64 @@ const Responses = () => {
 											isSelected ? 'bg-primary/[0.03]' : 'hover:bg-muted/20',
 										)}
 									>
+										{/* Checkbox */}
 										<td className="w-12 px-4 py-5">
 											<Checkbox checked={isSelected} onCheckedChange={() => toggleOne(response.id)} />
 										</td>
+
+										{/* ID */}
 										<td className="w-16 px-4 py-5">
 											<span className={cn(cellCls, 'tabular-nums text-foreground/40')}>
 												#{response.id}
 											</span>
 										</td>
+
+										{/* Response summary — clickable, opens detail page */}
+										<td className="w-[220px] px-4 py-5">
+											<button
+												type="button"
+												className="group/resp flex min-w-0 items-center gap-1.5 text-left"
+												onClick={() => openDetail(response)}
+											>
+												<span className={cn(
+													cellCls,
+													'line-clamp-1 underline-offset-2 transition-colors',
+													'group-hover/resp:text-primary group-hover/resp:underline',
+												)}>
+													{summary}
+												</span>
+												<Edit2 className="size-3 shrink-0 opacity-0 transition-all group-hover/resp:text-primary group-hover/resp:opacity-60" />
+											</button>
+										</td>
+
+										{/* Form — plain text, no link */}
 										{showForm && (
 											<td className="w-[180px] px-4 py-5">
-												<button
-													type="button"
-													className="group/name flex min-w-0 items-center gap-1.5 text-left"
-													onClick={() => void navigate({ to: '/builder/', search: { new: false, id: response.survey_id } })}
-												>
-													<span className={cn(cellCls, 'truncate font-medium underline-offset-2 transition-all group-hover/name:text-primary group-hover/name:underline')}>
-														{surveyTitleMap[response.survey_id] ?? `#${response.survey_id}`}
-													</span>
-													<Edit2 className="size-3 shrink-0 opacity-0 transition-all group-hover/name:text-primary group-hover/name:opacity-60" />
-												</button>
+												<span className={cn(cellCls, 'truncate block')}>
+													{surveyTitleMap[response.survey_id] ?? `#${response.survey_id}`}
+												</span>
 											</td>
 										)}
-										<td className="w-[220px] px-4 py-5">
-											<span className={cn(cellCls, 'line-clamp-1 block')}>{summary}</span>
-										</td>
+
+										{/* Submitted date */}
 										<td className="w-36 px-4 py-5">
 											<span className={cellCls}>
 												{format(new Date(response.created_at), 'MMM d, yyyy')}
 											</span>
 										</td>
-										<td className="w-24 px-4 py-5">
+
+										{/* Actions */}
+										<td className="w-36 px-4 py-5">
 											<div className="flex items-center gap-1">
+												<button
+													type="button"
+													onClick={() => openDetail(response)}
+													style={{ border: '1.5px solid #E2E2E8' }}
+													className="flex max-sm:hidden items-center gap-1 rounded-lg bg-primary/[0.04] px-2 py-1 text-[11px] font-medium text-primary/80 transition-colors hover:bg-primary/[0.08] hover:text-primary"
+												>
+													<Eye className="size-3" />
+													{__('View', 'all-feedback')}
+												</button>
 												<DropdownMenu>
 													<DropdownMenuTrigger asChild>
 														<button
@@ -373,6 +405,17 @@ const Responses = () => {
 														</button>
 													</DropdownMenuTrigger>
 													<DropdownMenuContent>
+														<DropdownMenuItem
+															className="max-sm:flex sm:hidden"
+															onSelect={() => openDetail(response)}
+														>
+															<Eye className="size-3.5" />
+															{__('View', 'all-feedback')}
+														</DropdownMenuItem>
+														<DropdownMenuItem onSelect={() => openDetail(response, true)}>
+															<Pencil className="size-3.5" />
+															{__('Edit', 'all-feedback')}
+														</DropdownMenuItem>
 														<DropdownMenuItem
 															destructive
 															onSelect={() => setConfirmDelete({ id: response.id, surveyId: response.survey_id })}

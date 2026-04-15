@@ -1,16 +1,13 @@
-import { settingsApi } from '@/admin/api/settings';
 import type { Settings } from '@/admin/api/settings';
 import { settingsQuery } from '@/admin/queries/settings';
 import { useSettingsDirty } from '@/admin/pages/settings/Settings';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useForm, useStore } from '@tanstack/react-form';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { __ } from '@wordpress/i18n';
-import { Globe, Lock, Loader2, MessageSquare, Pipette, Settings2 } from 'lucide-react';
-import { useEffect } from 'react';
-import { toast } from 'sonner';
+import { Globe, Lock, MessageSquare, Pipette, Settings2 } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 
 const DEFAULT_WIDGET_COLOR = '#6366F1';
 
@@ -20,6 +17,15 @@ const Row = ({ label, children, top }: { label: string; children: React.ReactNod
 	<div className={cn('flex gap-4', top ? 'items-start' : 'items-center')}>
 		<label className={cn(labelCls, 'w-[40%] shrink-0', top && 'pt-2')}>{label}</label>
 		<div className="min-w-0 flex-1">{children}</div>
+	</div>
+);
+
+const SectionLabel = ({ children }: { children: React.ReactNode }) => (
+	<div className="flex items-center gap-3">
+		<span className="text-[11.5px] font-semibold uppercase tracking-widest text-muted-foreground/50">
+			{children}
+		</span>
+		<div className="flex-1 border-t border-border/50" />
 	</div>
 );
 
@@ -245,73 +251,68 @@ const GeneralSettingsSkeleton = () => (
 				</div>
 			</div>
 		</div>
-
-		<div className="flex items-center justify-end border-t border-border/50 px-6 py-4">
-			<Skeleton className="h-9 w-28 rounded-md" />
-		</div>
 	</div>
 );
 
 const DEFAULT_VALUES = {
-	color:    DEFAULT_WIDGET_COLOR,
-	position: 'bottom-right' as Position,
+	widget_color:    DEFAULT_WIDGET_COLOR,
+	widget_position: 'bottom-right' as Position,
 };
 
-const GeneralSettings = () => {
-	const queryClient = useQueryClient();
-	const { data, isPending } = useQuery(settingsQuery());
-	const { isDirty: sharedIsDirty, setDirty } = useSettingsDirty();
+const FORM_KEY = 'general';
 
-	const { mutate, isPending: isSaving } = useMutation({
-		mutationFn: (value: typeof DEFAULT_VALUES) =>
-			settingsApi.update({ general: { widget: value } }),
-		onSuccess: (updated) => {
-			queryClient.setQueryData(settingsQuery().queryKey, updated);
-			setDirty('general', false);
-			toast.success(__('Settings saved successfully.', 'all-feedback'));
-		},
-		onError: () => {
-			toast.error(__('Failed to save settings. Please try again.', 'all-feedback'));
-		},
-	});
+const GeneralSettings = () => {
+	const { data, isPending } = useQuery(settingsQuery());
+	const { isDirty: sharedIsDirty, isSaving, setDirty, patches, setPatch } = useSettingsDirty();
+
+ 	const stagedWidget = (patches[FORM_KEY] as { general?: { widget?: Partial<Settings['general']['widget']> } } | undefined)?.general?.widget;
+	const initValues = stagedWidget
+		? { widget_color: stagedWidget.color ?? DEFAULT_VALUES.widget_color, widget_position: stagedWidget.position ?? DEFAULT_VALUES.widget_position }
+		: data
+			? { widget_color: data.general.widget.color ?? DEFAULT_VALUES.widget_color, widget_position: data.general.widget.position ?? DEFAULT_VALUES.widget_position }
+			: DEFAULT_VALUES;
 
 	const form = useForm({
-		defaultValues: DEFAULT_VALUES,
-		onSubmit: async ({ value }) => {
-			mutate(value);
+		defaultValues: initValues,
+		onSubmit: async () => {
+			// saving is handled centrally by Settings.tsx
 		},
 	});
 
+ 	const markedDirtyRef = useRef(false);
 	useEffect(() => {
-		if (!data) return;
+		if (stagedWidget && !markedDirtyRef.current) {
+			setDirty(FORM_KEY, true);
+			markedDirtyRef.current = true;
+		}
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
+
+ 	useEffect(() => {
+		if (!data || patches[FORM_KEY]) return;
 		form.reset({
-			color:    data.general?.widget?.color    ?? DEFAULT_VALUES.color,
-			position: data.general?.widget?.position ?? DEFAULT_VALUES.position,
+			widget_color:    data.general.widget.color    ?? DEFAULT_VALUES.widget_color,
+			widget_position: data.general.widget.position ?? DEFAULT_VALUES.widget_position,
 		}, { keepDefaultValues: true });
-	}, [data]);
+	}, [data]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	const values  = useStore(form.store, (s) => s.values);
 	const isDirty = useStore(form.store, (s) => s.isDirty);
 
 	useEffect(() => {
-		if (isDirty) setDirty('general', true);
-	}, [isDirty, setDirty]);
-
-	useEffect(() => {
-		const handler = (e: KeyboardEvent) => {
-			if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-				e.preventDefault();
-				void form.handleSubmit();
-			}
-		};
-		document.addEventListener('keydown', handler);
-		return () => document.removeEventListener('keydown', handler);
-	}, [form]);
+		if (!isDirty) return;
+		// Skip when values still match server data (e.g. right after a save resets the form)
+		const serverColor    = data?.general.widget.color    ?? DEFAULT_VALUES.widget_color;
+		const serverPosition = data?.general.widget.position ?? DEFAULT_VALUES.widget_position;
+		if (values.widget_color === serverColor && values.widget_position === serverPosition) return;
+		setDirty(FORM_KEY, true);
+		setPatch(FORM_KEY, { general: { widget: { color: values.widget_color, position: values.widget_position } } } as Record<string, unknown>);
+	}, [values, isDirty]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	if (isPending) return <GeneralSettingsSkeleton />;
 
 	return (
-		<form onSubmit={(e) => { e.preventDefault(); void form.handleSubmit(); }}>
+		<div>
 			<div className="flex items-center gap-3 border-b border-border/50 px-6 py-4">
 				<div className="flex size-9 items-center justify-center rounded-xl bg-primary/10">
 					<Settings2 className="size-[18px] text-primary" />
@@ -333,29 +334,22 @@ const GeneralSettings = () => {
 
 				<Row label={__('Widget color', 'all-feedback')} top>
 					<ColorPicker
-						value={values.color}
-						onChange={(v) => form.setFieldValue('color', v)}
+						value={values.widget_color}
+						onChange={(v) => form.setFieldValue('widget_color', v)}
 					/>
 				</Row>
 
 				<Row label={__('Position', 'all-feedback')} top>
 					<PositionPicker
-						value={values.position}
-						onChange={(v) => form.setFieldValue('position', v)}
-						color={values.color}
+						value={values.widget_position}
+						onChange={(v) => form.setFieldValue('widget_position', v)}
+						color={values.widget_color}
 					/>
 				</Row>
 
 
 			</div>
-
-			<div className="flex items-center justify-end border-t border-border/50 px-6 py-4">
-				<Button type="submit" disabled={isSaving}>
-					{isSaving && <Loader2 className="animate-spin" />}
-					{isSaving ? __('Saving…', 'all-feedback') : __('Save Changes', 'all-feedback')}
-				</Button>
-			</div>
-		</form>
+		</div>
 	);
 };
 

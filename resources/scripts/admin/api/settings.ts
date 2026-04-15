@@ -16,9 +16,9 @@ export type Settings = {
 			disable_user_details: boolean;
 		};
 		logging: {
-			enabled:        boolean;
-			level:          'error' | 'warning' | 'info' | 'debug';
-			retention_days: number;
+			enabled:         boolean;
+			level:           'error' | 'warning' | 'info' | 'debug';
+			retention_days:  number;
 		};
 		plugin: {
 			delete_on_uninstall:  boolean;
@@ -27,22 +27,14 @@ export type Settings = {
 	};
 };
 
-/** Deeply-partial payload accepted by PATCH /settings. Send only what changed. */
-export type SettingsUpdatePayload = {
-	general?: {
-		widget?: Partial<Settings['general']['widget']>;
-	};
-	advanced?: {
-		privacy?: Partial<Settings['advanced']['privacy']>;
-		logging?: Partial<Settings['advanced']['logging']>;
-		plugin?:  Partial<Settings['advanced']['plugin']>;
-	};
-};
+type DeepPartial<T> = T extends object
+	? { [K in keyof T]?: DeepPartial<T[K]> }
+	: T;
 
 export const settingsApi = {
 	get: () =>
 		request<Settings>('/settings'),
 
-	update: (data: SettingsUpdatePayload) =>
+	update: (data: DeepPartial<Settings>) =>
 		request<Settings>('/settings', { method: 'PATCH', data }),
 };

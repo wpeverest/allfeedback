@@ -108,6 +108,47 @@ class ResponsesController extends RestController {
 			'/' . $this->restBase . '/(?P<id>\d+)/responses/(?P<rid>\d+)',
 			[
 				[
+					'methods'             => \WP_REST_Server::READABLE,
+					'callback'            => [ $this, 'show' ],
+					'permission_callback' => [ $this, 'adminPermission' ],
+					'args'                => array_merge(
+						$this->idArg(),
+						[
+							'rid' => [
+								'description'       => __( 'Unique identifier of the response.', 'all-feedback' ),
+								'type'              => 'integer',
+								'required'          => true,
+								'minimum'           => 1,
+								'sanitize_callback' => 'absint',
+								'validate_callback' => 'rest_validate_request_arg',
+							],
+						]
+					),
+				],
+				[
+					'methods'             => \WP_REST_Server::EDITABLE,
+					'callback'            => [ $this, 'update' ],
+					'permission_callback' => [ $this, 'adminPermission' ],
+					'args'                => array_merge(
+						$this->idArg(),
+						[
+							'rid'           => [
+								'description'       => __( 'Unique identifier of the response.', 'all-feedback' ),
+								'type'              => 'integer',
+								'required'          => true,
+								'minimum'           => 1,
+								'sanitize_callback' => 'absint',
+								'validate_callback' => 'rest_validate_request_arg',
+							],
+							'response_data' => [
+								'description' => __( 'Field answers keyed by field ID.', 'all-feedback' ),
+								'type'        => [ 'object', 'array', 'null' ],
+								'required'    => true,
+							],
+						]
+					),
+				],
+				[
 					'methods'             => \WP_REST_Server::DELETABLE,
 					'callback'            => [ $this, 'destroy' ],
 					'permission_callback' => [ $this, 'adminPermission' ],
@@ -207,6 +248,86 @@ class ResponsesController extends RestController {
 				'per_page'  => $perPage,
 			]
 		);
+	}
+
+	/**
+	 * GET /all-feedback/v1/surveys/{id}/responses/{rid}
+	 *
+	 * Return a single response record.
+	 * Verifies the response belongs to the given survey.
+	 *
+	 * @param \WP_REST_Request $request Full request data.
+	 * @return \WP_REST_Response|\WP_Error
+	 * @since 1.0.0
+	 */
+	public function show( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		$surveyId   = (int) $request->get_param( 'id' );
+		$responseId = (int) $request->get_param( 'rid' );
+
+		$response = $this->responseManager->find( $responseId );
+
+		if ( $response === null || (int) $response->survey_id !== $surveyId ) {
+			return $this->notFoundResponse( __( 'Response', 'all-feedback' ) );
+		}
+
+		return $this->successResponse( $this->prepareResponse( $response ) );
+	}
+
+	/**
+	 * PUT /all-feedback/v1/surveys/{id}/responses/{rid}
+	 *
+	 * Update the response_data of an existing response.
+	 * Verifies the response belongs to the given survey before saving.
+	 *
+	 * @param \WP_REST_Request $request Full request data.
+	 * @return \WP_REST_Response|\WP_Error
+	 * @since 1.0.0
+	 */
+	public function update( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		$surveyId   = (int) $request->get_param( 'id' );
+		$responseId = (int) $request->get_param( 'rid' );
+
+		$response = $this->responseManager->find( $responseId );
+
+		if ( $response === null || (int) $response->survey_id !== $surveyId ) {
+			return $this->notFoundResponse( __( 'Response', 'all-feedback' ) );
+		}
+
+		$rawData = $request->get_param( 'response_data' );
+
+		// Normalise: WP may decode the JSON body as stdClass — cast to array.
+		if ( $rawData instanceof \stdClass ) {
+			$rawData = (array) $rawData;
+		}
+
+		$responseDataJson = $rawData !== null ? wp_json_encode( $rawData ) : null;
+
+		if ( $responseDataJson === false ) {
+			return $this->errorResponse( __( 'Invalid response_data: could not encode as JSON.', 'all-feedback' ), 400 );
+		}
+
+		$updatePayload = [ 'response_data' => $responseDataJson ];
+
+		if ( ! $this->responseManager->update( $responseId, $updatePayload ) ) {
+			$this->logger->error(
+				'Response update failed at DB layer.',
+				[ 'response_id' => $responseId, 'survey_id' => $surveyId, 'user_id' => get_current_user_id() ]
+			);
+			return $this->errorResponse( __( 'Failed to update the response.', 'all-feedback' ), 500 );
+		}
+
+		$this->logger->info(
+			'Response updated.',
+			[ 'response_id' => $responseId, 'survey_id' => $surveyId, 'user_id' => get_current_user_id() ]
+		);
+
+		$updated = $this->responseManager->find( $responseId );
+
+		if ( $updated === null ) {
+			return $this->errorResponse( __( 'Response not found after update.', 'all-feedback' ), 500 );
+		}
+
+		return $this->successResponse( $this->prepareResponse( $updated ) );
 	}
 
 	/**
