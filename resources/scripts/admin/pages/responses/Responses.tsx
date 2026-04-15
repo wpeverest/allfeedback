@@ -260,6 +260,21 @@ const Responses = () => {
 
 			<div className="mb-4 flex flex-wrap items-center gap-3 py-1">
 
+				<div className="relative w-full sm:w-[260px]">
+					<svg
+						className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
+						fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"
+					>
+						<circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+					</svg>
+					<Input
+						value={search}
+						onChange={(e) => setSearch(e.target.value)}
+						placeholder={__('Search responses…', 'all-feedback')}
+						className="pl-9"
+					/>
+				</div>
+
 				<Select
 					value={selectedSurveyId !== null ? String(selectedSurveyId) : 'all'}
 					onValueChange={(v) => {
@@ -281,21 +296,6 @@ const Responses = () => {
 					</SelectContent>
 				</Select>
 
-				<div className="relative w-full sm:w-[260px]">
-					<svg
-						className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
-						fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"
-					>
-						<circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-					</svg>
-					<Input
-						value={search}
-						onChange={(e) => setSearch(e.target.value)}
-						placeholder={__('Search responses…', 'all-feedback')}
-						className="pl-9"
-					/>
-				</div>
-
 				<Select
 					value={readFilter}
 					onValueChange={(v) => { setReadFilter(v as 'all' | 'read' | 'unread'); setPage(1); }}
@@ -304,7 +304,7 @@ const Responses = () => {
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>
-						<SelectItem value="all">{__('All statuses', 'all-feedback')}</SelectItem>
+						<SelectItem value="all">{__('All status', 'all-feedback')}</SelectItem>
 						<SelectItem value="unread">{__('Unread', 'all-feedback')}</SelectItem>
 						<SelectItem value="read">{__('Read', 'all-feedback')}</SelectItem>
 					</SelectContent>
