@@ -182,6 +182,38 @@ IDs that do not exist are counted as `failed`.
 
 ---
 
+### `POST /responses/mark-read`
+Bulk mark multiple responses as read across any survey.
+
+**Body**
+```json
+{ "ids": [10, 11, 12] }
+```
+
+**Response**
+```json
+{ "updated": 3, "failed": [] }
+```
+
+IDs that do not exist are counted as `failed`.
+
+---
+
+### `POST /responses/mark-unread`
+Bulk mark multiple responses as unread across any survey.
+
+**Body**
+```json
+{ "ids": [10, 11, 12] }
+```
+
+**Response**
+```json
+{ "updated": 3, "failed": [] }
+```
+
+---
+
 ### `GET /surveys/{id}/responses`
 Return a paginated list of responses for a specific survey. Returns an empty list (not 404) if the survey is trashed.
 
@@ -439,6 +471,8 @@ Permanently delete a single log file.
 | POST | `/surveys/{id}/submit` | Nonce | Submit a response (public widget) |
 | GET | `/responses` | Admin | List all responses (all surveys) |
 | DELETE | `/responses/delete` | Admin | Bulk delete responses (any survey) |
+| POST | `/responses/mark-read` | Admin | Bulk mark responses as read |
+| POST | `/responses/mark-unread` | Admin | Bulk mark responses as unread |
 | GET | `/surveys/{id}/responses` | Admin | List responses for one survey |
 | DELETE | `/surveys/{id}/responses/delete` | Admin | Bulk delete responses for one survey |
 | GET | `/surveys/{id}/responses/{rid}` | Admin | Get single response |

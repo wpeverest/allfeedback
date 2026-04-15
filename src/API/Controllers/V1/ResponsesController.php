@@ -19,8 +19,10 @@ use AllFeedback\Support\Logger;
  * Admin REST controller for reading and deleting survey responses.
  *
  * Routes registered (all under all-feedback/v1):
- *   GET    /responses                        → indexAll()    : paginated list across all surveys
+ *   GET    /responses                        → indexAll()         : paginated list across all surveys
  *   DELETE /responses/delete                  → destroyManyGlobal() : bulk delete by ID (any survey)
+ *   POST   /responses/mark-read               → markManyRead()      : bulk mark responses as read
+ *   POST   /responses/mark-unread             → markManyUnread()    : bulk mark responses as unread
  *   GET    /surveys/{id}/responses           → index()       : paginated response list for one survey
  *   DELETE /surveys/{id}/responses/delete    → destroyMany() : bulk delete responses by ID
  *   GET    /surveys/{id}/responses/{rid}     → show()        : single response
@@ -101,6 +103,28 @@ class ResponsesController extends RestController {
 						'minItems'    => 1,
 					],
 				],
+			]
+		);
+
+		register_rest_route(
+			$this->namespace,
+			'/responses/mark-read',
+			[
+				'methods'             => \WP_REST_Server::CREATABLE,
+				'callback'            => [ $this, 'markManyRead' ],
+				'permission_callback' => [ $this, 'adminPermission' ],
+				'args'                => [ 'ids' => $this->idsArg() ],
+			]
+		);
+
+		register_rest_route(
+			$this->namespace,
+			'/responses/mark-unread',
+			[
+				'methods'             => \WP_REST_Server::CREATABLE,
+				'callback'            => [ $this, 'markManyUnread' ],
+				'permission_callback' => [ $this, 'adminPermission' ],
+				'args'                => [ 'ids' => $this->idsArg() ],
 			]
 		);
 
@@ -288,6 +312,32 @@ class ResponsesController extends RestController {
 				'failed'  => $failed,
 			]
 		);
+	}
+
+	/**
+	 * POST /all-feedback/v1/responses/mark-read
+	 *
+	 * Bulk mark responses as read across any survey.
+	 *
+	 * @param \WP_REST_Request $request Full request data.
+	 * @return \WP_REST_Response|\WP_Error
+	 * @since 1.0.0
+	 */
+	public function markManyRead( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		return $this->bulkSetReadStatus( $request, true );
+	}
+
+	/**
+	 * POST /all-feedback/v1/responses/mark-unread
+	 *
+	 * Bulk mark responses as unread across any survey.
+	 *
+	 * @param \WP_REST_Request $request Full request data.
+	 * @return \WP_REST_Response|\WP_Error
+	 * @since 1.0.0
+	 */
+	public function markManyUnread( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		return $this->bulkSetReadStatus( $request, false );
 	}
 
 	/**
@@ -651,5 +701,77 @@ class ResponsesController extends RestController {
 			'sanitize_callback' => 'absint',
 			'validate_callback' => 'rest_validate_request_arg',
 		];
+	}
+
+	/**
+	 * Shared `ids` array argument definition used by bulk endpoints.
+	 *
+	 * @return array<string, mixed>
+	 * @since 1.0.0
+	 */
+	private function idsArg(): array {
+		return [
+			'description' => __( 'Array of response IDs to operate on.', 'all-feedback' ),
+			'type'        => 'array',
+			'required'    => true,
+			'items'       => [
+				'type'    => 'integer',
+				'minimum' => 1,
+			],
+			'minItems'    => 1,
+		];
+	}
+
+	/**
+	 * Shared implementation for bulk mark-read / mark-unread.
+	 *
+	 * Iterates over the provided IDs and updates the `is_read` column on each
+	 * response that exists. Non-existent IDs are counted as failures.
+	 *
+	 * @param \WP_REST_Request $request Full request data.
+	 * @param bool             $isRead  True = mark as read, false = mark as unread.
+	 * @return \WP_REST_Response|\WP_Error
+	 * @since 1.0.0
+	 */
+	private function bulkSetReadStatus( \WP_REST_Request $request, bool $isRead ): \WP_REST_Response|\WP_Error {
+		$ids = array_values( array_filter( array_map( 'absint', (array) ( $request->get_param( 'ids' ) ?? [] ) ) ) );
+
+		if ( empty( $ids ) ) {
+			return $this->errorResponse( __( 'No response IDs provided.', 'all-feedback' ), 422 );
+		}
+
+		$updated = 0;
+		$failed  = [];
+
+		foreach ( $ids as $id ) {
+			if ( $this->responseRepository->findById( $id ) === null ) {
+				$failed[] = $id;
+				continue;
+			}
+
+			if ( $this->responseRepository->update( $id, [ 'is_read' => $isRead ? 1 : 0 ] ) ) {
+				++$updated;
+			} else {
+				$failed[] = $id;
+			}
+		}
+
+		$this->logger->info(
+			'Bulk response read-status update.',
+			[
+				'is_read'       => $isRead,
+				'requested'     => $ids,
+				'updated_count' => $updated,
+				'failed'        => $failed,
+				'user_id'       => get_current_user_id(),
+			]
+		);
+
+		return $this->successResponse(
+			[
+				'updated' => $updated,
+				'failed'  => $failed,
+			]
+		);
 	}
 }
