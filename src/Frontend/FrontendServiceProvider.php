@@ -149,6 +149,7 @@ class FrontendServiceProvider implements ServiceProvider {
 
 	/**
 	 * Enqueue frontend-only scripts and styles.
+	 *
 	 */
 	public function enqueueAssets(): void {
 		/** @var array<string, mixed> $widgetSettings */
@@ -157,6 +158,22 @@ class FrontendServiceProvider implements ServiceProvider {
 
 		if ( $surveyId === null && ! $this->pageHasEmbed() ) {
 			return;
+		}
+
+		// When a specific survey is targeted for the floating widget, merge its
+		// display settings on top of the global defaults.  Only non-null form
+		// values override — if a field isn't set on the form, the global default wins.
+		if ( $surveyId !== null ) {
+			/** @var SurveyRepository $repo */
+			$repo   = $this->container->get( SurveyRepository::class );
+			$survey = $repo->findById( $surveyId );
+
+			if ( $survey !== null ) {
+				$widgetSettings = $this->mergeFormDisplaySettings(
+					$widgetSettings,
+					$survey->getSettings()
+				);
+			}
 		}
 
 		$frontendData = $this->applyFilters(
@@ -188,6 +205,70 @@ class FrontendServiceProvider implements ServiceProvider {
 	// ------------------------------------------------------------------
 	// Internal helpers
 	// ------------------------------------------------------------------
+
+	/**
+	 * Merge per-form display settings into the global widget settings array.
+	 *
+	 * Only fields that are explicitly set on the form (non-null) override the
+	 * global value.  This preserves the global default for any field the author
+	 * left unconfigured on the form.
+	 *
+	 * DB key (survey.settings JSON) → __ALLFB__.settings key:
+	 *   trigger_type + delay_value + delay_unit → trigger, delay (seconds)
+	 *   scroll_depth                            → scroll_threshold (0–100)
+	 *   user_state                              → show_to ('all'|'logged_in'|'logged_out')
+	 *   display_frequency                       → display_frequency ('once'|'until_submit')
+	 *   max_impressions                         → max_impressions
+	 *   dismiss_wait_value + dismiss_wait_unit  → reshow_after_days
+	 *
+	 * @param  array<string, mixed> $global Global widget settings.
+	 * @param  array<string, mixed> $form   Survey::getSettings() decoded array (DB snake_case keys).
+	 * @return array<string, mixed>         Merged settings.
+	 * @since 1.0.0
+	 */
+	private function mergeFormDisplaySettings( array $global, array $form ): array {
+		// ── Trigger type → global trigger key ────────────────────────────────
+		$triggerTypeMap = [
+			'immediate'    => 'auto',
+			'time_delay'   => 'auto',
+			'scroll_depth' => 'scroll',
+		];
+		$trigger = isset( $form['trigger_type'] )
+			? ( $triggerTypeMap[ $form['trigger_type'] ] ?? null )
+			: null;
+
+		// ── Delay in seconds from delay_value + delay_unit ────────────────────
+		$delay = null;
+		if ( isset( $form['delay_value'], $form['delay_unit'] ) ) {
+			$unitMultiplier = [ 'seconds' => 1, 'minutes' => 60, 'hours' => 3600 ];
+			$delay = (int) round( (float) $form['delay_value'] * ( $unitMultiplier[ $form['delay_unit'] ] ?? 1 ) );
+		}
+
+		// ── Reshow cooldown in days from dismiss_wait_value + dismiss_wait_unit ─
+		$reshowAfterDays = null;
+		if ( isset( $form['dismiss_wait_value'], $form['dismiss_wait_unit'] ) ) {
+			$dayMultiplier = [ 'hours' => 1 / 24, 'days' => 1, 'weeks' => 7 ];
+			$reshowAfterDays = (int) ceil( (float) $form['dismiss_wait_value'] * ( $dayMultiplier[ $form['dismiss_wait_unit'] ] ?? 1 ) );
+		}
+
+		$overrides = [
+			// Widget display trigger
+			'trigger'           => $trigger,
+			'delay'             => $delay,
+			'scroll_threshold'  => isset( $form['scroll_depth'] ) ? (int) $form['scroll_depth']          : null,
+
+			// Audience
+			'show_to'           => isset( $form['user_state'] )   ? (string) $form['user_state']          : null,
+
+			// Frequency & limits
+			'display_frequency' => isset( $form['display_frequency'] ) ? (string) $form['display_frequency'] : null,
+			'max_impressions'   => isset( $form['max_impressions'] )   ? (int) $form['max_impressions']      : null,
+			'reshow_after_days' => $reshowAfterDays,
+		];
+
+		// Only apply overrides that are actually set on the form (filter nulls).
+		return array_merge( $global, array_filter( $overrides, fn( $v ) => $v !== null ) );
+	}
 
 	/**
 	 * Return true if the current post contains the [allfb_survey] shortcode

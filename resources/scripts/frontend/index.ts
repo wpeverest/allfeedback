@@ -5,13 +5,19 @@ import '../../styles/frontend.pcss';
 // ---------------------------------------------------------------------------
 
 interface AllfbSettings {
-	color:            string;
-	position:         'bottom-right' | 'bottom-left' | 'side-tab';
-	trigger:          'auto' | 'scroll' | 'exit-intent' | 'manual';
-	delay:            number;
-	scroll_threshold: number;
-	show_on_mobile:   boolean;
-	survey_id?:       number; // injected by TargetingEngine
+	color:              string;
+	position:           'bottom-right' | 'bottom-left' | 'side-tab';
+	trigger:            'auto' | 'scroll' | 'exit-intent' | 'manual';
+	delay:              number;
+	scroll_threshold:   number;
+	show_on_mobile:     boolean;
+	survey_id?:         number;  // injected by TargetingEngine
+
+	// Per-form overrides (merged server-side from form display settings)
+	show_to?:           'all' | 'logged_in' | 'logged_out';
+	display_frequency?: 'once' | 'until_submit';
+	max_impressions?:   number;
+	reshow_after_days?: number;
 }
 
 interface AllfbConfig {
@@ -174,6 +180,12 @@ class AllfbWidget {
 		// No floating widget if there's no targeted survey.
 		if ( ! this.cfg.settings.survey_id ) return;
 
+		// Audience gate: skip if the page visitor doesn't match the intended audience.
+		if ( ! this.checkAudience() ) return;
+
+		// Frequency gate: skip if impression/cooldown limits have been reached.
+		if ( ! this.checkFrequency() ) return;
+
 		this.root.appendChild( this.launcher );
 		this.root.appendChild( this.panel );
 		document.body.appendChild( this.root );
@@ -181,7 +193,7 @@ class AllfbWidget {
 		const { trigger, delay, scroll_threshold } = this.cfg.settings;
 
 		if ( trigger === 'manual' ) {
-			this.root.classList.add( 'is-revealed' );
+			this.reveal();
 		} else if ( trigger === 'auto' ) {
 			const ms = Math.max( 0, delay ) * 1000;
 			setTimeout( () => { this.reveal(); this.open(); }, ms );
@@ -215,10 +227,6 @@ class AllfbWidget {
 
 	private toggle(): void {
 		this.isOpen ? this.close() : this.open();
-	}
-
-	private reveal(): void {
-		this.root.classList.add( 'is-revealed' );
 	}
 
 	// ── DOM ──────────────────────────────────────────────────────────────
@@ -311,6 +319,81 @@ class AllfbWidget {
 			}
 		};
 		document.addEventListener( 'mouseleave', onLeave );
+	}
+
+	// ── Audience & frequency gates ────────────────────────────────────────
+
+	/**
+	 * Return true if the current visitor matches the intended audience.
+	 * WordPress adds `logged-in` to <body> for authenticated users.
+	 */
+	private checkAudience(): boolean {
+		const showTo = this.cfg.settings.show_to ?? 'all';
+		if ( showTo === 'all' ) return true;
+		const isLoggedIn = document.body.classList.contains( 'logged-in' );
+		return showTo === 'logged_in' ? isLoggedIn : ! isLoggedIn;
+	}
+
+	/**
+	 * Return true if the widget is allowed to be shown based on impression
+	 * count and cooldown period stored in localStorage.
+	 *
+	 * display_frequency:
+	 *   'once'         — show at most once ever (ignores max_impressions)
+	 *   'until_submit' — show until the visitor submits, up to max_impressions
+	 *                    times, respecting the reshow_after_days cooldown
+	 */
+	private checkFrequency(): boolean {
+		const { display_frequency, max_impressions, reshow_after_days } = this.cfg.settings;
+
+		// No restrictions configured — always show.
+		if ( ! display_frequency || display_frequency === 'until_submit' && ! max_impressions && ! reshow_after_days ) {
+			return true;
+		}
+
+		const state = this.loadWidgetState();
+
+		if ( display_frequency === 'once' && state.impressions >= 1 ) return false;
+
+		if ( display_frequency === 'until_submit' ) {
+			if ( max_impressions && state.impressions >= max_impressions ) return false;
+
+			if ( reshow_after_days && state.lastShown ) {
+				const cooldownMs = reshow_after_days * 24 * 60 * 60 * 1000;
+				if ( Date.now() - state.lastShown < cooldownMs ) return false;
+			}
+		}
+
+		return true;
+	}
+
+	// ── localStorage helpers ──────────────────────────────────────────────
+
+	private widgetStateKey(): string {
+		return `allfb_w_${ this.cfg.settings.survey_id }`;
+	}
+
+	private loadWidgetState(): { impressions: number; lastShown: number | null } {
+		try {
+			const raw = localStorage.getItem( this.widgetStateKey() );
+			if ( raw ) return JSON.parse( raw ) as { impressions: number; lastShown: number | null };
+		} catch { /* ignore */ }
+		return { impressions: 0, lastShown: null };
+	}
+
+	private recordImpression(): void {
+		try {
+			const state = this.loadWidgetState();
+			localStorage.setItem( this.widgetStateKey(), JSON.stringify( {
+				impressions: state.impressions + 1,
+				lastShown:   Date.now(),
+			} ) );
+		} catch { /* ignore quota / private-browsing errors */ }
+	}
+
+	private reveal(): void {
+		this.root.classList.add( 'is-revealed' );
+		this.recordImpression();
 	}
 }
 

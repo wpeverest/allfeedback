@@ -38,7 +38,7 @@ declare module '@wordpress/block-editor' {
 }
 
 declare module '@wordpress/components' {
-	import type { ReactNode, FC } from 'react';
+	import type { FC, ReactNode } from 'react';
 
 	interface PanelBodyProps {
 		title?:       string;

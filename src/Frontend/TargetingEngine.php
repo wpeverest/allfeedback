@@ -100,10 +100,23 @@ class TargetingEngine {
 	/**
 	 * Evaluate whether a survey's targeting rules accept the current page.
 	 *
+	 * Priority:
+	 *  1. If the survey has explicit low-level targeting JSON (`targeting` column),
+	 *     use that (mode / rules / exclusions).
+	 *  2. Otherwise fall back to the form builder's UI-level page targeting stored
+	 *     in the `settings` column (target_pages / target_page_ids / targetPages).
+	 *
 	 * @since 1.0.0
 	 */
 	private function surveyMatchesCurrentPage( Survey $survey ): bool {
-		$targeting  = $survey->getTargeting();
+		$targeting = $survey->getTargeting();
+
+		// If the targeting column was never explicitly set, fall back to the
+		// form-level page targeting that lives in the settings column.
+		if ( empty( $targeting ) ) {
+			return $this->matchesSettingsTargeting( $survey->getSettings() );
+		}
+
 		$mode       = (string) ( $targeting['mode'] ?? 'all' );
 		$rules      = (array)  ( $targeting['rules'] ?? [] );
 		$exclusions = (array)  ( $targeting['exclusions'] ?? [] );
@@ -127,6 +140,53 @@ class TargetingEngine {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Evaluate the form builder's UI-level page targeting stored in survey settings.
+	 *
+	 * The form serialises targeting as:
+	 *   targetPages      — 'all' | 'specific_pages' | 'specific_posts'
+	 *   target_page_ids  — int[] of WordPress page or post IDs
+	 *
+	 * @param  array<string, mixed> $settings Survey::getSettings() decoded array.
+	 * @return bool
+	 * @since 1.0.0
+	 */
+	private function matchesSettingsTargeting( array $settings ): bool {
+		// Prefer the full targetPages value; fall back to simplified target_pages.
+		$targetPages = (string) ( $settings['targetPages'] ?? $settings['target_pages'] ?? 'all' );
+
+		if ( $targetPages === 'all' ) {
+			return true;
+		}
+
+		// Collect IDs saved by the form builder (always a flat array of ints).
+		$ids = array_values( array_filter(
+			array_map( 'intval', (array) ( $settings['target_page_ids'] ?? [] ) ),
+			fn( int $id ) => $id > 0
+		) );
+
+		// Specific mode with no IDs configured → match nothing (avoid unintended exposure).
+		if ( $ids === [] ) {
+			return false;
+		}
+
+		if ( $targetPages === 'specific_pages' || $targetPages === 'specific' ) {
+			foreach ( $ids as $id ) {
+				if ( is_page( $id ) ) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		if ( $targetPages === 'specific_posts' ) {
+			$currentId = isset( $GLOBALS['post'] ) ? (int) ( $GLOBALS['post']->ID ?? 0 ) : 0;
+			return $currentId > 0 && in_array( $currentId, $ids, true );
+		}
+
+		return true;
 	}
 
 	/**
