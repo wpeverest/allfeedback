@@ -177,8 +177,12 @@ const Responses = () => {
 	const markReadMutation = useMutation({
 		mutationFn: ({ id, surveyId, isRead }: { id: number; surveyId: number; isRead: boolean }) =>
 			surveysApi.updateResponse(surveyId, id, { is_read: isRead }),
-		onSuccess: () => {
+		onSuccess: (_, { isRead }) => {
 			void queryClient.invalidateQueries({ queryKey: ['responses'] });
+			toast.success(isRead ? __('Marked as read.', 'all-feedback') : __('Marked as unread.', 'all-feedback'));
+		},
+		onError: () => {
+			toast.error(__('Failed to update response. Please try again.', 'all-feedback'));
 		},
 	});
 
@@ -384,7 +388,11 @@ const Responses = () => {
 										key={response.id}
 										className={cn(
 											'border-b border-border last:border-0 transition-colors',
-											isSelected ? 'bg-primary/[0.03]' : 'hover:bg-muted/20',
+											isSelected
+												? 'bg-primary/[0.05]'
+												: !response.is_read
+													? 'bg-muted/[0.45] hover:bg-muted/[0.6]'
+													: 'hover:bg-muted/20',
 										)}
 									>
 										{/* Checkbox */}
@@ -398,11 +406,7 @@ const Responses = () => {
 												{!response.is_read && (
 													<span className="size-1.5 shrink-0 rounded-full bg-primary/70" title={__('Unread', 'all-feedback')} />
 												)}
-												<span className={cn(
-													cellCls,
-													'tabular-nums',
-													!response.is_read ? 'font-semibold text-foreground/70' : 'text-foreground/35',
-												)}>
+												<span className={cn(cellCls, 'tabular-nums text-foreground/40')}>
 													#{response.id}
 												</span>
 											</div>
@@ -419,8 +423,7 @@ const Responses = () => {
 													cellCls,
 													'line-clamp-1 underline-offset-2 transition-colors',
 													'group-hover/resp:text-primary group-hover/resp:underline',
-													!response.is_read ? 'font-medium text-foreground' : 'text-foreground/55',
-												)}>
+													)}>
 													{summary}
 												</span>
 												<Edit2 className="size-3 shrink-0 opacity-0 transition-all group-hover/resp:text-primary group-hover/resp:opacity-60" />

@@ -18,30 +18,35 @@ const BuilderPending = () => (
 			</div>
 		</header>
 
-		<div className="flex h-[72px] shrink-0 items-center justify-center gap-6 border-b border-border/40 bg-white px-8">
-			{[100, 90, 80].map((w, i) => (
-				<div key={i} className="flex items-center gap-2.5">
-					{i > 0 && <div className="h-px w-12 bg-border/50" />}
-					<div className="size-10 animate-pulse rounded-full bg-muted/60" />
-					<div className={`h-4 animate-pulse rounded bg-muted/60`} style={{ width: w }} />
-				</div>
-			))}
-		</div>
-
 		<div className="flex flex-1 overflow-hidden">
-			<div className="flex flex-1 flex-col gap-4 overflow-y-auto bg-background p-5">
-				{[1, 2].map((n) => (
-					<div key={n} className="overflow-hidden rounded-2xl border border-border/60 bg-white">
-						<div className="flex items-center gap-3 border-b border-border/50 bg-white px-5 py-4">
-							<div className="size-4 animate-pulse rounded bg-muted/60" />
-							<div className="h-5 w-32 animate-pulse rounded bg-muted/60" />
+
+			<div className="flex flex-1 flex-col overflow-hidden">
+				<div className="flex h-[72px] shrink-0 items-center justify-center border-b border-border/40 bg-white px-8">
+					{[60, 66, 56].map((w, i) => (
+						<div key={i} className="flex items-center">
+							{i > 0 && <div className="mx-4 h-px w-12 shrink-0 bg-border/50" />}
+							<div className="flex items-center gap-2.5">
+								<div className="size-10 shrink-0 animate-pulse rounded-full bg-muted/60" />
+								<div className="h-3.5 animate-pulse rounded bg-muted/60" style={{ width: w }} />
+							</div>
 						</div>
-						<div className="space-y-3 p-5">
-							<div className="h-20 animate-pulse rounded-xl bg-muted/60" />
-							<div className="h-10 animate-pulse rounded-lg bg-muted/60" />
+					))}
+				</div>
+
+				<div className="flex flex-1 flex-col gap-4 overflow-y-auto bg-background p-5">
+					{[1, 2].map((n) => (
+						<div key={n} className="overflow-hidden rounded-2xl border border-border/60 bg-white">
+							<div className="flex items-center gap-3 border-b border-border/50 bg-white px-5 py-4">
+								<div className="size-4 animate-pulse rounded bg-muted/60" />
+								<div className="h-5 w-32 animate-pulse rounded bg-muted/60" />
+							</div>
+							<div className="space-y-3 p-5">
+								<div className="h-20 animate-pulse rounded-xl bg-muted/60" />
+								<div className="h-10 animate-pulse rounded-lg bg-muted/60" />
+							</div>
 						</div>
-					</div>
-				))}
+					))}
+				</div>
 			</div>
 
 			<div className="w-3 shrink-0 border-x border-border bg-white" />

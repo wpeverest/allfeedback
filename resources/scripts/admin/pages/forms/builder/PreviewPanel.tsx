@@ -681,36 +681,6 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 				</div>
 			</div>
 
-			{hasSteps && (
-				<div className="flex shrink-0 items-center justify-between border-t border-border/50 bg-muted/20 px-4 py-1.5">
-					<span className="text-[11px] font-medium text-muted-foreground/60">
-						{__('Admin nav', 'all-feedback')}
-					</span>
-					<div className="flex items-center gap-2">
-						<button
-							type="button"
-							onClick={adminPrev}
-							disabled={!adminCanPrev}
-							className="flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
-						>
-							<ChevronLeft className="size-3.5" />
-						</button>
-						<span className="min-w-[64px] text-center text-[11.5px] font-medium text-foreground">
-							{isSubmitted
-								? __('Thank you', 'all-feedback')
-								: `${__('Page', 'all-feedback')} ${stepIndex + 1} / ${adminTotalPages}`}
-						</span>
-						<button
-							type="button"
-							onClick={adminNext}
-							disabled={!adminCanNext}
-							className="flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
-						>
-							<ChevronRight className="size-3.5" />
-						</button>
-					</div>
-				</div>
-			)}
 
 			{viewMode === 'page' ? (
 
@@ -764,11 +734,6 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 
 							<div className="relative flex-1 overflow-hidden bg-[#f8f9fa]">
 								<div className="pointer-events-none absolute inset-0 flex flex-col">
-									<div className="flex items-center justify-center bg-foreground/[0.055] px-4 py-[5px]">
-										<p className="text-[7.5px] font-medium leading-[1.5] tracking-wide text-foreground/40 text-center">
-											{__('Approximate preview — position, size, and styling may vary on your live site based on your theme and screen size', 'all-feedback')}
-										</p>
-									</div>
 									<div className="flex h-9 shrink-0 items-center gap-3 border-b border-black/5 bg-white px-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
 										<div className="h-2.5 w-14 rounded-full bg-foreground/10" />
 										<div className="flex flex-1 items-center justify-end gap-2.5">
@@ -791,6 +756,9 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 											</div>
 										))}
 									</div>
+									<p className="mt-4 px-4 text-center text-[7.5px] font-medium leading-[1.5] tracking-wide text-foreground/35">
+										{__('Approximate preview — position, size, and styling may vary on your live site based on your theme and screen size', 'all-feedback')}
+									</p>
 								</div>
 
 								<button
@@ -836,26 +804,56 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 			)}
 
 			<div className={cn(
-				'flex shrink-0 items-center justify-center gap-1 border-t border-border px-4 py-3 transition-opacity',
+				'flex shrink-0 items-center border-t border-border px-4 py-3 transition-opacity',
 				viewMode === 'widget' && 'pointer-events-none opacity-35',
 			)}>
-				{DEVICES.map(({ value, Icon, label }) => (
-					<button
-						key={value}
-						type="button"
-						onClick={() => onDeviceChange(value)}
-						title={label}
-						disabled={viewMode === 'widget'}
-						className={cn(
-							'flex size-8 items-center justify-center rounded-lg transition-colors',
-							device === value
-								? 'bg-primary/10 text-primary'
-								: 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
-						)}
-					>
-						<Icon className="size-4" />
-					</button>
-				))}
+				<div className="flex flex-1" />
+				<div className="flex items-center gap-1">
+					{DEVICES.map(({ value, Icon, label }) => (
+						<button
+							key={value}
+							type="button"
+							onClick={() => onDeviceChange(value)}
+							title={label}
+							disabled={viewMode === 'widget'}
+							className={cn(
+								'flex size-8 items-center justify-center rounded-lg transition-colors',
+								device === value
+									? 'bg-primary/10 text-primary'
+									: 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
+							)}
+						>
+							<Icon className="size-4" />
+						</button>
+					))}
+				</div>
+				<div className="flex flex-1 items-center justify-end">
+					{hasSteps && (
+						<div className="flex items-center gap-0.5">
+							<button
+								type="button"
+								onClick={adminPrev}
+								disabled={!adminCanPrev}
+								title={__('Previous page', 'all-feedback')}
+								className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+							>
+								<ChevronLeft className="size-3.5" />
+							</button>
+							<span className="min-w-[44px] text-center text-[10px] text-muted-foreground/60">
+								{isSubmitted ? __('Thanks', 'all-feedback') : `${stepIndex + 1} / ${adminTotalPages}`}
+							</span>
+							<button
+								type="button"
+								onClick={adminNext}
+								disabled={!adminCanNext}
+								title={__('Next page', 'all-feedback')}
+								className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+							>
+								<ChevronRight className="size-3.5" />
+							</button>
+						</div>
+					)}
+				</div>
 			</div>
 		</div>
 	);
