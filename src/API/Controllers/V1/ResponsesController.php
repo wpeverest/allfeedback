@@ -19,11 +19,13 @@ use AllFeedback\Support\Logger;
  * Admin REST controller for reading and deleting survey responses.
  *
  * Routes registered (all under all-feedback/v1):
- *   GET    /responses                     → indexAll() : paginated list across all surveys
- *   GET    /surveys/{id}/responses        → index()    : paginated response list for one survey
- *   GET    /surveys/{id}/responses/{rid}  → show()     : single response
- *   PUT    /surveys/{id}/responses/{rid}  → update()   : patch response_data / is_read
- *   DELETE /surveys/{id}/responses/{rid}  → destroy()  : delete a single response
+ *   GET    /responses                        → indexAll()    : paginated list across all surveys
+ *   DELETE /responses/delete                  → destroyManyGlobal() : bulk delete by ID (any survey)
+ *   GET    /surveys/{id}/responses           → index()       : paginated response list for one survey
+ *   DELETE /surveys/{id}/responses/delete    → destroyMany() : bulk delete responses by ID
+ *   GET    /surveys/{id}/responses/{rid}     → show()        : single response
+ *   PUT    /surveys/{id}/responses/{rid}     → update()      : patch response_data / is_read
+ *   DELETE /surveys/{id}/responses/{rid}     → destroy()     : delete a single response
  *
  * Public submission is handled by SubmitController (POST /surveys/{id}/submit)
  * to maintain a clear security boundary between public and admin endpoints.
@@ -82,6 +84,28 @@ class ResponsesController extends RestController {
 
 		register_rest_route(
 			$this->namespace,
+			'/responses/delete',
+			[
+				'methods'             => \WP_REST_Server::DELETABLE,
+				'callback'            => [ $this, 'destroyManyGlobal' ],
+				'permission_callback' => [ $this, 'adminPermission' ],
+				'args'                => [
+					'ids' => [
+						'description' => __( 'Array of response IDs to permanently delete.', 'all-feedback' ),
+						'type'        => 'array',
+						'required'    => true,
+						'items'       => [
+							'type'    => 'integer',
+							'minimum' => 1,
+						],
+						'minItems'    => 1,
+					],
+				],
+			]
+		);
+
+		register_rest_route(
+			$this->namespace,
 			'/' . $this->restBase . '/(?P<id>\d+)/responses',
 			[
 				[
@@ -102,6 +126,31 @@ class ResponsesController extends RestController {
 					),
 				],
 				'schema' => [ $this, 'getPublicItemSchema' ],
+			]
+		);
+
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->restBase . '/(?P<id>\d+)/responses/delete',
+			[
+				'methods'             => \WP_REST_Server::DELETABLE,
+				'callback'            => [ $this, 'destroyMany' ],
+				'permission_callback' => [ $this, 'adminPermission' ],
+				'args'                => array_merge(
+					$this->idArg(),
+					[
+						'ids' => [
+							'description' => __( 'Array of response IDs to permanently delete.', 'all-feedback' ),
+							'type'        => 'array',
+							'required'    => true,
+							'items'       => [
+								'type'    => 'integer',
+								'minimum' => 1,
+							],
+							'minItems'    => 1,
+						],
+					]
+				),
 			]
 		);
 
@@ -187,6 +236,56 @@ class ResponsesController extends RestController {
 				'total'     => $total,
 				'page'      => $page,
 				'per_page'  => $perPage,
+			]
+		);
+	}
+
+	/**
+	 * DELETE /all-feedback/v1/responses/delete
+	 *
+	 * Bulk-delete multiple responses by ID across any survey.
+	 *
+	 * @param \WP_REST_Request $request Full request data.
+	 * @return \WP_REST_Response|\WP_Error
+	 * @since 1.0.0
+	 */
+	public function destroyManyGlobal( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		$ids = array_values( array_filter( array_map( 'absint', (array) ( $request->get_param( 'ids' ) ?? [] ) ) ) );
+
+		if ( empty( $ids ) ) {
+			return $this->errorResponse( __( 'No response IDs provided.', 'all-feedback' ), 422 );
+		}
+
+		$deleted = 0;
+		$failed  = [];
+
+		foreach ( $ids as $id ) {
+			if ( $this->responseRepository->findById( $id ) === null ) {
+				$failed[] = $id;
+				continue;
+			}
+
+			if ( $this->responseRepository->delete( $id ) ) {
+				++$deleted;
+			} else {
+				$failed[] = $id;
+			}
+		}
+
+		$this->logger->info(
+			'Global bulk response deletion completed.',
+			[
+				'requested'     => $ids,
+				'deleted_count' => $deleted,
+				'failed'        => $failed,
+				'user_id'       => get_current_user_id(),
+			]
+		);
+
+		return $this->successResponse(
+			[
+				'deleted' => $deleted,
+				'failed'  => $failed,
 			]
 		);
 	}
@@ -338,6 +437,65 @@ class ResponsesController extends RestController {
 		}
 
 		return $this->successResponse( $this->prepareResponse( $updated ) );
+	}
+
+	/**
+	 * DELETE /all-feedback/v1/surveys/{id}/responses/delete
+	 *
+	 * Bulk-delete multiple responses by ID.
+	 * Only deletes responses that belong to the given survey — others are counted as failures.
+	 *
+	 * @param \WP_REST_Request $request Full request data.
+	 * @return \WP_REST_Response|\WP_Error
+	 * @since 1.0.0
+	 */
+	public function destroyMany( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		$surveyId = (int) $request->get_param( 'id' );
+		$ids      = array_values( array_filter( array_map( 'absint', (array) ( $request->get_param( 'ids' ) ?? [] ) ) ) );
+
+		if ( empty( $ids ) ) {
+			return $this->errorResponse( __( 'No response IDs provided.', 'all-feedback' ), 422 );
+		}
+
+		if ( $this->surveyRepository->findById( $surveyId ) === null ) {
+			return $this->notFoundResponse( __( 'Survey', 'all-feedback' ) );
+		}
+
+		$deleted = 0;
+		$failed  = [];
+
+		foreach ( $ids as $id ) {
+			$response = $this->responseRepository->findById( $id );
+
+			if ( $response === null || $response->getSurveyId() !== $surveyId ) {
+				$failed[] = $id;
+				continue;
+			}
+
+			if ( $this->responseRepository->delete( $id ) ) {
+				++$deleted;
+			} else {
+				$failed[] = $id;
+			}
+		}
+
+		$this->logger->info(
+			'Bulk response deletion completed.',
+			[
+				'survey_id'     => $surveyId,
+				'requested'     => $ids,
+				'deleted_count' => $deleted,
+				'failed'        => $failed,
+				'user_id'       => get_current_user_id(),
+			]
+		);
+
+		return $this->successResponse(
+			[
+				'deleted' => $deleted,
+				'failed'  => $failed,
+			]
+		);
 	}
 
 	/**
