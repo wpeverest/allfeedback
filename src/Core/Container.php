@@ -36,8 +36,12 @@ class Container {
 		$builder->useAttributes( true );
 
 		// In production, compile the container to a PHP file for speed.
+		// The version slug is embedded in the cache path so a plugin update
+		// automatically invalidates the old compiled container — preventing
+		// the "too few arguments to constructor" fatal that occurs when the
+		// compiled class still reflects the previous parameter list.
 		if ( $this->isProduction() ) {
-			$cacheDir = WP_CONTENT_DIR . '/cache/all-feedback';
+			$cacheDir = WP_CONTENT_DIR . '/cache/allfeedback/' . Constants::VERSION;
 			$builder->enableCompilation( $cacheDir );
 			$builder->writeProxiesToFile( true, $cacheDir . '/proxies' );
 			$this->compiled = true;

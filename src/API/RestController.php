@@ -163,13 +163,31 @@ abstract class RestController {
 	}
 
 	/**
-	 * Allow only logged-in users with manage_options capability.
+	 * Allow only logged-in users with the required admin capability.
+	 *
+	 * The capability defaults to `manage_options` and can be changed
+	 * site-wide via the `allfeedback_required_capability` filter. This is
+	 * useful for multisite or custom role configurations.
+	 *
+	 * ```php
+	 * add_filter( 'allfeedback_required_capability', fn() => 'edit_posts' );
+	 * ```
 	 *
 	 * @return bool
 	 * @since 1.0.0
 	 */
 	public function adminPermission(): bool {
-		return current_user_can( 'manage_options' );
+		/**
+		 * Filter: allfeedback_required_capability
+		 *
+		 * Override the capability required to access AllFeedback admin REST routes.
+		 *
+		 * @param string $capability WordPress capability string. Default 'manage_options'.
+		 * @since 1.0.0
+		 */
+		$capability = (string) apply_filters( 'allfeedback_required_capability', 'manage_options' );
+
+		return current_user_can( $capability );
 	}
 
 	/**

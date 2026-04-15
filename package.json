@@ -4,9 +4,9 @@
   "description": "All Feedback Plugin",
   "private": true,
   "scripts": {
-    "dev": "wp-scripts start --node-env=development --mode=development --hot",
-    "build": "wp-scripts build --node-env=production --mode=production",
-    "watch": "wp-scripts start --node-env=development --mode=development",
+    "dev": "wp-scripts start --config webpack.config.js --node-env=development --mode=development --hot",
+    "build": "wp-scripts build --config webpack.config.js --node-env=production --mode=production",
+    "watch": "wp-scripts start --config webpack.config.js --node-env=development --mode=development",
     "lint": "eslint \"resources/scripts/**/*.{ts,tsx}\"",
     "prettier": "prettier --ignore-path .gitignore --check \"**/*.+(ts|tsx)\"",
     "format": "prettier --ignore-path .gitignore --write \"**/*.+(ts|tsx)\"",

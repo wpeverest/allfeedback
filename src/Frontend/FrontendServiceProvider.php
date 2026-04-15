@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace AllFeedback\Frontend;
 
+use AllFeedback\API\Controllers\V1\SubmitController;
 use AllFeedback\Core\Container;
 use AllFeedback\Core\ServiceProvider;
+use AllFeedback\Core\Settings\SettingsManager;
+use AllFeedback\Domain\Survey\SurveyRepository;
+use AllFeedback\Frontend\Blocks\BlockRegistry;
 use AllFeedback\Support\AssetManager;
 use AllFeedback\Traits\Hooks;
 use DI\ContainerBuilder;
@@ -15,12 +19,17 @@ use DI\ContainerBuilder;
  *
  * Boots all public-facing functionality:
  *  - Shortcode registration
+ *  - Gutenberg block registration (delegated to BlockRegistry)
  *  - Frontend script / style enqueueing
  *
- * How to add a new shortcode:
- *  1. Register it in registerShortcodes() with add_shortcode().
- *  2. Create a render method (or delegate to a dedicated Controller).
- *  3. Enqueue assets in enqueueAssets() guarded by is_page() or a flag.
+ * Adding a new Gutenberg block
+ * ────────────────────────────
+ * This class does NOT need to change. See BlockRegistry and AbstractBlock.
+ *
+ * Adding a new shortcode
+ * ──────────────────────
+ * 1. Register it in registerShortcodes() with add_shortcode().
+ * 2. Create a render method (or delegate to a dedicated class).
  */
 class FrontendServiceProvider implements ServiceProvider {
 
@@ -29,6 +38,9 @@ class FrontendServiceProvider implements ServiceProvider {
 	public function __construct(
 		private readonly Container $container,
 		private readonly AssetManager $assetManager,
+		private readonly SettingsManager $settingsManager,
+		private readonly TargetingEngine $targetingEngine,
+		private readonly BlockRegistry $blockRegistry,
 	) {}
 
 	// ServiceProvider::register() — nothing extra to add here.
@@ -38,11 +50,53 @@ class FrontendServiceProvider implements ServiceProvider {
 	 * Wire up WordPress hooks for the frontend context.
 	 */
 	public function boot(): void {
-		// Register shortcodes after WP is fully loaded.
-		$this->addAction( 'init', [ $this, 'registerShortcodes' ] );
-
-		// Listen for the namespaced enqueue action fired by AppServiceProvider.
+		$this->addAction( 'init',                 [ $this, 'registerShortcodes' ] );
+		$this->addAction( 'init',                 [ $this, 'registerBlocks'     ] );
+		$this->addFilter( 'block_categories_all', [ $this, 'registerBlockCategory' ], 10, 1 );
 		$this->addAction( 'allfeedback:enqueue-assets:frontend', [ $this, 'enqueueAssets' ] );
+	}
+
+	// ------------------------------------------------------------------
+	// Block category
+	// ------------------------------------------------------------------
+
+	/**
+	 * Prepend the "All Feedback" category to the block inserter so that
+	 * plugin blocks are grouped under their own heading.
+	 *
+	 * @param  array<int, array{slug: string, title: string, icon: string|null}> $categories
+	 * @return array<int, array{slug: string, title: string, icon: string|null}>
+	 * @since 1.0.0
+	 */
+	public function registerBlockCategory( array $categories ): array {
+		return array_merge(
+			[
+				[
+					'slug'  => 'all-feedback',
+					'title' => __( 'All Feedback', 'all-feedback' ),
+					'icon'  => null,
+				],
+			],
+			$categories
+		);
+	}
+
+	// ------------------------------------------------------------------
+	// Gutenberg blocks
+	// ------------------------------------------------------------------
+
+	/**
+	 * Register all plugin blocks via the BlockRegistry.
+	 *
+	 * To add a new block, add its class to BlockRegistry in services.php —
+	 * this method never needs to change.
+	 *
+	 * @since 1.0.0
+	 */
+	public function registerBlocks(): void {
+		foreach ( $this->blockRegistry->all() as $block ) {
+			$block->register();
+		}
 	}
 
 	// ------------------------------------------------------------------
@@ -51,74 +105,42 @@ class FrontendServiceProvider implements ServiceProvider {
 
 	/**
 	 * Register all plugin shortcodes.
-	 *
-	 * Usage on a page/post:  [all_feedback]
 	 */
 	public function registerShortcodes(): void {
-		add_shortcode( 'all_feedback', [ $this, 'renderSampleShortcode' ] );
-
-		// Add more shortcodes here as the plugin grows, e.g.:
-		// add_shortcode( 'allfb_form', [ $this, 'renderFormShortcode' ] );
+		add_shortcode( 'allfb_survey', [ $this, 'renderSurveyShortcode' ] );
 	}
 
 	/**
-	 * Render the [all_feedback] shortcode.
+	 * Render the [allfb_survey id="X"] shortcode.
 	 *
-	 * Shortcode attributes are sanitised and merged with defaults before use.
-	 *
-	 * @param  array<string, string>|string $atts  Shortcode attributes from the editor.
-	 * @param  string|null                  $content Inner content (for enclosing shortcodes).
-	 * @return string                       The HTML to inject in place of the shortcode.
+	 * @param  array<string, string>|string $atts Shortcode attributes.
+	 * @return string                             HTML or empty string.
 	 */
-	public function renderSampleShortcode( array|string $atts, ?string $content = null ): string {
-		// Merge user-supplied attributes with defaults.
-		$atts = shortcode_atts(
-			[
-				'title'    => __( 'Hello from All Feedback!', 'all-feedback' ),
-				'bg_color' => '#f9f9f9',
-			],
-			(array) $atts,
-			'all_feedback'
+	public function renderSurveyShortcode( array|string $atts ): string {
+		$atts     = shortcode_atts( [ 'id' => 0 ], (array) $atts, 'allfb_survey' );
+		$surveyId = (int) $atts['id'];
+
+		if ( $surveyId <= 0 ) {
+			return '';
+		}
+
+		/** @var SurveyRepository $repo */
+		$repo   = $this->container->get( SurveyRepository::class );
+		$survey = $repo->findById( $surveyId );
+
+		if ( $survey === null || ! $survey->getStatus()->isPublished() ) {
+			return '';
+		}
+
+		$surveyId = (int) apply_filters( 'allfeedback:shortcode:survey:id', $survey->getId() );
+		$nonce    = esc_attr( wp_create_nonce( SubmitController::NONCE_ACTION ) );
+
+		return sprintf(
+			'<div class="allfb-embed" data-survey-id="%d" data-nonce="%s" role="region" aria-label="%s"></div>',
+			$surveyId,
+			$nonce,
+			esc_attr( $survey->getTitle() )
 		);
-
-		/**
-		 * Filter: allfeedback:shortcode:sample:atts
-		 *
-		 * Allows modification of the resolved shortcode attributes.
-		 *
-		 * @param array<string, string> $atts Resolved attributes.
-		 */
-		$atts = apply_filters( 'allfeedback:shortcode:sample:atts', $atts );
-
-		$title   = esc_html( $atts['title'] );
-		$bgColor = esc_attr( $atts['bg_color'] );
-
-		// Mark assets for enqueue on this page load.
-		// (We enqueue unconditionally in enqueueAssets(); use a flag here
-		//  if you only want assets on pages that actually use the shortcode.)
-		ob_start();
-		?>
-		<div class="allfb-sample-widget" style="background:<?php echo $bgColor; ?>;padding:20px;border-radius:6px;">
-			<h3 class="allfb-sample-widget__title"><?php echo $title; ?></h3>
-			<?php if ( ! empty( $content ) ) : ?>
-				<div class="allfb-sample-widget__content">
-					<?php echo wp_kses_post( $content ); ?>
-				</div>
-			<?php else : ?>
-				<p><?php esc_html_e( 'Replace this shortcode renderer in FrontendServiceProvider::renderSampleShortcode().', 'all-feedback' ); ?></p>
-			<?php endif; ?>
-
-			<?php
-			/**
-			 * Hook: allfeedback:shortcode:sample:after_content
-			 *
-			 * Fired inside the shortcode output, after the main content.
-			 */
-			do_action( 'allfeedback:shortcode:sample:after_content', $atts );
-			?>
-		</div>
-		<?php
-		return (string) ob_get_clean();
 	}
 
 	// ------------------------------------------------------------------
@@ -128,44 +150,180 @@ class FrontendServiceProvider implements ServiceProvider {
 	/**
 	 * Enqueue frontend-only scripts and styles.
 	 *
-	 * For a shortcode-only plugin you might guard with is_page() or a
-	 * has_shortcode() check to avoid loading assets on every page.
 	 */
 	public function enqueueAssets(): void {
-		// Build the data object that will be inlined before the frontend script.
+		/** @var array<string, mixed> $globalWidgetSettings */
+		$globalWidgetSettings = (array) $this->settingsManager->get( 'general.widget' );
+		$surveyIds            = $this->targetingEngine->resolveAllForCurrentPage();
+
+		if ( empty( $surveyIds ) && ! $this->pageHasEmbed() ) {
+			return;
+		}
+
+		// Build per-survey config objects for the JS orchestrator.
+		// Each entry carries the display-gate overrides (show_to, frequency, etc.)
+		// merged from the global defaults + the survey's own form settings.
+		/** @var array<int, array<string, mixed>> $surveyConfigs */
+		$surveyConfigs = [];
+
+		if ( ! empty( $surveyIds ) ) {
+			/** @var SurveyRepository $repo */
+			$repo = $this->container->get( SurveyRepository::class );
+
+			foreach ( $surveyIds as $id ) {
+				$survey = $repo->findById( $id );
+				if ( $survey === null ) {
+					continue;
+				}
+
+				$merged          = $this->mergeFormDisplaySettings( $globalWidgetSettings, $survey->getSettings() );
+				$surveyConfigs[] = array_filter(
+					[
+						'id'                => $id,
+						'show_to'           => $merged['show_to']           ?? null,
+						'display_frequency' => $merged['display_frequency'] ?? null,
+						'max_impressions'   => isset( $merged['max_impressions'] )   ? (int) $merged['max_impressions']   : null,
+						'reshow_after_days' => isset( $merged['reshow_after_days'] ) ? (int) $merged['reshow_after_days'] : null,
+					],
+					fn( $v ) => $v !== null
+				);
+			}
+		}
+
+		// Merge display settings from the first matching survey into the global
+		// widget settings so trigger / delay / scroll_threshold etc. are still
+		// respected for the primary survey.
+		$widgetSettings = $globalWidgetSettings;
+		if ( ! empty( $surveyIds ) ) {
+			/** @var SurveyRepository $repo */
+			$repo   = $this->container->get( SurveyRepository::class );
+			$survey = $repo->findById( $surveyIds[0] );
+			if ( $survey !== null ) {
+				$widgetSettings = $this->mergeFormDisplaySettings( $globalWidgetSettings, $survey->getSettings() );
+			}
+		}
+
+		// Back-compat: keep survey_id as a scalar for any code that still reads it.
+		$primarySurveyId = $surveyIds[0] ?? null;
+
 		$frontendData = $this->applyFilters(
 			'allfeedback:frontend:script_data',
 			[
-				'siteUrl'  => home_url( '/' ),
-				'nonce'    => wp_create_nonce( 'wp_rest' ),
-				'restUrl'  => rest_url( 'all-feedback/v1/' ),
-				'version'  => \AllFeedback\Core\Constants::VERSION,
+				'siteUrl'     => home_url( '/' ),
+				'restUrl'     => rest_url( 'all-feedback/v1/' ),
+				'nonce'       => wp_create_nonce( 'wp_rest' ),
+				'submitNonce' => wp_create_nonce( SubmitController::NONCE_ACTION ),
+				'version'     => \AllFeedback\Core\Constants::VERSION,
+				'settings'    => array_merge(
+					$widgetSettings,
+					[
+						'survey_id'      => $primarySurveyId,
+						'survey_configs' => $surveyConfigs,
+					]
+				),
 			]
 		);
 
-		// Enqueue the main frontend JS bundle.
-		// Expected at resources/build/frontend.js (output of your bundler).
 		$this->assetManager->enqueueScript(
 			handle:   'frontend',
 			src:      'frontend.js',
 			localize: [
-				'object_name' => '__RMB__',
+				'object_name' => '__ALLFB__',
 				'data'        => $frontendData,
 			]
 		);
 
-		// Enqueue the frontend stylesheet.
-		$this->assetManager->enqueueStyle(
-			handle: 'frontend',
-			src:    'frontend.css'
-		);
+		$this->assetManager->enqueueStyle( handle: 'frontend', src: 'frontend.css' );
 
-		/**
-		 * Hook: allfeedback:frontend:enqueue_assets
-		 *
-		 * Fired after the core frontend assets are enqueued.
-		 * Add-ons can hook here to load their own public assets.
-		 */
 		$this->doAction( 'allfeedback:frontend:enqueue_assets' );
+	}
+
+	// ------------------------------------------------------------------
+	// Internal helpers
+	// ------------------------------------------------------------------
+
+	/**
+	 * Merge per-form display settings into the global widget settings array.
+	 *
+	 * Only fields that are explicitly set on the form (non-null) override the
+	 * global value.  This preserves the global default for any field the author
+	 * left unconfigured on the form.
+	 *
+	 * DB key (survey.settings JSON) → __ALLFB__.settings key:
+	 *   trigger_type + delay_value + delay_unit → trigger, delay (seconds)
+	 *   scroll_depth                            → scroll_threshold (0–100)
+	 *   user_state                              → show_to ('all'|'logged_in'|'logged_out')
+	 *   display_frequency                       → display_frequency ('once'|'until_submit')
+	 *   max_impressions                         → max_impressions
+	 *   dismiss_wait_value + dismiss_wait_unit  → reshow_after_days
+	 *
+	 * @param  array<string, mixed> $global Global widget settings.
+	 * @param  array<string, mixed> $form   Survey::getSettings() decoded array (DB snake_case keys).
+	 * @return array<string, mixed>         Merged settings.
+	 * @since 1.0.0
+	 */
+	private function mergeFormDisplaySettings( array $global, array $form ): array {
+		// ── Trigger type → global trigger key ────────────────────────────────
+		$triggerTypeMap = [
+			'immediate'    => 'auto',
+			'time_delay'   => 'auto',
+			'scroll_depth' => 'scroll',
+		];
+		$trigger = isset( $form['trigger_type'] )
+			? ( $triggerTypeMap[ $form['trigger_type'] ] ?? null )
+			: null;
+
+		// ── Delay in seconds from delay_value + delay_unit ────────────────────
+		$delay = null;
+		if ( isset( $form['delay_value'], $form['delay_unit'] ) ) {
+			$unitMultiplier = [ 'seconds' => 1, 'minutes' => 60, 'hours' => 3600 ];
+			$delay = (int) round( (float) $form['delay_value'] * ( $unitMultiplier[ $form['delay_unit'] ] ?? 1 ) );
+		}
+
+		// ── Reshow cooldown in days from dismiss_wait_value + dismiss_wait_unit ─
+		$reshowAfterDays = null;
+		if ( isset( $form['dismiss_wait_value'], $form['dismiss_wait_unit'] ) ) {
+			$dayMultiplier = [ 'hours' => 1 / 24, 'days' => 1, 'weeks' => 7 ];
+			$reshowAfterDays = (int) ceil( (float) $form['dismiss_wait_value'] * ( $dayMultiplier[ $form['dismiss_wait_unit'] ] ?? 1 ) );
+		}
+
+		$overrides = [
+			// Widget display trigger
+			'trigger'           => $trigger,
+			'delay'             => $delay,
+			'scroll_threshold'  => isset( $form['scroll_depth'] ) ? (int) $form['scroll_depth']          : null,
+
+			// Audience
+			'show_to'           => isset( $form['user_state'] )   ? (string) $form['user_state']          : null,
+
+			// Frequency & limits
+			'display_frequency' => isset( $form['display_frequency'] ) ? (string) $form['display_frequency'] : null,
+			'max_impressions'   => isset( $form['max_impressions'] )   ? (int) $form['max_impressions']      : null,
+			'reshow_after_days' => $reshowAfterDays,
+		];
+
+		// Only apply overrides that are actually set on the form (filter nulls).
+		return array_merge( $global, array_filter( $overrides, fn( $v ) => $v !== null ) );
+	}
+
+	/**
+	 * Return true if the current post contains the [allfb_survey] shortcode
+	 * or the allfeedback/survey block, so frontend assets are loaded.
+	 *
+	 * @since 1.0.0
+	 */
+	private function pageHasEmbed(): bool {
+		if ( ! is_singular() ) {
+			return false;
+		}
+
+		$post = get_post();
+
+		if ( ! $post instanceof \WP_Post ) {
+			return false;
+		}
+
+		return has_shortcode( $post->post_content, 'allfb_survey' )
+			|| has_block( 'allfeedback/survey', $post );
 	}
 }

@@ -206,6 +206,26 @@ class Survey extends Entity {
 	}
 
 	/**
+	 * Move the survey to the Trashed status (soft delete).
+	 *
+	 * @since 1.0.0
+	 */
+	public function trash(): void {
+		$this->status = SurveyStatus::Trashed;
+		$this->touch();
+	}
+
+	/**
+	 * Restore a trashed survey back to Draft.
+	 *
+	 * @since 1.0.0
+	 */
+	public function restore(): void {
+		$this->status = SurveyStatus::Draft;
+		$this->touch();
+	}
+
+	/**
 	 * Increment the denormalised response counter by one.
 	 *
 	 * @since 1.0.0

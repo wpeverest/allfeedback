@@ -1,26 +1,642 @@
 /**
- * frontend.pcss — Public-facing styles
+ * frontend.pcss — Public-facing styles for the AllFeedback widget.
  *
- * Imported by resources/scripts/frontend/index.ts
- * Keep this lean — only load what the shortcode/frontend actually needs.
+ * Imported by resources/scripts/frontend/index.ts.
+ * Uses CSS custom properties so the accent colour can be set at runtime
+ * via element.style.setProperty('--allfb-color', '#hex').
  */
 
-@import './app.pcss';
+/* ── Reset (scoped to both widget and inline embed) ───────────────────────── */
+.allfb-widget *,
+.allfb-widget *::before,
+.allfb-widget *::after,
+.allfb-embed *,
+.allfb-embed *::before,
+.allfb-embed *::after {
+  box-sizing: border-box;
+  margin:     0;
+  padding:    0;
+}
 
-/* ── Shortcode widget ─────────────────────────────────────────────── */
-.allfb-sample-widget {
-	border-radius: var(--radius-lg);
-	padding:       1.25rem;
-	font-family:   inherit;
+/* ── CSS custom properties ────────────────────────────────────────────────── */
+.allfb-widget {
+  --allfb-color:       #6366f1;
+  --allfb-color-dark:  color-mix(in srgb, var(--allfb-color) 85%, #000);
+  --allfb-white:       #ffffff;
+  --allfb-text:        #1a1a2e;
+  --allfb-muted:       #6b7280;
+  --allfb-border:      #e5e7eb;
+  --allfb-bg:          #ffffff;
+  --allfb-radius:      16px;
+  --allfb-shadow:      0 8px 32px rgba(0 0 0 / 0.14), 0 2px 8px rgba(0 0 0 / 0.08);
+  --allfb-z:           2147483647; /* max z-index */
+  --allfb-panel-w:     360px;
+  --allfb-panel-h:     480px;
+  --allfb-launcher-sz: 52px;
+  --allfb-gap:         20px;
+  --allfb-font:        -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
 
-	&__title {
-		font-size:     1.1rem;
-		font-weight:   600;
-		margin-bottom: 0.5rem;
-	}
+/* ── Widget root ──────────────────────────────────────────────────────────── */
+.allfb-widget {
+  position:    fixed;
+  z-index:     var(--allfb-z);
+  font-family: var(--allfb-font);
+  bottom:      var(--allfb-gap);
 
-	&__content {
-		font-size:   0.9rem;
-		line-height: 1.6;
-	}
+  &[data-position="bottom-right"] { right: var(--allfb-gap); }
+  &[data-position="bottom-left"]  { left:  var(--allfb-gap); }
+  &[data-position="side-tab"] {
+    right:     0;
+    bottom:    50%;
+    transform: translateY(50%);
+  }
+}
+
+/* Launcher hidden until revealed (non-manual triggers). */
+.allfb-widget:not(.is-revealed) .allfb-launcher {
+  opacity:        0;
+  pointer-events: none;
+  transform:      scale(0.8);
+}
+
+/* ── Launcher button ──────────────────────────────────────────────────────── */
+.allfb-launcher {
+  display:          flex;
+  align-items:      center;
+  justify-content:  center;
+  cursor:           pointer;
+  border:           none;
+  color:            var(--allfb-white);
+  background-color: var(--allfb-color);
+  transition:       transform 0.2s ease, background-color 0.15s ease, opacity 0.2s ease;
+  outline-offset:   3px;
+
+  &:hover        { background-color: var(--allfb-color-dark); transform: scale(1.06); }
+  &:focus-visible { outline: 3px solid var(--allfb-color); }
+  &:active       { transform: scale(0.96); }
+
+  .allfb-widget:not([data-position="side-tab"]) & {
+    width:         var(--allfb-launcher-sz);
+    height:        var(--allfb-launcher-sz);
+    border-radius: 50%;
+    box-shadow:    0 4px 16px color-mix(in srgb, var(--allfb-color) 50%, transparent);
+    svg { width: 24px; height: 24px; }
+  }
+
+  .allfb-widget[data-position="side-tab"] & {
+    padding:       10px 8px;
+    border-radius: 8px 0 0 8px;
+    box-shadow:    -2px 4px 12px rgba(0 0 0 / 0.15);
+  }
+}
+
+.allfb-launcher__tab-label {
+  writing-mode:   vertical-rl;
+  transform:      rotate(180deg);
+  font-size:      13px;
+  font-weight:    600;
+  letter-spacing: 0.06em;
+  white-space:    nowrap;
+  user-select:    none;
+}
+
+/* ── Panel ────────────────────────────────────────────────────────────────── */
+.allfb-panel {
+  position:         absolute;
+  width:            var(--allfb-panel-w);
+  max-height:       var(--allfb-panel-h);
+  background:       var(--allfb-bg);
+  border-radius:    var(--allfb-radius);
+  box-shadow:       var(--allfb-shadow);
+  display:          flex;
+  flex-direction:   column;
+  overflow:         hidden;
+  transform-origin: bottom right;
+  opacity:          0;
+  pointer-events:   none;
+  transform:        scale(0.92) translateY(8px);
+  transition:       opacity 0.2s ease, transform 0.2s ease;
+
+  &.is-open {
+    opacity:        1;
+    pointer-events: auto;
+    transform:      scale(1) translateY(0);
+  }
+
+  .allfb-widget[data-position="bottom-right"] & {
+    bottom:          calc(var(--allfb-launcher-sz) + 12px);
+    right:           0;
+    transform-origin: bottom right;
+  }
+  .allfb-widget[data-position="bottom-left"] & {
+    bottom:          calc(var(--allfb-launcher-sz) + 12px);
+    left:            0;
+    transform-origin: bottom left;
+  }
+  .allfb-widget[data-position="side-tab"] & {
+    right:           100%;
+    top:             50%;
+    transform:       translateY(-50%) scale(0.92);
+    transform-origin: right center;
+    margin-right:    8px;
+    bottom:          auto;
+    &.is-open { transform: translateY(-50%) scale(1); }
+  }
+}
+
+/* ── Panel header ─────────────────────────────────────────────────────────── */
+.allfb-panel__header {
+  display:          flex;
+  align-items:      center;
+  justify-content:  space-between;
+  padding:          14px 16px;
+  background-color: var(--allfb-color);
+  color:            var(--allfb-white);
+  flex-shrink:      0;
+}
+
+.allfb-panel__title {
+  font-size:   15px;
+  font-weight: 600;
+}
+
+.allfb-panel__close {
+  display:     flex;
+  align-items: center;
+  justify-content: center;
+  width:       28px;
+  height:      28px;
+  background:  rgba(255 255 255 / 0.18);
+  border:      none;
+  border-radius: 6px;
+  color:       inherit;
+  cursor:      pointer;
+  transition:  background 0.15s;
+
+  &:hover         { background: rgba(255 255 255 / 0.3); }
+  &:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+  svg { width: 16px; height: 16px; }
+}
+
+/* ── Panel body ───────────────────────────────────────────────────────────── */
+.allfb-panel__body {
+  flex:        1;
+  overflow-y:  auto;
+  padding:     20px 16px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--allfb-border) transparent;
+}
+
+.allfb-panel__placeholder,
+.allfb-panel__error {
+  font-size:   13px;
+  line-height: 1.6;
+  color:       var(--allfb-muted);
+  text-align:  center;
+  padding:     12px 0;
+}
+.allfb-panel__error { color: #dc2626; }
+
+/* ── Spinner ──────────────────────────────────────────────────────────────── */
+.allfb-spinner {
+  width:         32px;
+  height:        32px;
+  margin:        24px auto;
+  border:        3px solid var(--allfb-border);
+  border-top-color: var(--allfb-color);
+  border-radius: 50%;
+  animation:     allfb-spin 0.7s linear infinite;
+}
+@keyframes allfb-spin { to { transform: rotate(360deg); } }
+
+/* ── Form wrapper ─────────────────────────────────────────────────────────── */
+.allfb-form-wrapper {
+  display:        flex;
+  flex-direction: column;
+  gap:            16px;
+}
+
+/* ── Step indicators ──────────────────────────────────────────────────────── */
+.allfb-steps {
+  display:     flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 4px;
+  border-bottom:  1px solid var(--allfb-border);
+}
+
+.allfb-steps__dots {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.allfb-steps__dot {
+  display:       block;
+  height:        6px;
+  width:         6px;
+  border-radius: 99px;
+  background:    var(--allfb-border);
+  transition:    background 0.2s, width 0.2s;
+
+  &.is-active { width: 12px; background: var(--allfb-color); }
+  &.is-done   { background: color-mix(in srgb, var(--allfb-color) 40%, #fff); }
+}
+
+.allfb-steps__count {
+  font-size: 11px;
+  color:     var(--allfb-muted);
+}
+
+/* ── Fields container ─────────────────────────────────────────────────────── */
+.allfb-form__fields {
+  display:        flex;
+  flex-direction: column;
+  gap:            18px;
+}
+
+/* ── Footer ───────────────────────────────────────────────────────────────── */
+.allfb-form__footer {
+  display:        flex;
+  flex-direction: column;
+  gap:            8px;
+  padding-top:    4px;
+}
+
+.allfb-form__submit-error {
+  font-size: 12px;
+  color:     #dc2626;
+  text-align: center;
+}
+
+/* ── Field ────────────────────────────────────────────────────────────────── */
+.allfb-field {
+  display:        flex;
+  flex-direction: column;
+  gap:            6px;
+}
+
+.allfb-field__label {
+  font-size:   13px;
+  font-weight: 500;
+  color:       var(--allfb-text);
+  line-height: 1.4;
+
+  p  { display: inline; }
+  em { font-style: italic; }
+  strong { font-weight: 700; }
+}
+
+.allfb-field__required {
+  color:       #dc2626;
+  font-weight: 700;
+  font-size:   11px;
+}
+
+.allfb-field__error {
+  font-size: 11px;
+  color:     #dc2626;
+  min-height: 1em;
+}
+
+/* ── Inputs ───────────────────────────────────────────────────────────────── */
+.allfb-input,
+.allfb-textarea {
+  width:         100%;
+  padding:       8px 10px;
+  font-size:     13px;
+  font-family:   var(--allfb-font);
+  color:         var(--allfb-text);
+  background:    #f9fafb;
+  border:        1.5px solid var(--allfb-border);
+  border-radius: 8px;
+  outline:       none;
+  transition:    border-color 0.15s, box-shadow 0.15s;
+  resize:        vertical;
+
+  &::placeholder { color: var(--allfb-muted); opacity: 0.7; }
+
+  &:focus {
+    border-color: var(--allfb-color);
+    box-shadow:   0 0 0 3px color-mix(in srgb, var(--allfb-color) 20%, transparent);
+    background:   #fff;
+  }
+
+  &.is-error {
+    border-color: #dc2626;
+    &:focus { box-shadow: 0 0 0 3px rgba(220 38 38 / 0.18); }
+  }
+}
+
+/* ── Options (radio / checkboxes) ─────────────────────────────────────────── */
+.allfb-options {
+  display:        flex;
+  flex-direction: column;
+  gap:            8px;
+}
+
+.allfb-option {
+  display:     flex;
+  align-items: center;
+  gap:         8px;
+  cursor:      pointer;
+}
+
+/* Hide native input visually */
+.sr-only {
+  position: absolute;
+  width:    1px;
+  height:   1px;
+  padding:  0;
+  margin:   -1px;
+  overflow: hidden;
+  clip:     rect(0, 0, 0, 0);
+  border:   0;
+}
+
+.allfb-option__radio,
+.allfb-option__checkbox {
+  flex-shrink:   0;
+  width:         14px;
+  height:        14px;
+  border:        1.5px solid var(--allfb-border);
+  background:    #fff;
+  transition:    border-color 0.15s, background 0.15s;
+}
+
+.allfb-option__radio {
+  border-radius: 50%;
+  display:       flex;
+  align-items:   center;
+  justify-content: center;
+
+  &.is-checked {
+    border-color: var(--allfb-color);
+    background:   var(--allfb-color);
+    /* inner dot */
+    &::after {
+      content:       '';
+      display:       block;
+      width:         5px;
+      height:        5px;
+      border-radius: 50%;
+      background:    #fff;
+    }
+  }
+}
+
+.allfb-option__checkbox {
+  border-radius: 3px;
+  display:       flex;
+  align-items:   center;
+  justify-content: center;
+
+  &.is-checked {
+    border-color: var(--allfb-color);
+    background:   var(--allfb-color);
+    /* checkmark */
+    &::after {
+      content: '';
+      display: block;
+      width:   8px;
+      height:  8px;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Cpath d='M1.5 4L3 5.5L6.5 2' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E") center/contain no-repeat;
+    }
+  }
+}
+
+.allfb-option__text {
+  font-size:   13px;
+  color:       var(--allfb-text);
+  line-height: 1.4;
+}
+
+/* ── Star rating ──────────────────────────────────────────────────────────── */
+.allfb-stars {
+  display: flex;
+  gap:     4px;
+}
+
+.allfb-star {
+  display:     flex;
+  align-items: center;
+  justify-content: center;
+  width:       32px;
+  height:      32px;
+  border:      none;
+  background:  none;
+  cursor:      pointer;
+  padding:     0;
+  color:       #d1d5db;
+  transition:  color 0.15s, transform 0.1s;
+
+  svg { width: 24px; height: 24px; }
+
+  &:hover, &.is-active { color: #f59e0b; }
+  &:hover               { transform: scale(1.15); }
+  &:active              { transform: scale(0.95); }
+  &:focus-visible       { outline: 2px solid var(--allfb-color); outline-offset: 2px; border-radius: 4px; }
+}
+
+.allfb-star--number {
+  width:         30px;
+  height:        30px;
+  border:        1.5px solid var(--allfb-border);
+  border-radius: 6px;
+  font-size:     12px;
+  font-weight:   600;
+  font-family:   var(--allfb-font);
+  color:         var(--allfb-muted);
+  background:    #f3f4f6;
+
+  &:hover, &.is-active {
+    background:    var(--allfb-color);
+    border-color:  var(--allfb-color);
+    color:         #fff;
+    transform:     scale(1.08);
+  }
+}
+
+/* ── Scale ────────────────────────────────────────────────────────────────── */
+.allfb-scale {
+  display:        flex;
+  flex-direction: column;
+  gap:            6px;
+}
+
+.allfb-scale__btns {
+  display:   flex;
+  flex-wrap: wrap;
+  gap:       5px;
+}
+
+.allfb-scale__btn {
+  min-width:     32px;
+  height:        32px;
+  padding:       0 6px;
+  font-size:     12px;
+  font-weight:   600;
+  font-family:   var(--allfb-font);
+  color:         var(--allfb-text);
+  background:    #f3f4f6;
+  border:        1.5px solid var(--allfb-border);
+  border-radius: 8px;
+  cursor:        pointer;
+  transition:    background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
+
+  &:hover {
+    background:   color-mix(in srgb, var(--allfb-color) 10%, #fff);
+    border-color: color-mix(in srgb, var(--allfb-color) 50%, var(--allfb-border));
+    color:        var(--allfb-color);
+    transform:    scale(1.05);
+  }
+  &.is-active {
+    background:   var(--allfb-color);
+    border-color: var(--allfb-color);
+    color:        #fff;
+  }
+  &:focus-visible { outline: 2px solid var(--allfb-color); outline-offset: 2px; }
+}
+
+/* NPS row — stretch buttons to fill width */
+.allfb-scale--nps .allfb-scale__btns {
+  flex-wrap:  nowrap;
+}
+
+.allfb-scale__btn--nps {
+  flex:          1;
+  min-width:     0;
+  height:        28px;
+  font-size:     11px;
+  border-radius: 6px;
+
+  /* Sentiment default tint — visible even before any selection */
+  &.allfb-scale__btn--detractor {
+    color:        #dc2626;
+    border-color: #fca5a5;
+    background:   #fef2f2;
+    &:hover { background: #fee2e2; border-color: #ef4444; }
+    &.is-active { background: #fca5a5; border-color: #ef4444; color: #991b1b; }
+  }
+
+  &.allfb-scale__btn--passive {
+    color:        #d97706;
+    border-color: #fcd34d;
+    background:   #fffbeb;
+    &:hover { background: #fef3c7; border-color: #f59e0b; }
+    &.is-active { background: #fcd34d; border-color: #f59e0b; color: #92400e; }
+  }
+
+  &.allfb-scale__btn--promoter {
+    color:        #16a34a;
+    border-color: #86efac;
+    background:   #f0fdf4;
+    &:hover { background: #dcfce7; border-color: #22c55e; }
+    &.is-active { background: #86efac; border-color: #22c55e; color: #14532d; }
+  }
+}
+
+.allfb-scale__labels {
+  display:         flex;
+  justify-content: space-between;
+  font-size:       11px;
+  color:           var(--allfb-muted);
+}
+
+.allfb-scale__label--high {
+  margin-left: auto;
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────────────── */
+.allfb-btn {
+  display:         inline-flex;
+  align-items:     center;
+  justify-content: center;
+  width:           100%;
+  padding:         9px 18px;
+  font-size:       13px;
+  font-weight:     600;
+  font-family:     var(--allfb-font);
+  border:          1.5px solid var(--allfb-border);
+  border-radius:   8px;
+  cursor:          pointer;
+  transition:      background 0.15s, border-color 0.15s, color 0.15s;
+  background:      transparent;
+  color:           var(--allfb-text);
+
+  &:hover         { background: #f3f4f6; }
+  &:focus-visible { outline: 2px solid var(--allfb-color); outline-offset: 2px; }
+  &:disabled      { opacity: 0.55; cursor: not-allowed; }
+
+  &--primary {
+    background:   var(--allfb-color);
+    border-color: var(--allfb-color);
+    color:        #fff;
+    &:hover:not(:disabled) { background: var(--allfb-color-dark); border-color: var(--allfb-color-dark); }
+  }
+
+  &--secondary {
+    background:   #f3f4f6;
+    border-color: var(--allfb-border);
+    color:        var(--allfb-muted);
+    &:hover { background: #e5e7eb; }
+  }
+}
+
+/* ── Thank you ────────────────────────────────────────────────────────────── */
+.allfb-thankyou {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  gap:            10px;
+  padding:        16px 0 8px;
+  text-align:     center;
+}
+
+.allfb-thankyou__check {
+  display:     flex;
+  align-items: center;
+  justify-content: center;
+  width:       52px;
+  height:      52px;
+  border-radius: 50%;
+  background:  color-mix(in srgb, var(--allfb-color) 12%, #fff);
+  color:       var(--allfb-color);
+  svg { width: 26px; height: 26px; }
+}
+
+.allfb-thankyou__title {
+  font-size:   14px;
+  font-weight: 600;
+  color:       var(--allfb-text);
+}
+
+.allfb-thankyou__desc {
+  font-size:   12px;
+  color:       var(--allfb-muted);
+  line-height: 1.5;
+}
+
+/* ── Inline embed (shortcode) ─────────────────────────────────────────────── */
+.allfb-embed {
+  --allfb-color:  #6366f1;
+  --allfb-color-dark: color-mix(in srgb, var(--allfb-color) 85%, #000);
+  --allfb-text:   #1a1a2e;
+  --allfb-muted:  #6b7280;
+  --allfb-border: #e5e7eb;
+  --allfb-font:   -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  font-family:   var(--allfb-font);
+  max-width:     560px;
+  padding:       28px 24px;
+  background:    #fff;
+  border:        1.5px solid var(--allfb-border);
+  border-radius: 12px;
+  box-shadow:    0 2px 12px rgba(0 0 0 / 0.06);
+
+  .allfb-spinner        { margin: 16px auto; }
+  .allfb-form__fields   { gap: 20px; }
+  .allfb-form__footer   { padding-top: 8px; }
+  .allfb-thankyou       { padding: 24px 0; }
 }
