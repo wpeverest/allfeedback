@@ -15,7 +15,6 @@ import {
 	CalendarDays,
 	Check,
 	CheckSquare,
-	ChevronRight,
 	Clock,
 	Globe,
 	Laptop,
@@ -39,45 +38,44 @@ import type { SurveyFormSchemaField } from '@/admin/api/surveys';
 // ---------------------------------------------------------------------------
 
 const DetailSkeleton = () => (
-	<div className="p-5 md:p-6">
-		{/* back nav */}
-		<div className="mb-5 flex items-center gap-2">
-			<div className="size-8 animate-pulse rounded-lg bg-muted" />
-			<div className="h-4 w-24 animate-pulse rounded bg-muted" />
-			<div className="h-4 w-4 animate-pulse rounded bg-muted" />
-			<div className="h-4 w-32 animate-pulse rounded bg-muted" />
-		</div>
+	<div className="flex flex-col">
 		{/* header */}
-		<div className="mb-6 flex items-start justify-between">
-			<div className="space-y-2">
-				<div className="h-6 w-40 animate-pulse rounded bg-muted" />
-				<div className="h-4 w-56 animate-pulse rounded bg-muted" />
+		<div className="flex h-[68px] shrink-0 items-center justify-between border-b border-border bg-white px-6">
+			<div className="flex items-center gap-2">
+				<div className="size-8 animate-pulse rounded-lg bg-muted" />
+				<div className="h-5 w-px bg-border" />
+				<div className="space-y-1.5">
+					<div className="h-3.5 w-40 animate-pulse rounded bg-muted" />
+					<div className="h-3 w-28 animate-pulse rounded bg-muted" />
+				</div>
 			</div>
 			<div className="h-9 w-32 animate-pulse rounded-lg bg-muted" />
 		</div>
 		{/* body */}
-		<div className="grid gap-6 lg:grid-cols-[1fr_268px]">
-			<div className="space-y-0 rounded-xl border border-border bg-card">
-				<div className="border-b border-border px-5 py-4">
-					<div className="h-4 w-16 animate-pulse rounded bg-muted" />
-				</div>
-				{Array.from({ length: 3 }, (_, i) => (
-					<div key={i} className="border-b border-border px-5 py-5 last:border-0">
-						<div className="mb-3 h-3 w-28 animate-pulse rounded bg-muted" />
-						<div className="h-5 w-3/4 animate-pulse rounded bg-muted" />
+		<div className="p-5 md:p-6">
+			<div className="grid gap-5 lg:grid-cols-[1fr_268px]">
+				<div className="rounded-xl border border-border bg-card">
+					<div className="border-b border-border px-5 py-4">
+						<div className="h-3.5 w-16 animate-pulse rounded bg-muted" />
 					</div>
-				))}
-			</div>
-			<div className="rounded-xl border border-border bg-card">
-				<div className="border-b border-border px-5 py-4">
-					<div className="h-4 w-14 animate-pulse rounded bg-muted" />
+					{Array.from({ length: 3 }, (_, i) => (
+						<div key={i} className="border-b border-border px-5 py-5 last:border-0">
+							<div className="mb-3 h-3 w-28 animate-pulse rounded bg-muted" />
+							<div className="h-5 w-3/4 animate-pulse rounded bg-muted" />
+						</div>
+					))}
 				</div>
-				{Array.from({ length: 4 }, (_, i) => (
-					<div key={i} className="flex items-center gap-3 border-b border-border px-5 py-3.5 last:border-0">
-						<div className="size-4 animate-pulse rounded bg-muted" />
-						<div className="h-4 w-32 animate-pulse rounded bg-muted" />
+				<div className="rounded-xl border border-border bg-card">
+					<div className="border-b border-border px-5 py-4">
+						<div className="h-3.5 w-14 animate-pulse rounded bg-muted" />
 					</div>
-				))}
+					{Array.from({ length: 4 }, (_, i) => (
+						<div key={i} className="flex items-center gap-3 border-b border-border px-5 py-3.5 last:border-0">
+							<div className="size-4 animate-pulse rounded bg-muted" />
+							<div className="h-4 w-32 animate-pulse rounded bg-muted" />
+						</div>
+					))}
+				</div>
 			</div>
 		</div>
 	</div>
@@ -371,7 +369,7 @@ const MetaItem = ({
 );
 
 // ---------------------------------------------------------------------------
-// Device icon helper — returns the Lucide icon component for the device type
+// Device icon helper
 // ---------------------------------------------------------------------------
 
 const getDeviceIcon = (device: string | null) => {
@@ -446,8 +444,8 @@ const ResponseDetail = () => {
 
 	if (isError || !response) {
 		return (
-			<div className="p-5 md:p-6">
-				<div className="mb-5 flex items-center gap-1.5">
+			<div className="flex flex-col">
+				<div className="flex h-[68px] shrink-0 items-center border-b border-border bg-white px-6">
 					<Button
 						variant="ghost"
 						size="icon-sm"
@@ -456,10 +454,13 @@ const ResponseDetail = () => {
 					>
 						<ArrowLeft className="size-4" />
 					</Button>
-					<span className="text-[13px] text-muted-foreground">{__('Responses', 'all-feedback')}</span>
+					<span className="mx-2 h-5 w-px bg-border" />
+					<span className="text-[14px] font-semibold text-foreground">
+						{__('Response not found', 'all-feedback')}
+					</span>
 				</div>
-				<div className="flex min-h-[300px] items-center justify-center rounded-xl border border-border bg-card">
-					<div className="flex flex-col items-center gap-2 p-8 text-center">
+				<div className="flex min-h-[300px] items-center justify-center p-6">
+					<div className="flex flex-col items-center gap-2 text-center">
 						<MessageSquare className="size-8 text-muted-foreground/30" />
 						<p className="text-[15px] font-semibold text-foreground">
 							{__('Response not found', 'all-feedback')}
@@ -483,52 +484,39 @@ const ResponseDetail = () => {
 	}
 
 	return (
-		<div className="p-5 md:p-6">
+		<div className="flex flex-col">
 
-			{/* ----- Breadcrumb / back nav ----- */}
-			<div className="mb-5 flex items-center gap-1.5">
-				<Button
-					variant="ghost"
-					size="icon-sm"
-					onClick={() => router.history.back()}
-					aria-label={__('Back', 'all-feedback')}
-				>
-					<ArrowLeft className="size-4" />
-				</Button>
-				<span className="text-[13px] text-muted-foreground">{__('Responses', 'all-feedback')}</span>
-				<ChevronRight className="size-3.5 text-muted-foreground/50" />
-				<span className="text-[13px] font-medium text-foreground">
-					{__('Response', 'all-feedback')} #{response.id}
-				</span>
-			</div>
+			{/* ----- Header bar — mirrors builder header style ----- */}
+			<div className="flex h-[68px] shrink-0 items-center justify-between border-b border-border bg-white px-6">
+				<div className="flex min-w-0 flex-1 items-center gap-2">
+					<Button
+						variant="ghost"
+						size="icon-sm"
+						onClick={() => router.history.back()}
+						aria-label={__('Back', 'all-feedback')}
+					>
+						<ArrowLeft className="size-4" />
+					</Button>
 
-			{/* ----- Page header ----- */}
-			<div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+					<span className="h-5 w-px bg-border" />
+
+					<p className="truncate text-[14px] font-semibold text-foreground">
+						{survey?.title ?? `${__('Survey', 'all-feedback')} #${surveyId}`}
+					</p>
+				</div>
+
 				<div className="flex items-center gap-3">
-					<div>
-						<h1 className="text-[18px] font-semibold leading-snug text-foreground">
-							{survey?.title ?? `${__('Survey', 'all-feedback')} #${surveyId}`}
-						</h1>
-						<p className="mt-0.5 text-[13px] text-muted-foreground">
-							{__('Response', 'all-feedback')} #{response.id}
-							{' · '}
-							{format(new Date(response.created_at), 'MMM d, yyyy')}
-						</p>
-					</div>
-
 					{isEditing && (
 						<div className="flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1">
 							<span className="size-1.5 animate-pulse rounded-full bg-amber-400" />
 							<span className="text-[12px] font-medium text-amber-600">
-								{__('Editing', 'all-feedback')}
+								{__('Unsaved changes', 'all-feedback')}
 							</span>
 						</div>
 					)}
-				</div>
 
-				<div className="flex items-center gap-2">
 					{!isEditing ? (
-						<Button variant="secondary" onClick={() => setIsEditing(true)}>
+						<Button variant="outline" className="border-primary text-primary hover:bg-primary/5 hover:text-primary" onClick={() => setIsEditing(true)}>
 							<Pencil className="size-3.5" />
 							{__('Edit response', 'all-feedback')}
 						</Button>
@@ -557,173 +545,177 @@ const ResponseDetail = () => {
 				</div>
 			</div>
 
-			{/* ----- Body ----- */}
+			{/* ----- Content ----- */}
 			<form
 				onSubmit={(e) => { e.preventDefault(); void form.handleSubmit(); }}
-				className="grid gap-5 lg:grid-cols-[1fr_268px]"
+				className="p-5 md:p-6"
 			>
-				{/* ---- Left: field answers ---- */}
-				<div className={cn(
-					'rounded-xl border bg-card transition-colors',
-					isEditing ? 'border-amber-200' : 'border-border',
-				)}>
-					{/* section heading */}
-					<div className={cn(
-						'flex items-center justify-between border-b px-5 py-3.5 transition-colors',
-						isEditing ? 'border-amber-100 bg-amber-50/50' : 'border-border bg-muted/20',
-					)}>
-						<h2 className="text-[12px] font-semibold uppercase tracking-widest text-muted-foreground">
-							{__('Fields', 'all-feedback')}
-						</h2>
-						{isEditing && (
-							<span className="text-[12px] text-amber-600">
-								{__('Click any field below to edit', 'all-feedback')}
-							</span>
-						)}
-					</div>
+				<div className="grid gap-5 lg:grid-cols-[1fr_268px]">
 
-					<div className="divide-y divide-border">
-						{schemaFields.map((schField, idx) => {
-							const rawValue = responseData[schField.id];
-							return (
-								<form.Field key={schField.id} name="response_data">
-									{(field) => (
-										<div className={cn(
-											'px-5 py-5 transition-colors',
-											isEditing && 'hover:bg-muted/20',
-										)}>
-											<div className="mb-2 flex items-center gap-2">
-												<span className="flex size-5 items-center justify-center rounded-full bg-muted text-[10px] font-bold tabular-nums text-muted-foreground">
-													{idx + 1}
-												</span>
-												<p className="text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">
-													{schField.label}
-													{schField.required && (
-														<span className="ml-0.5 text-destructive">*</span>
+					{/* ---- Left: field answers ---- */}
+					<div className={cn(
+						'rounded-xl border bg-card transition-colors',
+						isEditing ? 'border-amber-200' : 'border-border',
+					)}>
+						<div className={cn(
+							'flex items-center justify-between border-b px-5 py-3.5 transition-colors',
+							isEditing ? 'border-amber-100 bg-amber-50/50' : 'border-border bg-muted/20',
+						)}>
+							<h2 className="text-[12px] font-semibold uppercase tracking-widest text-muted-foreground">
+								{__('Fields', 'all-feedback')}
+							</h2>
+							{isEditing && (
+								<span className="text-[12px] text-amber-600">
+									{__('Click any field below to edit', 'all-feedback')}
+								</span>
+							)}
+						</div>
+
+						<div className="divide-y divide-border">
+							{schemaFields.map((schField, idx) => {
+								const rawValue = responseData[schField.id];
+								return (
+									<form.Field key={schField.id} name="response_data">
+										{(field) => (
+											<div className={cn(
+												'px-5 py-5 transition-colors',
+												isEditing && 'hover:bg-muted/20',
+											)}>
+												<div className="mb-2 flex items-center gap-2">
+													<span className="flex size-5 items-center justify-center rounded-full bg-muted text-[10px] font-bold tabular-nums text-muted-foreground">
+														{idx + 1}
+													</span>
+													<p className="text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">
+														{schField.label}
+														{schField.required && (
+															<span className="ml-0.5 text-destructive">*</span>
+														)}
+													</p>
+												</div>
+												<div className="pl-7">
+													{isEditing ? (
+														<EditField
+															field={schField}
+															value={field.state.value[schField.id] ?? rawValue}
+															onChange={(v) =>
+																field.handleChange({ ...field.state.value, [schField.id]: v })
+															}
+														/>
+													) : (
+														<ViewField field={schField} value={rawValue} />
 													)}
+												</div>
+											</div>
+										)}
+									</form.Field>
+								);
+							})}
+
+							{/* Orphaned answers */}
+							{orphanedKeys.map((key) => (
+								<form.Field key={key} name="response_data">
+									{(field) => (
+										<div className={cn('px-5 py-5 transition-colors', isEditing && 'hover:bg-muted/20')}>
+											<div className="mb-2 flex items-center gap-2">
+												<span className="flex size-5 items-center justify-center rounded-full bg-muted text-[10px] font-bold text-muted-foreground">?</span>
+												<p className="text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">
+													{__('Unknown field', 'all-feedback')}
+													<span className="ml-1.5 font-normal normal-case text-foreground/30">
+														({key})
+													</span>
 												</p>
 											</div>
 											<div className="pl-7">
 												{isEditing ? (
 													<EditField
-														field={schField}
-														value={field.state.value[schField.id] ?? rawValue}
+														field={null}
+														value={field.state.value[key] ?? responseData[key]}
 														onChange={(v) =>
-															field.handleChange({ ...field.state.value, [schField.id]: v })
+															field.handleChange({ ...field.state.value, [key]: v })
 														}
 													/>
 												) : (
-													<ViewField field={schField} value={rawValue} />
+													<ViewField field={null} value={responseData[key]} />
 												)}
 											</div>
 										</div>
 									)}
 								</form.Field>
-							);
-						})}
+							))}
 
-						{/* Orphaned answers */}
-						{orphanedKeys.map((key) => (
-							<form.Field key={key} name="response_data">
-								{(field) => (
-									<div className={cn('px-5 py-5 transition-colors', isEditing && 'hover:bg-muted/20')}>
-										<div className="mb-2 flex items-center gap-2">
-											<span className="flex size-5 items-center justify-center rounded-full bg-muted text-[10px] font-bold text-muted-foreground">?</span>
-											<p className="text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">
-												{__('Unknown field', 'all-feedback')}
-												<span className="ml-1.5 font-normal normal-case text-foreground/30">
-													({key})
-												</span>
-											</p>
-										</div>
-										<div className="pl-7">
-											{isEditing ? (
-												<EditField
-													field={null}
-													value={field.state.value[key] ?? responseData[key]}
-													onChange={(v) =>
-														field.handleChange({ ...field.state.value, [key]: v })
-													}
-												/>
-											) : (
-												<ViewField field={null} value={responseData[key]} />
-											)}
-										</div>
-									</div>
-								)}
-							</form.Field>
-						))}
-
-						{schemaFields.length === 0 && Object.keys(responseData).length === 0 && (
-							<div className="flex flex-col items-center gap-2 py-14 text-center">
-								<MessageSquare className="size-7 text-muted-foreground/30" />
-								<p className="text-[14px] text-muted-foreground">
-									{__('No response data recorded.', 'all-feedback')}
-								</p>
-							</div>
-						)}
-					</div>
-				</div>
-
-				{/* ---- Right: metadata sidebar ---- */}
-				<div className="rounded-xl border border-border bg-card">
-					<div className="border-b border-border bg-muted/20 px-5 py-3.5">
-						<h2 className="text-[12px] font-semibold uppercase tracking-widest text-muted-foreground">
-							{__('Details', 'all-feedback')}
-						</h2>
+							{schemaFields.length === 0 && Object.keys(responseData).length === 0 && (
+								<div className="flex flex-col items-center gap-2 py-14 text-center">
+									<MessageSquare className="size-7 text-muted-foreground/30" />
+									<p className="text-[14px] text-muted-foreground">
+										{__('No response data recorded.', 'all-feedback')}
+									</p>
+								</div>
+							)}
+						</div>
 					</div>
 
-					<div className="divide-y divide-border">
-						{response.score !== null && (
-							<MetaItem icon={Star} label={__('Score', 'all-feedback')}>
-								<span className="font-semibold tabular-nums">{response.score}</span>
-							</MetaItem>
-						)}
+					{/* ---- Right: metadata sidebar ---- */}
+					<div className="rounded-xl border border-border bg-card">
+						<div className="border-b border-border bg-muted/20 px-5 py-3.5">
+							<h2 className="text-[12px] font-semibold uppercase tracking-widest text-muted-foreground">
+								{__('Details', 'all-feedback')}
+							</h2>
+						</div>
 
-						<MetaItem icon={CalendarDays} label={__('Submitted', 'all-feedback')}>
-							<span>{format(new Date(response.created_at), 'MMM d, yyyy')}</span>
-							<span className="flex items-center gap-1 text-muted-foreground">
-								<Clock className="size-3" />
-								{format(new Date(response.created_at), 'h:mm a')}
-							</span>
-						</MetaItem>
-
-						<MetaItem icon={getDeviceIcon(response.device_type)} label={__('Device', 'all-feedback')}>
-							{response.device_type ? (
-								<span className="capitalize">{response.device_type}</span>
-							) : (
-								<span className="text-muted-foreground">—</span>
+						<div className="divide-y divide-border">
+							{response.score !== null && (
+								<MetaItem icon={Star} label={__('Score', 'all-feedback')}>
+									<span className="font-semibold tabular-nums">{response.score}</span>
+								</MetaItem>
 							)}
-						</MetaItem>
 
-						<MetaItem icon={Globe} label={__('Page URL', 'all-feedback')}>
-							{response.page_url ? (
-								<a
-									href={response.page_url}
-									target="_blank"
-									rel="noopener noreferrer"
-									className="break-all text-primary underline-offset-2 hover:underline"
-								>
-									{response.page_url}
-								</a>
-							) : (
-								<span className="text-muted-foreground">—</span>
-							)}
-						</MetaItem>
-
-						<MetaItem icon={Shield} label={__('Consent', 'all-feedback')}>
-							{response.consent_given ? (
-								<span className="inline-flex items-center gap-1 font-medium text-emerald-600">
-									<ShieldCheck className="size-3.5" />
-									{__('Given', 'all-feedback')}
+							<MetaItem icon={CalendarDays} label={__('Submitted', 'all-feedback')}>
+								<span>{format(new Date(response.created_at), 'MMM d, yyyy')}</span>
+								<span className="flex items-center gap-1 text-muted-foreground">
+									<Clock className="size-3" />
+									{format(new Date(response.created_at), 'h:mm a')}
 								</span>
-							) : (
-								<span className="text-muted-foreground">—</span>
-							)}
-						</MetaItem>
+							</MetaItem>
+
+							<MetaItem icon={getDeviceIcon(response.device_type)} label={__('Device', 'all-feedback')}>
+								{response.device_type ? (
+									<span className="capitalize">{response.device_type}</span>
+								) : (
+									<span className="text-muted-foreground">—</span>
+								)}
+							</MetaItem>
+
+							<MetaItem icon={Globe} label={__('Page URL', 'all-feedback')}>
+								{response.page_url ? (
+									<a
+										href={response.page_url}
+										target="_blank"
+										rel="noopener noreferrer"
+										className="break-all text-primary underline-offset-2 hover:underline"
+									>
+										{response.page_url}
+									</a>
+								) : (
+									<span className="text-muted-foreground">—</span>
+								)}
+							</MetaItem>
+
+							<MetaItem icon={Shield} label={__('Consent', 'all-feedback')}>
+								{response.consent_given ? (
+									<span className="inline-flex items-center gap-1 font-medium text-emerald-600">
+										<ShieldCheck className="size-3.5" />
+										{__('Given', 'all-feedback')}
+									</span>
+								) : (
+									<span className="text-muted-foreground">—</span>
+								)}
+							</MetaItem>
+						</div>
 					</div>
+
 				</div>
 			</form>
+
 		</div>
 	);
 };

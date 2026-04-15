@@ -405,7 +405,10 @@ const Responses = () => {
 														</button>
 													</DropdownMenuTrigger>
 													<DropdownMenuContent>
-														<DropdownMenuItem onSelect={() => openDetail(response)}>
+														<DropdownMenuItem
+															className="max-sm:flex sm:hidden"
+															onSelect={() => openDetail(response)}
+														>
 															<Eye className="size-3.5" />
 															{__('View', 'all-feedback')}
 														</DropdownMenuItem>
