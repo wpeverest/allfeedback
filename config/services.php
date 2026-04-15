@@ -67,6 +67,8 @@ use AllFeedback\Infrastructure\Mail\SendNotificationJob;
 use AllFeedback\Admin\AdminServiceProvider;
 use AllFeedback\API\ApiServiceProvider;
 use AllFeedback\API\Controllers\V1\ContentSearchController;
+use AllFeedback\Frontend\Blocks\BlockRegistry;
+use AllFeedback\Frontend\Blocks\SurveyBlock;
 use AllFeedback\API\Controllers\V1\LogsController;
 use AllFeedback\API\Controllers\V1\ResponsesController;
 use AllFeedback\API\Controllers\V1\SettingsController;
@@ -188,6 +190,16 @@ return [
 	SettingsController::class        => autowire(),
 	ContentSearchController::class   => autowire(),
 	LogsController::class            => autowire(),
+
+	// ------------------------------------------------------------------
+	// Gutenberg blocks
+	// ─────────────────────────────────────────────────────────────────
+	// To add a new block: create its AbstractBlock subclass, autowire it
+	// here, then add get(NewBlock::class) to BlockRegistry's constructor.
+	// ------------------------------------------------------------------
+	SurveyBlock::class                   => autowire(),
+	BlockRegistry::class                 => create( BlockRegistry::class )
+		->constructor( get( SurveyBlock::class ) ),
 
 	// ------------------------------------------------------------------
 	// Service providers

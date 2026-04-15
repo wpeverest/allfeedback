@@ -4,7 +4,7 @@
 	"name": "allfeedback/survey",
 	"version": "1.0.0",
 	"title": "All Feedback Survey",
-	"category": "widgets",
+	"category": "all-feedback",
 	"icon": "megaphone",
 	"description": "Embed a published All Feedback survey directly in your content.",
 	"keywords": [ "survey", "feedback", "form", "nps" ],
@@ -19,6 +19,6 @@
 		"html": false,
 		"align": [ "wide", "full" ]
 	},
-	"editorScript": "file:../../resources/build/block.js",
+	"editorScript": "file:../../resources/build/block-survey.js",
 	"style": "file:../../resources/build/frontend.css"
 }
