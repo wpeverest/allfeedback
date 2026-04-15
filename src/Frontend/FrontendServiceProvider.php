@@ -152,29 +152,59 @@ class FrontendServiceProvider implements ServiceProvider {
 	 *
 	 */
 	public function enqueueAssets(): void {
-		/** @var array<string, mixed> $widgetSettings */
-		$widgetSettings = (array) $this->settingsManager->get( 'general.widget' );
-		$surveyId       = $this->targetingEngine->resolveForCurrentPage();
+		/** @var array<string, mixed> $globalWidgetSettings */
+		$globalWidgetSettings = (array) $this->settingsManager->get( 'general.widget' );
+		$surveyIds            = $this->targetingEngine->resolveAllForCurrentPage();
 
-		if ( $surveyId === null && ! $this->pageHasEmbed() ) {
+		if ( empty( $surveyIds ) && ! $this->pageHasEmbed() ) {
 			return;
 		}
 
-		// When a specific survey is targeted for the floating widget, merge its
-		// display settings on top of the global defaults.  Only non-null form
-		// values override — if a field isn't set on the form, the global default wins.
-		if ( $surveyId !== null ) {
-			/** @var SurveyRepository $repo */
-			$repo   = $this->container->get( SurveyRepository::class );
-			$survey = $repo->findById( $surveyId );
+		// Build per-survey config objects for the JS orchestrator.
+		// Each entry carries the display-gate overrides (show_to, frequency, etc.)
+		// merged from the global defaults + the survey's own form settings.
+		/** @var array<int, array<string, mixed>> $surveyConfigs */
+		$surveyConfigs = [];
 
-			if ( $survey !== null ) {
-				$widgetSettings = $this->mergeFormDisplaySettings(
-					$widgetSettings,
-					$survey->getSettings()
+		if ( ! empty( $surveyIds ) ) {
+			/** @var SurveyRepository $repo */
+			$repo = $this->container->get( SurveyRepository::class );
+
+			foreach ( $surveyIds as $id ) {
+				$survey = $repo->findById( $id );
+				if ( $survey === null ) {
+					continue;
+				}
+
+				$merged          = $this->mergeFormDisplaySettings( $globalWidgetSettings, $survey->getSettings() );
+				$surveyConfigs[] = array_filter(
+					[
+						'id'                => $id,
+						'show_to'           => $merged['show_to']           ?? null,
+						'display_frequency' => $merged['display_frequency'] ?? null,
+						'max_impressions'   => isset( $merged['max_impressions'] )   ? (int) $merged['max_impressions']   : null,
+						'reshow_after_days' => isset( $merged['reshow_after_days'] ) ? (int) $merged['reshow_after_days'] : null,
+					],
+					fn( $v ) => $v !== null
 				);
 			}
 		}
+
+		// Merge display settings from the first matching survey into the global
+		// widget settings so trigger / delay / scroll_threshold etc. are still
+		// respected for the primary survey.
+		$widgetSettings = $globalWidgetSettings;
+		if ( ! empty( $surveyIds ) ) {
+			/** @var SurveyRepository $repo */
+			$repo   = $this->container->get( SurveyRepository::class );
+			$survey = $repo->findById( $surveyIds[0] );
+			if ( $survey !== null ) {
+				$widgetSettings = $this->mergeFormDisplaySettings( $globalWidgetSettings, $survey->getSettings() );
+			}
+		}
+
+		// Back-compat: keep survey_id as a scalar for any code that still reads it.
+		$primarySurveyId = $surveyIds[0] ?? null;
 
 		$frontendData = $this->applyFilters(
 			'allfeedback:frontend:script_data',
@@ -184,7 +214,13 @@ class FrontendServiceProvider implements ServiceProvider {
 				'nonce'       => wp_create_nonce( 'wp_rest' ),
 				'submitNonce' => wp_create_nonce( SubmitController::NONCE_ACTION ),
 				'version'     => \AllFeedback\Core\Constants::VERSION,
-				'settings'    => array_merge( $widgetSettings, [ 'survey_id' => $surveyId ] ),
+				'settings'    => array_merge(
+					$widgetSettings,
+					[
+						'survey_id'      => $primarySurveyId,
+						'survey_configs' => $surveyConfigs,
+					]
+				),
 			]
 		);
 

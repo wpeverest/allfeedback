@@ -63,13 +63,16 @@ class TargetingEngine {
 	// ------------------------------------------------------------------
 
 	/**
-	 * Return the ID of the first published survey that targets the current
-	 * page, or null if no survey matches.
+	 * Return the IDs of ALL published surveys that target the current page,
+	 * ordered by date DESC (most-recently-published first).
 	 *
-	 * @return int|null
+	 * The JS orchestrator iterates this list and mounts the first survey that
+	 * passes the client-side audience / frequency gates.
+	 *
+	 * @return int[]
 	 * @since 1.0.0
 	 */
-	public function resolveForCurrentPage(): ?int {
+	public function resolveAllForCurrentPage(): array {
 		try {
 			$surveys = $this->surveyRepository->findAll(
 				new SurveyFilter(
@@ -81,16 +84,29 @@ class TargetingEngine {
 			);
 		} catch ( \Throwable $e ) {
 			$this->logger->error( 'TargetingEngine: failed to load surveys.', [ 'error' => $e->getMessage() ] );
-			return null;
+			return [];
 		}
 
+		$ids = [];
 		foreach ( $surveys as $survey ) {
 			if ( $this->surveyMatchesCurrentPage( $survey ) ) {
-				return $survey->getId();
+				$ids[] = $survey->getId();
 			}
 		}
 
-		return null;
+		return $ids;
+	}
+
+	/**
+	 * Return the ID of the first published survey that targets the current
+	 * page, or null if no survey matches.
+	 *
+	 * @return int|null
+	 * @since 1.0.0
+	 */
+	public function resolveForCurrentPage(): ?int {
+		$ids = $this->resolveAllForCurrentPage();
+		return $ids[0] ?? null;
 	}
 
 	// ------------------------------------------------------------------

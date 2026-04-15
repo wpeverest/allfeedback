@@ -4,6 +4,19 @@ import '../../styles/frontend.pcss';
 // Config types (matches FrontendServiceProvider localized data)
 // ---------------------------------------------------------------------------
 
+/**
+ * Per-survey display-gate configuration, emitted by the PHP orchestrator for
+ * each survey that targets the current page.  The JS orchestrator iterates
+ * this list and mounts the first entry that passes all client-side gates.
+ */
+interface SurveyConfig {
+	id:                 number;
+	show_to?:           'all' | 'logged_in' | 'logged_out';
+	display_frequency?: 'once' | 'until_submit';
+	max_impressions?:   number;
+	reshow_after_days?: number;
+}
+
 interface AllfbSettings {
 	color:              string;
 	position:           'bottom-right' | 'bottom-left' | 'side-tab';
@@ -11,13 +24,10 @@ interface AllfbSettings {
 	delay:              number;
 	scroll_threshold:   number;
 	show_on_mobile:     boolean;
-	survey_id?:         number;  // injected by TargetingEngine
-
-	// Per-form overrides (merged server-side from form display settings)
-	show_to?:           'all' | 'logged_in' | 'logged_out';
-	display_frequency?: 'once' | 'until_submit';
-	max_impressions?:   number;
-	reshow_after_days?: number;
+	/** @deprecated use survey_configs — kept for back-compat */
+	survey_id?:         number;
+	/** Ordered list of surveys targeting this page (most-recent first). */
+	survey_configs?:    SurveyConfig[];
 }
 
 interface AllfbConfig {
@@ -110,8 +120,23 @@ function bootstrap(): void {
 		return;
 	}
 
-	// Mount floating widget if a survey is targeted for this page.
-	new AllfbWidget( cfg ).mount();
+	// Build the ordered survey list.  Prefer the new survey_configs array; fall
+	// back to the legacy scalar survey_id for backward compatibility.
+	const surveyConfigs: SurveyConfig[] = settings.survey_configs?.length
+		? settings.survey_configs
+		: settings.survey_id
+			? [ { id: settings.survey_id } ]
+			: [];
+
+	// Orchestrator: iterate surveys in priority order (most-recent first) and
+	// mount the first one that passes all client-side gates.
+	for ( const surveyConfig of surveyConfigs ) {
+		const widget = new AllfbWidget( cfg, surveyConfig );
+		if ( widget.canMount() ) {
+			widget.mount();
+			break;
+		}
+	}
 
 	// Mount inline embeds rendered by the [allfb_survey] shortcode.
 	initEmbeds( cfg );
@@ -182,29 +207,34 @@ async function fetchAndRender(
 
 class AllfbWidget {
 
-	private cfg:      AllfbConfig;
-	private root:     HTMLDivElement;
-	private launcher: HTMLButtonElement;
-	private panel:    HTMLDivElement;
+	private cfg:          AllfbConfig;
+	private surveyConfig: SurveyConfig;
+
+	// DOM nodes — null until mount() builds them (lazy).
+	private root:     HTMLDivElement  | null = null;
+	private launcher: HTMLButtonElement | null = null;
+	private panel:    HTMLDivElement  | null = null;
 	private isOpen  = false;
 	private loaded  = false;
 
-	constructor( cfg: AllfbConfig ) {
-		this.cfg      = cfg;
-		this.root     = this.buildRoot();
-		this.launcher = this.buildLauncher();
-		this.panel    = this.buildPanel();
+	constructor( cfg: AllfbConfig, surveyConfig: SurveyConfig ) {
+		this.cfg          = cfg;
+		this.surveyConfig = surveyConfig;
+	}
+
+	/**
+	 * Pure gate check — no side effects, no DOM.
+	 * The orchestrator calls this before deciding which survey to mount.
+	 */
+	canMount(): boolean {
+		return this.checkAudience() && this.checkFrequency();
 	}
 
 	mount(): void {
-		// No floating widget if there's no targeted survey.
-		if ( ! this.cfg.settings.survey_id ) return;
-
-		// Audience gate: skip if the page visitor doesn't match the intended audience.
-		if ( ! this.checkAudience() ) return;
-
-		// Frequency gate: skip if impression/cooldown limits have been reached.
-		if ( ! this.checkFrequency() ) return;
+		// Build DOM lazily — only after gates pass.
+		this.root     = this.buildRoot();
+		this.launcher = this.buildLauncher();
+		this.panel    = this.buildPanel();
 
 		this.root.appendChild( this.launcher );
 		this.root.appendChild( this.panel );
@@ -225,6 +255,7 @@ class AllfbWidget {
 	}
 
 	private open(): void {
+		if ( ! this.launcher || ! this.panel ) return;
 		this.isOpen = true;
 		this.launcher.classList.add( 'is-open' );
 		this.launcher.setAttribute( 'aria-expanded', 'true' );
@@ -238,6 +269,7 @@ class AllfbWidget {
 	}
 
 	private close(): void {
+		if ( ! this.launcher || ! this.panel ) return;
 		this.isOpen = false;
 		this.launcher.classList.remove( 'is-open' );
 		this.launcher.setAttribute( 'aria-expanded', 'false' );
@@ -309,10 +341,9 @@ class AllfbWidget {
 	// ── Survey load ───────────────────────────────────────────────────────
 
 	private loadSurvey(): void {
-		const body      = this.panel.querySelector<HTMLElement>( '.allfb-panel__body' )!;
-		const surveyId  = this.cfg.settings.survey_id!;
+		const body = this.panel!.querySelector<HTMLElement>( '.allfb-panel__body' )!;
 
-		fetchAndRender( this.cfg, surveyId, body, this.cfg.submitNonce ).catch( () => {
+		fetchAndRender( this.cfg, this.surveyConfig.id, body, this.cfg.submitNonce ).catch( () => {
 			body.innerHTML = '<p class="allfb-panel__error">Unable to load survey.</p>';
 		} );
 	}
@@ -348,7 +379,7 @@ class AllfbWidget {
 	 * WordPress adds `logged-in` to <body> for authenticated users.
 	 */
 	private checkAudience(): boolean {
-		const showTo = this.cfg.settings.show_to ?? 'all';
+		const showTo = this.surveyConfig.show_to ?? 'all';
 		if ( showTo === 'all' ) return true;
 		const isLoggedIn = document.body.classList.contains( 'logged-in' );
 		return showTo === 'logged_in' ? isLoggedIn : ! isLoggedIn;
@@ -364,10 +395,10 @@ class AllfbWidget {
 	 *                    times, respecting the reshow_after_days cooldown
 	 */
 	private checkFrequency(): boolean {
-		const { display_frequency, max_impressions, reshow_after_days } = this.cfg.settings;
+		const { display_frequency, max_impressions, reshow_after_days } = this.surveyConfig;
 
 		// No restrictions configured — always show.
-		if ( ! display_frequency || display_frequency === 'until_submit' && ! max_impressions && ! reshow_after_days ) {
+		if ( ! display_frequency || ( display_frequency === 'until_submit' && ! max_impressions && ! reshow_after_days ) ) {
 			return true;
 		}
 
@@ -390,7 +421,7 @@ class AllfbWidget {
 	// ── localStorage helpers ──────────────────────────────────────────────
 
 	private widgetStateKey(): string {
-		return `allfb_w_${ this.cfg.settings.survey_id }`;
+		return `allfb_w_${ this.surveyConfig.id }`;
 	}
 
 	private loadWidgetState(): { impressions: number; lastShown: number | null } {
@@ -412,7 +443,7 @@ class AllfbWidget {
 	}
 
 	private reveal(): void {
-		this.root.classList.add( 'is-revealed' );
+		this.root!.classList.add( 'is-revealed' );
 		this.recordImpression();
 	}
 }
