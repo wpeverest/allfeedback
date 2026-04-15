@@ -219,10 +219,17 @@ const FormBuilder = () => {
 	const historyRef                        = useRef<FormSection[][]>([[]]);
 	const [historyIdx, setHistoryIdx]       = useState(0);
 
-	const dataInitializedRef = useRef(false);
+	const initializedFormIdRef = useRef<number | undefined>(undefined);
+
 	useEffect(() => {
-		if (!surveyData || dataInitializedRef.current) return;
-		dataInitializedRef.current = true;
+		initializedFormIdRef.current = undefined;
+		setIsDirty(false);
+		setActiveTab('builder');
+	}, [formId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+	useEffect(() => {
+		if (!surveyData || surveyData.id === initializedFormIdRef.current) return;
+		initializedFormIdRef.current = surveyData.id;
 		const loadedSections = deserializeFormSchema(surveyData.form_schema);
 		const loadedSettings = surveyData.settings
 			? { ...DEFAULT_FORM_SETTINGS, ...deserializeSettings(surveyData.settings as Record<string, unknown>) }
@@ -240,8 +247,7 @@ const FormBuilder = () => {
 			titleSnapshotRef.current = surveyData.title;
 			setIsEditingTitle(true);
 		}
-
-	}, [surveyData]);
+	}, [surveyData]); // eslint-disable-line react-hooks/exhaustive-deps
 	const canUndo                           = historyIdx > 0;
 	const canRedo                           = historyIdx < historyRef.current.length - 1;
 

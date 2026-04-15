@@ -80,21 +80,11 @@ export const Route = createFileRoute('/builder/')({
 		};
 	},
 
-	loader: async ({ context: { queryClient }, location }) => {
+	loaderDeps: ({ search }) => ({ id: search.id }),
 
-		let id = (location.search as { id?: number }).id;
-		if ((id === undefined || Number.isNaN(id as number)) && typeof window !== 'undefined') {
-			const qi = window.location.hash.indexOf('?');
-			if (qi !== -1) {
-				const raw = new URLSearchParams(window.location.hash.slice(qi + 1)).get('id');
-				if (raw !== null) {
-					const n = Number(raw);
-					if (!Number.isNaN(n)) id = n;
-				}
-			}
-		}
-		if (id !== undefined && !Number.isNaN(id as number)) {
-			await queryClient.ensureQueryData(surveyQuery(id));
+	loader: async ({ context: { queryClient }, deps: { id } }) => {
+		if (id !== undefined && !Number.isNaN(id)) {
+			await queryClient.ensureQueryData(surveyQuery(id)).catch(() => undefined);
 		}
 	},
 
