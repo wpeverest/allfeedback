@@ -7,7 +7,7 @@ import { useRouter } from '@tanstack/react-router';
 import { Route } from '@/admin/routes/builder.index';
 import { surveyQuery } from '@/admin/queries/surveys';
 import { __ } from '@wordpress/i18n';
-import { ArrowLeft, Check, ChevronDown, Info, LayoutGrid, Loader2, Palette, Pencil, Redo2, Settings2, Undo2, X } from 'lucide-react';
+import { ArrowLeft, Check, ChevronDown, Code2, Copy, Info, LayoutGrid, Loader2, Palette, Pencil, Redo2, Settings2, Undo2, X } from 'lucide-react';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import BuilderCanvas from './builder/BuilderCanvas';
@@ -513,6 +513,44 @@ const FormBuilder = () => {
 						<span className="text-[12px] font-medium text-amber-600">
 							{__('Unsaved changes', 'all-feedback')}
 						</span>
+					</div>
+				)}
+
+				{formId && (
+					<div className="flex items-center gap-1 rounded-lg border border-border/60 bg-muted/30 pl-2.5 pr-1 py-1">
+						<Code2 className="size-3.5 shrink-0 text-muted-foreground/40" />
+						<span className="font-mono text-[11px] text-foreground/50">
+							{`[allfb_survey id="${formId}"]`}
+						</span>
+						<button
+							type="button"
+							onClick={() => {
+								const text = `[allfb_survey id="${formId}"]`;
+								if (navigator.clipboard?.writeText) {
+									void navigator.clipboard.writeText(text).then(() => {
+										toast.success(__('Shortcode copied to clipboard.', 'all-feedback'));
+									});
+								} else {
+									const el = document.createElement('textarea');
+									el.value = text;
+									Object.assign(el.style, { position: 'fixed', opacity: '0', top: '0', left: '0' });
+									document.body.appendChild(el);
+									el.focus();
+									el.select();
+									try {
+										document.execCommand('copy');
+										toast.success(__('Shortcode copied to clipboard.', 'all-feedback'));
+									} catch {
+										toast.error(__('Failed to copy shortcode.', 'all-feedback'));
+									}
+									document.body.removeChild(el);
+								}
+							}}
+							title={__('Copy shortcode', 'all-feedback')}
+							className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/40 transition-colors hover:bg-primary/10 hover:text-primary"
+						>
+							<Copy className="size-3.5" />
+						</button>
 					</div>
 				)}
 

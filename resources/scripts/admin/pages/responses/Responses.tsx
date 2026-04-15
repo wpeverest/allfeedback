@@ -386,10 +386,13 @@ const Responses = () => {
 										key={response.id}
 										className={cn(
 											'border-b border-border last:border-0 transition-colors',
+											!response.is_read && !isSelected
+												? 'border-l-[3px] border-l-primary/50'
+												: 'border-l-[3px] border-l-transparent',
 											isSelected
 												? 'bg-primary/[0.05]'
 												: !response.is_read
-													? 'bg-muted/[0.45] hover:bg-muted/[0.6]'
+													? 'bg-muted/[0.22] hover:bg-muted/[0.36]'
 													: 'hover:bg-muted/20',
 										)}
 									>

@@ -33,6 +33,7 @@ import {
 	ArrowUp,
 	ArrowUpDown,
 	ArrowUpRight,
+	Code2,
 	Copy,
 	Edit2,
 	FileText,
@@ -72,6 +73,29 @@ const PER_PAGE_OPTIONS = [10, 25, 50];
 
 const cellCls = 'text-[14px] font-normal leading-[20px] text-[oklch(0.446_0.03_256.802)]';
 
+const copyShortcode = (id: number) => {
+	const text = `[allfb_survey id="${id}"]`;
+	if (navigator.clipboard?.writeText) {
+		void navigator.clipboard.writeText(text).then(() => {
+			toast.success(__('Shortcode copied to clipboard.', 'all-feedback'));
+		});
+	} else {
+		const el = document.createElement('textarea');
+		el.value = text;
+		Object.assign(el.style, { position: 'fixed', opacity: '0', top: '0', left: '0' });
+		document.body.appendChild(el);
+		el.focus();
+		el.select();
+		try {
+			document.execCommand('copy');
+			toast.success(__('Shortcode copied to clipboard.', 'all-feedback'));
+		} catch {
+			toast.error(__('Failed to copy shortcode.', 'all-feedback'));
+		}
+		document.body.removeChild(el);
+	}
+};
+
 const SkeletonRow = () => (
 	<tr className="border-b border-border">
 		<td className="w-12 px-4 py-5">
@@ -91,6 +115,9 @@ const SkeletonRow = () => (
 		</td>
 		<td className="w-32 px-4 py-5">
 			<div className="h-6 w-20 animate-pulse rounded-full bg-muted" />
+		</td>
+		<td className="w-[120px] px-4 py-5">
+			<div className="h-6 w-36 animate-pulse rounded-md bg-muted" />
 		</td>
 		<td className="w-24 px-4 py-5">
 			<div className="flex items-center gap-1.5">
@@ -386,6 +413,9 @@ const AllForms = () => {
 								<th className="w-32 px-4 py-4 text-left">
 									<ColHead label={__('Status', 'all-feedback')} />
 								</th>
+								<th className="w-[120px] px-4 py-4 text-left">
+									<ColHead label={__('Shortcode', 'all-feedback')} />
+								</th>
 								<th className="w-24 px-4 py-4 text-left">
 									<ColHead label={__('Actions', 'all-feedback')} />
 								</th>
@@ -396,7 +426,7 @@ const AllForms = () => {
 							{isLoading && Array.from({ length: 5 }, (_, i) => <SkeletonRow key={i} />)}
 
 							{isError && !isLoading && (
-								<tr><td colSpan={7}>
+								<tr><td colSpan={8}>
 									<EmptyState
 										icon={AlertCircle}
 										title={__('Failed to load forms', 'all-feedback')}
@@ -406,7 +436,7 @@ const AllForms = () => {
 							)}
 
 							{!isLoading && !isError && surveys.length === 0 && (
-								<tr><td colSpan={7}>
+								<tr><td colSpan={8}>
 									<EmptyState
 										icon={FileText}
 										title={search || status !== 'all'
@@ -492,6 +522,23 @@ const AllForms = () => {
 											</Badge>
 										</td>
 
+										<td className="w-[120px] px-4 py-5">
+											<div className="flex max-w-full items-center gap-1 rounded-md border border-border/60 bg-muted/30 pl-2 pr-1 py-1">
+												<Code2 className="size-3 shrink-0 text-muted-foreground/40" />
+												<span className="min-w-0 flex-1 truncate font-mono text-[11px] text-foreground/55">
+													{`[allfb_survey id="${survey.id}"]`}
+												</span>
+												<button
+													type="button"
+													onClick={() => copyShortcode(survey.id)}
+													title={__('Copy shortcode', 'all-feedback')}
+													className="flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground/40 transition-colors hover:bg-primary/10 hover:text-primary"
+												>
+													<Copy className="size-3" />
+												</button>
+											</div>
+										</td>
+
 										<td className="w-24 px-4 py-5">
 											<div className="flex items-center gap-1">
 												<button
@@ -550,6 +597,7 @@ const AllForms = () => {
 															}
 															{__('Clone', 'all-feedback')}
 														</DropdownMenuItem>
+
 
 														{survey.status !== 'trashed' && (
 															<DropdownMenuItem
