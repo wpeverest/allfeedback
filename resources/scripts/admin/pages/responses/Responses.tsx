@@ -30,7 +30,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import type { SurveyResponse } from '@/admin/api/surveys';
 
-const cellCls = 'text-[14px] font-normal leading-[20px] text-[oklch(0.446_0.03_256.802)]';
+const cellCls = 'text-base font-normal leading-5 text-body-text';
 
 const getResponseSummary = (data: Record<string, unknown> | null): string => {
 	if (!data) return '—';
@@ -206,7 +206,7 @@ const Responses = () => {
 		},
 	});
 
-	const colHeadCls = 'flex items-center gap-1 text-[12px] font-semibold uppercase tracking-wide leading-[16px] select-none text-[oklch(0.446_0.03_256.802)]';
+	const colHeadCls = 'flex items-center gap-1 text-sm font-semibold uppercase tracking-wide leading-4 select-none text-body-text';
 
 	const ColHead = ({ label, col }: { label: string; col?: 'id' | 'created_at' }) => {
 		const isActive = col !== undefined && sortBy === col;
@@ -454,7 +454,7 @@ const Responses = () => {
 													type="button"
 													onClick={() => openDetail(response)}
 													style={{ border: '1.5px solid #E2E2E8' }}
-													className="flex max-sm:hidden items-center gap-1 rounded-lg bg-primary/[0.04] px-2 py-1 text-[11px] font-medium text-primary/80 transition-colors hover:bg-primary/[0.08] hover:text-primary"
+													className="flex max-sm:hidden items-center gap-1 rounded-lg bg-primary/[0.04] px-2 py-1 text-xs font-medium text-primary/80 transition-colors hover:bg-primary/[0.08] hover:text-primary"
 												>
 													<Eye className="size-3" />
 													{__('View', 'all-feedback')}

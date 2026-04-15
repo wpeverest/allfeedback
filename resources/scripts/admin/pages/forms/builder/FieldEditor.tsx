@@ -37,7 +37,7 @@ const RequiredSwitch = ({ value, onChange }: { value: boolean; onChange: (v: boo
 		onClick={() => onChange(!value)}
 		className="flex items-center gap-1.5 rounded-md px-1.5 py-1 transition-colors hover:bg-black/[0.04]"
 	>
-		<span className="text-[11px] font-medium text-muted-foreground/60 select-none">
+		<span className="text-sm font-medium text-muted-foreground/60 select-none">
 			{__('Required', 'all-feedback')}
 		</span>
 		<span className={cn(
@@ -111,7 +111,7 @@ const OptionRow = ({
 				value={value}
 				onChange={(e) => onChange(e.target.value)}
 				placeholder={`Option ${index + 1}`}
-				className="option-row-input flex-1 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none"
+				className="option-row-input flex-1 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none"
 			/>
 		</div>
 
@@ -260,7 +260,7 @@ const QuestionEditor = ({ value, onChange, autoFocus, focusTrigger }: QuestionEd
 					onMouseDown={(e) => { e.preventDefault(); clearAllMarks(); }}
 					className="flex size-[22px] items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-muted hover:text-foreground"
 				>
-					<span className="text-[10px] font-bold leading-none">T<span className="text-[8px]">✕</span></span>
+					<span className="text-2xs font-bold leading-none">T<span className="text-2xs">✕</span></span>
 				</button>
 
 				<span className="mx-1 h-3.5 w-px bg-border/70" />
@@ -268,7 +268,7 @@ const QuestionEditor = ({ value, onChange, autoFocus, focusTrigger }: QuestionEd
 					type="button"
 					title={__('Close editor', 'all-feedback')}
 					onMouseDown={(e) => { e.preventDefault(); editor?.commands.blur(); setIsOpen(false); }}
-					className="flex h-[22px] items-center justify-center rounded px-1.5 text-[10.5px] font-medium text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
+					className="flex h-[22px] items-center justify-center rounded px-1.5 text-2xs font-medium text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
 				>
 					{__('Close', 'all-feedback')}
 				</button>
@@ -313,14 +313,14 @@ const TextFieldConfig = ({
 		/>
 
 		<div className="space-y-1.5">
-			<label className="block text-[11.5px] font-medium text-muted-foreground/70">
+			<label className="block text-sm font-medium text-muted-foreground/70">
 				{__('Placeholder', 'all-feedback')}
 			</label>
 			<input
 				value={field.placeholder ?? ''}
 				onChange={(e) => onChange({ ...field, placeholder: e.target.value })}
 				placeholder="e.g. Enter your answer…"
-				className="w-full rounded-lg border border-border/70 bg-transparent px-3 py-2 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/10"
+				className="w-full rounded-lg border border-border/70 bg-transparent px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/10"
 			/>
 		</div>
 	</div>
@@ -405,7 +405,7 @@ const OptionsConfig = ({
 				<button
 					type="button"
 					onClick={() => addOptionAfter(options.length - 1)}
-					className="mt-1.5 flex items-center gap-1.5 pl-[22px] text-[12.5px] text-muted-foreground/60 transition-colors hover:text-primary"
+					className="mt-1.5 flex items-center gap-1.5 pl-[22px] text-sm text-muted-foreground/60 transition-colors hover:text-primary"
 				>
 					<Plus className="size-3.5" />
 					{__('Add option', 'all-feedback')}
@@ -427,9 +427,9 @@ const StarRatingConfig = ({
 	focusTrigger?: number;
 }) => {
 	const range    = field.starRange ?? 5;
-	const labelCls = 'block text-[11.5px] font-medium text-muted-foreground/70';
+	const labelCls = 'block text-sm font-medium text-muted-foreground/70';
 	const chipCls  = (active: boolean) => cn(
-		'flex h-8 w-10 items-center justify-center rounded-lg border text-[12px] font-semibold transition-colors',
+		'flex h-8 w-10 items-center justify-center rounded-lg border text-sm font-semibold transition-colors',
 		active
 			? 'border-primary bg-primary/10 text-primary'
 			: 'border-border/60 text-muted-foreground/60 hover:border-primary/40 hover:text-primary/70',
@@ -472,8 +472,8 @@ const ScaleConfig = ({
 }) => {
 	const min      = field.scaleMin ?? 0;
 	const max      = field.scaleMax ?? 10;
-	const labelCls = 'block text-[11.5px] font-medium text-muted-foreground/70';
-	const inputCls = 'w-full rounded-lg border border-border/70 bg-transparent px-3 py-2 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/10';
+	const labelCls = 'block text-sm font-medium text-muted-foreground/70';
+	const inputCls = 'w-full rounded-lg border border-border/70 bg-transparent px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/10';
 
 	return (
 		<div className="space-y-4">
@@ -496,12 +496,12 @@ const ScaleConfig = ({
 								const v = parseInt(e.target.value, 10);
 								if (!isNaN(v) && v >= 0 && v < max) onChange({ ...field, scaleMin: v });
 							}}
-							className="h-8 w-16 rounded-lg border border-border/70 bg-transparent px-2.5 text-center text-[13px] font-semibold text-foreground focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/10"
+							className="h-8 w-16 rounded-lg border border-border/70 bg-transparent px-2.5 text-center text-sm font-semibold text-foreground focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/10"
 						/>
-						<span className="text-[10px] text-muted-foreground/50">{__('Start', 'all-feedback')}</span>
+						<span className="text-xs text-muted-foreground/50">{__('Start', 'all-feedback')}</span>
 					</div>
 
-					<span className="mb-3.5 text-[13px] text-muted-foreground/40">–</span>
+					<span className="mb-3.5 text-sm text-muted-foreground/40">–</span>
 
 					<div className="flex flex-col items-center gap-0.5">
 						<input
@@ -512,9 +512,9 @@ const ScaleConfig = ({
 								const v = parseInt(e.target.value, 10);
 								if (!isNaN(v) && v > min) onChange({ ...field, scaleMax: v });
 							}}
-							className="h-8 w-16 rounded-lg border border-border/70 bg-transparent px-2.5 text-center text-[13px] font-semibold text-foreground focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/10"
+							className="h-8 w-16 rounded-lg border border-border/70 bg-transparent px-2.5 text-center text-sm font-semibold text-foreground focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/10"
 						/>
-						<span className="text-[10px] text-muted-foreground/50">{__('End', 'all-feedback')}</span>
+						<span className="text-xs text-muted-foreground/50">{__('End', 'all-feedback')}</span>
 					</div>
 				</div>
 			</div>
@@ -561,7 +561,7 @@ const NpsConfig = ({
 			autoFocus={autoFocus}
 			focusTrigger={focusTrigger}
 		/>
-		<p className="text-[11.5px] text-muted-foreground/60">
+		<p className="text-sm text-muted-foreground/60">
 			{__('Fixed 0 – 10 scale. No configuration needed.', 'all-feedback')}
 		</p>
 	</div>
@@ -705,7 +705,7 @@ const FieldEditor = ({
 					}}
 					onMouseDown={(e) => e.stopPropagation()}
 				>
-					<span className="min-w-0 flex-1 truncate text-[12px] text-foreground/75">
+					<span className="min-w-0 flex-1 truncate text-sm text-foreground/80">
 						{htmlToText(field.label) || __('Untitled', 'all-feedback')}
 					</span>
 					<Pencil className="size-3 shrink-0 text-muted-foreground/40 opacity-0 transition-opacity group-hover/title:opacity-100" />

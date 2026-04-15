@@ -11,7 +11,7 @@ import { useEffect, useRef } from 'react';
 
 const DEFAULT_WIDGET_COLOR = '#6366F1';
 
-const labelCls = 'text-[13.5px] font-normal text-foreground/80';
+const labelCls = 'text-base font-normal text-foreground/80';
 
 const Row = ({ label, children, top }: { label: string; children: React.ReactNode; top?: boolean }) => (
 	<div className={cn('flex gap-4', top ? 'items-start' : 'items-center')}>
@@ -22,7 +22,7 @@ const Row = ({ label, children, top }: { label: string; children: React.ReactNod
 
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
 	<div className="flex items-center gap-3">
-		<span className="text-[11.5px] font-semibold uppercase tracking-widest text-muted-foreground/50">
+		<span className="text-2xs font-semibold uppercase tracking-widest text-muted-foreground/50">
 			{children}
 		</span>
 		<div className="flex-1 border-t border-border/50" />
@@ -81,7 +81,7 @@ const ColorPicker = ({ value, onChange }: { value: string; onChange: (v: string)
 
 			<div className="flex items-center gap-2">
 				<div className="size-4 rounded border border-border/60" style={{ backgroundColor: value }} />
-				<code className="text-[12px] text-muted-foreground/70">{value.toUpperCase()}</code>
+				<code className="text-xs text-muted-foreground/70">{value.toUpperCase()}</code>
 			</div>
 		</div>
 	);
@@ -198,7 +198,7 @@ const PositionPicker = ({ value, onChange, color }: { value: Position; onChange:
 					type="button"
 					onClick={() => onChange(pos.value)}
 					className={cn(
-						'rounded-md px-4 py-2 text-[13px] font-medium transition-colors',
+						'rounded-md px-4 py-2 text-sm font-medium transition-colors',
 						value === pos.value
 							? 'bg-primary/10 text-primary'
 							: 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
@@ -317,13 +317,13 @@ const GeneralSettings = () => {
 				<div className="flex size-9 items-center justify-center rounded-xl bg-primary/10">
 					<Settings2 className="size-[18px] text-primary" />
 				</div>
-				<h3 className="text-[16px] font-semibold text-foreground" style={{ margin: 0 }}>
+				<h3 className="text-md font-semibold text-foreground" style={{ margin: 0 }}>
 					{__('General', 'all-feedback')}
 				</h3>
 				{sharedIsDirty && !isSaving && (
-					<div className="ml-auto flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1">
-						<span className="size-1.5 animate-pulse rounded-full bg-amber-400" />
-						<span className="text-[12px] font-medium text-amber-600">
+					<div className="ml-auto flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-3 py-1.5">
+						<span className="size-2 animate-pulse rounded-full bg-amber-500" />
+						<span className="text-sm font-semibold text-amber-700">
 							{__('Unsaved changes', 'all-feedback')}
 						</span>
 					</div>

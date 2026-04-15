@@ -69,7 +69,7 @@ const FieldTypeMenu = ({ triggerRef, onSelect, onClose }: FieldTypeMenuProps) =>
 					key={type}
 					type="button"
 					onClick={() => { onSelect(type); onClose(); }}
-					className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-[13px] text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+					className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
 				>
 					<Icon className="size-4 shrink-0" />
 					{label}
@@ -81,12 +81,12 @@ const FieldTypeMenu = ({ triggerRef, onSelect, onClose }: FieldTypeMenuProps) =>
 			{PRO_FIELD_TYPES.map(({ label, description, Icon }) => (
 				<div
 					key={label}
-					className="flex w-full cursor-not-allowed items-center gap-3 rounded-lg px-4 py-3 text-left text-[13px] text-muted-foreground opacity-55"
+					className="flex w-full cursor-not-allowed items-center gap-3 rounded-lg px-4 py-3 text-left text-sm text-muted-foreground opacity-55"
 					title={__('Available in Pro plan', 'all-feedback')}
 				>
 					<Icon className="size-4 shrink-0" />
 					<span className="flex-1">{description}</span>
-					<span className="shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[9.5px] font-semibold text-amber-600">
+					<span className="shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-2xs font-semibold text-amber-600">
 						Pro
 					</span>
 				</div>

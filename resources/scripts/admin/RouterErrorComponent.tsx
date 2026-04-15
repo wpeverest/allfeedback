@@ -11,18 +11,18 @@ export function RouterErrorComponent({ error }: Props) {
 				<div className="mb-4 text-center">
 					<span className="inline-flex items-center gap-2">
 						<AlertTriangle className="size-4 shrink-0 text-red-500" />
-						<span className="text-[15px] font-semibold text-gray-900">
+						<span className="text-md font-semibold text-foreground">
 							{__('Something went wrong', 'all-feedback')}
 						</span>
 					</span>
 				</div>
 
-				<p className="mb-4 text-center text-[13px] text-red-400">
+				<p className="mb-4 text-center text-sm text-red-400">
 					{error.message || __('An unexpected error occurred.', 'all-feedback')}
 				</p>
 
 				{error.stack && (
-					<pre className="mb-6 max-h-48 overflow-y-auto rounded-lg bg-gray-50 p-3 font-mono text-[11px] break-all whitespace-pre-wrap text-gray-400">
+					<pre className="mb-6 max-h-48 overflow-y-auto rounded-lg bg-gray-50 p-3 font-mono text-2xs break-all whitespace-pre-wrap text-gray-400">
 						{error.stack}
 					</pre>
 				)}

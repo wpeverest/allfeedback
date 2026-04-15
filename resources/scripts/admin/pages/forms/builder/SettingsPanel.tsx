@@ -11,7 +11,7 @@ import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { cn } from '@/lib/utils';
 import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query';
 import { __ } from '@wordpress/i18n';
-import { FileText, Lock, Loader2, Search, X } from 'lucide-react';
+import { FileText, Loader2, Search, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type {
@@ -28,18 +28,18 @@ interface SettingsPanelProps {
 	onScrollChange?: (scrolled: boolean, progress: number) => void;
 }
 
-const labelCls = 'text-[13.5px] font-normal text-foreground/80';
+const labelCls = 'text-base font-normal text-foreground/80';
 
 const inputCls = [
 	'flex h-9 w-full rounded-lg border border-border/70 bg-transparent px-3 py-2',
-	'text-[13px] text-foreground placeholder:text-muted-foreground/40',
+	'text-sm text-foreground placeholder:text-muted-foreground/40',
 	'transition-colors focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/10',
 	'disabled:cursor-not-allowed disabled:opacity-50',
 ].join(' ');
 
 const textareaCls = [
 	'flex w-full resize-none rounded-lg border border-border/70 bg-transparent px-3 py-2',
-	'text-[13px] text-foreground placeholder:text-muted-foreground/40',
+	'text-sm text-foreground placeholder:text-muted-foreground/40',
 	'transition-colors focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/10',
 	'disabled:cursor-not-allowed disabled:opacity-50',
 ].join(' ');
@@ -54,7 +54,7 @@ const Row = ({ label, children }: { label: string; children: React.ReactNode }) 
 const Card = ({ title, children }: { title: string; children: React.ReactNode }) => (
 	<div className="overflow-hidden rounded-2xl border border-border/60 bg-white">
 		<div className="border-b border-border/50 px-5 py-3.5">
-			<h3 className="text-[14px] font-semibold text-foreground" style={{ margin: 0 }}>
+			<h3 className="text-base font-semibold text-foreground" style={{ margin: 0 }}>
 				{title}
 			</h3>
 		</div>
@@ -97,7 +97,7 @@ const Chips = <T extends string>({
 				type="button"
 				onClick={() => onChange(opt.value)}
 				className={cn(
-					'rounded-lg border px-3 py-2 text-[13.5px] transition-colors',
+					'rounded-lg border px-3 py-2 text-base transition-colors',
 					value === opt.value
 						? 'border-primary/30 bg-primary/10 font-medium text-primary'
 						: 'border-border/60 bg-muted/30 text-foreground/70 hover:border-border hover:bg-muted/60',
@@ -292,7 +292,7 @@ const ContentPicker = ({
 						<Loader2 className="size-4 animate-spin text-muted-foreground/50" />
 					</div>
 				) : visible.length === 0 ? (
-					<p className="px-2 py-1.5 text-[14px] text-muted-foreground">
+					<p className="px-2 py-1.5 text-base text-muted-foreground">
 						{results.length > 0
 							? __('All results already selected.', 'all-feedback')
 							: query
@@ -307,7 +307,7 @@ const ContentPicker = ({
 								key={item.id}
 								type="button"
 								onClick={() => select(item)}
-								className="relative flex w-full cursor-pointer select-none items-center gap-2 rounded-md py-1.5 pl-2 pr-8 text-[14px] text-foreground outline-none transition-colors hover:bg-accent"
+								className="relative flex w-full cursor-pointer select-none items-center gap-2 rounded-md py-1.5 pl-2 pr-8 text-base text-foreground outline-none transition-colors hover:bg-accent"
 							>
 								<span className="min-w-0 flex-1 truncate text-left">{item.title}</span>
 							</button>
@@ -326,7 +326,7 @@ const ContentPicker = ({
 					{selected.map(({ id, title }) => (
 						<span
 							key={id}
-							className="flex items-center gap-1.5 rounded-lg border border-border/60 bg-muted/40 px-2.5 py-1 text-[12px] text-foreground/80"
+							className="flex items-center gap-1.5 rounded-lg border border-border/60 bg-muted/40 px-2.5 py-1 text-xs text-foreground/80"
 						>
 							<FileText className="size-3 shrink-0 text-muted-foreground/60" />
 							<span className="max-w-[140px] truncate">{title}</span>
@@ -374,51 +374,6 @@ const DISMISS_UNIT_OPTIONS: { value: DismissUnit; label: string }[] = [
 	{ value: 'weeks', label: __('Weeks', 'all-feedback') },
 ];
 
-const ProCard = ({ title }: { title: string }) => (
-	<div className="relative overflow-hidden rounded-2xl border border-border/60 bg-white">
-
-		<div className="pointer-events-none select-none opacity-60">
-			<div className="flex items-center justify-between border-b border-border/50 px-5 py-3.5">
-				<h3 className="text-[14px] font-semibold text-foreground" style={{ margin: 0 }}>
-					{title}
-				</h3>
-				<span className="flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-600">
-					<Lock className="size-2.5" />
-					PRO
-				</span>
-			</div>
-			<div className="space-y-4 p-5">
-				<Row label={__('Trigger', 'all-feedback')}>
-					<div className="flex h-10 w-full items-center justify-between rounded-lg border border-border bg-muted/50 px-3 text-[13px] text-foreground/70">
-						<span>{__('Time delay', 'all-feedback')}</span>
-						<span className="text-muted-foreground/50">▾</span>
-					</div>
-				</Row>
-				<Row label={__('Wait for', 'all-feedback')}>
-					<div className="flex gap-2">
-						<div className="flex h-9 w-24 items-center rounded-lg border border-border bg-muted/50 px-3 text-[13px] text-foreground/60">
-							3
-						</div>
-						<div className="flex h-9 flex-1 items-center justify-between rounded-lg border border-border bg-muted/50 px-3 text-[13px] text-foreground/60">
-							<span>{__('Seconds', 'all-feedback')}</span>
-							<span className="text-muted-foreground/50">▾</span>
-						</div>
-					</div>
-				</Row>
-				<Row label={__('Scroll depth', 'all-feedback')}>
-					<div className="flex items-center gap-3">
-						<div className="h-1.5 flex-1 rounded-full bg-border">
-							<div className="h-full w-1/2 rounded-full bg-primary/40" />
-						</div>
-						<div className="flex h-9 w-20 items-center rounded-lg border border-border bg-muted/50 px-3 text-[13px] text-foreground/60">
-							50
-						</div>
-					</div>
-				</Row>
-			</div>
-		</div>
-	</div>
-);
 
 const SettingsPanel = ({ settings, onChange, onScrollChange }: SettingsPanelProps) => {
 	const update = (patch: Partial<FormSettings>) => onChange({ ...settings, ...patch });
@@ -507,9 +462,7 @@ const SettingsPanel = ({ settings, onChange, onScrollChange }: SettingsPanelProp
 					</div>
 				</Card>
 
-				<ProCard title={__('Display Trigger', 'all-feedback')} />
-
-				<Card title={__('Frequency & Limits', 'all-feedback')}>
+<Card title={__('Frequency & Limits', 'all-feedback')}>
 					<Row label={__('Display frequency', 'all-feedback')}>
 						<Select value={settings.displayFrequency} onValueChange={(v) => update({ displayFrequency: v as DisplayFrequency })}>
 							<SelectTrigger className="w-full">

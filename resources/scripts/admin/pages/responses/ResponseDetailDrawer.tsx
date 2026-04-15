@@ -59,7 +59,7 @@ const ViewField = ({
 	const type = field?.type ?? 'short_text';
 
 	if (value === null || value === undefined || value === '') {
-		return <span className="text-[14px] italic text-muted-foreground">{__('No answer', 'all-feedback')}</span>;
+		return <span className="text-base italic text-muted-foreground">{__('No answer', 'all-feedback')}</span>;
 	}
 
 	if (type === 'checkboxes') {
@@ -69,7 +69,7 @@ const ViewField = ({
 				{(arr as string[]).map((opt) => (
 					<span
 						key={opt}
-						className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[13px] text-foreground"
+						className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/50 px-2 py-0.5 text-sm text-foreground"
 					>
 						<CheckSquare className="size-3 text-primary" />
 						{opt}
@@ -81,7 +81,7 @@ const ViewField = ({
 
 	if (type === 'radio') {
 		return (
-			<span className="inline-flex items-center gap-1.5 text-[14px] text-foreground">
+			<span className="inline-flex items-center gap-1.5 text-base text-foreground">
 				<span className="size-2 rounded-full bg-primary" />
 				{String(value)}
 			</span>
@@ -100,10 +100,10 @@ const ViewField = ({
 			: __('Detractor', 'all-feedback');
 		return (
 			<span className="flex items-center gap-2">
-				<span className={cn('rounded-md border px-2.5 py-0.5 text-[14px] font-semibold tabular-nums', cls)}>
+				<span className={cn('rounded-md border px-2.5 py-0.5 text-base font-semibold tabular-nums', cls)}>
 					{score}
 				</span>
-				<span className={cn('text-[13px] font-medium', cls.split(' ')[0])}>{label}</span>
+				<span className={cn('text-sm font-medium', cls.split(' ')[0])}>{label}</span>
 			</span>
 		);
 	}
@@ -124,7 +124,7 @@ const ViewField = ({
 						/>
 					))}
 				</span>
-				<span className="text-[13px] text-muted-foreground">
+				<span className="text-sm text-muted-foreground">
 					{stars}/{max}
 				</span>
 			</span>
@@ -137,11 +137,11 @@ const ViewField = ({
 		const lowLabel  = (field?.settings?.scaleLowLabel  as string | undefined) ?? '';
 		const highLabel = (field?.settings?.scaleHighLabel as string | undefined) ?? '';
 		return (
-			<span className="flex items-center gap-2 text-[14px]">
+			<span className="flex items-center gap-2 text-base">
 				<span className="tabular-nums font-semibold text-foreground">{String(value)}</span>
 				<span className="text-muted-foreground">/ {scaleMax}</span>
 				{(lowLabel || highLabel) && (
-					<span className="text-[12px] text-muted-foreground">
+					<span className="text-xs text-muted-foreground">
 						({lowLabel && `${scaleMin} = ${lowLabel}`}{lowLabel && highLabel && ', '}{highLabel && `${scaleMax} = ${highLabel}`})
 					</span>
 				)}
@@ -151,13 +151,13 @@ const ViewField = ({
 
 	if (type === 'long_text') {
 		return (
-			<p className="whitespace-pre-wrap text-[14px] leading-relaxed text-foreground">
+			<p className="whitespace-pre-wrap text-base leading-relaxed text-foreground">
 				{String(value)}
 			</p>
 		);
 	}
 
-	return <span className="text-[14px] text-foreground">{String(value)}</span>;
+	return <span className="text-base text-foreground">{String(value)}</span>;
 };
 
 // ---------------------------------------------------------------------------
@@ -176,7 +176,7 @@ const EditField = ({
 	const type = field?.type ?? 'short_text';
 
 	const inputCls = cn(
-		'flex w-full rounded-lg bg-muted/60 border border-transparent px-3 py-2 text-[14px] text-foreground',
+		'flex w-full rounded-lg bg-muted/60 border border-transparent px-3 py-2 text-base text-foreground',
 		'placeholder:text-muted-foreground',
 		'transition-colors focus:border-border focus:bg-white focus:outline-none focus:ring-0',
 		'disabled:cursor-not-allowed disabled:opacity-50',
@@ -198,7 +198,7 @@ const EditField = ({
 		return (
 			<div className="flex flex-col gap-2">
 				{options.map((opt) => (
-					<label key={opt} className="flex cursor-pointer items-center gap-2.5 text-[14px]">
+					<label key={opt} className="flex cursor-pointer items-center gap-2.5 text-base">
 						<input
 							type="radio"
 							className="accent-primary"
@@ -227,7 +227,7 @@ const EditField = ({
 		return (
 			<div className="flex flex-col gap-2">
 				{options.map((opt) => (
-					<label key={opt} className="flex cursor-pointer items-center gap-2.5 text-[14px]">
+					<label key={opt} className="flex cursor-pointer items-center gap-2.5 text-base">
 						<Checkbox
 							checked={selected.includes(opt)}
 							onCheckedChange={() => toggle(opt)}
@@ -305,10 +305,10 @@ const EditField = ({
 
 const MetaRow = ({ label, children }: { label: string; children: React.ReactNode }) => (
 	<div className="flex items-start gap-3 py-3">
-		<span className="w-28 shrink-0 text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">
+		<span className="w-28 shrink-0 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
 			{label}
 		</span>
-		<div className="min-w-0 flex-1 text-[14px] text-foreground">{children}</div>
+		<div className="min-w-0 flex-1 text-base text-foreground">{children}</div>
 	</div>
 );
 
@@ -341,7 +341,7 @@ const FieldRow = ({
 	editContent: React.ReactNode;
 }) => (
 	<div className="border-b border-border py-4 last:border-0">
-		<p className="mb-1.5 text-[12px] font-semibold text-muted-foreground">
+		<p className="mb-1.5 text-xs font-semibold text-muted-foreground">
 			{label}
 			{required && <span className="ml-0.5 text-destructive">*</span>}
 		</p>
@@ -444,14 +444,14 @@ const ResponseDetailDrawer = ({
 					{/* ----- Header ----- */}
 					<div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-4">
 						<div>
-							<Dialog.Title className="text-[15px] font-semibold text-foreground">
+							<Dialog.Title className="text-md font-semibold text-foreground">
 								{__('Response', 'all-feedback')}
-								<span className="ml-1.5 text-[14px] font-normal text-muted-foreground">
+								<span className="ml-1.5 text-base font-normal text-muted-foreground">
 									#{response?.id}
 								</span>
 							</Dialog.Title>
 							{response && (
-								<p className="mt-0.5 text-[12px] text-muted-foreground">
+								<p className="mt-0.5 text-xs text-muted-foreground">
 									{format(new Date(response.created_at), 'MMM d, yyyy · h:mm a')}
 								</p>
 							)}
@@ -500,7 +500,7 @@ const ResponseDetailDrawer = ({
 							>
 								{/* Response fields section */}
 								<div className="px-5">
-									<p className="py-4 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+									<p className="py-4 text-2xs font-semibold uppercase tracking-widest text-muted-foreground">
 										{__('Fields', 'all-feedback')}
 									</p>
 
@@ -566,7 +566,7 @@ const ResponseDetailDrawer = ({
 									))}
 
 									{schemaFields.length === 0 && Object.keys(responseData).length === 0 && (
-										<p className="py-8 text-center text-[14px] text-muted-foreground">
+										<p className="py-8 text-center text-base text-muted-foreground">
 											{__('No response data available.', 'all-feedback')}
 										</p>
 									)}
@@ -574,7 +574,7 @@ const ResponseDetailDrawer = ({
 
 								{/* Metadata section */}
 								<div className="border-t border-border px-5">
-									<p className="py-4 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+									<p className="py-4 text-2xs font-semibold uppercase tracking-widest text-muted-foreground">
 										{__('Details', 'all-feedback')}
 									</p>
 

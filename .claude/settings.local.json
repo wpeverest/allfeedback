@@ -4,7 +4,10 @@
       "Bash(python3:*)",
       "Bash(node:*)",
       "Bash(pnpm add:*)",
-      "Bash(pnpm build:*)"
+      "Bash(pnpm build:*)",
+      "Bash(sort -t: -k3)",
+      "Bash(grep -v \"^\\\\s*//\")",
+      "Bash(grep -v \"^.*//.*amber\")"
     ]
   }
 }

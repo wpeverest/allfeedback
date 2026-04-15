@@ -79,7 +79,7 @@ const ViewField = ({ field, value }: { field: SurveyFormSchemaField | null; valu
 
 	if (value === null || value === undefined || value === '') {
 		return (
-			<span className="text-[13px] italic text-muted-foreground/60">
+			<span className="text-sm italic text-muted-foreground/60">
 				{__('No answer provided', 'all-feedback')}
 			</span>
 		);
@@ -92,7 +92,7 @@ const ViewField = ({ field, value }: { field: SurveyFormSchemaField | null; valu
 				{(arr as string[]).map((opt) => (
 					<span
 						key={opt}
-						className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-muted/40 px-2.5 py-1 text-[13px] font-medium text-foreground"
+						className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-muted/40 px-2.5 py-1 text-sm font-medium text-foreground"
 					>
 						<CheckSquare className="size-3 text-primary" />
 						{opt}
@@ -104,7 +104,7 @@ const ViewField = ({ field, value }: { field: SurveyFormSchemaField | null; valu
 
 	if (type === 'radio') {
 		return (
-			<span className="inline-flex items-center gap-2 text-[15px] text-foreground">
+			<span className="inline-flex items-center gap-2 text-md text-foreground">
 				<span className="size-2 rounded-full bg-primary" />
 				{String(value)}
 			</span>
@@ -121,12 +121,12 @@ const ViewField = ({ field, value }: { field: SurveyFormSchemaField | null; valu
 					: { bg: 'bg-rose-50', border: 'border-rose-200', text: 'text-rose-700', label: __('Detractor', 'all-feedback') };
 		return (
 			<div className="flex items-center gap-3">
-				<span className={cn('rounded-xl border px-3.5 py-1.5 text-[24px] font-bold tabular-nums', bg, border, text)}>
+				<span className={cn('rounded-xl border px-3.5 py-1.5 text-2xl font-bold tabular-nums', bg, border, text)}>
 					{score}
 				</span>
 				<div>
-					<p className={cn('text-[14px] font-semibold', text)}>{label}</p>
-					<p className="text-[12px] text-muted-foreground">{__('out of 10', 'all-feedback')}</p>
+					<p className={cn('text-base font-semibold', text)}>{label}</p>
+					<p className="text-xs text-muted-foreground">{__('out of 10', 'all-feedback')}</p>
 				</div>
 			</div>
 		);
@@ -145,7 +145,7 @@ const ViewField = ({ field, value }: { field: SurveyFormSchemaField | null; valu
 						/>
 					))}
 				</span>
-				<span className="text-[13px] font-medium text-muted-foreground">
+				<span className="text-sm font-medium text-muted-foreground">
 					{stars} / {max}
 				</span>
 			</div>
@@ -161,14 +161,14 @@ const ViewField = ({ field, value }: { field: SurveyFormSchemaField | null; valu
 		return (
 			<div className="space-y-2.5">
 				<div className="flex items-baseline gap-1.5">
-					<span className="text-[24px] font-bold tabular-nums text-foreground">{String(value)}</span>
-					<span className="text-[13px] text-muted-foreground">/ {scaleMax}</span>
+					<span className="text-2xl font-bold tabular-nums text-foreground">{String(value)}</span>
+					<span className="text-sm text-muted-foreground">/ {scaleMax}</span>
 				</div>
 				<div className="h-1.5 w-52 overflow-hidden rounded-full bg-muted/60">
 					<div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
 				</div>
 				{(lowLabel || highLabel) && (
-					<div className="flex w-52 justify-between text-[11px] text-muted-foreground">
+					<div className="flex w-52 justify-between text-2xs text-muted-foreground">
 						<span>{lowLabel}</span>
 						<span>{highLabel}</span>
 					</div>
@@ -179,13 +179,13 @@ const ViewField = ({ field, value }: { field: SurveyFormSchemaField | null; valu
 
 	if (type === 'long_text') {
 		return (
-			<p className="whitespace-pre-wrap text-[15px] leading-relaxed text-foreground">
+			<p className="whitespace-pre-wrap text-md leading-relaxed text-foreground">
 				{String(value)}
 			</p>
 		);
 	}
 
-	return <span className="text-[15px] text-foreground">{String(value)}</span>;
+	return <span className="text-md text-foreground">{String(value)}</span>;
 };
 
 const EditField = ({
@@ -198,7 +198,7 @@ const EditField = ({
 	const type = field?.type ?? 'short_text';
 
 	const textareaCls = cn(
-		'flex w-full rounded-xl border border-border/50 bg-muted/30 px-3.5 py-2.5 text-[14px] text-foreground',
+		'flex w-full rounded-xl border border-border/50 bg-muted/30 px-3.5 py-2.5 text-base text-foreground',
 		'placeholder:text-muted-foreground/50',
 		'transition-all focus:border-primary/40 focus:bg-white focus:ring-2 focus:ring-primary/8 focus:outline-none',
 	);
@@ -221,7 +221,7 @@ const EditField = ({
 		return (
 			<div className="flex flex-col gap-2.5">
 				{options.map((opt) => (
-					<label key={opt} className="flex cursor-pointer items-center gap-2.5 text-[14px]">
+					<label key={opt} className="flex cursor-pointer items-center gap-2.5 text-base">
 						<input type="radio" className="accent-primary" checked={current === opt} onChange={() => onChange(opt)} />
 						{opt}
 					</label>
@@ -241,7 +241,7 @@ const EditField = ({
 		return (
 			<div className="flex flex-col gap-2.5">
 				{options.map((opt) => (
-					<label key={opt} className="flex cursor-pointer items-center gap-2.5 text-[14px]">
+					<label key={opt} className="flex cursor-pointer items-center gap-2.5 text-base">
 						<Checkbox checked={selected.includes(opt)} onCheckedChange={() => toggle(opt)} />
 						{opt}
 					</label>
@@ -301,11 +301,11 @@ const MetaItem = ({ icon: Icon, label, children }: { icon: LucideIcon; label: st
 	<div className="px-5 py-4">
 		<div className="mb-1.5 flex items-center gap-1.5">
 			<Icon className="size-3 shrink-0 text-muted-foreground/50" />
-			<p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/55">
+			<p className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground/80">
 				{label}
 			</p>
 		</div>
-		<div className="pl-[18px] text-[13px] text-foreground">{children}</div>
+		<div className="pl-[18px] text-sm text-foreground">{children}</div>
 	</div>
 );
 
@@ -417,13 +417,13 @@ const ResponseDetail = () => {
 						<ArrowLeft className="size-4" />
 					</Button>
 					<span className="mx-2 h-5 w-px bg-border" />
-					<span className="text-[14px] font-semibold text-foreground">{__('Response not found', 'all-feedback')}</span>
+					<span className="text-base font-semibold text-foreground">{__('Response not found', 'all-feedback')}</span>
 				</div>
 				<div className="flex min-h-[300px] items-center justify-center p-6">
 					<div className="flex flex-col items-center gap-2 text-center">
 						<MessageSquare className="size-8 text-muted-foreground/30" />
-						<p className="text-[15px] font-semibold text-foreground">{__('Response not found', 'all-feedback')}</p>
-						<p className="text-[13px] text-muted-foreground">{__('This response may have been deleted or does not exist.', 'all-feedback')}</p>
+						<p className="text-md font-semibold text-foreground">{__('Response not found', 'all-feedback')}</p>
+						<p className="text-sm text-muted-foreground">{__('This response may have been deleted or does not exist.', 'all-feedback')}</p>
 						<Button variant="outline" size="sm" className="mt-2" onClick={() => router.history.back()}>
 							<ArrowLeft className="size-3.5" />
 							{__('Go back', 'all-feedback')}
@@ -443,16 +443,16 @@ const ResponseDetail = () => {
 						<ArrowLeft className="size-4" />
 					</Button>
 					<span className="h-5 w-px bg-border" />
-					<p className="truncate text-[14px] font-semibold text-foreground">
+					<p className="truncate text-base font-semibold text-foreground">
 						{survey?.title ?? `${__('Survey', 'all-feedback')} #${surveyId}`}
 					</p>
 				</div>
 
 				<div className="flex items-center gap-3">
 					{isEditing && isDirty && (
-						<div className="flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1">
-							<span className="size-1.5 animate-pulse rounded-full bg-amber-400" />
-							<span className="text-[12px] font-medium text-amber-600">{__('Unsaved changes', 'all-feedback')}</span>
+						<div className="flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-3 py-1.5">
+							<span className="size-2 animate-pulse rounded-full bg-amber-500" />
+							<span className="text-sm font-semibold text-amber-700">{__('Unsaved changes', 'all-feedback')}</span>
 						</div>
 					)}
 
@@ -496,7 +496,7 @@ const ResponseDetail = () => {
 
 					<div className="rounded-2xl border border-border/60 bg-white">
 						<div className="flex items-center justify-between border-b border-border/50 px-6 py-4">
-							<h2 className="text-[13px] font-semibold text-foreground">
+							<h2 className="text-sm font-semibold text-foreground">
 								{__('Responses', 'all-feedback')}
 							</h2>
 						</div>
@@ -512,10 +512,10 @@ const ResponseDetail = () => {
 												isEditing && 'hover:bg-muted/[0.04]',
 											)}>
 												<div className="mb-2.5 flex items-center gap-2">
-													<span className="flex size-5 shrink-0 items-center justify-center rounded-md bg-muted text-[10px] font-bold tabular-nums text-muted-foreground">
+													<span className="flex size-5 shrink-0 items-center justify-center rounded-md bg-muted text-2xs font-bold tabular-nums text-muted-foreground">
 														{idx + 1}
 													</span>
-													<p className="text-[12px] font-medium text-muted-foreground">
+													<p className="text-xs font-medium text-muted-foreground">
 														{schField.label}
 														{schField.required && <span className="ml-0.5 text-destructive">*</span>}
 													</p>
@@ -542,8 +542,8 @@ const ResponseDetail = () => {
 									{(field) => (
 										<div className={cn('px-6 py-5 transition-colors', isEditing && 'hover:bg-muted/[0.04]')}>
 											<div className="mb-2.5 flex items-center gap-2">
-												<span className="flex size-5 shrink-0 items-center justify-center rounded-md bg-muted text-[10px] font-bold text-muted-foreground">?</span>
-												<p className="text-[12px] font-medium text-muted-foreground">
+												<span className="flex size-5 shrink-0 items-center justify-center rounded-md bg-muted text-2xs font-bold text-muted-foreground">?</span>
+												<p className="text-xs font-medium text-muted-foreground">
 													{__('Unknown field', 'all-feedback')}
 													<span className="ml-1.5 font-normal text-foreground/30">({key})</span>
 												</p>
@@ -567,7 +567,7 @@ const ResponseDetail = () => {
 							{schemaFields.length === 0 && Object.keys(responseData).length === 0 && (
 								<div className="flex flex-col items-center gap-2 py-16 text-center">
 									<MessageSquare className="size-7 text-muted-foreground/25" />
-									<p className="text-[14px] text-muted-foreground">{__('No response data recorded.', 'all-feedback')}</p>
+									<p className="text-base text-muted-foreground">{__('No response data recorded.', 'all-feedback')}</p>
 								</div>
 							)}
 						</div>
@@ -575,15 +575,15 @@ const ResponseDetail = () => {
 
 					<div className="rounded-2xl border border-border/60 bg-white">
 						<div className="flex items-center justify-between border-b border-border/50 px-5 py-4">
-							<h2 className="text-[13px] font-semibold text-foreground">
+							<h2 className="text-sm font-semibold text-foreground">
 								{__('Details', 'all-feedback')}
 							</h2>
 							{response.is_read ? (
-								<span className="rounded-full bg-muted/60 px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+								<span className="rounded-full bg-muted/60 px-2 py-0.5 text-2xs font-medium text-muted-foreground">
 									{__('Read', 'all-feedback')}
 								</span>
 							) : (
-								<span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+								<span className="rounded-full bg-primary/10 px-2 py-0.5 text-2xs font-semibold text-primary">
 									{__('Unread', 'all-feedback')}
 								</span>
 							)}
@@ -596,7 +596,7 @@ const ResponseDetail = () => {
 
 							{response.score !== null && (
 								<MetaItem icon={Star} label={__('Score', 'all-feedback')}>
-									<span className="text-[15px] font-semibold tabular-nums">{response.score}</span>
+									<span className="text-md font-semibold tabular-nums">{response.score}</span>
 								</MetaItem>
 							)}
 

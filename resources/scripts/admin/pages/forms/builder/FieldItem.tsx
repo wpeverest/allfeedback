@@ -58,8 +58,8 @@ const FieldItem = ({
 			)}
 
 			<div className="min-w-0 flex-1">
-				<p className="truncate text-[13.5px] font-medium text-foreground">{field.label}</p>
-				<p className="text-[11.5px] text-muted-foreground">{typeConfig?.label}</p>
+				<p className="truncate text-sm font-medium text-foreground">{field.label}</p>
+				<p className="text-sm text-muted-foreground">{typeConfig?.label}</p>
 			</div>
 
 			<div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">

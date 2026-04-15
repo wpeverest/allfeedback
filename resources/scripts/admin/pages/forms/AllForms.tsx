@@ -71,7 +71,7 @@ const STATUS_FILTER_OPTIONS = [
 
 const PER_PAGE_OPTIONS = [10, 25, 50];
 
-const cellCls = 'text-[14px] font-normal leading-[20px] text-[oklch(0.446_0.03_256.802)]';
+const cellCls = 'text-base font-normal leading-5 text-body-text';
 
 const copyShortcode = (id: number) => {
 	const text = `[allfb_survey id="${id}"]`;
@@ -175,7 +175,7 @@ const AllForms = () => {
 		setPage(1);
 	};
 
-	const colHeadCls = 'flex items-center gap-1 text-[12px] font-semibold uppercase tracking-wide leading-[16px] select-none text-[oklch(0.446_0.03_256.802)]';
+	const colHeadCls = 'flex items-center gap-1 text-sm font-semibold uppercase tracking-wide leading-4 select-none text-body-text';
 
 	const ColHead = ({ column, label, sortable = false }: { column?: string; label: string; sortable?: boolean }) => {
 		const isActive = sortable && column !== undefined && orderby === column;
@@ -495,7 +495,7 @@ const AllForms = () => {
 											<button
 												type="button"
 												className={cn(
-													'group/resp inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[13px] font-medium tabular-nums transition-colors hover:bg-primary/[0.06] hover:text-primary',
+													'group/resp inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-sm font-medium tabular-nums transition-colors hover:bg-primary/[0.06] hover:text-primary',
 													survey.response_count > 0
 														? 'text-primary/70'
 														: 'text-foreground/40 hover:text-primary/60',
@@ -523,16 +523,16 @@ const AllForms = () => {
 										</td>
 
 										<td className="w-[120px] px-4 py-5">
-											<div className="flex max-w-full items-center gap-1 rounded-md border border-border/60 bg-muted/30 pl-2 pr-1 py-1">
-												<Code2 className="size-3 shrink-0 text-muted-foreground/40" />
-												<span className="min-w-0 flex-1 truncate font-mono text-[11px] text-foreground/55">
+											<div className="flex max-w-full items-center gap-1 rounded-md border border-border bg-muted/60 pl-2 pr-1 py-1">
+												<Code2 className="size-3 shrink-0 text-muted-foreground/70" />
+												<span className="min-w-0 flex-1 truncate font-mono text-xs text-foreground/90">
 													{`[allfb_survey id="${survey.id}"]`}
 												</span>
 												<button
 													type="button"
 													onClick={() => copyShortcode(survey.id)}
 													title={__('Copy shortcode', 'all-feedback')}
-													className="flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground/40 transition-colors hover:bg-primary/10 hover:text-primary"
+													className="flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground/60 transition-colors hover:bg-accent hover:text-foreground"
 												>
 													<Copy className="size-3" />
 												</button>
@@ -547,7 +547,7 @@ const AllForms = () => {
 														to: '/builder/', search: { new: false, id: survey.id },
 													})}
 													style={{ border: '1.5px solid #E2E2E8' }}
-													className="flex max-sm:hidden items-center gap-1 rounded-lg bg-primary/[0.04] px-2 py-1 text-[11px] font-medium text-primary/80 transition-colors hover:bg-primary/[0.08] hover:text-primary"
+													className="flex max-sm:hidden items-center gap-1 rounded-lg bg-primary/[0.04] px-2 py-1 text-xs font-medium text-primary/80 transition-colors hover:bg-primary/[0.08] hover:text-primary"
 												>
 													<Edit2 className="size-3" />
 													{__('Edit', 'all-feedback')}

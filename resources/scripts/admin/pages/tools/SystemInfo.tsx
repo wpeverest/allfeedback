@@ -3,8 +3,8 @@ import { Check, Info, X } from 'lucide-react';
 
 // ── primitives ────────────────────────────────────────────────────────────────
 
-const labelCls = 'text-[13.5px] font-normal text-foreground/80';
-const valueCls = 'text-[13.5px] font-normal text-foreground';
+const labelCls = 'text-base font-normal text-foreground/80';
+const valueCls = 'text-base font-normal text-foreground';
 
 const BoolValue = ({ value }: { value: boolean }) =>
 	value ? (
@@ -25,7 +25,7 @@ const Row = ({ label, value }: { label: string; value: string | boolean | null |
 );
 
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
-	<p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/50">
+	<p className="text-2xs font-semibold uppercase tracking-widest text-muted-foreground/50">
 		{children}
 	</p>
 );
@@ -42,7 +42,7 @@ const SystemInfo = () => {
 				<div className="flex size-9 items-center justify-center rounded-xl bg-primary/10">
 					<Info className="size-[18px] text-primary" />
 				</div>
-				<h3 className="text-[16px] font-semibold text-foreground" style={{ margin: 0 }}>
+				<h3 className="text-md font-semibold text-foreground" style={{ margin: 0 }}>
 					{__('System Info', 'all-feedback')}
 				</h3>
 			</div>

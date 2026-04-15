@@ -140,7 +140,7 @@ const Settings = () => {
 								<Link
 									key={to}
 									to={to}
-									className="group flex shrink-0 cursor-pointer items-center gap-3 rounded-xl px-4 py-3 text-[14px] font-[500] text-foreground/70 transition-colors hover:bg-muted/60 hover:text-foreground data-[status=active]:bg-primary/10 data-[status=active]:text-primary lg:w-full"
+									className="group flex shrink-0 cursor-pointer items-center gap-3 rounded-xl px-4 py-3 text-base font-medium text-foreground/70 transition-colors hover:bg-muted/60 hover:text-foreground data-[status=active]:bg-primary/10 data-[status=active]:text-primary lg:w-full"
 								>
 									<Icon className="size-[18px] shrink-0 text-muted-foreground/50 transition-colors group-data-[status=active]:text-primary" />
 									{label}
@@ -156,7 +156,7 @@ const Settings = () => {
 										{(isMac ? ['⌘', 'S'] : ['Ctrl', 'S']).map((k) => (
 											<kbd
 												key={k}
-												className="rounded border border-border bg-muted/60 px-1.5 py-0.5 text-[11px] font-medium leading-none text-muted-foreground/60"
+												className="rounded border border-border bg-muted/60 px-1.5 py-0.5 text-2xs font-medium leading-none text-muted-foreground/60"
 											>
 												{k}
 											</kbd>

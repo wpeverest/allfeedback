@@ -204,7 +204,7 @@ const SectionCard = ({
 									if (e.key === 'Escape') cancelTitle();
 								}}
 								onMouseDown={(e) => e.stopPropagation()}
-								className="section-title-input w-[260px] rounded-md border border-border/70 bg-transparent px-2 py-1 text-[15px] font-semibold text-foreground outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/10"
+								className="section-title-input w-[260px] rounded-md border border-border/70 bg-transparent px-2 py-1 text-md font-semibold text-foreground outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/10"
 							/>
 							<Button
 								variant="ghost"
@@ -228,7 +228,7 @@ const SectionCard = ({
 					) : (
 						<button
 							type="button"
-							className="section-title-btn group flex w-[260px] items-center gap-2 rounded-md border border-transparent px-2 py-1 text-left text-[15px] font-semibold text-foreground transition-colors hover:border-border/50 hover:bg-black/[0.04]"
+							className="section-title-btn group flex w-[260px] items-center gap-2 rounded-md border border-transparent px-2 py-1 text-left text-md font-semibold text-foreground transition-colors hover:border-border/50 hover:bg-black/[0.04]"
 							onClick={(e) => { e.stopPropagation(); startEditingTitle(); }}
 							title={__('Click to edit', 'all-feedback')}
 							onMouseDown={(e) => e.stopPropagation()}

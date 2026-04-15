@@ -502,24 +502,24 @@ const FormBuilder = () => {
 				<div className="flex items-center gap-3">
 				{surveyStatus === 'draft' && !isDirty && (
 					<div className="flex items-center gap-1.5 rounded-full border border-border bg-muted/60 px-3 py-1">
-						<span className="text-[12px] font-medium text-muted-foreground">
+						<span className="text-xs font-medium text-muted-foreground">
 							{__('Draft', 'all-feedback')}
 						</span>
 					</div>
 				)}
 				{isDirty && (
-					<div className="flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1">
-						<span className="size-1.5 animate-pulse rounded-full bg-amber-400" />
-						<span className="text-[12px] font-medium text-amber-600">
+					<div className="flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-3 py-1.5">
+						<span className="size-2 animate-pulse rounded-full bg-amber-500" />
+						<span className="text-sm font-semibold text-amber-700">
 							{__('Unsaved changes', 'all-feedback')}
 						</span>
 					</div>
 				)}
 
 				{formId && (
-					<div className="flex items-center gap-1 rounded-lg border border-border/60 bg-muted/30 pl-2.5 pr-1 py-1">
-						<Code2 className="size-3.5 shrink-0 text-muted-foreground/40" />
-						<span className="font-mono text-[11px] text-foreground/50">
+					<div className="flex items-center gap-1 rounded-lg border border-border bg-muted/60 pl-2.5 pr-1 py-1">
+						<Code2 className="size-3.5 shrink-0 text-muted-foreground/70" />
+						<span className="font-mono text-xs text-foreground/90">
 							{`[allfb_survey id="${formId}"]`}
 						</span>
 						<button
@@ -547,7 +547,7 @@ const FormBuilder = () => {
 								}
 							}}
 							title={__('Copy shortcode', 'all-feedback')}
-							className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/40 transition-colors hover:bg-primary/10 hover:text-primary"
+							className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/60 transition-colors hover:bg-accent hover:text-foreground"
 						>
 							<Copy className="size-3.5" />
 						</button>
@@ -588,7 +588,7 @@ const FormBuilder = () => {
 					{shortcutsOpen && (
 						<div className="absolute right-0 top-full z-10 mt-1.5 w-56 overflow-hidden rounded-xl border border-border bg-white shadow-dropdown">
 							<div className="border-b border-border px-4 py-2.5">
-								<p className="text-[12px] font-semibold text-foreground">{__('Keyboard shortcuts', 'all-feedback')}</p>
+								<p className="text-sm font-semibold text-foreground">{__('Keyboard shortcuts', 'all-feedback')}</p>
 							</div>
 							<div className="px-4 py-2">
 								{[
@@ -597,10 +597,10 @@ const FormBuilder = () => {
 									{ label: __('Redo',           'all-feedback'), keys: isMac ? ['⌘', '⇧', 'Z'] : ['Ctrl', 'Y'] },
 								].map(({ label, keys }) => (
 									<div key={label} className="flex items-center justify-between py-1.5">
-										<span className="text-[12px] text-muted-foreground">{label}</span>
+										<span className="text-sm text-muted-foreground">{label}</span>
 										<div className="flex items-center gap-1">
 											{keys.map((k) => (
-												<kbd key={k} className="rounded border border-border bg-muted/60 px-1.5 py-0.5 text-[11px] font-medium text-foreground leading-none">
+												<kbd key={k} className="rounded border border-border bg-muted/60 px-1.5 py-0.5 text-2xs font-medium text-foreground leading-none">
 													{k}
 												</kbd>
 											))}
@@ -618,7 +618,7 @@ const FormBuilder = () => {
 							type="button"
 							onClick={handlePublish}
 							disabled={isSubmitting}
-							className="flex h-10 items-center gap-2 bg-primary px-5 text-[14px] font-medium text-primary-foreground transition-colors hover:bg-brand-600 active:bg-brand-700 disabled:opacity-70"
+							className="flex h-10 items-center gap-2 bg-primary px-5 text-base font-medium text-primary-foreground transition-colors hover:bg-brand-600 active:bg-brand-700 disabled:opacity-70"
 						>
 							{isSubmitting && <Loader2 className="size-3.5 animate-spin" />}
 							{__('Publish', 'all-feedback')}
@@ -638,7 +638,7 @@ const FormBuilder = () => {
 							<button
 								type="button"
 								onClick={handleSaveAsDraft}
-								className="flex w-full items-center px-4 py-2.5 text-[13px] text-foreground transition-colors hover:bg-muted/60"
+								className="flex w-full items-center px-4 py-2.5 text-sm text-foreground transition-colors hover:bg-muted/60"
 							>
 								{__('Save as Draft', 'all-feedback')}
 							</button>
@@ -670,7 +670,7 @@ const FormBuilder = () => {
 										type="button"
 										onClick={() => setActiveTab(value)}
 										className={cn(
-											'group flex items-center gap-2.5 text-[13.5px] font-medium transition-colors',
+											'group flex items-center gap-2.5 text-base font-medium transition-colors',
 											isActive
 												? 'text-primary'
 												: 'text-muted-foreground hover:text-foreground',
@@ -736,10 +736,10 @@ const FormBuilder = () => {
 							<div className="flex flex-1 items-center justify-center">
 								<div className="text-center">
 									<Palette className="mx-auto mb-3 size-8 text-muted-foreground/30" />
-									<p className="text-[14px] font-medium text-foreground">
+									<p className="text-base font-medium text-foreground">
 										{__('Form Styling', 'all-feedback')}
 									</p>
-									<p className="mt-1 text-[13px] text-muted-foreground">
+									<p className="mt-1 text-sm text-muted-foreground">
 										{__('Available in', 'all-feedback')}{' '}
 										<span className="font-semibold text-amber-600">PRO</span>
 									</p>

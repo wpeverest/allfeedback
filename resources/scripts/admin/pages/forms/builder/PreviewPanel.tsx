@@ -71,7 +71,7 @@ const StarRatingPreview = ({ field, value, onChange }: { field: FormField; value
 				>
 					{scale === 'number' ? (
 						<span className={cn(
-							'flex items-center justify-center rounded text-[12px] font-semibold transition-colors',
+							'flex items-center justify-center rounded text-xs font-semibold transition-colors',
 							iconSize,
 							n <= active ? 'bg-primary text-white' : 'bg-muted/60 text-muted-foreground/60',
 						)}>
@@ -96,7 +96,7 @@ const ScalePreview = ({ field, value, onChange }: { field: FormField; value: str
 	const selected = value !== '' ? Number(value) : null;
 	const active   = hovered ?? selected;
 	const points   = Array.from({ length: max - min + 1 }, (_, i) => min + i);
-	const btnSize  = points.length > 8 ? 'size-7 text-[11px]' : 'size-9 text-[13px]';
+	const btnSize  = points.length > 8 ? 'size-7 text-2xs' : 'size-9 text-sm';
 
 	return (
 		<div className="space-y-1.5" onMouseLeave={() => setHovered(null)}>
@@ -122,10 +122,10 @@ const ScalePreview = ({ field, value, onChange }: { field: FormField; value: str
 			{(field.scaleLowLabel || field.scaleHighLabel) && (
 				<div className="flex justify-between">
 					{field.scaleLowLabel && (
-						<span className="text-[11.5px] text-muted-foreground/60">{field.scaleLowLabel}</span>
+						<span className="text-2xs text-muted-foreground/60">{field.scaleLowLabel}</span>
 					)}
 					{field.scaleHighLabel && (
-						<span className="ml-auto text-[11.5px] text-muted-foreground/60">{field.scaleHighLabel}</span>
+						<span className="ml-auto text-2xs text-muted-foreground/60">{field.scaleHighLabel}</span>
 					)}
 				</div>
 			)}
@@ -156,7 +156,7 @@ const NpsPreview = ({ value, onChange }: { value: string; onChange: (v: string) 
 							onMouseEnter={() => setHovered(n)}
 							onClick={() => onChange(selected === n ? '' : String(n))}
 							className={cn(
-								'flex h-7 flex-1 items-center justify-center rounded-lg border text-[11px] font-semibold transition-all duration-100 active:scale-95',
+								'flex h-7 flex-1 items-center justify-center rounded-lg border text-2xs font-semibold transition-all duration-100 active:scale-95',
 								isActive
 									? active
 									: cn('border-border/60 bg-muted/30 text-foreground/60', hover),
@@ -168,8 +168,8 @@ const NpsPreview = ({ value, onChange }: { value: string; onChange: (v: string) 
 				})}
 			</div>
 			<div className="flex justify-between">
-				<span className="text-[11.5px] text-muted-foreground/60">{__('Not at all likely', 'all-feedback')}</span>
-				<span className="text-[11.5px] text-muted-foreground/60">{__('Extremely likely', 'all-feedback')}</span>
+				<span className="text-2xs text-muted-foreground/60">{__('Not at all likely', 'all-feedback')}</span>
+				<span className="text-2xs text-muted-foreground/60">{__('Extremely likely', 'all-feedback')}</span>
 			</div>
 		</div>
 	);
@@ -184,7 +184,7 @@ interface FieldPreviewProps {
 
 const FieldPreview = ({ field, value, error, onChange }: FieldPreviewProps) => {
 	const inputBase = cn(
-		'w-full rounded-lg border bg-muted/30 px-2.5 py-1.5 text-[11px] text-foreground/80',
+		'w-full rounded-lg border bg-muted/30 px-2.5 py-1.5 text-2xs text-foreground/80',
 		'placeholder:text-muted-foreground/50 focus:outline-none transition-colors',
 		error ? 'border-destructive/60' : 'border-border/70',
 	);
@@ -204,11 +204,11 @@ const FieldPreview = ({ field, value, error, onChange }: FieldPreviewProps) => {
 		<div className="space-y-2.5">
 			<div className="flex items-baseline gap-0.5">
 				<div
-					className="field-preview-label text-[13.5px] text-foreground [&_p]:m-0 [&_strong]:font-semibold [&_em]:italic [&_u]:underline [&_s]:line-through [&_code]:rounded [&_code]:bg-muted [&_code]:px-0.5 [&_code]:font-mono [&_code]:text-[0.9em] [&_mark]:rounded [&_mark]:bg-amber-100 [&_mark]:text-amber-800"
+					className="field-preview-label text-sm text-foreground [&_p]:m-0 [&_strong]:font-semibold [&_em]:italic [&_u]:underline [&_s]:line-through [&_code]:rounded [&_code]:bg-muted [&_code]:px-0.5 [&_code]:font-mono [&_code]:text-[0.9em] [&_mark]:rounded [&_mark]:bg-amber-100 [&_mark]:text-amber-800"
 					dangerouslySetInnerHTML={{ __html: baseHtml }}
 				/>
 				{field.required && (
-					<span className="shrink-0 text-[11px] font-bold leading-none text-destructive">*</span>
+					<span className="shrink-0 text-2xs font-bold leading-none text-destructive">*</span>
 				)}
 			</div>
 
@@ -251,7 +251,7 @@ const FieldPreview = ({ field, value, error, onChange }: FieldPreviewProps) => {
 								onChange={() => onChange(opt)}
 								className="sr-only"
 							/>
-							<span className="text-[12.5px] text-foreground/75">{opt || `Option ${i + 1}`}</span>
+							<span className="text-sm text-foreground/75">{opt || `Option ${i + 1}`}</span>
 						</label>
 					))}
 				</div>
@@ -280,7 +280,7 @@ const FieldPreview = ({ field, value, error, onChange }: FieldPreviewProps) => {
 								onChange={() => toggleCheckbox(opt)}
 								className="sr-only"
 							/>
-							<span className="text-[12.5px] text-foreground/75">{opt || `Option ${i + 1}`}</span>
+							<span className="text-sm text-foreground/75">{opt || `Option ${i + 1}`}</span>
 						</label>
 					))}
 				</div>
@@ -384,12 +384,12 @@ const WidgetBody = ({
 
 				<div className="flex flex-col items-center justify-center px-4 py-5 text-center">
 					<CheckCircle2 className="mb-1.5 size-6 text-primary" />
-					<p className="text-[12px] font-semibold text-foreground">
+					<p className="text-xs font-semibold text-foreground">
 						{settings.thankYouEnabled && settings.thankYouTitle
 							? settings.thankYouTitle
 							: __('Thank you!', 'all-feedback')}
 					</p>
-					<p className="mt-0.5 text-[11px] text-muted-foreground">
+					<p className="mt-0.5 text-2xs text-muted-foreground">
 						{settings.thankYouEnabled && settings.thankYouDescription
 							? settings.thankYouDescription
 							: __('Your response has been recorded.', 'all-feedback')}
@@ -420,7 +420,7 @@ const WidgetBody = ({
 						{!hasSteps ? (
 							<div className="flex flex-col items-center justify-center py-3">
 								<Eye className="mb-1.5 size-4 text-muted-foreground/25" />
-								<p className="text-[10.5px] text-muted-foreground/55">
+								<p className="text-[10.5px] text-muted-foreground/80">
 									{__('Add fields to preview', 'all-feedback')}
 								</p>
 							</div>
@@ -445,7 +445,7 @@ const WidgetBody = ({
 								<button
 									type="button"
 									onClick={onBack}
-									className="flex-1 rounded-lg border border-border py-3 text-[11.5px] font-medium text-foreground/70 transition-colors hover:bg-muted/50"
+									className="flex-1 rounded-lg border border-border py-3 text-2xs font-medium text-foreground/70 transition-colors hover:bg-muted/50"
 								>
 									{settings.backLabel || __('Back', 'all-feedback')}
 								</button>
@@ -455,7 +455,7 @@ const WidgetBody = ({
 									type="button"
 									onClick={onSubmit}
 									disabled={isSubmitting}
-									className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary py-3 text-[11.5px] font-semibold text-white transition-colors hover:bg-brand-600 active:bg-brand-700 disabled:opacity-70"
+									className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary py-3 text-2xs font-semibold text-white transition-colors hover:bg-brand-600 active:bg-brand-700 disabled:opacity-70"
 								>
 									{isSubmitting && <Loader2 className="size-3 animate-spin" />}
 									{settings.submitLabel || __('Submit', 'all-feedback')}
@@ -464,7 +464,7 @@ const WidgetBody = ({
 								<button
 									type="button"
 									onClick={onNext}
-									className="flex-1 rounded-lg bg-primary py-3 text-[11.5px] font-semibold text-white transition-colors hover:bg-brand-600 active:bg-brand-700"
+									className="flex-1 rounded-lg bg-primary py-3 text-2xs font-semibold text-white transition-colors hover:bg-brand-600 active:bg-brand-700"
 								>
 									{settings.nextLabel || __('Next', 'all-feedback')}
 								</button>
@@ -634,7 +634,7 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 	return (
 		<div className="flex h-full flex-col bg-white">
 			<div className="flex h-[72px] shrink-0 items-center justify-between px-6">
-				<span className="text-[13.5px] font-medium text-foreground">
+				<span className="text-sm font-medium text-foreground">
 					{__('Preview changes', 'all-feedback')}
 				</span>
 
@@ -643,7 +643,7 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 						<button
 							type="button"
 							onClick={handleReset}
-							className="flex items-center gap-1.5 rounded-lg border border-border/60 px-2.5 py-1.5 text-[12px] font-medium text-muted-foreground transition-colors hover:border-border hover:bg-muted/40 hover:text-foreground"
+							className="flex items-center gap-1.5 rounded-lg border border-border/60 px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:bg-muted/40 hover:text-foreground"
 						>
 							<RotateCw className="size-3" />
 							{__('Reset', 'all-feedback')}
@@ -662,7 +662,7 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 							)}
 						>
 							<Globe className="size-3" />
-							<span className="text-[11px]">{__('Page', 'all-feedback')}</span>
+							<span className="text-2xs">{__('Page', 'all-feedback')}</span>
 						</button>
 						<button
 							type="button"
@@ -675,7 +675,7 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 							)}
 						>
 							<MessageSquare className="size-3" />
-							<span className="text-[11px]">{__('Widget', 'all-feedback')}</span>
+							<span className="text-2xs">{__('Widget', 'all-feedback')}</span>
 						</button>
 					</div>
 				</div>

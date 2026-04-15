@@ -14,7 +14,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import type { SurveyResponse } from '@/admin/api/surveys';
 
-const cellCls = 'text-[13px] font-normal leading-[20px] text-[oklch(0.446_0.03_256.802)]';
+const cellCls = 'text-base font-normal leading-5 text-body-text';
 
 const getResponseSummary = (data: Record<string, unknown> | null): string => {
 	if (!data) return '—';
@@ -107,7 +107,7 @@ const ResponsesPanel = ({ surveyId }: ResponsesPanelProps) => {
 		},
 	});
 
-	const colHeadCls = 'flex items-center gap-1 text-[12px] font-semibold uppercase tracking-wide leading-[16px] select-none text-[oklch(0.446_0.03_256.802)]';
+	const colHeadCls = 'flex items-center gap-1 text-sm font-semibold uppercase tracking-wide leading-4 select-none text-body-text';
 	const ColHead = ({ label, col }: { label: string; col?: 'id' | 'created_at' }) => {
 		const isActive = col !== undefined && sortBy === col;
 		const Icon     = isActive ? (order === 'DESC' ? ArrowDown : ArrowUp) : ArrowUpDown;

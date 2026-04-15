@@ -10,7 +10,7 @@ import { __ } from '@wordpress/i18n';
 import { SlidersHorizontal } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 
-const labelCls = 'text-[13.5px] font-normal text-foreground/80';
+const labelCls = 'text-base font-normal text-foreground/80';
 
 const Row = ({
 	label,
@@ -25,7 +25,7 @@ const Row = ({
 		<div className="w-[40%] shrink-0">
 			<label className={labelCls}>{label}</label>
 			{description && (
-				<p className="mt-1 text-[12px] leading-relaxed text-muted-foreground/55">
+				<p className="mt-1 text-xs leading-relaxed text-muted-foreground/80">
 					{description}
 				</p>
 			)}
@@ -37,7 +37,7 @@ const Row = ({
 );
 
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
-	<p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/50">
+	<p className="text-2xs font-semibold uppercase tracking-widest text-muted-foreground/50">
 		{children}
 	</p>
 );
@@ -177,13 +177,13 @@ const AdvancedSettings = () => {
 				<div className="flex size-9 items-center justify-center rounded-xl bg-primary/10">
 					<SlidersHorizontal className="size-[18px] text-primary" />
 				</div>
-				<h3 className="text-[16px] font-semibold text-foreground" style={{ margin: 0 }}>
+				<h3 className="text-md font-semibold text-foreground" style={{ margin: 0 }}>
 					{__('Advanced', 'all-feedback')}
 				</h3>
 				{sharedIsDirty && !isSaving && (
-					<div className="ml-auto flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1">
-						<span className="size-1.5 animate-pulse rounded-full bg-amber-400" />
-						<span className="text-[12px] font-medium text-amber-600">
+					<div className="ml-auto flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-3 py-1.5">
+						<span className="size-2 animate-pulse rounded-full bg-amber-500" />
+						<span className="text-sm font-semibold text-amber-700">
 							{__('Unsaved changes', 'all-feedback')}
 						</span>
 					</div>

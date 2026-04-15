@@ -34,7 +34,7 @@ const Tools = () => (
 						<Link
 							key={to}
 							to={to}
-							className="group flex shrink-0 cursor-pointer items-center gap-3 rounded-xl px-4 py-3 text-[14px] font-[500] text-foreground/70 transition-colors hover:bg-muted/60 hover:text-foreground data-[status=active]:bg-primary/10 data-[status=active]:text-primary lg:w-full"
+							className="group flex shrink-0 cursor-pointer items-center gap-3 rounded-xl px-4 py-3 text-base font-medium text-foreground/70 transition-colors hover:bg-muted/60 hover:text-foreground data-[status=active]:bg-primary/10 data-[status=active]:text-primary lg:w-full"
 						>
 							<Icon className="size-[18px] shrink-0 text-muted-foreground/50 transition-colors group-data-[status=active]:text-primary" />
 							{label}

@@ -100,14 +100,14 @@ const FilterTab = ({
 		type="button"
 		onClick={onClick}
 		className={cn(
-			'flex items-center gap-1.5 rounded-full border px-3.5 py-1 text-[12.5px] font-medium transition-colors',
+			'flex items-center gap-1.5 rounded-full border px-3.5 py-1 text-sm font-medium transition-colors',
 			active
 				? 'border-primary bg-primary/10 text-primary'
 				: 'border-border/60 bg-transparent text-muted-foreground hover:border-border hover:text-foreground',
 		)}
 	>
 		{label}
-		<span className={cn('text-[11px] font-semibold', active ? 'text-primary' : 'text-muted-foreground/60')}>
+		<span className={cn('text-2xs font-semibold', active ? 'text-primary' : 'text-muted-foreground/60')}>
 			{count}
 		</span>
 	</button>
@@ -133,7 +133,7 @@ const LogCodeViewer = ({
 
 	if (filtered.length === 0) {
 		return (
-			<div className="bg-muted/40 px-6 py-8 text-center font-mono text-[12px] text-muted-foreground/50">
+			<div className="bg-muted/40 px-6 py-8 text-center font-mono text-xs text-muted-foreground/50">
 				{activeFilter === 'ALL'
 					? __('No entries in this file.', 'all-feedback')
 					: `${__('No', 'all-feedback')} ${activeFilter} ${__('entries in this file.', 'all-feedback')}`}
@@ -156,13 +156,13 @@ const LogCodeViewer = ({
 								)}
 							>
 								{/* Gutter — sticky so it stays visible on horizontal scroll */}
-								<td className="sticky left-0 z-10 w-[3.5rem] min-w-[3.5rem] select-none border-r border-border/50 bg-muted/60 py-1.5 pr-4 text-right align-top font-mono text-[11px] leading-5 text-muted-foreground/40 group-hover:text-muted-foreground/60">
+								<td className="sticky left-0 z-10 w-[3.5rem] min-w-[3.5rem] select-none border-r border-border/50 bg-muted/60 py-1.5 pr-4 text-right align-top font-mono text-2xs leading-5 text-muted-foreground/40 group-hover:text-muted-foreground/60">
 									{line.lineNumber}
 								</td>
 								{/* Log line content */}
 								<td
 									className={cn(
-										'whitespace-pre py-1.5 pl-5 pr-8 align-top font-mono text-[12px] leading-5',
+										'whitespace-pre py-1.5 pl-5 pr-8 align-top font-mono text-xs leading-5',
 										line.level ? LINE_TEXT[line.level] : 'text-foreground/70',
 									)}
 								>
@@ -177,13 +177,13 @@ const LogCodeViewer = ({
 			{/* Show-all prompt when file exceeds render threshold */}
 			{truncated && (
 				<div className="flex items-center justify-between border-t border-border/50 bg-muted/40 px-5 py-2.5">
-					<span className="font-mono text-[11px] text-muted-foreground/50">
+					<span className="font-mono text-2xs text-muted-foreground/50">
 						{__('Showing', 'all-feedback')} {RENDER_THRESHOLD.toLocaleString()} {__('of', 'all-feedback')} {filtered.length.toLocaleString()} {__('lines', 'all-feedback')}
 					</span>
 					<button
 						type="button"
 						onClick={() => setShowAll(true)}
-						className="font-mono text-[11px] text-primary transition-colors hover:text-primary/80"
+						className="font-mono text-2xs text-primary transition-colors hover:text-primary/80"
 					>
 						{__('Show all', 'all-feedback')} {filtered.length.toLocaleString()} {__('lines', 'all-feedback')} →
 					</button>
@@ -256,10 +256,10 @@ const LogFileSection = ({
 						!open && '-rotate-90',
 					)}
 				/>
-				<span className="flex-1 font-mono text-[12.5px] font-medium text-foreground/80">
+				<span className="flex-1 font-mono text-sm font-medium text-foreground/80">
 					{file.name}
 				</span>
-				<span className="text-[12px] text-muted-foreground/50">
+				<span className="text-sm text-muted-foreground/60">
 					{file.entries} {__('entries', 'all-feedback')} · {file.size}
 				</span>
 
@@ -305,10 +305,10 @@ const EmptyState = () => (
 		<div className="flex size-12 items-center justify-center rounded-xl bg-muted/60">
 			<ScrollText className="size-5 text-muted-foreground/40" />
 		</div>
-		<p className="mt-1 text-[13.5px] font-medium text-foreground/70">
+		<p className="mt-1 text-sm font-medium text-foreground/70">
 			{__('No logs yet', 'all-feedback')}
 		</p>
-		<p className="max-w-xs text-[12.5px] text-muted-foreground/55">
+		<p className="max-w-xs text-sm text-muted-foreground/80">
 			{__('Logs will appear here once logging is enabled in ', 'all-feedback')}
 			<Link
 				to="/settings/advanced"
@@ -410,10 +410,10 @@ const Logs = () => {
 					<ScrollText className="size-[18px] text-primary" />
 				</div>
 				<div>
-					<h3 className="text-[16px] font-semibold text-foreground" style={{ margin: 0 }}>
+					<h3 className="text-md font-semibold text-foreground" style={{ margin: 0 }}>
 						{__('Activity Logs', 'all-feedback')}
 					</h3>
-					<p className="text-[12px] text-muted-foreground/60" style={{ margin: 0 }}>
+					<p className="text-xs text-muted-foreground/60" style={{ margin: 0 }}>
 						{files.length} {__('files', 'all-feedback')}
 						{files.length > 0 && <> · {formatBytes(totalBytes)}</>}
 					</p>
@@ -484,7 +484,7 @@ const Logs = () => {
 			{/* footer */}
 			{allLines.length > 0 && (
 				<div className="border-t border-border/50 px-6 py-3 text-right">
-					<span className="text-[12px] text-muted-foreground/55">
+					<span className="text-xs text-muted-foreground/80">
 						{countFor(activeFilter).toLocaleString()} {__('lines', 'all-feedback')}
 						{activeFilter !== 'ALL' && (
 							<> · {allLines.length.toLocaleString()} {__('total', 'all-feedback')}</>
