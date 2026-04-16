@@ -130,6 +130,16 @@ class ResponsesController extends RestController {
 
 		register_rest_route(
 			$this->namespace,
+			'/responses/unread-count',
+			[
+				'methods'             => \WP_REST_Server::READABLE,
+				'callback'            => [ $this, 'unreadCount' ],
+				'permission_callback' => [ $this, 'adminPermission' ],
+			]
+		);
+
+		register_rest_route(
+			$this->namespace,
 			'/' . $this->restBase . '/(?P<id>\d+)/responses',
 			[
 				[
@@ -338,6 +348,19 @@ class ResponsesController extends RestController {
 	 */
 	public function markManyUnread( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		return $this->bulkSetReadStatus( $request, false );
+	}
+
+	/**
+	 * GET /all-feedback/v1/responses/unread-count
+	 *
+	 * Return the total number of unread responses across all surveys.
+	 * Used by the React admin to keep the WP sidebar badge in sync without a reload.
+	 *
+	 * @return \WP_REST_Response
+	 * @since 1.0.0
+	 */
+	public function unreadCount(): \WP_REST_Response {
+		return $this->successResponse( [ 'count' => $this->responseRepository->countUnread() ] );
 	}
 
 	/**
