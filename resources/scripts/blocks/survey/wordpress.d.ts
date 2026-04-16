@@ -1,10 +1,3 @@
-/**
- * Stub type declarations for @wordpress/* packages that are externalized
- * by @wordpress/dependency-extraction-webpack-plugin.
- * They are available as globals at runtime; these stubs satisfy TypeScript.
- */
-
-
 declare module '@wordpress/blocks' {
 	export interface BlockEditProps<T extends Record<string, unknown>> {
 		attributes:    T;
