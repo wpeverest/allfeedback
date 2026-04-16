@@ -1,6 +1,7 @@
 ﻿import { cn } from '@/lib/utils';
 import { __ } from '@wordpress/i18n';
 import { Archive, Loader2, Mail, MailOpen, RotateCcw, Trash2, X } from 'lucide-react';
+import { useRef } from 'react';
 
 export interface BulkActionBarProps {
 	count:             number;
@@ -34,8 +35,15 @@ export const BulkActionBar = ({
 	onDelete, onTrash, onRestore, onClear, onMarkRead, onMarkUnread,
 	isDeleting, isTrashing, isRestoring, isMarkingRead, isMarkingUnread,
 }: BulkActionBarProps) => {
-	const busy        = isDeleting || isTrashing || isRestoring || isMarkingRead || isMarkingUnread;
-	const hasActions  = showTrash || showDelete || showRestore || showMarkRead || showMarkUnread;
+	const busy = isDeleting || isTrashing || isRestoring || isMarkingRead || isMarkingUnread;
+
+	// Freeze both the count and the layout (show* props) at the last non-zero state so
+	// neither the number nor the action buttons change while the bar is animating out.
+	const frozenRef = useRef({ count, showTrash, showDelete, showRestore, showMarkRead, showMarkUnread });
+	if (count > 0) frozenRef.current = { count, showTrash, showDelete, showRestore, showMarkRead, showMarkUnread };
+	const frozen = frozenRef.current;
+
+	const hasActions = frozen.showTrash || frozen.showDelete || frozen.showRestore || frozen.showMarkRead || frozen.showMarkUnread;
 
 	return (
 		<div
@@ -51,7 +59,7 @@ export const BulkActionBar = ({
 
 				<div className="flex items-center gap-1 px-6 py-4">
 					<span className="text-[13px] font-semibold tabular-nums text-foreground/80">
-						{count}
+						{frozen.count}
 					</span>
 					<span className="text-[13px] text-foreground/40">
 						{__('selected', 'all-feedback')}
@@ -60,7 +68,7 @@ export const BulkActionBar = ({
 
 				{hasActions && <div className="h-5 w-px shrink-0 bg-border/60" />}
 
-				{showMarkRead && (
+				{frozen.showMarkRead && (
 					<>
 						<div className="px-3 py-3">
 							<button
@@ -76,11 +84,11 @@ export const BulkActionBar = ({
 								{__('Mark as read', 'all-feedback')}
 							</button>
 						</div>
-						{(showMarkUnread || showRestore || showTrash || showDelete) && <div className="h-5 w-px shrink-0 bg-border/60" />}
+						{(frozen.showMarkUnread || frozen.showRestore || frozen.showTrash || frozen.showDelete) && <div className="h-5 w-px shrink-0 bg-border/60" />}
 					</>
 				)}
 
-				{showMarkUnread && (
+				{frozen.showMarkUnread && (
 					<>
 						<div className="px-3 py-3">
 							<button
@@ -96,11 +104,11 @@ export const BulkActionBar = ({
 								{__('Mark as unread', 'all-feedback')}
 							</button>
 						</div>
-						{(showRestore || showTrash || showDelete) && <div className="h-5 w-px shrink-0 bg-border/60" />}
+						{(frozen.showRestore || frozen.showTrash || frozen.showDelete) && <div className="h-5 w-px shrink-0 bg-border/60" />}
 					</>
 				)}
 
-				{showRestore && (
+				{frozen.showRestore && (
 					<>
 						<div className="px-3 py-3">
 							<button
@@ -116,11 +124,11 @@ export const BulkActionBar = ({
 								{__('Restore', 'all-feedback')}
 							</button>
 						</div>
-						{(showTrash || showDelete) && <div className="h-5 w-px shrink-0 bg-border/60" />}
+						{(frozen.showTrash || frozen.showDelete) && <div className="h-5 w-px shrink-0 bg-border/60" />}
 					</>
 				)}
 
-				{showTrash && (
+				{frozen.showTrash && (
 					<>
 						<div className="px-3 py-3">
 							<button
@@ -136,11 +144,11 @@ export const BulkActionBar = ({
 								{__('Trash', 'all-feedback')}
 							</button>
 						</div>
-						{showDelete && <div className="h-5 w-px shrink-0 bg-border/60" />}
+						{frozen.showDelete && <div className="h-5 w-px shrink-0 bg-border/60" />}
 					</>
 				)}
 
-				{showDelete && (
+				{frozen.showDelete && (
 					<div className="px-3 py-3">
 						<button
 							type="button"
