@@ -1,0 +1,155 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { AllfbConfig, SurveyConfig } from '../types';
+import type { StateManager } from '../state';
+import { SurveyPanel } from './SurveyPanel';
+
+interface WidgetProps {
+	cfg:          AllfbConfig;
+	surveyConfig: SurveyConfig;
+	stateManager: StateManager;
+}
+
+const MsgIcon = () => (
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+		<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+	</svg>
+);
+
+const CloseIcon = () => (
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+		<line x1="18" y1="6" x2="6" y2="18" />
+		<line x1="6" y1="6" x2="18" y2="18" />
+	</svg>
+);
+
+export const Widget = ( { cfg, surveyConfig, stateManager }: WidgetProps ) => {
+	const { position, trigger, delay, scroll_threshold, color } = cfg.settings;
+
+	const [ isRevealed, setIsRevealed ] = useState( trigger === 'manual' );
+	const [ isOpen,     setIsOpen     ] = useState( false );
+	const [ panelReady, setPanelReady ] = useState( false );
+
+	const impressionRecordedRef = useRef( false );
+
+	const reveal = useCallback( () => setIsRevealed( true ), [] );
+
+	const open = useCallback( () => {
+		setIsOpen( true );
+		setPanelReady( true );
+		if ( ! impressionRecordedRef.current ) {
+			impressionRecordedRef.current = true;
+			stateManager.recordImpression();
+		}
+	}, [ stateManager ] );
+
+	const close = useCallback( () => setIsOpen( false ), [] );
+
+	const toggle = useCallback( () => {
+		setIsOpen( ( prev ) => {
+			if ( ! prev ) {
+				setPanelReady( true );
+				if ( ! impressionRecordedRef.current ) {
+					impressionRecordedRef.current = true;
+					stateManager.recordImpression();
+				}
+			}
+			return ! prev;
+		} );
+	}, [ stateManager ] );
+
+	const handleClose = useCallback( () => {
+		stateManager.recordDismissal();
+		close();
+	}, [ stateManager, close ] );
+
+	useEffect( () => {
+		if ( trigger === 'manual' ) return;
+
+		if ( trigger === 'auto' ) {
+			const ms = Math.max( 0, delay ) * 1000;
+			const t  = setTimeout( () => { reveal(); open(); }, ms );
+			return () => clearTimeout( t );
+		}
+
+		if ( trigger === 'scroll' ) {
+			const onScroll = () => {
+				const max = document.documentElement.scrollHeight - window.innerHeight;
+				const pct = max > 0 ? ( window.scrollY / max ) * 100 : 0;
+				if ( pct >= scroll_threshold ) {
+					reveal();
+					window.removeEventListener( 'scroll', onScroll );
+				}
+			};
+			window.addEventListener( 'scroll', onScroll, { passive: true } );
+			return () => window.removeEventListener( 'scroll', onScroll );
+		}
+
+		if ( trigger === 'exit-intent' ) {
+			const onLeave = ( e: MouseEvent ) => {
+				if ( e.clientY <= 5 ) {
+					reveal();
+					document.removeEventListener( 'mouseleave', onLeave );
+				}
+			};
+			document.addEventListener( 'mouseleave', onLeave );
+			return () => document.removeEventListener( 'mouseleave', onLeave );
+		}
+	}, [] );
+
+	const rootStyle = { '--allfb-color': color } as React.CSSProperties;
+
+	return (
+		<div
+			className={ `allfb-widget${ isRevealed ? ' is-revealed' : '' }` }
+			data-position={ position }
+			style={ rootStyle }
+		>
+			<button
+				type="button"
+				className={ `allfb-launcher${ isOpen ? ' is-open' : '' }` }
+				aria-label="Open feedback"
+				aria-expanded={ isOpen }
+				aria-controls="allfb-panel"
+				onClick={ toggle }
+			>
+				{ position === 'side-tab' ? (
+					<span className="allfb-launcher__tab-label">Feedback</span>
+				) : (
+					<MsgIcon />
+				) }
+			</button>
+
+			<div
+				id="allfb-panel"
+				className={ `allfb-panel${ isOpen ? ' is-open' : '' }` }
+				aria-hidden={ ! isOpen }
+				role="dialog"
+				aria-modal="true"
+				aria-label="Feedback"
+			>
+				<div className="allfb-panel__header">
+					<span className="allfb-panel__title">Feedback</span>
+					<button
+						type="button"
+						className="allfb-panel__close"
+						aria-label="Close feedback"
+						onClick={ handleClose }
+					>
+						<CloseIcon />
+					</button>
+				</div>
+
+				<div className="allfb-panel__body">
+					{ panelReady && (
+						<SurveyPanel
+							cfg={ cfg }
+							surveyId={ surveyConfig.id }
+							submitNonce={ cfg.submitNonce }
+							onSubmit={ () => stateManager.recordSubmit() }
+						/>
+					) }
+				</div>
+			</div>
+		</div>
+	);
+};

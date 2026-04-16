@@ -5,6 +5,10 @@ const ReactRefreshPlugin     = require('@pmmmwh/react-refresh-webpack-plugin');
 const { TanStackRouterWebpack } = require('@tanstack/router-plugin/webpack');
 const WebpackBar             = require('webpackbar');
 
+const isReactRefreshPlugin = ( p ) =>
+    p && p.constructor &&
+    ( p.constructor.name === 'ReactRefreshPlugin' || p.constructor.name === 'ReactRefreshWebpackPlugin' );
+
 const isProd = process.env.NODE_ENV === 'production';
 
 module.exports = {
@@ -57,7 +61,7 @@ module.exports = {
 
     entry: {
         admin:    resolve(process.cwd(), 'resources/scripts/admin',    'index.tsx'),
-        frontend: resolve(process.cwd(), 'resources/scripts/frontend', 'index.ts'),
+        frontend: resolve(process.cwd(), 'resources/scripts/frontend', 'index.tsx'),
         // Each block gets its own compiled entry: block-{slug}.js
         // To add a new block: copy this line with the new slug.
         'block-survey': resolve(process.cwd(), 'resources/scripts/blocks/survey', 'index.tsx'),
@@ -72,14 +76,16 @@ module.exports = {
     },
 
     plugins: [
-        ...defaults.plugins,
+        ...defaults.plugins.filter( ( p ) => ! isReactRefreshPlugin( p ) ),
         new ForkTsCheckerPlugin(),
         TanStackRouterWebpack({
             routesDirectory:     join(process.cwd(), 'resources/scripts/admin/routes'),
             generatedRouteTree:  join(process.cwd(), 'resources/scripts/admin/routeTree.gen.ts'),
             routeFileExtensions: ['.ts', '.tsx'],
         }),
-        !isProd && new ReactRefreshPlugin(),
+        ! isProd && new ReactRefreshPlugin( {
+            include: /resources[/\\]scripts[/\\](?:admin|blocks)/,
+        } ),
         new WebpackBar({ name: 'All Feedback' }),
     ].filter(Boolean),
 
