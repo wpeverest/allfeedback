@@ -198,12 +198,27 @@ return [
 	// ------------------------------------------------------------------
 	// Gutenberg blocks
 	// ─────────────────────────────────────────────────────────────────
-	// To add a new block: create its AbstractBlock subclass, autowire it
-	// here, then add get(NewBlock::class) to BlockRegistry's constructor.
+	// To add a new block:
+	//   1. Create src/Frontend/Blocks/{Name}Block.php (extends AbstractBlock)
+	//   2. Create blocks/{slug}/block.json
+	//   3. Create resources/scripts/blocks/{slug}/Edit.tsx + index.ts
+	//   4. Add  import * as {slug}  in resources/scripts/blocks/index.ts
+	//   5. Add  {Name}Block::class => autowire()  below
+	//   6. Add  {Name}Block::class  to the 'block.classes' array
+	// webpack.config.js, BlockRegistry, and FrontendServiceProvider never change.
 	// ------------------------------------------------------------------
 	SurveyBlock::class                   => autowire(),
-	BlockRegistry::class                 => create( BlockRegistry::class )
-		->constructor( get( SurveyBlock::class ) ),
+
+	'block.classes' => [
+		SurveyBlock::class,
+		// NewBlock::class,   ← add one line per block
+	],
+
+	BlockRegistry::class => factory( function ( \Psr\Container\ContainerInterface $c ) {
+		/** @var class-string<AbstractBlock>[] $classes */
+		$classes = $c->get( 'block.classes' );
+		return new BlockRegistry( ...array_map( fn( $cls ) => $c->get( $cls ), $classes ) );
+	} ),
 
 	// ------------------------------------------------------------------
 	// Service providers

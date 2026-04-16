@@ -7,16 +7,11 @@ namespace AllFeedback\Frontend\Blocks;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Holds every registered block for this plugin.
+ * Immutable registry of all Gutenberg blocks for this plugin.
  *
- * Adding a new block
- * ──────────────────
- * Pass the new block class as an additional argument in config/services.php:
- *
- *   BlockRegistry::class => create( BlockRegistry::class )
- *       ->constructor( get( SurveyBlock::class ), get( MyNewBlock::class ) ),
- *
- * FrontendServiceProvider does NOT need to change.
+ * Blocks are resolved by the factory in config/services.php from the
+ * 'block.classes' array.  To add a new block, add its class to that
+ * array — this class and FrontendServiceProvider never need to change.
  *
  * @since 1.0.0
  */

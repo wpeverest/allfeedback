@@ -1,4 +1,12 @@
-import { registerBlockType }               from '@wordpress/blocks';
+/**
+ * Survey block — editor component.
+ *
+ * Renders a sidebar survey picker (InspectorControls) and a static preview
+ * on the canvas via the shared surveyPreviewHtml() renderer.
+ *
+ * @see resources/scripts/shared/formPreview.ts – surveyPreviewHtml()
+ */
+
 import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
 import {
 	PanelBody,
@@ -11,12 +19,14 @@ import { useState, useEffect, useMemo }     from '@wordpress/element';
 import { __ }                               from '@wordpress/i18n';
 import apiFetch                             from '@wordpress/api-fetch';
 import type { BlockEditProps }              from '@wordpress/blocks';
-import metadata                             from '../../../../blocks/allfb-survey/block.json';
 import { surveyPreviewHtml }                from '../../shared/formPreview';
 import type { PreviewSurvey }               from '../../shared/formPreview';
 
-const BLOCK_CFG     = ( window as unknown as Record<string, unknown> ).__ALLFB_BLOCK__ as { color?: string } | undefined;
-const ACCENT_COLOR  = BLOCK_CFG?.color ?? '#6366f1';
+// ---------------------------------------------------------------------------
+// Plugin colour injected by PHP → wp_add_inline_script.
+// ---------------------------------------------------------------------------
+const BLOCK_CFG    = ( window as unknown as Record<string, unknown> ).__ALLFB_BLOCK__ as { color?: string } | undefined;
+const ACCENT_COLOR = BLOCK_CFG?.color ?? '#6366f1';
 
 interface SurveyListItem {
 	id:     number;
@@ -31,24 +41,28 @@ interface SurveyOption {
 	[key: string]: unknown;
 }
 
-interface Attributes {
+export interface Attributes {
 	surveyId:          number;
 	[key: string]: unknown;
 }
 
-function Edit( { attributes, setAttributes }: BlockEditProps<Attributes> ) {
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
+export default function Edit( { attributes, setAttributes }: BlockEditProps<Attributes> ) {
 	const { surveyId } = attributes;
 	const blockProps    = useBlockProps();
 
- 	const [ options,        setOptions        ] = useState<SurveyOption[]>( [] );
+	const [ options,        setOptions        ] = useState<SurveyOption[]>( [] );
 	const [ loadingOptions, setLoadingOptions ] = useState( true );
 	const [ optionsError,   setOptionsError   ] = useState( '' );
 	const [ filter,         setFilter         ] = useState( '' );
 
- 	const [ survey,         setSurvey         ] = useState<PreviewSurvey | null>( null );
+	const [ survey,         setSurvey         ] = useState<PreviewSurvey | null>( null );
 	const [ loadingPreview, setLoadingPreview  ] = useState( false );
 
- 	useEffect( () => {
+	useEffect( () => {
 		apiFetch<{ success: boolean; data: { surveys: SurveyListItem[] } }>( {
 			path: '/all-feedback/v1/surveys?per_page=100',
 		} )
@@ -67,7 +81,7 @@ function Edit( { attributes, setAttributes }: BlockEditProps<Attributes> ) {
 			.finally( () => setLoadingOptions( false ) );
 	}, [] );
 
- 	useEffect( () => {
+	useEffect( () => {
 		if ( ! surveyId ) { setSurvey( null ); return; }
 		setLoadingPreview( true );
 		setSurvey( null );
@@ -90,7 +104,7 @@ function Edit( { attributes, setAttributes }: BlockEditProps<Attributes> ) {
 
 	return (
 		<>
- 			<InspectorControls>
+			<InspectorControls>
 				<PanelBody title={ __( 'Survey', 'all-feedback' ) } initialOpen>
 					{ optionsError ? (
 						<Notice status="error" isDismissible={ false }>{ optionsError }</Notice>
@@ -111,7 +125,7 @@ function Edit( { attributes, setAttributes }: BlockEditProps<Attributes> ) {
 				</PanelBody>
 			</InspectorControls>
 
- 			<div { ...blockProps }>
+			<div { ...blockProps }>
 				{ surveyId === 0 ? (
 
 					<Placeholder
@@ -149,8 +163,3 @@ function Edit( { attributes, setAttributes }: BlockEditProps<Attributes> ) {
 		</>
 	);
 }
-
-registerBlockType( metadata.name, {
-	edit: Edit,
-	save: () => null,
-} );
