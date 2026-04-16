@@ -340,7 +340,10 @@ const ResponseDetail = () => {
 	const markReadMutation = useMutation({
 		mutationFn: (isRead: boolean) =>
 			surveysApi.updateResponse(surveyId, Number(responseId), { is_read: isRead }),
-		onSuccess: () => { void queryClient.invalidateQueries({ queryKey: ['responses'] }); },
+		onSuccess: (_, isRead) => {
+			void queryClient.invalidateQueries({ queryKey: ['responses'] });
+			toast.success(isRead ? __('Marked as read.', 'all-feedback') : __('Marked as unread.', 'all-feedback'));
+		},
 	});
 
 	useEffect(() => {
@@ -458,15 +461,15 @@ const ResponseDetail = () => {
 
 					{!isEditing ? (
 						<>
-							<button
-								type="button"
+							<Button
+								variant="secondary"
+								size="sm"
 								onClick={() => markReadMutation.mutate(!response.is_read)}
 								disabled={markReadMutation.isPending}
-								title={response.is_read ? __('Mark as unread', 'all-feedback') : __('Mark as read', 'all-feedback')}
-								className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
 							>
 								{response.is_read ? <Mail className="size-4" /> : <MailOpen className="size-4" />}
-							</button>
+								{response.is_read ? __('Mark as unread', 'all-feedback') : __('Mark as read', 'all-feedback')}
+							</Button>
 							<Button
 								variant="outline"
 								className="border-primary text-primary hover:bg-primary/5 hover:text-primary"
