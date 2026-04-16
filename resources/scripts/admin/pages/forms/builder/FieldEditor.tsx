@@ -695,7 +695,7 @@ const FieldEditor = ({
 
 				<button
 					type="button"
-					className="group/title flex w-[180px] shrink-0 items-center gap-2 rounded-md border border-transparent px-2 py-1 text-left transition-colors hover:border-border/50 hover:bg-black/[0.04]"
+					className="group/title flex min-w-0 flex-1 items-center gap-2 rounded-md border border-transparent px-2 py-1 text-left transition-colors hover:border-border/50 hover:bg-black/[0.04]"
 					onClick={(e) => {
 						e.stopPropagation();
 						setIsCollapsed(false);
