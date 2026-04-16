@@ -10,6 +10,7 @@ import { __ } from '@wordpress/i18n';
 import { ArrowLeft, Check, ChevronDown, Code2, Copy, Info, LayoutGrid, Loader2, Palette, Pencil, Redo2, Settings2, Undo2, X } from 'lucide-react';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import UnsavedChangesBadge from '@/components/ui/unsaved-changes-badge';
 import BuilderCanvas from './builder/BuilderCanvas';
 import PreviewPanel from './builder/PreviewPanel';
 import SettingsPanel from './builder/SettingsPanel';
@@ -507,14 +508,7 @@ const FormBuilder = () => {
 						</span>
 					</div>
 				)}
-				{isDirty && (
-					<div className="flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-3 py-1.5">
-						<span className="size-2 animate-pulse rounded-full bg-amber-500" />
-						<span className="text-sm font-semibold text-amber-700">
-							{__('Unsaved changes', 'all-feedback')}
-						</span>
-					</div>
-				)}
+				{isDirty && <UnsavedChangesBadge />}
 
 				{formId && (
 					<div className="flex items-center gap-1 rounded-lg border border-border bg-muted/60 pl-2.5 pr-1 py-1">
@@ -600,7 +594,7 @@ const FormBuilder = () => {
 										<span className="text-sm text-muted-foreground">{label}</span>
 										<div className="flex items-center gap-1">
 											{keys.map((k) => (
-												<kbd key={k} className="rounded border border-border bg-muted/60 px-1.5 py-0.5 text-2xs font-medium text-foreground leading-none">
+												<kbd key={k} className="rounded border border-border bg-muted/60 px-1 py-px text-2xs font-medium text-foreground leading-none">
 													{k}
 												</kbd>
 											))}

@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { useForm, useStore } from '@tanstack/react-form';
 import { useQuery } from '@tanstack/react-query';
 import { __ } from '@wordpress/i18n';
+import UnsavedChangesBadge from '@/components/ui/unsaved-changes-badge';
 import { Globe, Lock, MessageSquare, Pipette, Settings2 } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 
@@ -313,21 +314,16 @@ const GeneralSettings = () => {
 
 	return (
 		<div>
-			<div className="flex items-center gap-3 border-b border-border/50 px-6 py-4">
-				<div className="flex size-9 items-center justify-center rounded-xl bg-primary/10">
-					<Settings2 className="size-[18px] text-primary" />
-				</div>
-				<h3 className="text-md font-semibold text-foreground" style={{ margin: 0 }}>
-					{__('General', 'all-feedback')}
-				</h3>
-				{sharedIsDirty && !isSaving && (
-					<div className="ml-auto flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-3 py-1.5">
-						<span className="size-2 animate-pulse rounded-full bg-amber-500" />
-						<span className="text-sm font-semibold text-amber-700">
-							{__('Unsaved changes', 'all-feedback')}
-						</span>
+			<div className="flex items-center justify-between gap-3 border-b border-border/50 px-6 py-4">
+				<div className="flex items-center gap-3">
+					<div className="flex size-9 items-center justify-center rounded-xl bg-primary/10">
+						<Settings2 className="size-[18px] text-primary" />
 					</div>
-				)}
+					<h3 className="text-md font-semibold text-foreground" style={{ margin: 0 }}>
+						{__('General', 'all-feedback')}
+					</h3>
+				</div>
+				{sharedIsDirty && !isSaving && <UnsavedChangesBadge />}
 			</div>
 
 			<div className="space-y-4 p-6">
