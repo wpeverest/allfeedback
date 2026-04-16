@@ -29,6 +29,9 @@ class SurveyAnalyticsService {
 	/**
 	 * Build a full analytics report for the given survey.
 	 *
+	 * All aggregation is performed in SQL — no response objects are loaded into
+	 * PHP memory, so this scales to millions of rows without issue.
+	 *
 	 * Returns:
 	 *  - total_responses (int)
 	 *  - average_score   (float|null)
@@ -48,55 +51,29 @@ class SurveyAnalyticsService {
 			throw NotFoundException::forResource( esc_html__( 'Survey', 'all-feedback' ), $surveyId );
 		}
 
-		$responses = $this->responseRepository->findBySurveyId( $surveyId );
-		$total     = count( $responses );
+		$stats    = $this->responseRepository->aggregateScoreStats( $surveyId );
+		$byDevice = $this->responseRepository->countByDevice( $surveyId );
+		$overTime = $this->responseRepository->countByDate( $surveyId );
 
-		$scoreSum    = 0.0;
-		$scoreCount  = 0;
-		$promoters   = 0;
-		$passives    = 0;
-		$detractors  = 0;
-		$byDevice    = [];
-		$overTime    = [];
+		$total      = $stats['total'];
+		$scoreCount = $stats['score_count'];
 
-		foreach ( $responses as $response ) {
-			$score = $response->getScore();
+		$averageScore = $scoreCount > 0
+			? round( $stats['score_sum'] / $scoreCount, 2 )
+			: null;
 
-			if ( $score !== null ) {
-				$scoreSum += $score;
-				++$scoreCount;
-
-				if ( $score >= 9 ) {
-					++$promoters;
-				} elseif ( $score >= 7 ) {
-					++$passives;
-				} else {
-					++$detractors;
-				}
-			}
-
-			$device              = $response->getDeviceType() ?? 'unknown';
-			$byDevice[ $device ] = ( $byDevice[ $device ] ?? 0 ) + 1;
-
-			$date               = $response->getCreatedAt()->format( 'Y-m-d' );
-			$overTime[ $date ]  = ( $overTime[ $date ] ?? 0 ) + 1;
-		}
-
-		$averageScore = $scoreCount > 0 ? round( $scoreSum / $scoreCount, 2 ) : null;
-		$npsScore     = $total > 0
-			? round( ( ( $promoters - $detractors ) / $total ) * 100, 2 )
+		$npsScore = $total > 0
+			? round( ( ( $stats['promoters'] - $stats['detractors'] ) / $total ) * 100, 2 )
 			: 0.0;
 
-		ksort( $overTime );
-
 		return [
-			'total_responses'        => $total,
-			'average_score'          => $averageScore,
-			'nps_score'              => [
+			'total_responses'         => $total,
+			'average_score'           => $averageScore,
+			'nps_score'               => [
 				'score'      => $npsScore,
-				'promoters'  => $promoters,
-				'passives'   => $passives,
-				'detractors' => $detractors,
+				'promoters'  => $stats['promoters'],
+				'passives'   => $stats['passives'],
+				'detractors' => $stats['detractors'],
 			],
 			'response_rate_by_device' => $byDevice,
 			'responses_over_time'     => $overTime,

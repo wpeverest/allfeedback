@@ -1,6 +1,7 @@
 # Dependencies
 node_modules/
 vendor/
+release/
 
 # Package manager lockfiles (regenerated on install)
 pnpm-lock.yaml

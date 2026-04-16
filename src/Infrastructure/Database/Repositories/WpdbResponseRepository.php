@@ -27,6 +27,9 @@ class WpdbResponseRepository implements ResponseRepository {
 	/** @since 1.0.0 */
 	private string $table;
 
+	/** Transient key for the cached unread count. @since 1.0.0 */
+	private const UNREAD_CACHE_KEY = 'allfeedback_unread_count';
+
 	/** @since 1.0.0 */
 	private const ALLOWED_ORDERBY = [
 		'id',
@@ -71,6 +74,8 @@ class WpdbResponseRepository implements ResponseRepository {
 		if ( false === $result ) {
 			throw new \RuntimeException( 'Failed to insert response: ' . esc_html( $wpdb->last_error ) );
 		}
+
+		delete_transient( self::UNREAD_CACHE_KEY );
 
 		return Response::reconstitute(
 			id: (int) $wpdb->insert_id,
@@ -224,7 +229,13 @@ class WpdbResponseRepository implements ResponseRepository {
 			array_keys( $payload )
 		);
 
-		return $wpdb->update( $this->table, $payload, [ 'id' => $id ], $formats, [ '%d' ] ) !== false;
+		$ok = $wpdb->update( $this->table, $payload, [ 'id' => $id ], $formats, [ '%d' ] ) !== false;
+
+		if ( $ok && isset( $payload['is_read'] ) ) {
+			delete_transient( self::UNREAD_CACHE_KEY );
+		}
+
+		return $ok;
 	}
 
 	/**
@@ -234,7 +245,13 @@ class WpdbResponseRepository implements ResponseRepository {
 	 */
 	public function delete( int $id ): bool {
 		global $wpdb;
-		return $wpdb->delete( $this->table, [ 'id' => $id ], [ '%d' ] ) !== false;
+		$ok = $wpdb->delete( $this->table, [ 'id' => $id ], [ '%d' ] ) !== false;
+
+		if ( $ok ) {
+			delete_transient( self::UNREAD_CACHE_KEY );
+		}
+
+		return $ok;
 	}
 
 	/**
@@ -245,24 +262,43 @@ class WpdbResponseRepository implements ResponseRepository {
 	public function deleteBySurveyId( int $surveyId ): bool {
 		global $wpdb;
 		$result = $wpdb->delete( $this->table, [ 'survey_id' => $surveyId ], [ '%d' ] );
+
+		if ( $result !== false ) {
+			delete_transient( self::UNREAD_CACHE_KEY );
+		}
+
 		return $result !== false;
 	}
 
 	/**
 	 * Count all unread Responses across every non-trashed Survey.
 	 *
+	 * Result is cached as a transient for 5 minutes to avoid hitting the
+	 * database on every admin page load. The cache is invalidated whenever
+	 * a response is saved, updated, or deleted via this repository.
+	 *
 	 * @since 1.0.0
 	 */
 	public function countUnread(): int {
+		$cached = get_transient( self::UNREAD_CACHE_KEY );
+
+		if ( $cached !== false ) {
+			return (int) $cached;
+		}
+
 		global $wpdb;
 
 		$surveysTable = $wpdb->prefix . 'af_surveys';
 
-		return (int) $wpdb->get_var(
+		$count = (int) $wpdb->get_var(
 			"SELECT COUNT(*) FROM {$this->table}
 			 WHERE is_read = 0
 			   AND survey_id IN (SELECT id FROM {$surveysTable} WHERE status != 'trashed')" // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		);
+
+		set_transient( self::UNREAD_CACHE_KEY, $count, 5 * MINUTE_IN_SECONDS );
+
+		return $count;
 	}
 
 	/**
@@ -301,6 +337,98 @@ class WpdbResponseRepository implements ResponseRepository {
 		}
 
 		return $count > 0;
+	}
+
+	/**
+	 * Aggregate score statistics for a survey using SQL.
+	 *
+	 * @return array{total: int, score_count: int, score_sum: float, promoters: int, passives: int, detractors: int}
+	 * @since 1.0.0
+	 */
+	public function aggregateScoreStats( int $surveyId ): array {
+		global $wpdb;
+
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT
+					COUNT(*)                                              AS total,
+					COUNT(score)                                          AS score_count,
+					COALESCE(SUM(score), 0)                               AS score_sum,
+					SUM(CASE WHEN score >= 9              THEN 1 ELSE 0 END) AS promoters,
+					SUM(CASE WHEN score >= 7 AND score < 9 THEN 1 ELSE 0 END) AS passives,
+					SUM(CASE WHEN score < 7 AND score IS NOT NULL THEN 1 ELSE 0 END) AS detractors
+				 FROM {$this->table}
+				 WHERE survey_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$surveyId
+			),
+			ARRAY_A
+		);
+
+		return [
+			'total'       => (int) ( $row['total'] ?? 0 ),
+			'score_count' => (int) ( $row['score_count'] ?? 0 ),
+			'score_sum'   => (float) ( $row['score_sum'] ?? 0 ),
+			'promoters'   => (int) ( $row['promoters'] ?? 0 ),
+			'passives'    => (int) ( $row['passives'] ?? 0 ),
+			'detractors'  => (int) ( $row['detractors'] ?? 0 ),
+		];
+	}
+
+	/**
+	 * Count responses grouped by device_type for a survey using SQL.
+	 *
+	 * @return array<string, int>
+	 * @since 1.0.0
+	 */
+	public function countByDevice( int $surveyId ): array {
+		global $wpdb;
+
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT COALESCE(device_type, 'unknown') AS device, COUNT(*) AS cnt
+				 FROM {$this->table}
+				 WHERE survey_id = %d
+				 GROUP BY device", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$surveyId
+			),
+			ARRAY_A
+		) ?: [];
+
+		$result = [];
+		foreach ( $rows as $row ) {
+			$result[ $row['device'] ] = (int) $row['cnt'];
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Count responses grouped by date (Y-m-d) for a survey using SQL.
+	 *
+	 * @return array<string, int>
+	 * @since 1.0.0
+	 */
+	public function countByDate( int $surveyId ): array {
+		global $wpdb;
+
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT DATE(created_at) AS d, COUNT(*) AS cnt
+				 FROM {$this->table}
+				 WHERE survey_id = %d
+				 GROUP BY d
+				 ORDER BY d ASC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$surveyId
+			),
+			ARRAY_A
+		) ?: [];
+
+		$result = [];
+		foreach ( $rows as $row ) {
+			$result[ $row['d'] ] = (int) $row['cnt'];
+		}
+
+		return $result;
 	}
 
 	/**

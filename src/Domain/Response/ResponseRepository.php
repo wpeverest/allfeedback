@@ -108,4 +108,30 @@ interface ResponseRepository {
 	 * @since 1.0.0
 	 */
 	public function existsByIpHash( int $surveyId, string $ipHash, int $windowHours = 0 ): bool;
+
+	/**
+	 * Aggregate score statistics for a survey using SQL.
+	 *
+	 * Returns: total, score_count, score_sum, promoters (9-10), passives (7-8), detractors (0-6).
+	 *
+	 * @return array{total: int, score_count: int, score_sum: float, promoters: int, passives: int, detractors: int}
+	 * @since 1.0.0
+	 */
+	public function aggregateScoreStats( int $surveyId ): array;
+
+	/**
+	 * Count responses grouped by device_type for a survey using SQL.
+	 *
+	 * @return array<string, int> device_type => count
+	 * @since 1.0.0
+	 */
+	public function countByDevice( int $surveyId ): array;
+
+	/**
+	 * Count responses grouped by date (Y-m-d) for a survey using SQL.
+	 *
+	 * @return array<string, int> date => count (sorted ascending)
+	 * @since 1.0.0
+	 */
+	public function countByDate( int $surveyId ): array;
 }
