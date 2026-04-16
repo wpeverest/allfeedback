@@ -10,7 +10,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import CopyButton from '@/components/ui/copy-button';
+import ShortcodeChip from '@/components/ui/shortcode-chip';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { Pagination } from '@/components/ui/pagination';
@@ -34,7 +34,7 @@ import {
 	ArrowUp,
 	ArrowUpDown,
 	ArrowUpRight,
-	Code2,
+
 	Copy,
 	Edit2,
 	FileText,
@@ -86,17 +86,17 @@ const SkeletonRow = () => (
 		<td className="px-4 py-5">
 			<div className="h-4 w-48 animate-pulse rounded bg-muted" />
 		</td>
-		<td className="w-28 px-4 py-5">
+		<td className="w-20 px-4 py-5">
 			<div className="h-4 w-10 animate-pulse rounded bg-muted" />
 		</td>
-		<td className="w-36 px-4 py-5">
-			<div className="h-4 w-24 animate-pulse rounded bg-muted" />
+		<td className="w-[200px] px-4 py-5">
+			<div className="h-6 w-36 animate-pulse rounded-md bg-muted" />
 		</td>
-		<td className="w-32 px-4 py-5">
+		<td className="w-24 px-4 py-5">
 			<div className="h-6 w-20 animate-pulse rounded-full bg-muted" />
 		</td>
-		<td className="w-[120px] px-4 py-5">
-			<div className="h-6 w-36 animate-pulse rounded-md bg-muted" />
+		<td className="w-28 px-4 py-5">
+			<div className="h-4 w-24 animate-pulse rounded bg-muted" />
 		</td>
 		<td className="w-24 px-4 py-5">
 			<div className="flex items-center gap-1.5">
@@ -383,17 +383,17 @@ const AllForms = () => {
 								<th className="w-[220px] px-4 py-4 text-left">
 									<ColHead label={__('Form Name', 'all-feedback')} />
 								</th>
-								<th className="w-28 px-4 py-4 text-left">
+								<th className="w-20 px-4 py-4 text-left">
 									<ColHead column="response_count" label={__('Responses', 'all-feedback')} sortable />
 								</th>
-								<th className="w-36 px-4 py-4 text-left">
-									<ColHead column="created_at" label={__('Created', 'all-feedback')} sortable />
+								<th className="w-[200px] px-4 py-4 text-left">
+									<ColHead label={__('Shortcode', 'all-feedback')} />
 								</th>
-								<th className="w-32 px-4 py-4 text-left">
+								<th className="w-24 px-4 py-4 text-left">
 									<ColHead label={__('Status', 'all-feedback')} />
 								</th>
-								<th className="w-[120px] px-4 py-4 text-left">
-									<ColHead label={__('Shortcode', 'all-feedback')} />
+								<th className="w-28 px-4 py-4 text-left">
+									<ColHead column="created_at" label={__('Created', 'all-feedback')} sortable />
 								</th>
 								<th className="w-24 px-4 py-4 text-left">
 									<ColHead label={__('Actions', 'all-feedback')} />
@@ -470,14 +470,14 @@ const AllForms = () => {
 											</button>
 										</td>
 
-										<td className="w-28 px-4 py-5">
+										<td className="w-20 px-4 py-5">
 											<button
 												type="button"
 												className={cn(
 													'group/resp inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-sm font-medium tabular-nums transition-colors hover:bg-primary/[0.06] hover:text-primary',
 													survey.response_count > 0
-														? 'text-primary/70'
-														: 'text-foreground/40 hover:text-primary/60',
+														? 'text-primary'
+														: 'text-foreground/60 hover:text-primary',
 												)}
 												onClick={() => void navigate({ to: '/responses/', search: { surveyId: survey.id } })}
 											>
@@ -488,33 +488,21 @@ const AllForms = () => {
 											</button>
 										</td>
 
-										<td className="w-36 px-4 py-5">
-											<span className={cellCls}>
-												{format(new Date(survey.created_at), 'MMM d, yyyy')}
-											</span>
+										<td className="w-[200px] px-4 py-5">
+											<ShortcodeChip shortcode={`[allfb_survey id="${survey.id}"]`} size="sm" />
 										</td>
 
-										<td className="w-32 px-4 py-5">
+										<td className="w-24 px-4 py-5">
 											<Badge variant={statusCfg.variant}>
 												<span className={cn('size-1.5 rounded-full', statusCfg.dot)} />
 												{statusCfg.label}
 											</Badge>
 										</td>
 
-										<td className="w-[120px] px-4 py-5">
-											<div className="flex max-w-full items-center gap-1 rounded-md border border-border bg-muted/60 pl-2 pr-1 py-1">
-												<Code2 className="size-3 shrink-0 text-muted-foreground/70" />
-												<span className="min-w-0 flex-1 truncate font-mono text-xs text-foreground/90">
-													{`[allfb_survey id="${survey.id}"]`}
-												</span>
-												<CopyButton
-													text={`[allfb_survey id="${survey.id}"]`}
-													title={__('Copy shortcode', 'all-feedback')}
-													successMessage={__('Shortcode copied to clipboard.', 'all-feedback')}
-													className="size-5 rounded text-muted-foreground/60 hover:bg-accent hover:text-foreground"
-													iconClassName="size-3"
-												/>
-											</div>
+										<td className="w-28 px-4 py-5">
+											<span className={cellCls}>
+												{format(new Date(survey.created_at), 'MMM d, yyyy')}
+											</span>
 										</td>
 
 										<td className="w-24 px-4 py-5">

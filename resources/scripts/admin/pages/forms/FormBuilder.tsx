@@ -7,10 +7,10 @@ import { useRouter } from '@tanstack/react-router';
 import { Route } from '@/admin/routes/builder.index';
 import { surveyQuery } from '@/admin/queries/surveys';
 import { __ } from '@wordpress/i18n';
-import { ArrowLeft, Check, ChevronDown, Code2, Info, LayoutGrid, Loader2, Palette, Pencil, Redo2, Settings2, Undo2, X } from 'lucide-react';
+import { ArrowLeft, Check, ChevronDown, Info, LayoutGrid, Loader2, Palette, Pencil, Redo2, Settings2, Undo2, X } from 'lucide-react';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import CopyButton from '@/components/ui/copy-button';
+import ShortcodeChip from '@/components/ui/shortcode-chip';
 import UnsavedChangesBadge from '@/components/ui/unsaved-changes-badge';
 import BuilderCanvas from './builder/BuilderCanvas';
 import PreviewPanel from './builder/PreviewPanel';
@@ -512,19 +512,7 @@ const FormBuilder = () => {
 				{isDirty && <UnsavedChangesBadge />}
 
 				{formId && (
-					<div className="flex items-center gap-1 rounded-lg border border-border bg-muted/60 pl-2.5 pr-1 py-1">
-						<Code2 className="size-3.5 shrink-0 text-muted-foreground/70" />
-						<span className="font-mono text-xs text-foreground/90">
-							{`[allfb_survey id="${formId}"]`}
-						</span>
-						<CopyButton
-							text={`[allfb_survey id="${formId}"]`}
-							title={__('Copy shortcode', 'all-feedback')}
-							successMessage={__('Shortcode copied to clipboard.', 'all-feedback')}
-							className="size-6 rounded-md text-muted-foreground/60 hover:bg-accent hover:text-foreground"
-							iconClassName="size-3.5"
-						/>
-					</div>
+					<ShortcodeChip shortcode={`[allfb_survey id="${formId}"]`} size="md" />
 				)}
 
 				<div className="flex items-center gap-0.5">

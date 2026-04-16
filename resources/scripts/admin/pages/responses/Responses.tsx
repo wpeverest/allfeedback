@@ -403,15 +403,9 @@ const Responses = () => {
 
 										{/* ID */}
 										<td className="w-16 px-4 py-5">
-											<div className="flex items-center gap-1.5">
-												<span
-													className={cn('size-1.5 shrink-0 rounded-full', !response.is_read ? 'bg-primary/70' : 'bg-transparent')}
-													title={!response.is_read ? __('Unread', 'all-feedback') : undefined}
-												/>
-												<span className={cn(cellCls, 'tabular-nums text-foreground/40')}>
-													#{response.id}
-												</span>
-											</div>
+											<span className={cn(cellCls, 'tabular-nums text-foreground/40')}>
+												#{response.id}
+											</span>
 										</td>
 
 										{/* Response summary — clickable, opens detail page */}
@@ -432,12 +426,25 @@ const Responses = () => {
 											</button>
 										</td>
 
-										{/* Form — plain text, no link */}
+										{/* Form — click to filter by this form */}
 										{showForm && (
 											<td className="w-[180px] px-4 py-5">
-												<span className={cn(cellCls, 'truncate block')}>
-													{surveyTitleMap[response.survey_id] ?? `#${response.survey_id}`}
-												</span>
+												<button
+													type="button"
+													className="group/form flex min-w-0 items-center gap-1 text-left"
+													onClick={() => {
+														setSelectedSurveyId(response.survey_id);
+														setPage(1);
+														setChecked([]);
+													}}
+												>
+													<span className={cn(
+														cellCls,
+														'truncate underline-offset-2 transition-colors group-hover/form:text-primary group-hover/form:underline',
+													)}>
+														{surveyTitleMap[response.survey_id] ?? `#${response.survey_id}`}
+													</span>
+												</button>
 											</td>
 										)}
 

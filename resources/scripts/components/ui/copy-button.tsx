@@ -58,8 +58,8 @@ const CopyButton = ({
 			)}
 		>
 			{copied
-				? <Check className={cn(iconClassName, 'text-green-500')} />
-				: <Copy className={iconClassName} />
+				? <Check className={cn(iconClassName, 'text-green-500 stroke-[2.5]')} />
+				: <Copy className={cn(iconClassName, 'text-foreground/70 stroke-[2.5]')} />
 			}
 		</button>
 	);
