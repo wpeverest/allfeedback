@@ -1,4 +1,5 @@
-import { cn } from '@/lib/utils';
+import { cn, htmlToText } from '@/lib/utils';
+import { __ } from '@wordpress/i18n';
 import { Copy, GripVertical, Trash2 } from 'lucide-react';
 import { FIELD_TYPES } from './fieldTypes';
 import type { FormField } from './types';
@@ -58,7 +59,7 @@ const FieldItem = ({
 			)}
 
 			<div className="min-w-0 flex-1">
-				<p className="truncate text-sm font-medium text-foreground">{field.label}</p>
+				<p className="text-sm font-medium text-foreground">{htmlToText(field.label) || __('Untitled', 'all-feedback')}</p>
 				<p className="text-sm text-muted-foreground">{typeConfig?.label}</p>
 			</div>
 

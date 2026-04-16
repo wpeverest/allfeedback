@@ -5,6 +5,12 @@ export function cn(...inputs: ClassValue[]): string {
 	return twMerge(clsx(inputs));
 }
 
+export function htmlToText(html: string): string {
+	const div = document.createElement('div');
+	div.innerHTML = html;
+	return div.textContent ?? div.innerText ?? '';
+}
+
 export function deepMerge(
 	target: Record<string, unknown>,
 	...sources: Record<string, unknown>[]

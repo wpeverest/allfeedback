@@ -4,7 +4,7 @@ import HighlightExtension from '@tiptap/extension-highlight';
 import UnderlineExtension from '@tiptap/extension-underline';
 import PlaceholderExtension from '@tiptap/extension-placeholder';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { cn, htmlToText } from '@/lib/utils';
 import { __ } from '@wordpress/i18n';
 import {
 	Bold as BoldIcon,
@@ -603,8 +603,6 @@ export interface FieldEditorProps {
 	onDrop: (e: React.DragEvent, index: number) => void;
 }
 
-const htmlToText = (html: string): string =>
-	html.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&nbsp;/g, ' ').trim();
 
 const FieldEditor = ({
 	field,

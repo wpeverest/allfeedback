@@ -514,10 +514,13 @@ const ResponseDetail = () => {
 													<span className="flex size-5 shrink-0 items-center justify-center rounded-md bg-muted text-2xs font-bold tabular-nums text-muted-foreground">
 														{idx + 1}
 													</span>
-													<p className="text-xs font-medium text-muted-foreground">
-														{schField.label}
+													<div className="flex items-baseline gap-0.5 text-xs font-medium text-muted-foreground">
+														<span
+															className="[&_p]:m-0 [&_p]:inline"
+															dangerouslySetInnerHTML={{ __html: schField.label }}
+														/>
 														{schField.required && <span className="ml-0.5 text-destructive">*</span>}
-													</p>
+													</div>
 												</div>
 												<div className="pl-7">
 													{isEditing ? (

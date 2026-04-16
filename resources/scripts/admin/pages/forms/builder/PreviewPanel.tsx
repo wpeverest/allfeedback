@@ -1,6 +1,6 @@
 ﻿import { surveysApi } from '@/admin/api/surveys';
 import type { SubmitFormData, SurveyStatus } from '@/admin/api/surveys';
-import { cn } from '@/lib/utils';
+import { cn, htmlToText } from '@/lib/utils';
 import { useMutation } from '@tanstack/react-query';
 import { __ } from '@wordpress/i18n';
 import { ArrowLeft, ArrowRight, CheckCircle2, ChevronLeft, ChevronRight, Eye, Globe, Loader2, Lock, MessageSquare, Minus, Monitor, MoreHorizontal, Plus, RotateCw, Smartphone, Star, Tablet, X } from 'lucide-react';
@@ -37,11 +37,6 @@ const DEVICE_PAGE_W: Record<PreviewDevice, string | null> = {
 
 type PreviewView = 'page' | 'widget';
 
-const htmlToText = (html: string): string => {
-	const div    = document.createElement('div');
-	div.innerHTML = html;
-	return div.textContent ?? div.innerText ?? '';
-};
 
 const normalizeLabel = (html: string): string => {
 	const t = html.trim();
