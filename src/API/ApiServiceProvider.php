@@ -9,6 +9,7 @@ use AllFeedback\API\Controllers\V1\LogsController;
 use AllFeedback\API\Controllers\V1\ResponsesController;
 use AllFeedback\API\Controllers\V1\SettingsController;
 use AllFeedback\API\Controllers\V1\SubmitController;
+use AllFeedback\API\Controllers\V1\SurveyStateController;
 use AllFeedback\API\Controllers\V1\SurveysController;
 use AllFeedback\Core\Container;
 use AllFeedback\Core\ServiceProvider;
@@ -68,6 +69,7 @@ class ApiServiceProvider implements ServiceProvider {
 	public function registerRoutes(): void {
 		$controllers = [
 			SubmitController::class,        // /surveys/{id}/submit    — public, nonce-gated
+			SurveyStateController::class,   // /surveys/{id}/state     — logged-in users only
 			ResponsesController::class,     // /surveys/{id}/responses — admin, must come before SurveysController
 			SurveysController::class,       // /surveys
 			SettingsController::class,      // /settings

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AllFeedback\Frontend;
 
 use AllFeedback\API\Controllers\V1\SubmitController;
+use AllFeedback\Application\Survey\SurveyStateService;
 use AllFeedback\Core\Container;
 use AllFeedback\Core\ServiceProvider;
 use AllFeedback\Core\Settings\SettingsManager;
@@ -41,6 +42,7 @@ class FrontendServiceProvider implements ServiceProvider {
 		private readonly SettingsManager $settingsManager,
 		private readonly TargetingEngine $targetingEngine,
 		private readonly BlockRegistry $blockRegistry,
+		private readonly SurveyStateService $stateService,
 	) {}
 
 	// ServiceProvider::register() — nothing extra to add here.
@@ -168,7 +170,9 @@ class FrontendServiceProvider implements ServiceProvider {
 
 		if ( ! empty( $surveyIds ) ) {
 			/** @var SurveyRepository $repo */
-			$repo = $this->container->get( SurveyRepository::class );
+			$repo        = $this->container->get( SurveyRepository::class );
+			$isLoggedIn  = is_user_logged_in();
+			$currentUser = $isLoggedIn ? get_current_user_id() : 0;
 
 			foreach ( $surveyIds as $id ) {
 				$survey = $repo->findById( $id );
@@ -176,17 +180,26 @@ class FrontendServiceProvider implements ServiceProvider {
 					continue;
 				}
 
-				$merged          = $this->mergeFormDisplaySettings( $globalWidgetSettings, $survey->getSettings() );
-				$surveyConfigs[] = array_filter(
-					[
-						'id'                => $id,
-						'show_to'           => $merged['show_to']           ?? null,
-						'display_frequency' => $merged['display_frequency'] ?? null,
-						'max_impressions'   => isset( $merged['max_impressions'] )   ? (int) $merged['max_impressions']   : null,
-						'reshow_after_days' => isset( $merged['reshow_after_days'] ) ? (int) $merged['reshow_after_days'] : null,
-					],
-					fn( $v ) => $v !== null
-				);
+				$merged = $this->mergeFormDisplaySettings( $globalWidgetSettings, $survey->getSettings() );
+
+				// Build config — always include id and is_logged_in.
+				$config = [
+					'id'          => $id,
+					'is_logged_in' => $isLoggedIn,
+				];
+
+				if ( isset( $merged['show_to'] ) )           $config['show_to']           = (string) $merged['show_to'];
+				if ( isset( $merged['display_frequency'] ) ) $config['display_frequency'] = (string) $merged['display_frequency'];
+				if ( isset( $merged['max_impressions'] ) )   $config['max_impressions']   = (int) $merged['max_impressions'];
+				if ( isset( $merged['reshow_after_days'] ) ) $config['reshow_after_days'] = (int) $merged['reshow_after_days'];
+
+				// For logged-in users, embed their current display state so the JS
+				// gate check is correct on first load — no extra REST call needed.
+				if ( $isLoggedIn ) {
+					$config['server_state'] = $this->stateService->getState( $currentUser, $id );
+				}
+
+				$surveyConfigs[] = $config;
 			}
 		}
 

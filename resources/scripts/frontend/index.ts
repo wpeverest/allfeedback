@@ -5,16 +5,29 @@ import '../../styles/frontend.pcss';
 // ---------------------------------------------------------------------------
 
 /**
+ * Display state — shared shape for both localStorage (guests) and
+ * server_state (logged-in users embedded by PHP).
+ */
+interface WidgetState {
+	impressions:  number;
+	submitted:    boolean;
+	dismissed_at: number | null; // Unix ms, or null if never dismissed
+}
+
+/**
  * Per-survey display-gate configuration, emitted by the PHP orchestrator for
  * each survey that targets the current page.  The JS orchestrator iterates
  * this list and mounts the first entry that passes all client-side gates.
  */
 interface SurveyConfig {
 	id:                 number;
+	is_logged_in:       boolean;                  // always present — set by PHP
 	show_to?:           'all' | 'logged_in' | 'logged_out';
 	display_frequency?: 'once' | 'until_submit';
 	max_impressions?:   number;
 	reshow_after_days?: number;
+	/** Embedded by PHP for logged-in users so no extra request is needed. */
+	server_state?:      WidgetState;
 }
 
 interface AllfbSettings {
@@ -125,7 +138,7 @@ function bootstrap(): void {
 	const surveyConfigs: SurveyConfig[] = settings.survey_configs?.length
 		? settings.survey_configs
 		: settings.survey_id
-			? [ { id: settings.survey_id } ]
+			? [ { id: settings.survey_id, is_logged_in: false } ]
 			: [];
 
 	// Orchestrator: iterate surveys in priority order (most-recent first) and
@@ -174,6 +187,7 @@ async function fetchAndRender(
 	surveyId: number,
 	container: HTMLElement,
 	submitNonce: string,
+	onSubmit?: () => void,
 ): Promise<void> {
 	try {
 		const res = await fetch( `${ cfg.restUrl }surveys/${ surveyId }`, {
@@ -191,6 +205,7 @@ async function fetchAndRender(
 		const tyDesc   = settings.thankYouEnabled ? settings.thankYouDescription : 'Your response has been recorded.';
 
 		const form = buildForm( cfg, survey, submitNonce, () => {
+			onSubmit?.();
 			container.innerHTML = thankYouHtml( tyTitle, tyDesc );
 		} );
 
@@ -202,6 +217,105 @@ async function fetchAndRender(
 }
 
 // ---------------------------------------------------------------------------
+// StateManager — abstracts localStorage (guests) vs REST + user_meta (logged-in)
+// ---------------------------------------------------------------------------
+
+class StateManager {
+
+	private state:      WidgetState;
+	private surveyId:   number;
+	private restUrl:    string;
+	private nonce:      string;
+	private isLoggedIn: boolean;
+	private readonly localKey: string;
+
+	constructor( surveyConfig: SurveyConfig, restUrl: string, nonce: string ) {
+		this.surveyId   = surveyConfig.id;
+		this.restUrl    = restUrl;
+		this.nonce      = nonce;
+		this.isLoggedIn = surveyConfig.is_logged_in ?? false;
+		this.localKey   = `allfb_w_${ surveyConfig.id }`;
+
+		if ( this.isLoggedIn && surveyConfig.server_state ) {
+			// Logged-in: use server_state (PHP-embedded, cross-device authoritative).
+			// Also write it to localStorage so subsequent in-session reads are instant.
+			this.state = this.mergeWithLocal( surveyConfig.server_state );
+			this.writeLocal( this.state );
+		} else {
+			// Guest: localStorage is the only source of truth.
+			this.state = this.readLocal();
+		}
+	}
+
+	/** Return the current resolved state (in-memory after first init). */
+	getState(): WidgetState {
+		return this.state;
+	}
+
+	/** Called when the widget panel is first opened. */
+	recordImpression(): void {
+		this.state = { ...this.state, impressions: this.state.impressions + 1 };
+		this.persist( 'impression' );
+	}
+
+	/** Called when the user explicitly closes the panel (X button). */
+	recordDismissal(): void {
+		this.state = { ...this.state, dismissed_at: Date.now() };
+		this.persist( 'dismiss' );
+	}
+
+	/** Called after a successful form submission. */
+	recordSubmit(): void {
+		this.state = { ...this.state, submitted: true };
+		this.persist( 'submit' );
+	}
+
+	// ── Private ────────────────────────────────────────────────────────────
+
+	/**
+	 * Merge server state with local state, taking the most permissive values.
+	 * Handles the case where a user submitted on another device (server_state
+	 * has submitted: true) but local has lower impression count.
+	 */
+	private mergeWithLocal( server: WidgetState ): WidgetState {
+		const local = this.readLocal();
+		return {
+			impressions:  Math.max( local.impressions, server.impressions ),
+			submitted:    local.submitted || server.submitted,
+			dismissed_at: server.dismissed_at ?? local.dismissed_at,
+		};
+	}
+
+	private persist( action: string ): void {
+		// Always write locally — instant and works offline.
+		this.writeLocal( this.state );
+
+		// For logged-in users, also sync to the server (fire-and-forget).
+		if ( this.isLoggedIn ) {
+			fetch( `${ this.restUrl }surveys/${ this.surveyId }/state`, {
+				method:  'POST',
+				headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': this.nonce },
+				body:    JSON.stringify( { action } ),
+			} ).catch( () => { /* silent — localStorage already updated */ } );
+		}
+	}
+
+	private readLocal(): WidgetState {
+		try {
+			const raw = localStorage.getItem( this.localKey );
+			if ( raw ) return JSON.parse( raw ) as WidgetState;
+		} catch { /* ignore quota / private-browsing errors */ }
+		return { impressions: 0, submitted: false, dismissed_at: null };
+	}
+
+	private writeLocal( state: WidgetState ): void {
+		try {
+			localStorage.setItem( this.localKey, JSON.stringify( state ) );
+		} catch { /* ignore */ }
+	}
+}
+
+// ---------------------------------------------------------------------------
 // Floating widget
 // ---------------------------------------------------------------------------
 
@@ -209,17 +323,20 @@ class AllfbWidget {
 
 	private cfg:          AllfbConfig;
 	private surveyConfig: SurveyConfig;
+	private stateManager: StateManager;
 
 	// DOM nodes — null until mount() builds them (lazy).
 	private root:     HTMLDivElement  | null = null;
 	private launcher: HTMLButtonElement | null = null;
 	private panel:    HTMLDivElement  | null = null;
-	private isOpen  = false;
-	private loaded  = false;
+	private isOpen             = false;
+	private loaded             = false;
+	private impressionRecorded = false;
 
 	constructor( cfg: AllfbConfig, surveyConfig: SurveyConfig ) {
 		this.cfg          = cfg;
 		this.surveyConfig = surveyConfig;
+		this.stateManager = new StateManager( surveyConfig, cfg.restUrl, cfg.nonce );
 	}
 
 	/**
@@ -261,6 +378,12 @@ class AllfbWidget {
 		this.launcher.setAttribute( 'aria-expanded', 'true' );
 		this.panel.classList.add( 'is-open' );
 		this.panel.removeAttribute( 'aria-hidden' );
+
+		// Record impression on first open only (not on reveal).
+		if ( ! this.impressionRecorded ) {
+			this.impressionRecorded = true;
+			this.stateManager.recordImpression();
+		}
 
 		if ( ! this.loaded ) {
 			this.loaded = true;
@@ -334,7 +457,10 @@ class AllfbWidget {
 			</div>
 		`;
 
-		el.querySelector( '.allfb-panel__close' )!.addEventListener( 'click', () => this.close() );
+		el.querySelector( '.allfb-panel__close' )!.addEventListener( 'click', () => {
+			this.stateManager.recordDismissal();
+			this.close();
+		} );
 		return el;
 	}
 
@@ -343,7 +469,7 @@ class AllfbWidget {
 	private loadSurvey(): void {
 		const body = this.panel!.querySelector<HTMLElement>( '.allfb-panel__body' )!;
 
-		fetchAndRender( this.cfg, this.surveyConfig.id, body, this.cfg.submitNonce ).catch( () => {
+		fetchAndRender( this.cfg, this.surveyConfig.id, body, this.cfg.submitNonce, () => this.stateManager.recordSubmit() ).catch( () => {
 			body.innerHTML = '<p class="allfb-panel__error">Unable to load survey.</p>';
 		} );
 	}
@@ -387,7 +513,7 @@ class AllfbWidget {
 
 	/**
 	 * Return true if the widget is allowed to be shown based on impression
-	 * count and cooldown period stored in localStorage.
+	 * count, submission status, and cooldown period managed by StateManager.
 	 *
 	 * display_frequency:
 	 *   'once'         — show at most once ever (ignores max_impressions)
@@ -402,49 +528,27 @@ class AllfbWidget {
 			return true;
 		}
 
-		const state = this.loadWidgetState();
+		const state = this.stateManager.getState();
+
+		// Already submitted — never show again.
+		if ( state.submitted ) return false;
 
 		if ( display_frequency === 'once' && state.impressions >= 1 ) return false;
 
 		if ( display_frequency === 'until_submit' ) {
 			if ( max_impressions && state.impressions >= max_impressions ) return false;
 
-			if ( reshow_after_days && state.lastShown ) {
+			if ( reshow_after_days && state.dismissed_at ) {
 				const cooldownMs = reshow_after_days * 24 * 60 * 60 * 1000;
-				if ( Date.now() - state.lastShown < cooldownMs ) return false;
+				if ( Date.now() - state.dismissed_at < cooldownMs ) return false;
 			}
 		}
 
 		return true;
 	}
 
-	// ── localStorage helpers ──────────────────────────────────────────────
-
-	private widgetStateKey(): string {
-		return `allfb_w_${ this.surveyConfig.id }`;
-	}
-
-	private loadWidgetState(): { impressions: number; lastShown: number | null } {
-		try {
-			const raw = localStorage.getItem( this.widgetStateKey() );
-			if ( raw ) return JSON.parse( raw ) as { impressions: number; lastShown: number | null };
-		} catch { /* ignore */ }
-		return { impressions: 0, lastShown: null };
-	}
-
-	private recordImpression(): void {
-		try {
-			const state = this.loadWidgetState();
-			localStorage.setItem( this.widgetStateKey(), JSON.stringify( {
-				impressions: state.impressions + 1,
-				lastShown:   Date.now(),
-			} ) );
-		} catch { /* ignore quota / private-browsing errors */ }
-	}
-
 	private reveal(): void {
 		this.root!.classList.add( 'is-revealed' );
-		this.recordImpression();
 	}
 }
 

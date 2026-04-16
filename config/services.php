@@ -42,6 +42,7 @@ use AllFeedback\Application\Survey\CreateSurveyService;
 use AllFeedback\Application\Survey\DeleteSurveyService;
 use AllFeedback\Application\Survey\SurveyAnalyticsService;
 use AllFeedback\Application\Survey\SurveyQueryService;
+use AllFeedback\Application\Survey\SurveyStateService;
 use AllFeedback\Application\Survey\UpdateSurveyService;
 
 // ── Application — Response ────────────────────────────────────────────────────
@@ -73,6 +74,7 @@ use AllFeedback\API\Controllers\V1\LogsController;
 use AllFeedback\API\Controllers\V1\ResponsesController;
 use AllFeedback\API\Controllers\V1\SettingsController;
 use AllFeedback\API\Controllers\V1\SubmitController;
+use AllFeedback\API\Controllers\V1\SurveyStateController;
 use AllFeedback\API\Controllers\V1\SurveysController;
 use AllFeedback\Frontend\FrontendServiceProvider;
 use AllFeedback\Frontend\TargetingEngine;
@@ -163,6 +165,7 @@ return [
 	DeleteSurveyService::class       => autowire(),
 	SurveyQueryService::class        => autowire(),
 	SurveyAnalyticsService::class    => autowire(),
+	SurveyStateService::class        => create( SurveyStateService::class ),
 
 	// ------------------------------------------------------------------
 	// Application services — Response
@@ -187,6 +190,7 @@ return [
 	SurveysController::class         => autowire(),
 	ResponsesController::class       => autowire(),
 	SubmitController::class          => autowire(),
+	SurveyStateController::class     => autowire(),
 	SettingsController::class        => autowire(),
 	ContentSearchController::class   => autowire(),
 	LogsController::class            => autowire(),
