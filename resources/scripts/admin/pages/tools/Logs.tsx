@@ -58,7 +58,7 @@ const FILTERS: { key: LogLevel | 'ALL'; label: string }[] = [
 
 function parseLines(content: string): ParsedLine[] {
 	return content
-		.split('\n')
+		.split(/\r?\n/)
 		.filter((l) => l.trim())
 		.map((raw, i) => {
 			const m = raw.match(ENTRY_RE);
