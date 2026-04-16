@@ -62,9 +62,8 @@ module.exports = {
     entry: {
         admin:    resolve(process.cwd(), 'resources/scripts/admin',    'index.tsx'),
         frontend: resolve(process.cwd(), 'resources/scripts/frontend', 'index.tsx'),
-        // Each block gets its own compiled entry: block-{slug}.js
-        // To add a new block: copy this line with the new slug.
-        'block-survey': resolve(process.cwd(), 'resources/scripts/blocks/survey', 'index.tsx'),
+        // Single entry registers all blocks — add new blocks in blocks/index.ts
+        blocks:   resolve(process.cwd(), 'resources/scripts/blocks',   'index.ts'),
     },
 
     resolve: {

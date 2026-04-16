@@ -13,16 +13,15 @@ use AllFeedback\Core\Constants;
  *
  * How to add a new block
  * ──────────────────────
- * 1. Create  blocks/{slug}/block.json
- *            (editorScript: "file:../../resources/build/block-{slug}.js")
- * 2. Create  resources/scripts/blocks/{slug}/index.tsx
- * 3. Add a webpack entry in webpack.config.js:
- *            'block-{slug}': resolve(..., 'resources/scripts/blocks/{slug}/index.tsx')
- * 4. Create  src/Frontend/Blocks/{Name}Block.php  (extend AbstractBlock)
- * 5. Add     {Name}Block::class => autowire()  to config/services.php
- * 6. Add the class to FrontendServiceProvider::$blocks[]
+ * 1. Create  blocks/{slug}/block.json  (editorScript: "file:../../resources/build/blocks.js")
+ * 2. Create  resources/scripts/blocks/{slug}/Edit.tsx + index.ts  (exports Edit + metadata)
+ * 3. Add     import * as {slug} from './{slug}'  to resources/scripts/blocks/index.ts
+ * 4. Create  src/Frontend/Blocks/{Name}Block.php  (extend this class)
+ * 5. In config/services.php:
+ *      a. Add  {Name}Block::class => autowire()
+ *      b. Add  {Name}Block::class  to the 'block.classes' array
  *
- * That's it — no changes to FrontendServiceProvider beyond step 6.
+ * webpack.config.js, BlockRegistry, and FrontendServiceProvider never change.
  *
  * @since 1.0.0
  */
@@ -64,8 +63,23 @@ abstract class AbstractBlock {
 			return;
 		}
 
+		$blockDir = Constants::path( 'blocks/' . $this->getSlug() );
+
+		if ( ! is_dir( $blockDir ) || ! file_exists( $blockDir . '/block.json' ) ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+			trigger_error(
+				sprintf(
+					'AllFeedback block "%s": expected block.json at %s/block.json',
+					static::class,
+					$blockDir
+				),
+				E_USER_WARNING
+			);
+			return;
+		}
+
 		$blockType = register_block_type(
-			Constants::path( 'blocks/' . $this->getSlug() ),
+			$blockDir,
 			[ 'render_callback' => [ $this, 'render' ] ]
 		);
 

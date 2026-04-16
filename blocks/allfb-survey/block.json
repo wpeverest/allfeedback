@@ -19,6 +19,6 @@
 		"html": false,
 		"align": [ "wide", "full" ]
 	},
-	"editorScript": "file:../../resources/build/block-survey.js",
+	"editorScript": "file:../../resources/build/blocks.js",
 	"style": "file:../../resources/build/frontend.css"
 }
