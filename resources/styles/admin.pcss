@@ -7,6 +7,7 @@
  */
 
 @import './app.pcss';
+@import './frontend.pcss';
 
 /* ── Remove WP default content padding so our SPA fills edge-to-edge ─────── */
 .toplevel_page_all-feedback #wpcontent,
@@ -28,9 +29,10 @@
 }
 
 /* ── Focused inputs always use primary colour as border ──────────────────── */
-#ALLFB-Admin-Root input:not([type='checkbox']):not([type='radio']):focus,
+/* Exclude allfb-* widget inputs so preview focus styles apply unmodified.   */
+#ALLFB-Admin-Root input:not([type='checkbox']):not([type='radio']):not(.allfb-input):focus,
 #ALLFB-Admin-Root select:focus,
-#ALLFB-Admin-Root textarea:focus,
+#ALLFB-Admin-Root textarea:not(.allfb-textarea):focus,
 #ALLFB-Admin-Root [data-slot='select-trigger']:focus,
 #ALLFB-Admin-Root [data-slot='select-trigger']:focus-visible {
 	border-color: var(--primary);
@@ -38,12 +40,14 @@
 }
 
 /* ── Override WP admin form styles leaking into shadcn inputs ────────────── */
+/* Exclude allfb-* widget inputs so preview styles apply unmodified.         */
 #ALLFB-Admin-Root [data-slot='input'],
 #ALLFB-Admin-Root [data-slot='textarea'],
 #ALLFB-Admin-Root [data-slot='select-trigger'],
-#ALLFB-Admin-Root input:not([type='checkbox']):not([type='radio']),
+#ALLFB-Admin-Root input:not([type='checkbox']):not([type='radio']):not(.allfb-input),
 #ALLFB-Admin-Root select,
-#ALLFB-Admin-Root textarea {
+#ALLFB-Admin-Root textarea:not(.allfb-textarea) {
+	box-sizing:       border-box;  /* WP admin can flip inputs back to content-box */
 	background-color: var(--card);
 	color:            var(--foreground);
 	border:           1px solid var(--border);
@@ -75,7 +79,8 @@
 }
 
 /* ── Remove WP's default button styling inside the SPA ───────────────────── */
-#ALLFB-Admin-Root button {
+/* Exclude allfb-* widget buttons so preview styles apply unmodified.        */
+#ALLFB-Admin-Root button:not(.allfb-btn):not(.allfb-star):not(.allfb-scale__btn):not(.allfb-panel__close):not(.allfb-launcher) {
 	border:      none;
 	appearance:  none;
 	margin:      0;
@@ -111,18 +116,31 @@
 /* Specificity (1,1,1) > button reset (1,0,1) → strict win.                    */
 #ALLFB-Admin-Root input.builder-title:not([type='radio']),
 #ALLFB-Admin-Root button.builder-title {
-	font-size:   18px;
-	font-weight: 700;
+	box-sizing:  border-box;
+	font-size:   18px !important;
+	font-weight: 600;
 	line-height: 1.5;
-	padding:     0.5rem 0.875rem;
+	padding:     0.5rem 1rem;
 	text-align:  left;
 }
 
-/* ── Section title — lock padding + line-height so button and input match ─── */
+/* ── Section title — lock all sizing tokens so button and input match ──────── */
+/* text-md (1.125rem) and font-semibold live in @layer utilities and lose to   */
+/* non-layered rules; set them explicitly here so both states render the same. */
 #ALLFB-Admin-Root input.section-title-input,
 #ALLFB-Admin-Root button.section-title-btn {
+	box-sizing:  border-box;
+	font-size:   1rem;
+	font-weight: 500;
 	line-height: 1.5;
 	padding:     0.5rem 0.875rem;
+}
+
+/* Section-title button hover — @layer hover utilities lose to non-layered CSS */
+/* so we re-apply them here at the correct specificity level.                  */
+#ALLFB-Admin-Root button.section-title-btn:hover {
+	background-color: rgba(0, 0, 0, 0.04);
+	border-color:     color-mix(in oklch, var(--border) 50%, transparent);
 }
 
 /* Give display-mode title buttons the same border box as their edit inputs    */
@@ -130,6 +148,24 @@
 #ALLFB-Admin-Root button.builder-title,
 #ALLFB-Admin-Root button.section-title-btn {
 	border: 1px solid transparent;
+}
+
+/* Lock builder / section title input backgrounds and borders against the       */
+/* generic input reset above — Tailwind bg-transparent / border-border/70 are  */
+/* in @layer utilities and lose to non-layered CSS, so we re-apply here.        */
+#ALLFB-Admin-Root input.builder-title:not([type='radio']),
+#ALLFB-Admin-Root input.section-title-input {
+	box-sizing:       border-box;
+	background-color: transparent;
+	border:           1px solid color-mix(in oklch, var(--border) 70%, transparent);
+	box-shadow:       none;
+}
+
+#ALLFB-Admin-Root input.builder-title:not([type='radio']):focus,
+#ALLFB-Admin-Root input.section-title-input:focus {
+	background-color: transparent;
+	border-color:     color-mix(in oklch, var(--primary) 50%, transparent);
+	box-shadow:       0 0 0 1px color-mix(in oklch, var(--primary) 10%, transparent);
 }
 
 /* ── Publish split button ─────────────────────────────────────────────────── */
@@ -353,6 +389,70 @@
 	padding:          0 !important;
 	line-height:      1.5;
 }
+
+/* ── Builder preview: page background ───────────────────────────────────── */
+.allfb-preview-bg {
+	background-color: #ffffff;
+}
+
+/* ── Builder preview: widget panel max-height token ─────────────────────── */
+.allfb-preview-panel {
+	max-height: var(--allfb-panel-h, 480px);
+}
+
+/* ── allfb widget inputs inside admin root ───────────────────────────────── */
+/* WP admin CSS (e.g. #wpcontent input[type="text"], spec ≥0,2,1) beats the  */
+/* plain .allfb-input class (0,1,0) from frontend.pcss. These ID-scoped rules */
+/* (1,1,0 / 1,1,1) win cleanly without !important.                            */
+#ALLFB-Admin-Root .allfb-input,
+#ALLFB-Admin-Root .allfb-textarea {
+	box-sizing:    border-box;
+	width:         100%;
+	padding:       8px 12px;
+	font-size:     13px;
+	font-family:   var(--allfb-font);
+	line-height:   1.5;
+	color:         var(--allfb-text, #1a1a2e);
+	background:    color-mix(in srgb, var(--allfb-border, #e5e7eb) 30%, #fff);
+	border:        1px solid transparent;
+	border-radius: 8px;
+	box-shadow:    none;
+	outline:       none;
+	transition:    border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+
+#ALLFB-Admin-Root .allfb-input:focus,
+#ALLFB-Admin-Root .allfb-textarea:focus {
+	border-color: var(--allfb-color, #6366f1);
+	background:   #fff;
+	box-shadow:   0 0 0 3px color-mix(in srgb, var(--allfb-color, #6366f1) 20%, transparent);
+	outline:      none;
+}
+
+#ALLFB-Admin-Root .allfb-input.is-error,
+#ALLFB-Admin-Root .allfb-textarea.is-error {
+	border-color: #dc2626;
+	background:   #fff;
+	box-shadow:   none;
+}
+
+/* ── allfb field labels inside admin root ────────────────────────────────── */
+/* Without the .allfb-widget * reset, WP admin p/em/strong margins leak in.   */
+#ALLFB-Admin-Root .allfb-field__label {
+	font-size:   13px;
+	font-weight: 500;
+	color:       var(--allfb-text, #1a1a2e);
+	line-height: 1.4;
+}
+
+#ALLFB-Admin-Root .allfb-field__label p      { display: inline; margin: 0; padding: 0; }
+#ALLFB-Admin-Root .allfb-field__label em,
+#ALLFB-Admin-Root .allfb-field__label i      { font-style:  italic; }
+#ALLFB-Admin-Root .allfb-field__label strong,
+#ALLFB-Admin-Root .allfb-field__label b      { font-weight: 700; }
+#ALLFB-Admin-Root .allfb-field__label ul,
+#ALLFB-Admin-Root .allfb-field__label ol     { margin: 0; padding-left: 1.25rem; }
+#ALLFB-Admin-Root .allfb-field__label li     { margin: 0; }
 
 /* ── Loading cursor while async operations run ───────────────────────────── */
 body[data-wait] {

@@ -492,7 +492,7 @@ const FormBuilder = () => {
 							onClick={startEditingTitle}
 							title={__('Click to edit', 'all-feedback')}
 						>
-							<span className="min-w-0 flex-1 truncate">{title}</span>
+							<span className="min-w-0 flex-1 truncate px-[2px] py-[4.5px]">{title}</span>
 							<Pencil
 								className="size-3.5 shrink-0 text-muted-foreground/50 opacity-0 transition-opacity group-hover:opacity-100"
 								onClick={(e) => { e.stopPropagation(); startEditingTitle(); }}

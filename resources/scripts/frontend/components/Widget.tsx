@@ -15,6 +15,12 @@ const MsgIcon = () => (
 	</svg>
 );
 
+const MinusIcon = () => (
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+		<line x1="5" y1="12" x2="19" y2="12" />
+	</svg>
+);
+
 const CloseIcon = () => (
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
 		<line x1="18" y1="6" x2="6" y2="18" />
@@ -57,10 +63,8 @@ export const Widget = ( { cfg, surveyConfig, stateManager }: WidgetProps ) => {
 		} );
 	}, [ stateManager ] );
 
-	const handleClose = useCallback( () => {
-		stateManager.recordDismissal();
-		close();
-	}, [ stateManager, close ] );
+	const handleClose    = useCallback( () => { stateManager.recordDismissal(); close(); }, [ stateManager, close ] );
+	const handleMinimize = useCallback( () => close(), [ close ] );
 
 	useEffect( () => {
 		if ( trigger === 'manual' ) return;
@@ -128,7 +132,14 @@ export const Widget = ( { cfg, surveyConfig, stateManager }: WidgetProps ) => {
 				aria-label="Feedback"
 			>
 				<div className="allfb-panel__header">
-					<span className="allfb-panel__title">Feedback</span>
+					<button
+						type="button"
+						className="allfb-panel__close"
+						aria-label="Minimise feedback"
+						onClick={ handleMinimize }
+					>
+						<MinusIcon />
+					</button>
 					<button
 						type="button"
 						className="allfb-panel__close"

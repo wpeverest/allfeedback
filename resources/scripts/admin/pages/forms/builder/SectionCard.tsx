@@ -233,7 +233,7 @@ const SectionCard = ({
 							title={__('Click to edit', 'all-feedback')}
 							onMouseDown={(e) => e.stopPropagation()}
 						>
-							<span className="min-w-0 flex-1 truncate">{section.title}</span>
+							<span className="min-w-0 flex-1 truncate px-[2px] py-[4.5px]">{section.title}</span>
 							<Pencil
 								className="size-3 shrink-0 text-muted-foreground/40 opacity-0 transition-opacity group-hover:opacity-100"
 							/>

@@ -1,12 +1,17 @@
-﻿import { surveysApi } from '@/admin/api/surveys';
+import { surveysApi } from '@/admin/api/surveys';
 import type { SubmitFormData, SurveyStatus } from '@/admin/api/surveys';
-import { cn, htmlToText } from '@/lib/utils';
-import { useMutation } from '@tanstack/react-query';
+import { FieldPreview } from '@/shared/FieldPreview';
+import { cn } from '@/lib/utils';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { __ } from '@wordpress/i18n';
-import { ArrowLeft, ArrowRight, CheckCircle2, ChevronLeft, ChevronRight, Eye, Globe, Loader2, Lock, MessageSquare, Minus, Monitor, MoreHorizontal, Plus, RotateCw, Smartphone, Star, Tablet, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Eye, Globe, Lock, MessageSquare, Minus, Monitor, MoreHorizontal, Plus, RotateCw, Smartphone, Star, Tablet, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+
 import { toast } from 'sonner';
+import { settingsQuery } from '@/admin/queries/settings';
 import type { FormField, FormSection, FormSettings, PreviewDevice } from './types';
+
+type WidgetPosition = 'bottom-right' | 'bottom-left' | 'side-tab';
 
 interface PreviewPanelProps {
 	sections:       FormSection[];
@@ -24,8 +29,8 @@ const DEVICES: { value: PreviewDevice; Icon: typeof Monitor; label: string }[] =
 ];
 
 const DEVICE_MAX_W: Record<PreviewDevice, string> = {
-	desktop: '420px',
-	tablet:  '360px',
+	desktop: '400px',
+	tablet:  '400px',
 	mobile:  '100%',
 };
 
@@ -35,272 +40,56 @@ const DEVICE_PAGE_W: Record<PreviewDevice, string | null> = {
 	mobile:  '390px',
 };
 
+const POSITIONS: { value: WidgetPosition; label: string; Icon: () => React.ReactElement }[] = [
+	{
+		value: 'bottom-left',
+		label: __('Bottom left', 'all-feedback'),
+		Icon: () => (
+			<svg viewBox="0 0 16 16" fill="none" className="size-4" aria-hidden="true">
+				<rect x="1" y="1" width="14" height="14" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+				<circle cx="4" cy="12" r="2" fill="currentColor"/>
+			</svg>
+		),
+	},
+	{
+		value: 'bottom-right',
+		label: __('Bottom right', 'all-feedback'),
+		Icon: () => (
+			<svg viewBox="0 0 16 16" fill="none" className="size-4" aria-hidden="true">
+				<rect x="1" y="1" width="14" height="14" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+				<circle cx="12" cy="12" r="2" fill="currentColor"/>
+			</svg>
+		),
+	},
+	{
+		value: 'side-tab',
+		label: __('Side tab', 'all-feedback'),
+		Icon: () => (
+			<svg viewBox="0 0 16 16" fill="none" className="size-4" aria-hidden="true">
+				<rect x="1" y="1" width="11" height="14" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+				<rect x="12" y="5" width="3" height="6" rx="1" fill="currentColor"/>
+			</svg>
+		),
+	},
+];
+
 type PreviewView = 'page' | 'widget';
 
+const ALLFB_VARS_BASE = {
+	'--allfb-white':   '#ffffff',
+	'--allfb-text':    '#1a1a2e',
+	'--allfb-muted':   '#6b7280',
+	'--allfb-border':  '#e5e7eb',
+	'--allfb-bg':      '#ffffff',
+	'--allfb-panel-h': '480px',
+	'--allfb-font':    '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+} as React.CSSProperties;
 
-const normalizeLabel = (html: string): string => {
-	const t = html.trim();
-	if (t.startsWith('<p>') && t.endsWith('</p>') && t.indexOf('<p>', 1) === -1) {
-		return t.slice(3, -4);
-	}
-	return t;
-};
-
-const StarRatingPreview = ({ field, value, onChange }: { field: FormField; value: string; onChange: (v: string) => void }) => {
-	const [hovered, setHovered] = useState(0);
-	const scale    = field.starScale ?? 'star';
-	const range    = field.starRange ?? 5;
-	const selected = Number(value) || 0;
-	const active   = hovered || selected;
-	const iconSize = range >= 10 ? 'size-5' : 'size-7';
-
-	return (
-		<div className="flex gap-0.5" onMouseLeave={() => setHovered(0)}>
-			{Array.from({ length: range }, (_, i) => i + 1).map((n) => (
-				<button
-					key={n}
-					type="button"
-					onMouseEnter={() => setHovered(n)}
-					onClick={() => onChange(String(selected === n ? 0 : n))}
-					className="transition-transform hover:scale-110 active:scale-95"
-				>
-					{scale === 'number' ? (
-						<span className={cn(
-							'flex items-center justify-center rounded text-xs font-semibold transition-colors',
-							iconSize,
-							n <= active ? 'bg-primary text-white' : 'bg-muted/60 text-muted-foreground/60',
-						)}>
-							{n}
-						</span>
-					) : (
-						<Star className={cn(
-							iconSize, 'transition-colors',
-							n <= active ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/25',
-						)} />
-					)}
-				</button>
-			))}
-		</div>
-	);
-};
-
-const ScalePreview = ({ field, value, onChange }: { field: FormField; value: string; onChange: (v: string) => void }) => {
-	const [hovered, setHovered] = useState<number | null>(null);
-	const min      = field.scaleMin ?? 0;
-	const max      = field.scaleMax ?? 10;
-	const selected = value !== '' ? Number(value) : null;
-	const active   = hovered ?? selected;
-	const points   = Array.from({ length: max - min + 1 }, (_, i) => min + i);
-	const btnSize  = points.length > 8 ? 'size-7 text-2xs' : 'size-9 text-sm';
-
-	return (
-		<div className="space-y-1.5" onMouseLeave={() => setHovered(null)}>
-			<div className="flex gap-1.5 flex-wrap">
-				{points.map((n) => (
-					<button
-						key={n}
-						type="button"
-						onMouseEnter={() => setHovered(n)}
-						onClick={() => onChange(selected === n ? '' : String(n))}
-						className={cn(
-							'flex items-center justify-center rounded-lg border font-semibold transition-all duration-100 hover:scale-105 active:scale-95',
-							btnSize,
-							active !== null && n <= active
-								? 'border-primary bg-primary text-white'
-								: 'border-border/70 bg-muted/30 text-foreground/60 hover:border-primary/50 hover:bg-primary/8 hover:text-primary',
-						)}
-					>
-						{n}
-					</button>
-				))}
-			</div>
-			{(field.scaleLowLabel || field.scaleHighLabel) && (
-				<div className="flex justify-between">
-					{field.scaleLowLabel && (
-						<span className="text-2xs text-muted-foreground/60">{field.scaleLowLabel}</span>
-					)}
-					{field.scaleHighLabel && (
-						<span className="ml-auto text-2xs text-muted-foreground/60">{field.scaleHighLabel}</span>
-					)}
-				</div>
-			)}
-		</div>
-	);
-};
-
-const NpsPreview = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => {
-	const [hovered, setHovered] = useState<number | null>(null);
-	const selected = value !== '' ? Number(value) : null;
-
-	const colorFor = (n: number) => {
-		if (n <= 6) return { active: 'border-destructive/50 bg-destructive/10 text-destructive', hover: 'hover:border-destructive/40 hover:bg-destructive/[0.06] hover:text-destructive' };
-		if (n <= 8) return { active: 'border-amber-400/70 bg-amber-50 text-amber-600',           hover: 'hover:border-amber-400/50 hover:bg-amber-50/60 hover:text-amber-600' };
-		return          { active: 'border-green-500/60 bg-green-50 text-green-600',              hover: 'hover:border-green-500/40 hover:bg-green-50/60 hover:text-green-600' };
-	};
-
-	return (
-		<div className="space-y-1.5" onMouseLeave={() => setHovered(null)}>
-			<div className="flex gap-1">
-				{Array.from({ length: 11 }, (_, i) => i).map((n) => {
-					const isActive = (hovered ?? selected) === n;
-					const { active, hover } = colorFor(n);
-					return (
-						<button
-							key={n}
-							type="button"
-							onMouseEnter={() => setHovered(n)}
-							onClick={() => onChange(selected === n ? '' : String(n))}
-							className={cn(
-								'flex h-7 flex-1 items-center justify-center rounded-lg border text-2xs font-semibold transition-all duration-100 active:scale-95',
-								isActive
-									? active
-									: cn('border-border/60 bg-muted/30 text-foreground/60', hover),
-							)}
-						>
-							{n}
-						</button>
-					);
-				})}
-			</div>
-			<div className="flex justify-between">
-				<span className="text-2xs text-muted-foreground/60">{__('Not at all likely', 'all-feedback')}</span>
-				<span className="text-2xs text-muted-foreground/60">{__('Extremely likely', 'all-feedback')}</span>
-			</div>
-		</div>
-	);
-};
-
-interface FieldPreviewProps {
-	field:    FormField;
-	value:    string | string[];
-	error:    string;
-	onChange: (value: string | string[]) => void;
-}
-
-const FieldPreview = ({ field, value, error, onChange }: FieldPreviewProps) => {
-	const inputBase = cn(
-		'w-full rounded-lg border bg-muted/30 px-2.5 py-1.5 text-2xs text-foreground/80',
-		'placeholder:text-muted-foreground/50 focus:outline-none transition-colors',
-		error ? 'border-destructive/60' : 'border-border/70',
-	);
-
-	const baseHtml = field.label?.trim() ? normalizeLabel(field.label) : '<span style="opacity:0.4">Untitled</span>';
-	const strVal    = typeof value === 'string' ? value : '';
-	const arrVal    = Array.isArray(value) ? value : [];
-
-	const toggleCheckbox = (opt: string) => {
-		const next = arrVal.includes(opt)
-			? arrVal.filter((v) => v !== opt)
-			: [...arrVal, opt];
-		onChange(next);
-	};
-
-	return (
-		<div className="space-y-2.5">
-			<div className="flex items-baseline gap-0.5">
-				<div
-					className="field-preview-label text-sm text-foreground [&_p]:m-0 [&_strong]:font-semibold [&_em]:italic [&_u]:underline [&_s]:line-through [&_code]:rounded [&_code]:bg-muted [&_code]:px-0.5 [&_code]:font-mono [&_code]:text-[0.9em] [&_mark]:rounded [&_mark]:bg-amber-100 [&_mark]:text-amber-800"
-					dangerouslySetInnerHTML={{ __html: baseHtml }}
-				/>
-				{field.required && (
-					<span className="shrink-0 text-2xs font-bold leading-none text-destructive">*</span>
-				)}
-			</div>
-
-			{field.type === 'short_text' && (
-				<input
-					value={strVal}
-					onChange={(e) => onChange(e.target.value)}
-					placeholder={field.placeholder || __('Short answer…', 'all-feedback')}
-					className={inputBase}
-				/>
-			)}
-
-			{field.type === 'long_text' && (
-				<textarea
-					value={strVal}
-					onChange={(e) => onChange(e.target.value)}
-					placeholder={field.placeholder || __('Long answer…', 'all-feedback')}
-					rows={2}
-					className={cn(inputBase, 'resize-none')}
-				/>
-			)}
-
-			{field.type === 'radio' && (
-				<div className="space-y-1">
-					{(field.options ?? []).map((opt, i) => (
-						<label key={i} className="flex cursor-pointer items-center gap-1.5">
-							<span className={cn(
-								'flex size-3 shrink-0 items-center justify-center rounded-full border transition-colors',
-								strVal === opt
-									? 'border-primary bg-primary'
-									: 'border-border/70 bg-white',
-							)}>
-								{strVal === opt && <span className="size-1.5 rounded-full bg-white" />}
-							</span>
-							<input
-								type="radio"
-								name={field.id}
-								value={opt}
-								checked={strVal === opt}
-								onChange={() => onChange(opt)}
-								className="sr-only"
-							/>
-							<span className="text-sm text-foreground/75">{opt || `Option ${i + 1}`}</span>
-						</label>
-					))}
-				</div>
-			)}
-
-			{field.type === 'checkboxes' && (
-				<div className="space-y-1">
-					{(field.options ?? []).map((opt, i) => (
-						<label key={i} className="flex cursor-pointer items-center gap-1.5">
-							<span className={cn(
-								'flex size-3 shrink-0 items-center justify-center rounded-[2px] border transition-colors',
-								arrVal.includes(opt)
-									? 'border-primary bg-primary'
-									: 'border-border/70 bg-white',
-							)}>
-								{arrVal.includes(opt) && (
-									<svg viewBox="0 0 8 8" className="size-2 text-white" fill="none">
-										<path d="M1.5 4L3 5.5L6.5 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-									</svg>
-								)}
-							</span>
-							<input
-								type="checkbox"
-								value={opt}
-								checked={arrVal.includes(opt)}
-								onChange={() => toggleCheckbox(opt)}
-								className="sr-only"
-							/>
-							<span className="text-sm text-foreground/75">{opt || `Option ${i + 1}`}</span>
-						</label>
-					))}
-				</div>
-			)}
-
-			{field.type === 'star_rating' && (
-				<StarRatingPreview field={field} value={strVal} onChange={onChange} />
-			)}
-
-			{field.type === 'scale' && (
-				<ScalePreview field={field} value={strVal} onChange={onChange} />
-			)}
-
-			{field.type === 'nps' && (
-				<NpsPreview value={strVal} onChange={onChange} />
-			)}
-
-			{!['short_text', 'long_text', 'radio', 'checkboxes', 'star_rating', 'scale', 'nps'].includes(field.type) && (
-				<div className="h-5 rounded-md border border-border/60 bg-muted/40" />
-			)}
-
-			{error && <p className="text-[10px] text-destructive">{error}</p>}
-		</div>
-	);
-};
+const buildAllfbVars = (color: string): React.CSSProperties => ({
+	...ALLFB_VARS_BASE,
+	'--allfb-color':      color,
+	'--allfb-color-dark': `color-mix(in srgb, ${color} 85%, #000)`,
+} as React.CSSProperties);
 
 interface WidgetBodyProps {
 	steps:         FormSection[];
@@ -312,10 +101,14 @@ interface WidgetBodyProps {
 	isSubmitted:   boolean;
 	fieldValues:   Record<string, string | string[]>;
 	fieldErrors:   Record<string, string>;
+	submitError:   string;
 	isMinimized:   boolean;
 	isClosed:      boolean;
-	showControls:  boolean;
-	settings:      FormSettings;
+	showControls:   boolean;
+	showMinimize:   boolean;
+	settings:       FormSettings;
+	widgetPosition: WidgetPosition;
+	widgetColor:    string;
 	onMinimize:    () => void;
 	onClose:       () => void;
 	onChange:      (fieldId: string, value: string | string[]) => void;
@@ -328,8 +121,8 @@ interface WidgetBodyProps {
 
 const WidgetBody = ({
 	steps, stepIndex, totalSteps, hasSteps, isLastStep, currentFields,
-	isSubmitted, fieldValues, fieldErrors, isMinimized, isClosed, showControls, settings,
-	isSubmitting, onMinimize, onClose, onChange, onNext, onBack, onSubmit, onResubmit,
+	isSubmitted, fieldValues, fieldErrors, submitError, isMinimized, isClosed, showControls, showMinimize, settings,
+	isSubmitting, onMinimize, onClose, onChange, onNext, onBack, onSubmit, widgetPosition, widgetColor,
 }: WidgetBodyProps) => {
 	const handleKeyDown = (e: React.KeyboardEvent) => {
 		if (e.key !== 'Enter') return;
@@ -344,132 +137,132 @@ const WidgetBody = ({
 	};
 
 	return (
-	<div
-		className={cn(
-			'overflow-hidden rounded-2xl border border-border/60 shadow-lg transition-all duration-200 origin-bottom-right',
-			isClosed || isMinimized ? 'pointer-events-none scale-90 opacity-0' : 'scale-100 opacity-100',
-		)}
-		onKeyDown={handleKeyDown}
-	>
-		<div className="flex items-center justify-end gap-0.5 bg-primary px-2.5 py-1.5">
-			{showControls && (
-				<>
-					<button
-						type="button"
-						onClick={onMinimize}
-						className="flex size-6 items-center justify-center rounded-md text-white/70 transition-colors hover:bg-white/15 hover:text-white"
-						aria-label={__('Minimise', 'all-feedback')}
-					>
-						<Minus className="size-3.5" />
-					</button>
-					<button
-						type="button"
-						onClick={onClose}
-						className="flex size-6 items-center justify-center rounded-md text-white/70 transition-colors hover:bg-white/15 hover:text-white"
-						aria-label={__('Close', 'all-feedback')}
-					>
-						<X className="size-3.5" />
-					</button>
-				</>
-			)}
-		</div>
+		<div
+			className={ cn(
+				'allfb-preview-panel flex flex-col overflow-hidden rounded-2xl shadow-lg transition-all duration-200',
+				isClosed || isMinimized ? 'pointer-events-none scale-90 opacity-0' : 'scale-100 opacity-100',
+			) }
+			style={ {
+				...buildAllfbVars(widgetColor),
+				transformOrigin: widgetPosition === 'bottom-left' ? 'bottom left' : widgetPosition === 'side-tab' ? 'right center' : 'bottom right',
+			} }
+			onKeyDown={ handleKeyDown }
+		>
+			<div className="allfb-panel__header">
+				{ showControls && (
+					<>
+						{ showMinimize && (
+							<button
+								type="button"
+								onClick={ onMinimize }
+								className="allfb-panel__close"
+								aria-label={ __( 'Minimise', 'all-feedback' ) }
+							>
+								<Minus />
+							</button>
+						) }
+						<button
+							type="button"
+							onClick={ onClose }
+							className="allfb-panel__close"
+							aria-label={ __( 'Close', 'all-feedback' ) }
+						>
+							<X />
+						</button>
+					</>
+				) }
+			</div>
 
-		<div className="bg-white">
-			{isSubmitted ? (
-
-				<div className="flex flex-col items-center justify-center px-4 py-5 text-center">
-					<CheckCircle2 className="mb-1.5 size-6 text-primary" />
-					<p className="text-xs font-semibold text-foreground">
-						{settings.thankYouEnabled && settings.thankYouTitle
-							? settings.thankYouTitle
-							: __('Thank you!', 'all-feedback')}
-					</p>
-					<p className="mt-0.5 text-2xs text-muted-foreground">
-						{settings.thankYouEnabled && settings.thankYouDescription
-							? settings.thankYouDescription
-							: __('Your response has been recorded.', 'all-feedback')}
-					</p>
-				</div>
-			) : (
-				<>
- 					{totalSteps > 1 && (
-						<div className="flex items-center justify-between border-b border-border/30 px-3 py-1.5">
-							<div className="flex items-center gap-1.5">
-								{steps.map((_, i) => (
-									<span
-										key={i}
-										className={cn(
-											'size-1.5 rounded-full transition-all duration-200',
-											i === stepIndex ? 'w-3 bg-primary' : i < stepIndex ? 'bg-primary/40' : 'bg-border',
-										)}
-									/>
-								))}
-							</div>
-							<span className="text-[10px] text-muted-foreground">
-								{stepIndex + 1} / {totalSteps}
-							</span>
+			<div className="allfb-panel__body">
+				{ isSubmitted ? (
+					<div className="allfb-thankyou">
+						<div className="allfb-thankyou__check">
+							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+								<polyline points="20 6 9 17 4 12" />
+							</svg>
 						</div>
-					)}
-
-					<div className="max-h-[240px] overflow-y-auto px-4 py-4">
-						{!hasSteps ? (
-							<div className="flex flex-col items-center justify-center py-3">
-								<Eye className="mb-1.5 size-4 text-muted-foreground/25" />
-								<p className="text-[10.5px] text-muted-foreground/80">
-									{__('Add fields to preview', 'all-feedback')}
-								</p>
-							</div>
-						) : (
-							<div className="space-y-5">
-								{currentFields.map((field) => (
-									<FieldPreview
-										key={field.id}
-										field={field}
-										value={fieldValues[field.id] ?? ''}
-										error={fieldErrors[field.id] ?? ''}
-										onChange={(val) => onChange(field.id, val)}
-									/>
-								))}
-							</div>
-						)}
+						<p className="allfb-thankyou__title">
+							{ settings.thankYouEnabled && settings.thankYouTitle
+								? settings.thankYouTitle
+								: __( 'Thank you!', 'all-feedback' ) }
+						</p>
+						<p className="allfb-thankyou__desc">
+							{ settings.thankYouEnabled && settings.thankYouDescription
+								? settings.thankYouDescription
+								: __( 'Your response has been recorded.', 'all-feedback' ) }
+						</p>
 					</div>
+				) : ! hasSteps ? (
+					<div className="flex flex-col items-center justify-center py-6 text-center">
+						<Eye className="mb-1.5 size-4 text-muted-foreground/25" />
+						<p className="text-[8.5px] text-muted-foreground/80">
+							{ __( 'Add fields to preview', 'all-feedback' ) }
+						</p>
+					</div>
+				) : (
+					<div className="allfb-form-wrapper">
+						{ totalSteps > 1 && (
+							<div className="allfb-steps">
+								<div className="allfb-steps__dots">
+									{ steps.map( ( _, i ) => (
+										<span
+											key={ i }
+											className={ `allfb-steps__dot${ i === stepIndex ? ' is-active' : i < stepIndex ? ' is-done' : '' }` }
+										/>
+									) ) }
+								</div>
+								<span className="allfb-steps__count">{ stepIndex + 1 } / { totalSteps }</span>
+							</div>
+						) }
 
-					{hasSteps && (
-						<div className="flex items-center gap-2 border-t border-border/40 px-4 py-4 mt-1">
-							{stepIndex > 0 && (
+						<div className="allfb-form__fields">
+							{ currentFields.map( ( field ) => (
+								<FieldPreview
+									key={ field.id }
+									field={ field }
+									value={ fieldValues[ field.id ] ?? '' }
+									error={ fieldErrors[ field.id ] ?? '' }
+									onChange={ ( val ) => onChange( field.id, val ) }
+								/>
+							) ) }
+						</div>
+
+						<div className="allfb-form__footer">
+							{ submitError && <p className="allfb-form__submit-error">{ submitError }</p> }
+							{ stepIndex > 0 && (
 								<button
 									type="button"
-									onClick={onBack}
-									className="flex-1 rounded-lg border border-border py-3 text-2xs font-medium text-foreground/70 transition-colors hover:bg-muted/50"
+									className="allfb-btn allfb-btn--secondary"
+									onClick={ onBack }
 								>
-									{settings.backLabel || __('Back', 'all-feedback')}
+									{ settings.backLabel || __( 'Back', 'all-feedback' ) }
 								</button>
-							)}
-							{isLastStep ? (
+							) }
+							{ isLastStep ? (
 								<button
 									type="button"
-									onClick={onSubmit}
-									disabled={isSubmitting}
-									className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary py-3 text-2xs font-semibold text-white transition-colors hover:bg-brand-600 active:bg-brand-700 disabled:opacity-70"
+									className="allfb-btn allfb-btn--primary"
+									disabled={ isSubmitting }
+									onClick={ onSubmit }
 								>
-									{isSubmitting && <Loader2 className="size-3 animate-spin" />}
-									{settings.submitLabel || __('Submit', 'all-feedback')}
+									{ isSubmitting
+										? __( 'Submitting\u2026', 'all-feedback' )
+										: ( settings.submitLabel || __( 'Submit', 'all-feedback' ) ) }
 								</button>
 							) : (
 								<button
 									type="button"
-									onClick={onNext}
-									className="flex-1 rounded-lg bg-primary py-3 text-2xs font-semibold text-white transition-colors hover:bg-brand-600 active:bg-brand-700"
+									className="allfb-btn allfb-btn--primary"
+									onClick={ onNext }
 								>
-									{settings.nextLabel || __('Next', 'all-feedback')}
+									{ settings.nextLabel || __( 'Next', 'all-feedback' ) }
 								</button>
-							)}
+							) }
 						</div>
-					)}
-				</>
-			)}
+					</div>
+				) }
+			</div>
 		</div>
-	</div>
 	);
 };
 
@@ -495,11 +288,17 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 	const pageMaxW     = DEVICE_PAGE_W[device];
 	const siteHostname = getSiteHostname();
 
-	const [viewMode,     setViewMode]     = useState<PreviewView>('page');
-	const [isMinimized,  setIsMinimized]  = useState(false);
+	const { data: globalSettings } = useQuery(settingsQuery());
+	const widgetColor = globalSettings?.general?.widget?.color ?? '#6366f1';
+
+	const [viewMode,       setViewMode]       = useState<PreviewView>('page');
+	const [widgetPosition, setWidgetPosition] = useState<WidgetPosition>('bottom-right');
+	const positionInitializedRef              = useRef(false);
+	const [isMinimized,    setIsMinimized]    = useState(true);
 	const [isClosed,     setIsClosed]     = useState(false);
 	const [fieldValues,  setFieldValues]  = useState<Record<string, string | string[]>>({});
 	const [fieldErrors,  setFieldErrors]  = useState<Record<string, string>>({});
+	const [submitError,  setSubmitError]  = useState('');
 	const [currentStep,  setCurrentStep]  = useState(0);
 	const [isSubmitted,  setIsSubmitted]  = useState(false);
 
@@ -511,6 +310,7 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 		mutationFn: (data: SubmitFormData) => surveysApi.submit(surveyId!, data),
 		onSuccess: () => {
 			setIsSubmitted(true);
+			setSubmitError('');
 			toast.success(
 				surveyStatus === 'draft'
 					? __('Form preview submitted successfully.', 'all-feedback')
@@ -518,16 +318,24 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 			);
 		},
 		onError: () => {
-			toast.error(__('Failed to submit. Please try again.', 'all-feedback'));
+			setSubmitError(__('Submission failed. Please try again.', 'all-feedback'));
 		},
 	});
 
 	useEffect(() => {
 		setFieldValues({});
 		setFieldErrors({});
+		setSubmitError('');
 		setCurrentStep(0);
 		setIsSubmitted(false);
 	}, [allFields(sections).map((f) => f.id).join(',')]);
+
+	// Seed position from global settings on first load (user can still override via the picker)
+	useEffect(() => {
+		if (!globalSettings || positionInitializedRef.current) return;
+		positionInitializedRef.current = true;
+		setWidgetPosition(globalSettings.general.widget.position);
+	}, [globalSettings]);
 
 	const handleChange = (fieldId: string, value: string | string[]) => {
 		setFieldValues((prev) => ({ ...prev, [fieldId]: value }));
@@ -583,12 +391,16 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 		setIsSubmitted(false);
 		setFieldValues({});
 		setFieldErrors({});
+		setSubmitError('');
 		setCurrentStep(0);
 	};
 
 	const sharedWidgetProps = {
 		steps, stepIndex, totalSteps, hasSteps, isLastStep, currentFields,
-		isSubmitted, fieldValues, fieldErrors, isMinimized, isClosed, settings,
+		isSubmitted, fieldValues, fieldErrors, submitError, isMinimized, isClosed, settings,
+		widgetPosition,
+		widgetColor,
+		showMinimize: true,
 		isSubmitting: submitMutation.isPending,
 		onMinimize: () => setIsMinimized(true),
 		onClose:    () => setIsClosed(true),
@@ -596,10 +408,10 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 		onNext:     handleNext,
 		onBack:     () => { setFieldErrors({}); setCurrentStep((s) => s - 1); },
 		onSubmit:   handleSubmit,
-		onResubmit: () => { setIsSubmitted(false); setFieldValues({}); setFieldErrors({}); setCurrentStep(0); },
+		onResubmit: () => { setIsSubmitted(false); setFieldValues({}); setFieldErrors({}); setSubmitError(''); setCurrentStep(0); },
 	};
 
-	const needsReset = isSubmitted || (viewMode === 'page' && (isClosed || isMinimized));
+	const needsReset = isSubmitted || (viewMode === 'page' && isClosed);
 
 	const adminTotalPages = totalSteps + 1;
 	const adminCurrentPage = isSubmitted ? totalSteps : stepIndex;
@@ -628,12 +440,14 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 
 	return (
 		<div className="flex h-full flex-col bg-white">
-			<div className="flex h-[72px] shrink-0 items-center justify-between px-6">
-				<span className="text-sm font-medium text-foreground">
+			<div className="flex h-[72px] shrink-0 items-center px-6">
+				{/* Left — label */}
+				<span className="flex-1 text-base font-normal text-foreground">
 					{__('Preview changes', 'all-feedback')}
 				</span>
 
-				<div className="flex items-center gap-2">
+{/* Right — reset + view toggle */}
+				<div className="flex flex-1 items-center justify-end gap-2">
 					{needsReset && (
 						<button
 							type="button"
@@ -649,28 +463,30 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 						<button
 							type="button"
 							onClick={() => setViewMode('page')}
+							style={{ fontSize: '12px' }}
 							className={cn(
-								'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[10px] font-medium transition-colors',
+								'flex items-center gap-1.5 rounded-md px-3 py-1.5 font-medium transition-colors',
 								viewMode === 'page'
 									? 'bg-primary/10 text-primary'
 									: 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
 							)}
 						>
-							<Globe className="size-3" />
-							<span className="text-2xs">{__('Page', 'all-feedback')}</span>
+							<Globe className="size-3.5" />
+							{__('Page', 'all-feedback')}
 						</button>
 						<button
 							type="button"
 							onClick={() => setViewMode('widget')}
+							style={{ fontSize: '12px' }}
 							className={cn(
-								'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[10px] font-medium transition-colors',
+								'flex items-center gap-1.5 rounded-md px-3 py-1.5 font-medium transition-colors',
 								viewMode === 'widget'
 									? 'bg-primary/10 text-primary'
 									: 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
 							)}
 						>
-							<MessageSquare className="size-3" />
-							<span className="text-2xs">{__('Widget', 'all-feedback')}</span>
+							<MessageSquare className="size-3.5" />
+							{__('Widget', 'all-feedback')}
 						</button>
 					</div>
 				</div>
@@ -695,7 +511,7 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 
 									<div className="flex min-w-0 max-w-[172px] items-center gap-1.5 rounded-t-[7px] bg-white px-2.5 pb-[6px] pt-[5px]">
 										<Globe className="size-3 shrink-0 text-muted-foreground/50" />
-										<span className="min-w-0 flex-1 truncate text-[10.5px] text-foreground/70">{siteHostname}</span>
+										<span className="min-w-0 flex-1 truncate text-[8.5px] text-foreground/70">{siteHostname}</span>
 										<X className="size-2.5 shrink-0 text-muted-foreground/35 hover:text-foreground/60" />
 									</div>
 
@@ -717,7 +533,7 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 
 									<div className="mx-1.5 flex flex-1 items-center gap-1.5 rounded-full bg-white/95 px-3 py-[3px] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.10),0_1px_2px_rgba(0,0,0,0.06)]">
 										<Lock className="size-2.5 shrink-0 text-[#1e8e3e]" />
-										<span className="min-w-0 flex-1 truncate text-center text-[10.5px] text-foreground/70">{siteHostname}</span>
+										<span className="min-w-0 flex-1 truncate text-center text-[8.5px] text-foreground/70">{siteHostname}</span>
 										<Star className="size-2.5 shrink-0 text-muted-foreground/30" />
 									</div>
 
@@ -727,8 +543,8 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 								</div>
 							</div>
 
-							<div className="relative flex-1 overflow-hidden bg-[#f8f9fa]">
-								<div className="pointer-events-none absolute inset-0 flex flex-col">
+							<div className="allfb-preview-bg relative flex-1 overflow-hidden">
+								<div className="pointer-events-none absolute inset-0 flex flex-col overflow-hidden">
 									<div className="flex h-9 shrink-0 items-center gap-3 border-b border-black/5 bg-white px-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
 										<div className="h-2.5 w-14 rounded-full bg-foreground/10" />
 										<div className="flex flex-1 items-center justify-end gap-2.5">
@@ -737,43 +553,103 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 											<div className="h-1.5 w-7 rounded-full bg-foreground/8" />
 										</div>
 									</div>
-									<div className="flex flex-col items-center gap-2 px-6 pt-7">
-										<div className="h-3 w-3/5 rounded-full bg-foreground/10" />
-										<div className="h-2 w-2/5 rounded-full bg-foreground/[0.07]" />
-										<div className="mt-1.5 h-6 w-20 rounded-md bg-foreground/[0.08]" />
-									</div>
-									<div className="mt-5 grid grid-cols-3 gap-2 px-4">
-										{[0, 1, 2].map((i) => (
-											<div key={i} className="rounded-lg bg-white/75 p-2 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
-												<div className="mb-1.5 h-7 rounded-md bg-foreground/[0.06]" />
-												<div className="mb-1 h-1.5 rounded-full bg-foreground/[0.08]" />
-												<div className="h-1.5 w-3/4 rounded-full bg-foreground/[0.06]" />
+									<div className="flex flex-1 justify-center overflow-hidden">
+										<div className="w-full max-w-[480px]">
+											<div className="flex flex-col items-center gap-2 px-6 pt-7">
+												<div className="h-3 w-3/5 rounded-full bg-foreground/10" />
+												<div className="h-2 w-2/5 rounded-full bg-foreground/[0.07]" />
+												<div className="mt-1.5 h-6 w-20 rounded-md bg-foreground/[0.08]" />
 											</div>
-										))}
+											<div className="mt-5 grid grid-cols-3 gap-2 px-4">
+												{[0, 1, 2].map((i) => (
+													<div key={i} className="rounded-lg bg-white/75 p-2 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
+														<div className="mb-1.5 h-7 rounded-md bg-foreground/[0.06]" />
+														<div className="mb-1 h-1.5 rounded-full bg-foreground/[0.08]" />
+														<div className="h-1.5 w-3/4 rounded-full bg-foreground/[0.06]" />
+													</div>
+												))}
+											</div>
+											<p className="mt-4 px-4 text-center text-[7.5px] font-medium leading-[1.5] tracking-wide text-foreground/35">
+												{__('Approximate preview — position, size, and styling may vary on your live site based on your theme and screen size', 'all-feedback')}
+											</p>
+										</div>
 									</div>
-									<p className="mt-4 px-4 text-center text-[7.5px] font-medium leading-[1.5] tracking-wide text-foreground/35">
-										{__('Approximate preview — position, size, and styling may vary on your live site based on your theme and screen size', 'all-feedback')}
-									</p>
 								</div>
 
-								<button
-									type="button"
-									onClick={() => setIsMinimized(false)}
-									className={cn(
-										'absolute bottom-5 right-4 flex size-12 items-center justify-center rounded-full bg-primary shadow-lg transition-all duration-200 origin-bottom-right hover:scale-105 active:scale-95',
-										!isClosed && isMinimized ? 'scale-100 opacity-100' : 'pointer-events-none scale-75 opacity-0',
-									)}
-									aria-label={__('Open feedback widget', 'all-feedback')}
-								>
-									<MessageSquare className="size-5 text-white" />
-								</button>
+								{widgetPosition === 'side-tab' ? (
+									/* Side-tab launcher — always visible, matches the frontend's vertical pill */
+									<div
+										className={cn(
+											'transition-all duration-200',
+											!isClosed ? 'opacity-100' : 'pointer-events-none opacity-0',
+										)}
+										style={{ position: 'absolute', top: '50%', right: 0, transform: 'translateY(-50%)' }}
+									>
+										<button
+											type="button"
+											onClick={() => setIsMinimized((v) => !v)}
+											className={cn(
+												'flex items-center justify-center transition-all duration-200',
+												!isClosed ? 'scale-100' : 'scale-90',
+											)}
+											style={{
+												backgroundColor: widgetColor,
+												padding:         '10px 8px',
+												borderRadius:    '8px 0 0 8px',
+												boxShadow:       '-2px 4px 12px rgba(0,0,0,0.15)',
+												transformOrigin: 'right center',
+											}}
+											aria-label={__('Open feedback widget', 'all-feedback')}
+										>
+											<span style={{
+												writingMode:    'vertical-rl',
+												transform:      'rotate(180deg)',
+												fontSize:       '13px',
+												fontWeight:     600,
+												letterSpacing:  '0.06em',
+												whiteSpace:     'nowrap',
+												userSelect:     'none',
+												color:          '#fff',
+											}}>
+												{__('Feedback', 'all-feedback')}
+											</span>
+										</button>
+									</div>
+								) : (
+									/* Round launcher — bottom-left / bottom-right, always visible */
+									<button
+										type="button"
+										onClick={() => setIsMinimized((v) => !v)}
+										className={cn(
+											'flex size-12 items-center justify-center rounded-full shadow-lg transition-all duration-200 hover:scale-105 active:scale-95',
+											!isClosed ? 'scale-100 opacity-100' : 'pointer-events-none scale-75 opacity-0',
+										)}
+										style={{
+											position: 'absolute',
+											backgroundColor: widgetColor,
+											...(widgetPosition === 'bottom-right'
+												? { bottom: '20px', right: '16px', transformOrigin: 'bottom right' }
+												: { bottom: '20px', left:  '16px', transformOrigin: 'bottom left'  }),
+										}}
+										aria-label={__('Open feedback widget', 'all-feedback')}
+									>
+										<MessageSquare className="size-5 text-white" />
+									</button>
+								)}
 
 								<div
-									className={cn(
-										'absolute bottom-5 right-4',
-										(isClosed || isMinimized) && 'pointer-events-none',
-									)}
-									style={{ width: `min(${maxW}, calc(100% - 2rem))` }}
+									className={cn((isClosed || isMinimized) && 'pointer-events-none')}
+									style={{
+										position: 'absolute',
+										width: `min(${maxW}, calc(100% - 2rem))`,
+										// bottom positions: 20px launcher bottom + 48px launcher height + 12px gap = 80px
+										// side-tab: ~34px launcher width + 10px gap = 44px from right edge
+										...(widgetPosition === 'bottom-right'
+											? { bottom: '80px', right: '16px' }
+											: widgetPosition === 'bottom-left'
+												? { bottom: '80px', left: '16px' }
+												: { top: '50%', right: '44px', transform: 'translateY(-50%)' }),
+									}}
 								>
 									<WidgetBody {...sharedWidgetProps} showControls={true} />
 								</div>
@@ -789,6 +665,7 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 						<WidgetBody
 							{...sharedWidgetProps}
 							showControls={true}
+							showMinimize={false}
 							isMinimized={false}
 							isClosed={false}
 							onMinimize={() => {}}
@@ -834,7 +711,7 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 							>
 								<ChevronLeft className="size-3.5" />
 							</button>
-							<span className="min-w-[44px] text-center text-[10px] text-muted-foreground/60">
+							<span className="min-w-[44px] text-center text-xs text-muted-foreground/60">
 								{isSubmitted ? __('Thanks', 'all-feedback') : `${stepIndex + 1} / ${adminTotalPages}`}
 							</span>
 							<button
