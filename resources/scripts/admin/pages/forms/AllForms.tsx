@@ -10,6 +10,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import CopyButton from '@/components/ui/copy-button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { Pagination } from '@/components/ui/pagination';
@@ -73,28 +74,6 @@ const PER_PAGE_OPTIONS = [10, 25, 50];
 
 const cellCls = 'text-base font-normal leading-5 text-body-text';
 
-const copyShortcode = (id: number) => {
-	const text = `[allfb_survey id="${id}"]`;
-	if (navigator.clipboard?.writeText) {
-		void navigator.clipboard.writeText(text).then(() => {
-			toast.success(__('Shortcode copied to clipboard.', 'all-feedback'));
-		});
-	} else {
-		const el = document.createElement('textarea');
-		el.value = text;
-		Object.assign(el.style, { position: 'fixed', opacity: '0', top: '0', left: '0' });
-		document.body.appendChild(el);
-		el.focus();
-		el.select();
-		try {
-			document.execCommand('copy');
-			toast.success(__('Shortcode copied to clipboard.', 'all-feedback'));
-		} catch {
-			toast.error(__('Failed to copy shortcode.', 'all-feedback'));
-		}
-		document.body.removeChild(el);
-	}
-};
 
 const SkeletonRow = () => (
 	<tr className="border-b border-border">
@@ -528,14 +507,13 @@ const AllForms = () => {
 												<span className="min-w-0 flex-1 truncate font-mono text-xs text-foreground/90">
 													{`[allfb_survey id="${survey.id}"]`}
 												</span>
-												<button
-													type="button"
-													onClick={() => copyShortcode(survey.id)}
+												<CopyButton
+													text={`[allfb_survey id="${survey.id}"]`}
 													title={__('Copy shortcode', 'all-feedback')}
-													className="flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground/60 transition-colors hover:bg-accent hover:text-foreground"
-												>
-													<Copy className="size-3" />
-												</button>
+													successMessage={__('Shortcode copied to clipboard.', 'all-feedback')}
+													className="size-5 rounded text-muted-foreground/60 hover:bg-accent hover:text-foreground"
+													iconClassName="size-3"
+												/>
 											</div>
 										</td>
 
