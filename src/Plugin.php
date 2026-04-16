@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace AllFeedback;
 
+use AllFeedback\CLI\MigrateCommand;
 use AllFeedback\Core\AppServiceProvider;
 use AllFeedback\Core\Constants;
 use AllFeedback\Core\Container;
 use AllFeedback\Core\RoleManager;
+use AllFeedback\Infrastructure\Database\Migrator;
 use AllFeedback\Modules\ModuleLoader;
 use AllFeedback\Traits\Hooks;
 use AllFeedback\Traits\Singleton;
@@ -74,6 +76,11 @@ final class Plugin {
 		// Discover and boot all registered modules (add-ons).
 		$this->moduleLoader = $this->container->get( ModuleLoader::class );
 		$this->moduleLoader->loadModules();
+
+		// Register WP-CLI commands when running in the CLI context.
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			$this->registerCliCommands();
+		}
 
 		$this->booted = true;
 
@@ -177,6 +184,20 @@ final class Plugin {
 	// ------------------------------------------------------------------
 	// Internal helpers
 	// ------------------------------------------------------------------
+
+	/**
+	 * Register WP-CLI commands.
+	 *
+	 * Called only when WP_CLI is defined and truthy.
+	 *
+	 * @since 1.0.0
+	 */
+	private function registerCliCommands(): void {
+		\WP_CLI::add_command(
+			'allfeedback migrate',
+			$this->container->get( MigrateCommand::class )
+		);
+	}
 
 	/**
 	 * Load config/app.php into the container under the key 'config.app'.

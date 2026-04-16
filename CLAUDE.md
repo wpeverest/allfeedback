@@ -32,6 +32,7 @@ Plugin bootstrap: `src/Plugin.php`
 | `src/` | PHP backend (PSR-4: `AllFeedback\`) |
 | `src/Core/` | Plugin bootstrap, DI container, service providers |
 | `src/API/Controllers/V1/` | REST controllers (`/all-feedback/v1/`) |
+| `src/CLI/` | WP-CLI command classes |
 | `src/Survey/` | Survey table gateway (`Manager.php`) |
 | `src/Application/` | Use-case services for the legacy Form domain |
 | `src/Domain/` | Aggregate roots and repository interfaces (Form domain) |
@@ -45,15 +46,25 @@ Plugin bootstrap: `src/Plugin.php`
 
 ---
 
-## Database Tables (live as of session 2)
+## Database Tables
 
 | Table | Purpose |
 |-------|---------|
 | `wp_af_surveys` | Survey definitions — title, form_schema JSON, settings JSON, targeting JSON, status, response_count |
-| `wp_af_responses` | Individual submissions — response_data JSON, score, ip_hash, consent_given |
+| `wp_af_responses` | Individual submissions — response_data JSON, score, ip_hash, ip_address, is_read, consent_given |
+| `wp_af_migrations` | Migration tracking — name, batch number, ran_at (authoritative; replaces old wp_options approach) |
 
 Managed by: `src/Survey/Manager.php` (table gateway)
 Created by: `database/migrations/0001_CreateInitialTables.php`
+
+**Response table indexes** (as of migration 0005):
+
+| Index | Columns | Purpose |
+|-------|---------|---------|
+| `survey_id` | `(survey_id)` | Base survey filter |
+| `idx_survey_created` | `(survey_id, created_at)` | Analytics, response listing |
+| `idx_survey_unread` | `(survey_id, is_read)` | Unread badge count |
+| `idx_ip_survey_created` | `(ip_hash, survey_id, created_at)` | Duplicate IP detection with time window |
 
 ---
 
@@ -101,7 +112,7 @@ pnpm release      # clean → build → POT → composer --no-dev → zip
 
 - Admin SPA uses hash-based routing (`#/dashboard`, `#/forms`, etc.) for WP admin compatibility.
 - Uses `@wordpress/api-fetch` for nonce-authenticated requests.
-- Migrations run automatically on `admin_init` if pending; tracked in `wp_options` under `_allfb_migrations`.
+- Migrations run automatically on `admin_init` if pending; tracked in `wp_af_migrations` DB table (batch + ran_at).
 - Activation/deactivation hooks wired in `src/Core/CoreServiceProvider.php`.
 - Nonce for frontend widget submissions: action `allfeedback_submit`, passed via `wp_localize_script` (Assets class — not yet built).
 
@@ -111,64 +122,65 @@ pnpm release      # clean → build → POT → composer --no-dev → zip
 
 Migrations run **automatically** on `admin_init` — visiting any WP admin page is enough.
 
+### WP-CLI commands (preferred in development)
+
+Open the LocalWP site shell ("Open Site Shell") and use:
+
+```bash
+# Run all pending migrations
+wp allfeedback migrate
+
+# Show status of every migration (name, ran, batch, ran_at)
+wp allfeedback migrate status
+
+# Roll back the last batch
+wp allfeedback migrate rollback
+
+# Roll back last 2 batches
+wp allfeedback migrate rollback --step=2
+
+# Roll back ALL migrations (drops all plugin tables)
+wp allfeedback migrate reset
+
+# Reset then re-run all migrations (fresh start)
+wp allfeedback migrate refresh
+```
+
+CLI commands are registered in `src/CLI/MigrateCommand.php` and wired up in `src/Plugin.php::registerCliCommands()`.
+
 ### Tables not created? (common in development)
 
-**Option 1 — Reactivate the plugin (fastest)**
+**Option 1 — WP-CLI (fastest)**
+```bash
+wp allfeedback migrate
+```
+
+**Option 2 — Reactivate the plugin**
 WP Admin → Plugins → Deactivate "All Feedback" → Activate.
 This fires the activation hook which calls `onActivation()` → `migrator->run()` directly.
 
-**Option 2 — WP-CLI via LocalWP site shell**
-LocalWP uses a custom MySQL socket — use the built-in shell, not your system terminal:
-```bash
-# Open "Open Site Shell" in LocalWP, then:
-wp eval 'AllFeedback\Plugin::getInstance()->getContainer()->get(AllFeedback\Infrastructure\Database\Migrator::class)->run();'
-```
-
 **Option 3 — Adminer / phpMyAdmin (raw SQL fallback)**
-Open LocalWP → Database → Adminer and run:
-```sql
-CREATE TABLE IF NOT EXISTS wp_af_surveys (
-    id             BIGINT(20) UNSIGNED  NOT NULL AUTO_INCREMENT,
-    title          VARCHAR(255)         NOT NULL DEFAULT '',
-    description    TEXT                          DEFAULT NULL,
-    form_schema    LONGTEXT                      DEFAULT NULL,
-    settings       LONGTEXT                      DEFAULT NULL,
-    targeting      LONGTEXT                      DEFAULT NULL,
-    status         VARCHAR(20)          NOT NULL DEFAULT 'draft',
-    response_count INT UNSIGNED         NOT NULL DEFAULT 0,
-    created_by     BIGINT(20) UNSIGNED           DEFAULT NULL,
-    created_at     DATETIME             NOT NULL,
-    updated_at     DATETIME                      DEFAULT NULL,
-    PRIMARY KEY (id),
-    KEY status (status), KEY created_by (created_by), KEY created_at (created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS wp_af_responses (
-    id            BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-    survey_id     BIGINT(20) UNSIGNED NOT NULL,
-    response_data LONGTEXT                     DEFAULT NULL,
-    score         SMALLINT                     DEFAULT NULL,
-    page_url      VARCHAR(2083)                DEFAULT NULL,
-    device_type   VARCHAR(20)                  DEFAULT NULL,
-    ip_hash       VARCHAR(64)                  DEFAULT NULL,
-    user_id       BIGINT(20) UNSIGNED          DEFAULT NULL,
-    consent_given TINYINT(1)          NOT NULL DEFAULT 0,
-    created_at    DATETIME            NOT NULL,
-    PRIMARY KEY (id),
-    KEY survey_id (survey_id), KEY ip_hash (ip_hash), KEY created_at (created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-```
+Open LocalWP → Database → Adminer and run the CREATE TABLE statements from `database/migrations/`.
 
 ### Verify tables exist
 ```bash
 wp db query "SHOW TABLES LIKE 'wp_af%';"
 ```
-Expected output: `wp_af_responses` and `wp_af_surveys`.
+Expected: `wp_af_migrations`, `wp_af_responses`, `wp_af_surveys`.
 
 **Always clear the PHP-DI compiled container cache after changing `config/services.php`:**
 ```bash
 rm -rf /home/wpeverest/Local\ Sites/user-registration/app/public/wp-content/cache/allfeedback
 ```
+
+### Migration system internals
+
+- Migration files: `database/migrations/NNNN_ClassName.php` (numeric prefix sets run order)
+- Tracking table: `wp_af_migrations` — columns: `id`, `name`, `batch`, `ran_at`
+- Batch numbers group migrations run together, enabling targeted rollback with `--step`
+- On first boot after upgrade from the old system, any names in the legacy `_allfb_migrations` wp_options entry are automatically imported and the option is deleted
+- Migrator class: `src/Infrastructure/Database/Migrator.php`
+- Migration base class: `src/Infrastructure/Database/Migration.php`
 
 ---
 
