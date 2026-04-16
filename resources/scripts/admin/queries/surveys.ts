@@ -25,3 +25,11 @@ export const surveyResponseQuery = (surveyId: number, responseId: number) => ({
 	queryKey: ['responses', surveyId, responseId] as const,
 	queryFn:  () => surveysApi.getResponse(surveyId, responseId),
 });
+
+export const unreadCountQuery = () => ({
+	queryKey:             ['responses', 'unread-count'] as const,
+	queryFn:              () => surveysApi.getUnreadCount(),
+	refetchInterval:      60_000,       // poll every 60 s to catch new submissions
+	refetchOnWindowFocus: true,
+	staleTime:            30_000,
+});

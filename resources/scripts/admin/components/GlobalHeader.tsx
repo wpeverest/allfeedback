@@ -1,5 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { unreadCountQuery } from '@/admin/queries/surveys';
+import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { __ } from '@wordpress/i18n';
 import { Menu, MessageSquare, X } from 'lucide-react';
@@ -27,6 +29,33 @@ const GlobalHeader = () => {
 	const navigate  = useNavigate();
 	const [pathname, setPathname] = useState(getCurrentPath);
 	const [menuOpen, setMenuOpen] = useState(false);
+
+	const { data: unreadData } = useQuery(unreadCountQuery());
+	const unreadCount = unreadData?.count ?? 0;
+
+	// Keep the WP sidebar "Responses" badge in sync — the PHP-rendered badge
+	// is only correct on page load; this updates it reactively.
+	useEffect(() => {
+		const link = document.querySelector<HTMLElement>(
+			'#adminmenu a[href*="all-feedback%23%2Fresponses"], #adminmenu a[href*="all-feedback#/responses"]'
+		);
+		if ( ! link ) return;
+
+		let badge = link.querySelector<HTMLElement>('.awaiting-mod');
+
+		if ( unreadCount > 0 ) {
+			if ( ! badge ) {
+				badge = document.createElement('span');
+				badge.innerHTML = '<span class="pending-count"></span>';
+				link.appendChild(badge);
+			}
+			badge.className = `awaiting-mod count-${ unreadCount }`;
+			const pending = badge.querySelector('.pending-count');
+			if ( pending ) pending.textContent = String(unreadCount);
+		} else if ( badge ) {
+			badge.remove();
+		}
+	}, [unreadCount]);
 
 	useEffect(() => {
 		const handler = () => {

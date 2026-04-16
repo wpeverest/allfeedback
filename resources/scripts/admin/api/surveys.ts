@@ -216,6 +216,9 @@ export const surveysApi = {
 	bulkMarkResponsesUnread: (ids: number[]) =>
 		request<BulkMarkReadResult>('/responses/mark-unread', { method: 'POST', data: { ids } }),
 
+	getUnreadCount: () =>
+		request<{ count: number }>('/responses/unread-count'),
+
 	submit: (surveyId: number, data: SubmitFormData) =>
 		request<SubmitFormResult>(`/surveys/${surveyId}/submit`, { method: 'POST', data }),
 };
