@@ -51,9 +51,10 @@ class AdminServiceProvider implements ServiceProvider {
 	 * Wire up WordPress hooks for the admin context.
 	 */
 	public function boot(): void {
-		$this->addAction( 'admin_menu',                        [ $this, 'registerMenus' ] );
-		$this->addAction( 'allfeedback:enqueue-assets:admin',          [ $this, 'enqueueAssets' ] );
-		$this->addAction( 'admin_footer',                      [ $this, 'inlineMenuHighlight' ] );
+		$this->addAction( 'admin_menu',                           [ $this, 'registerMenus'         ] );
+		$this->addAction( 'allfeedback:enqueue-assets:admin',     [ $this, 'enqueueAssets'         ] );
+		$this->addAction( 'admin_footer',                         [ $this, 'inlineMenuHighlight'   ] );
+		$this->addAction( 'in_admin_header',                      [ $this, 'suppressAdminNotices'  ] );
 	}
 
 	// ------------------------------------------------------------------
@@ -155,6 +156,29 @@ class AdminServiceProvider implements ServiceProvider {
 
 		// Remove the auto-generated duplicate of the top-level entry.
 		remove_submenu_page( self::MENU_SLUG, self::MENU_SLUG );
+	}
+
+	// ------------------------------------------------------------------
+	// Admin notice suppression
+	// ------------------------------------------------------------------
+
+	/**
+	 * Remove all third-party and WP core admin notices on AllFeedback pages.
+	 *
+	 * Fires on 'in_admin_header' — after other plugins register their notices
+	 * but before WordPress renders them — so we can cleanly strip them without
+	 * affecting the rest of the admin.
+	 *
+	 * @since 1.0.0
+	 */
+	public function suppressAdminNotices(): void {
+		$screen = get_current_screen();
+		if ( ! $screen || ! str_contains( $screen->id, 'all-feedback' ) ) {
+			return;
+		}
+
+		remove_all_actions( 'admin_notices' );
+		remove_all_actions( 'all_admin_notices' );
 	}
 
 	// ------------------------------------------------------------------
