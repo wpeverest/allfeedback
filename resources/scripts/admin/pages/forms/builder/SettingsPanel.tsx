@@ -380,33 +380,6 @@ const SettingsPanel = ({ settings, onChange, onScrollChange }: SettingsPanelProp
 		<div className="flex-1 overflow-y-auto bg-background p-5" onScroll={handleScroll}>
 			<div className="w-full space-y-4">
 
-				<Card title={__('Submit Buttons', 'all-feedback')}>
-					<Row label={__('Submit label', 'all-feedback')}>
-						<input
-							value={settings.submitLabel}
-							onChange={(e) => update({ submitLabel: e.target.value })}
-							placeholder="Submit"
-							className={inputCls}
-						/>
-					</Row>
-					<Row label={__('Next label', 'all-feedback')}>
-						<input
-							value={settings.nextLabel}
-							onChange={(e) => update({ nextLabel: e.target.value })}
-							placeholder="Next"
-							className={inputCls}
-						/>
-					</Row>
-					<Row label={__('Back label', 'all-feedback')}>
-						<input
-							value={settings.backLabel}
-							onChange={(e) => update({ backLabel: e.target.value })}
-							placeholder="Back"
-							className={inputCls}
-						/>
-					</Row>
-				</Card>
-
 				<Card title={__('Targeting', 'all-feedback')}>
 					<Row label={__('Show to', 'all-feedback')}>
 						<Select value={settings.userState} onValueChange={(v) => update({ userState: v as UserState })}>
@@ -548,6 +521,33 @@ const SettingsPanel = ({ settings, onChange, onScrollChange }: SettingsPanelProp
 							</Row>
 						</div>
 					</Collapse>
+				</Card>
+
+				<Card title={__('Submit Buttons', 'all-feedback')}>
+					<Row label={__('Submit label', 'all-feedback')}>
+						<input
+							value={settings.submitLabel}
+							onChange={(e) => update({ submitLabel: e.target.value })}
+							placeholder="Submit"
+							className={inputCls}
+						/>
+					</Row>
+					<Row label={__('Next label', 'all-feedback')}>
+						<input
+							value={settings.nextLabel}
+							onChange={(e) => update({ nextLabel: e.target.value })}
+							placeholder="Next"
+							className={inputCls}
+						/>
+					</Row>
+					<Row label={__('Back label', 'all-feedback')}>
+						<input
+							value={settings.backLabel}
+							onChange={(e) => update({ backLabel: e.target.value })}
+							placeholder="Back"
+							className={inputCls}
+						/>
+					</Row>
 				</Card>
 
 			</div>
