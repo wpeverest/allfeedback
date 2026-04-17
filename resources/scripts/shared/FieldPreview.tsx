@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export interface SharedField {
 	id:              string;
@@ -16,10 +16,11 @@ export interface SharedField {
 }
 
 interface FieldPreviewProps {
-	field:    SharedField;
-	value:    string | string[];
-	error:    string;
-	onChange: ( value: string | string[] ) => void;
+	field:       SharedField;
+	value:       string | string[];
+	error:       string;
+	onChange:    ( value: string | string[] ) => void;
+	focusFirst?: boolean;
 }
 
 const normalizeLabel = ( html: string ): string => {
@@ -127,7 +128,16 @@ const NpsField = ( { value, onChange }: { value: string; onChange: ( v: string )
 	);
 };
 
-export const FieldPreview = ( { field, value, error, onChange }: FieldPreviewProps ) => {
+export const FieldPreview = ( { field, value, error, onChange, focusFirst = false }: FieldPreviewProps ) => {
+	const inputRef    = useRef<HTMLInputElement>( null );
+	const textareaRef = useRef<HTMLTextAreaElement>( null );
+
+	useEffect( () => {
+		if ( ! focusFirst || ! error ) return;
+		inputRef.current?.focus();
+		textareaRef.current?.focus();
+	}, [ error, focusFirst ] );
+
 	const labelHtml = field.label?.trim()
 		? normalizeLabel( field.label )
 		: '<span style="opacity:0.4">Untitled</span>';
@@ -151,6 +161,7 @@ export const FieldPreview = ( { field, value, error, onChange }: FieldPreviewPro
 
 			{ field.type === 'short_text' && (
 				<input
+					ref={ inputRef }
 					type="text"
 					className={ `allfb-input${ error ? ' is-error' : '' }` }
 					placeholder={ field.placeholder ?? '' }
@@ -161,6 +172,7 @@ export const FieldPreview = ( { field, value, error, onChange }: FieldPreviewPro
 
 			{ field.type === 'long_text' && (
 				<textarea
+					ref={ textareaRef }
 					className={ `allfb-textarea${ error ? ' is-error' : '' }` }
 					placeholder={ field.placeholder ?? '' }
 					rows={ 3 }

@@ -107,15 +107,19 @@ export const SurveyForm = ( { cfg, survey, submitNonce, onSuccess }: SurveyFormP
 			) }
 
 			<div className="allfb-form__fields">
-				{ currentSection.fields.map( ( field ) => (
-					<FieldPreview
-						key={ field.id }
-						field={ field }
-						value={ fieldValues[ field.id ] ?? ( field.type === 'checkboxes' ? [] : '' ) }
-						error={ fieldErrors[ field.id ] ?? '' }
-						onChange={ ( val ) => handleChange( field.id, val ) }
-					/>
-				) ) }
+				{ ( () => {
+					const firstErrorId = currentSection.fields.find( ( f ) => fieldErrors[ f.id ] )?.id;
+					return currentSection.fields.map( ( field ) => (
+						<FieldPreview
+							key={ field.id }
+							field={ field }
+							value={ fieldValues[ field.id ] ?? ( field.type === 'checkboxes' ? [] : '' ) }
+							error={ fieldErrors[ field.id ] ?? '' }
+							focusFirst={ field.id === firstErrorId }
+							onChange={ ( val ) => handleChange( field.id, val ) }
+						/>
+					) );
+				} )() }
 			</div>
 
 			<div className="allfb-form__footer">

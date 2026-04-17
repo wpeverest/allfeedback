@@ -218,15 +218,19 @@ const WidgetBody = ({
 						) }
 
 						<div className="allfb-form__fields">
-							{ currentFields.map( ( field ) => (
-								<FieldPreview
-									key={ field.id }
-									field={ field }
-									value={ fieldValues[ field.id ] ?? '' }
-									error={ fieldErrors[ field.id ] ?? '' }
-									onChange={ ( val ) => onChange( field.id, val ) }
-								/>
-							) ) }
+							{ ( () => {
+								const firstErrorId = currentFields.find( ( f ) => fieldErrors[ f.id ] )?.id;
+								return currentFields.map( ( field ) => (
+									<FieldPreview
+										key={ field.id }
+										field={ field }
+										value={ fieldValues[ field.id ] ?? '' }
+										error={ fieldErrors[ field.id ] ?? '' }
+										focusFirst={ field.id === firstErrorId }
+										onChange={ ( val ) => onChange( field.id, val ) }
+									/>
+								) );
+							} )() }
 						</div>
 
 						<div className="allfb-form__footer">

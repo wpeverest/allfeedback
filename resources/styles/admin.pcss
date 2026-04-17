@@ -447,6 +447,19 @@
 	box-shadow:   none;
 }
 
+/* ── allfb field error text inside admin root ────────────────────────────── */
+/* WP admin p rules can reach (1,1,1)+ specificity — use !important on the   */
+/* two properties most likely to be overridden so they match frontend.pcss.  */
+#ALLFB-Admin-Root .allfb-field__error {
+	font-size:   11px !important;
+	font-weight: 400  !important;
+	line-height: 1.5;
+	color:       #dc2626;
+	margin:      0;
+	padding:     0;
+	min-height:  1em;
+}
+
 /* ── allfb field labels inside admin root ────────────────────────────────── */
 /* Without the .allfb-widget * reset, WP admin p/em/strong margins leak in.   */
 #ALLFB-Admin-Root .allfb-field__label {
