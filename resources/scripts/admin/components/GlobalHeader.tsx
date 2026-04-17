@@ -77,7 +77,7 @@ const GlobalHeader = () => {
 
 	return (
 		<header className="sticky top-[var(--wp-admin--admin-bar--height,32px)] z-50 border-b border-border bg-white">
-			<div className="flex h-[54px] items-center px-5">
+			<div className="flex h-[60px] items-center px-5">
 
 				<div className="flex shrink-0 items-center gap-2">
 					<div className="flex size-[30px] items-center justify-center rounded-md bg-primary">
@@ -95,7 +95,7 @@ const GlobalHeader = () => {
 							return (
 								<span
 									key={item.label}
-									className="cursor-default px-3.5 py-1.5 text-[13px] font-medium text-muted-foreground/50"
+									className="cursor-default px-3.5 py-1.5 text-[14px] font-medium text-muted-foreground/50"
 								>
 									{item.label}
 								</span>
@@ -107,7 +107,7 @@ const GlobalHeader = () => {
 								key={item.to}
 								to={item.to}
 								className={cn(
-									'rounded-full border-[1.5px] px-3.5 py-1.5 text-[13px] font-medium transition-colors',
+									'rounded-full border-[1.5px] px-3.5 py-1.5 text-[14px] font-medium transition-colors',
 									active
 										? 'border-[1.5px] border-brand-400 bg-primary/[0.06] text-primary'
 										: 'border-transparent text-muted-foreground hover:text-foreground',
@@ -120,7 +120,7 @@ const GlobalHeader = () => {
 				</nav>
 
 				<div className="ml-auto flex shrink-0 items-center gap-2">
-					<Badge variant="secondary" className="border-[1.5px] border-brand-400 bg-white px-2.5 py-1 text-[13px] font-medium">
+					<Badge variant="secondary" className="border-[1.5px] border-brand-400 bg-white px-2.5 py-1 text-[14px] font-medium">
 						v{__ALLFB_ADMIN__.version}
 					</Badge>
 					<button
