@@ -182,6 +182,18 @@ IDs that do not exist are counted as `failed`.
 
 ---
 
+### `GET /responses/unread-count`
+Return the total number of unread responses across all non-trashed surveys.
+
+Used by the React admin to keep the WP sidebar badge in sync reactively (polled every 60 s).
+
+**Response**
+```json
+{ "count": 8 }
+```
+
+---
+
 ### `POST /responses/mark-read`
 Bulk mark multiple responses as read across any survey.
 
@@ -290,7 +302,10 @@ Accept a public widget submission. Requires a valid WordPress nonce (`action: al
 **Submission flow:**
 1. Nonce verification
 2. Survey existence + published-status guard (admins may submit to draft surveys as preview)
-3. Duplicate IP detection via HMAC-SHA256 hash (skipped if privacy mode disables user details)
+3. Three-tier duplicate detection (skipped if privacy mode or `manage_options`):
+   - Logged-in user → `existsByUserId()`
+   - Guest with `visitor_token` → `existsByGuestToken()`
+   - Guest without token → `existsByIpHash()` (fallback)
 4. `allfeedback_allow_response_submission` filter (pro blocking hooks)
 5. `allfeedback_response_data_before_save` filter (data transformation)
 6. Persist via `SubmitResponseService` → fires `allfeedback:response:submitted` event
@@ -306,6 +321,7 @@ Accept a public widget submission. Requires a valid WordPress nonce (`action: al
 | `page_url` | string | No | URL where the survey was displayed (max 2083 chars) |
 | `device_type` | string | No | `desktop`, `tablet`, or `mobile` |
 | `consent_given` | boolean | No | GDPR data-processing consent flag (default: false) |
+| `visitor_token` | string | No | UUID v4 generated in the browser (`localStorage` key `allfb_visitor_id`). Used for guest duplicate detection. Invalid/missing values fall back to IP hash. |
 
 **Response — 201**
 ```json
@@ -319,7 +335,7 @@ Accept a public widget submission. Requires a valid WordPress nonce (`action: al
 | 403 | Invalid nonce |
 | 403 | Survey not published (and not admin preview) |
 | 403 | Blocked by `allfeedback_allow_response_submission` filter |
-| 409 | Duplicate submission from same IP |
+| 409 | Duplicate submission (user_id, guest_token, or IP hash match) |
 | 422 | Validation failure in response data |
 | 404 | Survey not found |
 
@@ -470,6 +486,7 @@ Permanently delete a single log file.
 | POST | `/surveys/{id}/publish` | Admin | Publish survey |
 | POST | `/surveys/{id}/submit` | Nonce | Submit a response (public widget) |
 | GET | `/responses` | Admin | List all responses (all surveys) |
+| GET | `/responses/unread-count` | Admin | Count unread responses (sidebar badge) |
 | DELETE | `/responses/delete` | Admin | Bulk delete responses (any survey) |
 | POST | `/responses/mark-read` | Admin | Bulk mark responses as read |
 | POST | `/responses/mark-unread` | Admin | Bulk mark responses as unread |

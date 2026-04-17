@@ -26,6 +26,7 @@ class ResponseDTO {
 		public readonly bool $consentGiven,
 		public readonly int $userId,
 		public readonly ?string $ipAddress = null,
+		public readonly ?string $guestToken = null,
 	) {}
 
 	/**
@@ -39,6 +40,11 @@ class ResponseDTO {
 	 * @since 1.0.0
 	 */
 	public static function fromArray( int $surveyId, array $data ): self {
+		$rawToken   = isset( $data['visitor_token'] ) ? sanitize_text_field( (string) $data['visitor_token'] ) : '';
+		$guestToken = preg_match( '/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $rawToken )
+			? $rawToken
+			: null;
+
 		return new self(
 			surveyId: $surveyId,
 			responseData: $data['response_data'] ?? [],
@@ -47,6 +53,7 @@ class ResponseDTO {
 			deviceType: $data['device_type'] ?? null,
 			consentGiven: ! empty( $data['consent_given'] ),
 			userId: get_current_user_id(),
+			guestToken: $guestToken,
 		);
 	}
 }
