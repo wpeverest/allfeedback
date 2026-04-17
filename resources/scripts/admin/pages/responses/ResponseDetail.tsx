@@ -3,19 +3,28 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { surveysApi } from '@/admin/api/surveys';
-import { surveyQuery, surveyResponseQuery } from '@/admin/queries/surveys';
+import { surveyQuery, surveyResponseQuery, surveyResponsesQuery } from '@/admin/queries/surveys';
 import { cn } from '@/lib/utils';
 import { useForm } from '@tanstack/react-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useBlocker, useParams, useRouter, useSearch } from '@tanstack/react-router';
+import { useBlocker, useNavigate, useParams, useRouter, useSearch } from '@tanstack/react-router';
 import UnsavedChangesBadge from '@/components/ui/unsaved-changes-badge';
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import type { LucideIcon } from 'lucide-react';
 import { __ } from '@wordpress/i18n';
 import {
 	ArrowLeft,
+	ArrowRight,
 	CalendarDays,
 	Check,
 	CheckSquare,
+	ChevronDown,
+	ChevronRight,
 	Globe,
 	Laptop,
 	Loader2,
@@ -23,53 +32,51 @@ import {
 	MailOpen,
 	MessageSquare,
 	Monitor,
+	MoreHorizontal,
 	Pencil,
 	Smartphone,
 	Star,
 	Tablet,
+	Trash2,
 	X,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import type { SurveyFormSchemaField } from '@/admin/api/surveys';
+import { FIELD_TYPES } from '@/admin/pages/forms/builder/fieldTypes';
 
 const DetailSkeleton = () => (
-	<div className="flex flex-col">
-		<div className="flex h-[68px] shrink-0 items-center justify-between border-b border-border bg-white px-6">
-			<div className="flex items-center gap-2">
+	<div className="flex flex-col bg-background">
+		<div className="flex h-[60px] shrink-0 items-center justify-between border-b border-border bg-card px-6">
+			<div className="flex items-center gap-3">
 				<div className="size-8 animate-pulse rounded-lg bg-muted" />
 				<div className="h-5 w-px bg-border" />
 				<div className="h-4 w-40 animate-pulse rounded bg-muted" />
 			</div>
 			<div className="h-9 w-32 animate-pulse rounded-lg bg-muted" />
 		</div>
-		<div className="p-6">
-			<div className="grid gap-5 lg:grid-cols-[1fr_380px]">
-				<div className="rounded-2xl border border-border/60 bg-white">
-					<div className="border-b border-border/50 px-6 py-4">
-						<div className="h-4 w-20 animate-pulse rounded bg-muted" />
-					</div>
+		<div className="flex min-h-0 flex-1">
+			<div className="flex-1 overflow-y-auto p-6 space-y-5">
+				<div className="space-y-2">
+					<div className="h-7 w-48 animate-pulse rounded bg-muted" />
+					<div className="h-4 w-72 animate-pulse rounded bg-muted" />
+				</div>
+				<div className="rounded-xl bg-card">
 					{Array.from({ length: 3 }, (_, i) => (
-						<div key={i} className="border-b border-border/40 px-6 py-5 last:border-0">
+						<div key={i} className="border-b border-border/60 px-6 py-5 last:border-0">
 							<div className="mb-2 h-3 w-24 animate-pulse rounded bg-muted" />
 							<div className="h-5 w-2/3 animate-pulse rounded bg-muted" />
 						</div>
 					))}
 				</div>
-				<div className="rounded-2xl border border-border/60 bg-white">
-					<div className="border-b border-border/50 px-5 py-4">
-						<div className="h-4 w-16 animate-pulse rounded bg-muted" />
+			</div>
+			<div className="w-[30%] shrink-0 border-l border-border bg-card">
+				{Array.from({ length: 4 }, (_, i) => (
+					<div key={i} className="border-b border-border/60 px-5 py-4">
+						<div className="h-2.5 w-16 animate-pulse rounded bg-muted mb-2" />
+						<div className="h-4 w-24 animate-pulse rounded bg-muted" />
 					</div>
-					{Array.from({ length: 5 }, (_, i) => (
-						<div key={i} className="flex items-center gap-3 border-b border-border/40 px-5 py-4 last:border-0">
-							<div className="size-8 animate-pulse rounded-lg bg-muted" />
-							<div className="space-y-1.5">
-								<div className="h-2.5 w-16 animate-pulse rounded bg-muted" />
-								<div className="h-3.5 w-24 animate-pulse rounded bg-muted" />
-							</div>
-						</div>
-					))}
-				</div>
+				))}
 			</div>
 		</div>
 	</div>
@@ -80,7 +87,7 @@ const ViewField = ({ field, value }: { field: SurveyFormSchemaField | null; valu
 
 	if (value === null || value === undefined || value === '') {
 		return (
-			<span className="text-sm italic text-muted-foreground/60">
+			<span className="text-base italic text-muted-foreground/50">
 				{__('No answer provided', 'all-feedback')}
 			</span>
 		);
@@ -105,7 +112,7 @@ const ViewField = ({ field, value }: { field: SurveyFormSchemaField | null; valu
 
 	if (type === 'radio') {
 		return (
-			<span className="inline-flex items-center gap-2 text-md text-foreground">
+			<span className="inline-flex items-center gap-2 text-base font-normal text-foreground">
 				<span className="size-2 rounded-full bg-primary" />
 				{String(value)}
 			</span>
@@ -114,20 +121,26 @@ const ViewField = ({ field, value }: { field: SurveyFormSchemaField | null; valu
 
 	if (type === 'nps') {
 		const score = Number(value);
-		const { bg, border, text, label } =
+		const { bg, border, text, bar, label } =
 			score >= 9
-				? { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', label: __('Promoter', 'all-feedback') }
+				? { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', bar: 'bg-emerald-500', label: __('Promoter', 'all-feedback') }
 				: score >= 7
-					? { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700', label: __('Passive', 'all-feedback') }
-					: { bg: 'bg-rose-50', border: 'border-rose-200', text: 'text-rose-700', label: __('Detractor', 'all-feedback') };
+					? { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700', bar: 'bg-amber-500', label: __('Passive', 'all-feedback') }
+					: { bg: 'bg-rose-50', border: 'border-rose-200', text: 'text-rose-700', bar: 'bg-rose-500', label: __('Detractor', 'all-feedback') };
+		const pct = (score / 10) * 100;
 		return (
-			<div className="flex items-center gap-3">
-				<span className={cn('rounded-xl border px-3.5 py-1.5 text-2xl font-bold tabular-nums', bg, border, text)}>
-					{score}
-				</span>
-				<div>
-					<p className={cn('text-base font-semibold', text)}>{label}</p>
-					<p className="text-xs text-muted-foreground">{__('out of 10', 'all-feedback')}</p>
+			<div className="space-y-3">
+				<div className="flex items-center gap-4">
+					<span className={cn('flex size-14 shrink-0 items-center justify-center rounded-xl border text-3xl font-bold tabular-nums', bg, border, text)}>
+						{score}
+					</span>
+					<div>
+						<p className={cn('text-md font-semibold leading-tight', text)}>{label}</p>
+						<p className="mt-0.5 text-sm text-muted-foreground">{score} {__('out of 10', 'all-feedback')}</p>
+					</div>
+				</div>
+				<div className="h-1.5 w-full max-w-sm overflow-hidden rounded-full bg-muted/60">
+					<div className={cn('h-full rounded-full transition-all', bar)} style={{ width: `${pct}%` }} />
 				</div>
 			</div>
 		);
@@ -180,13 +193,13 @@ const ViewField = ({ field, value }: { field: SurveyFormSchemaField | null; valu
 
 	if (type === 'long_text') {
 		return (
-			<p className="whitespace-pre-wrap text-md leading-relaxed text-foreground">
+			<p className="whitespace-pre-wrap text-base font-normal leading-relaxed text-foreground">
 				{String(value)}
 			</p>
 		);
 	}
 
-	return <span className="text-md text-foreground">{String(value)}</span>;
+	return <span className="text-base font-normal text-foreground">{String(value)}</span>;
 };
 
 const EditField = ({
@@ -298,15 +311,15 @@ const EditField = ({
 	return <Input className={subtleInput} value={String(value ?? '')} onChange={(e) => onChange(e.target.value)} />;
 };
 
-const MetaItem = ({ icon: Icon, label, children }: { icon: LucideIcon; label: string; children: React.ReactNode }) => (
-	<div className="px-5 py-4">
-		<div className="mb-1.5 flex items-center gap-1.5">
-			<Icon className="size-3 shrink-0 text-muted-foreground/50" />
-			<p className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground/80">
-				{label}
-			</p>
+const SidebarRow = ({ icon: Icon, label, children }: { icon: LucideIcon; label: string; children: React.ReactNode }) => (
+	<div className="px-5 py-3.5">
+		<p className="mb-1 text-xs font-medium text-muted-foreground/70">
+			{label}
+		</p>
+		<div className="flex min-w-0 items-center gap-2 text-base font-normal text-foreground">
+			<Icon className="size-3.5 shrink-0 text-muted-foreground/50" />
+			<span className="min-w-0">{children}</span>
 		</div>
-		<div className="pl-[18px] text-sm text-foreground">{children}</div>
 	</div>
 );
 
@@ -317,16 +330,27 @@ const getDeviceIcon = (device: string | null) => {
 	return Laptop;
 };
 
+const isAnswered = (value: unknown) =>
+	value !== null && value !== undefined && value !== '' && !(Array.isArray(value) && value.length === 0);
+
 const ResponseDetail = () => {
 	const router      = useRouter();
+	const navigate    = useNavigate();
 	const queryClient = useQueryClient();
 	const { responseId }     = useParams({ from: '/_app/responses/$responseId' });
 	const { surveyId, edit } = useSearch({ from: '/_app/responses/$responseId' });
 
-	const [isEditing, setIsEditing] = useState(edit);
-	const [isDirty,   setIsDirty]   = useState(false);
+	const [isEditing,           setIsEditing]           = useState(edit);
+	const [isDirty,             setIsDirty]             = useState(false);
+	const [showUnanswered,      setShowUnanswered]      = useState(false);
 
 	const { data: survey } = useQuery({ ...surveyQuery(surveyId), enabled: surveyId > 0 });
+
+	const { data: responsesListData } = useQuery({
+		...surveyResponsesQuery(surveyId, { per_page: 100, page: 1 }),
+		enabled:   surveyId > 0,
+		staleTime: 60_000,
+	});
 
 	const { data: response, isLoading, isError } = useQuery({
 		...surveyResponseQuery(surveyId, Number(responseId)),
@@ -337,6 +361,33 @@ const ResponseDetail = () => {
 	const schemaFieldMap = Object.fromEntries(schemaFields.map((f) => [f.id, f]));
 	const responseData   = response?.response_data ?? {};
 	const orphanedKeys   = Object.keys(responseData).filter((k) => !(k in schemaFieldMap));
+
+	const answeredFields          = schemaFields.filter((f) => isAnswered(responseData[f.id]));
+	const unansweredOptional      = schemaFields.filter((f) => !f.required && !isAnswered(responseData[f.id]));
+	const completionPct           = schemaFields.length > 0
+		? Math.round((answeredFields.length / schemaFields.length) * 100)
+		: 100;
+
+	const firstTextField = schemaFields.find((f) => f.type === 'short_text' || f.type === 'long_text');
+	const respondentName = firstTextField && isAnswered(responseData[firstTextField.id])
+		? String(responseData[firstTextField.id])
+		: null;
+
+	// Sorted newest-first (matches list default) for prev/next navigation.
+	const sortedForNav = [...(responsesListData?.responses ?? [])].sort(
+		(a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+	);
+	const currentNavIndex = sortedForNav.findIndex((r) => r.id === Number(responseId));
+	const prevNavResponse = currentNavIndex > 0 ? sortedForNav[currentNavIndex - 1] : null;
+	const nextNavResponse = currentNavIndex < sortedForNav.length - 1 ? sortedForNav[currentNavIndex + 1] : null;
+
+	const navigateToResponse = (r: { id: number; survey_id: number }) => {
+		void navigate({
+			to:     '/responses/$responseId',
+			params: { responseId: String(r.id) },
+			search: { surveyId: r.survey_id },
+		});
+	};
 
 	const autoMarkRef  = useRef(false);
 	const isMountedRef = useRef(true);
@@ -352,12 +403,8 @@ const ResponseDetail = () => {
 					toast.success(isRead ? __('Marked as read.', 'all-feedback') : __('Marked as unread.', 'all-feedback'));
 				}
 			} else if (!autoMarkRef.current) {
-				// Explicit user action that completed after navigating away — still sync the list.
 				void queryClient.invalidateQueries({ queryKey: ['responses'] });
 			} else {
-				// Auto-mark completed after navigating away — update only the single-response
-				// cache entry so a full list refresh doesn't race with any bulk action the
-				// user may have already triggered on the list page.
 				queryClient.setQueryData(
 					['responses', surveyId, Number(responseId)] as const,
 					updatedResponse,
@@ -365,6 +412,16 @@ const ResponseDetail = () => {
 			}
 			autoMarkRef.current = false;
 		},
+	});
+
+	const deleteMutation = useMutation({
+		mutationFn: () => surveysApi.deleteResponse(surveyId, Number(responseId)),
+		onSuccess: () => {
+			void queryClient.invalidateQueries({ queryKey: ['responses'] });
+			toast.success(__('Response deleted.', 'all-feedback'));
+			router.history.back();
+		},
+		onError: () => { toast.error(__('Failed to delete response.', 'all-feedback')); },
 	});
 
 	useEffect(() => {
@@ -434,17 +491,23 @@ const ResponseDetail = () => {
 		setIsDirty(false);
 	};
 
+	const handleDelete = () => {
+		if (window.confirm(__('Delete this response? This cannot be undone.', 'all-feedback'))) {
+			deleteMutation.mutate();
+		}
+	};
+
 	if (isLoading) return <DetailSkeleton />;
 
 	if (isError || !response) {
 		return (
-			<div className="flex flex-col">
-				<div className="flex h-[68px] shrink-0 items-center border-b border-border bg-white px-6">
+			<div className="flex flex-col bg-background">
+				<div className="flex h-[60px] shrink-0 items-center border-b border-border bg-card px-6">
 					<Button variant="ghost" size="icon-sm" onClick={handleBack} aria-label={__('Back', 'all-feedback')}>
 						<ArrowLeft className="size-4" />
 					</Button>
-					<span className="mx-2 h-5 w-px bg-border" />
-					<span className="text-base font-semibold text-foreground">{__('Response not found', 'all-feedback')}</span>
+					<span className="mx-3 h-5 w-px bg-border" />
+					<span className="text-sm font-semibold text-foreground">{__('Response not found', 'all-feedback')}</span>
 				</div>
 				<div className="flex min-h-[300px] items-center justify-center p-6">
 					<div className="flex flex-col items-center gap-2 text-center">
@@ -461,50 +524,80 @@ const ResponseDetail = () => {
 		);
 	}
 
-	return (
-		<div className="flex flex-col">
+	const surveyTitle = survey?.title ?? `${__('Survey', 'all-feedback')} #${surveyId}`;
 
-			<div className="flex h-[68px] shrink-0 items-center justify-between border-b border-border bg-white px-6">
-				<div className="flex min-w-0 flex-1 items-center gap-2">
-					<Button variant="ghost" size="icon-sm" onClick={handleBack} aria-label={__('Back', 'all-feedback')}>
+	return (
+		<div className="flex h-full flex-col bg-background overflow-hidden">
+
+			<div className="flex h-[60px] shrink-0 items-center justify-between border-b border-border bg-card px-6">
+				<div className="flex min-w-0 flex-1 items-center gap-3">
+					<Button
+						variant="ghost"
+						size="icon-sm"
+						onClick={handleBack}
+						aria-label={__('Back', 'all-feedback')}
+					>
 						<ArrowLeft className="size-4" />
 					</Button>
 					<span className="h-5 w-px bg-border" />
-					<p className="truncate text-base font-semibold text-foreground">
-						{survey?.title ?? `${__('Survey', 'all-feedback')} #${surveyId}`}
-					</p>
+					<p className="truncate text-sm font-semibold text-foreground">{surveyTitle}</p>
+					<ChevronRight className="size-3.5 shrink-0 text-muted-foreground/40" />
+					<span className="text-sm text-muted-foreground">#{responseId}</span>
 				</div>
 
-				<div className="flex items-center gap-3">
+				<div className="flex items-center gap-2">
 					{isEditing && isDirty && <UnsavedChangesBadge />}
 
 					{!isEditing ? (
 						<>
 							<Button
-								variant="secondary"
+								variant="ghost"
 								size="sm"
 								onClick={() => markReadMutation.mutate(!response.is_read)}
 								disabled={markReadMutation.isPending}
 							>
-								{response.is_read ? <Mail className="size-4" /> : <MailOpen className="size-4" />}
-								{response.is_read ? __('Mark as unread', 'all-feedback') : __('Mark as read', 'all-feedback')}
+								{response.is_read ? <Mail className="size-3.5" /> : <MailOpen className="size-3.5" />}
+								{response.is_read ? __('Mark unread', 'all-feedback') : __('Mark read', 'all-feedback')}
 							</Button>
 							<Button
-								variant="outline"
-								className="border-primary text-primary hover:bg-primary/5 hover:text-primary"
+								size="sm"
 								onClick={() => setIsEditing(true)}
 							>
 								<Pencil className="size-3.5" />
-								{__('Edit response', 'all-feedback')}
+								{__('Edit', 'all-feedback')}
 							</Button>
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<Button variant="ghost" size="icon-sm">
+										<MoreHorizontal className="size-4" />
+									</Button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent align="end">
+									<DropdownMenuItem
+										onClick={() => markReadMutation.mutate(!response.is_read)}
+										disabled={markReadMutation.isPending}
+									>
+										{response.is_read ? <Mail className="size-3.5" /> : <MailOpen className="size-3.5" />}
+										{response.is_read ? __('Mark as unread', 'all-feedback') : __('Mark as read', 'all-feedback')}
+									</DropdownMenuItem>
+									<DropdownMenuItem
+										onClick={handleDelete}
+										disabled={deleteMutation.isPending}
+										className="text-destructive focus:text-destructive"
+									>
+										<Trash2 className="size-3.5" />
+										{__('Delete response', 'all-feedback')}
+									</DropdownMenuItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
 						</>
 					) : (
 						<>
-							<Button variant="outline" onClick={cancelEdit} disabled={saveMutation.isPending}>
+							<Button variant="outline" size="sm" onClick={cancelEdit} disabled={saveMutation.isPending}>
 								<X className="size-3.5" />
 								{__('Cancel', 'all-feedback')}
 							</Button>
-							<Button onClick={() => void form.handleSubmit()} disabled={saveMutation.isPending || !isDirty}>
+							<Button size="sm" onClick={() => void form.handleSubmit()} disabled={saveMutation.isPending || !isDirty}>
 								{saveMutation.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
 								{__('Save changes', 'all-feedback')}
 							</Button>
@@ -513,146 +606,328 @@ const ResponseDetail = () => {
 				</div>
 			</div>
 
-			<form onSubmit={(e) => { e.preventDefault(); void form.handleSubmit(); }} className="p-6">
-				<div className="grid gap-5 lg:grid-cols-[1fr_380px]">
+			<form
+				onSubmit={(e) => { e.preventDefault(); void form.handleSubmit(); }}
+				className="flex min-h-0 flex-1 overflow-hidden"
+			>
+				<div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
 
-					<div className="rounded-2xl border border-border/60 bg-white">
-						<div className="flex items-center justify-between border-b border-border/50 px-6 py-4">
-							<h2 className="text-sm font-semibold text-foreground">
-								{__('Responses', 'all-feedback')}
-							</h2>
+					<div className="flex items-center justify-between gap-6 rounded-xl border border-border/60 bg-card px-6 py-5">
+						<div className="min-w-0">
+							{!response.is_read && (
+								<div className="mb-2 flex items-center gap-1.5">
+									<span className="size-1.5 rounded-full bg-orange-400" />
+									<span className="text-2xs font-semibold uppercase tracking-widest text-orange-500">
+										{__('Unread response', 'all-feedback')}
+									</span>
+								</div>
+							)}
+							<h1 className="text-xl font-semibold text-foreground truncate">
+								{respondentName ?? __('Anonymous respondent', 'all-feedback')}
+							</h1>
+							<p className="mt-1 flex flex-wrap items-center gap-1.5 text-sm font-normal text-muted-foreground">
+								<CalendarDays className="size-3.5 shrink-0" />
+								<span>{format(new Date(response.created_at), 'MMM d, yyyy · h:mm a')}</span>
+								{response.page_url && (
+									<>
+										<span className="text-muted-foreground/40">·</span>
+										<a
+											href={response.page_url}
+											target="_blank"
+											rel="noopener noreferrer"
+											className="truncate max-w-xs font-medium !text-primary underline underline-offset-2 hover:!opacity-80"
+										>
+											{response.page_url}
+										</a>
+									</>
+								)}
+							</p>
 						</div>
 
-						<div>
-							{schemaFields.map((schField, idx) => {
-								const rawValue = responseData[schField.id];
-								return (
-									<form.Field key={schField.id} name="response_data">
-										{(field) => (
-											<div className={cn(
-												'px-6 py-5 transition-colors',
-												isEditing && 'hover:bg-muted/[0.04]',
-											)}>
-												<div className="mb-2.5 flex items-center gap-2">
-													<span className="flex size-5 shrink-0 items-center justify-center rounded-md bg-muted text-2xs font-bold tabular-nums text-muted-foreground">
-														{idx + 1}
-													</span>
-													<div className="flex items-baseline gap-0.5 text-xs font-medium text-muted-foreground">
-														<span
-															className="[&_p]:m-0 [&_p]:inline"
-															dangerouslySetInnerHTML={{ __html: schField.label }}
-														/>
-														{schField.required && <span className="ml-0.5 text-destructive">*</span>}
-													</div>
-												</div>
-												<div className="pl-7">
-													{isEditing ? (
-														<EditField
-															field={schField}
-															value={field.state.value[schField.id] ?? rawValue}
-															onChange={(v) => { field.handleChange({ ...field.state.value, [schField.id]: v }); setIsDirty(true); }}
-														/>
-													) : (
-														<ViewField field={schField} value={rawValue} />
-													)}
-												</div>
-											</div>
-										)}
-									</form.Field>
-								);
-							})}
+						{schemaFields.length > 0 && (
+							<div className="flex shrink-0 items-center gap-6">
+								<div className="text-center">
+									<p className="text-2xs font-medium uppercase tracking-widest text-muted-foreground/50">
+										{__('Completion', 'all-feedback')}
+									</p>
+									<p className="mt-1 text-5xl font-semibold tabular-nums text-foreground">
+										{completionPct}%
+									</p>
+								</div>
+								{response.score !== null && (
+									<>
+										<div className="h-10 w-px bg-border/60" />
+										<div className="text-center">
+											<p className="text-2xs font-medium uppercase tracking-widest text-muted-foreground/50">
+												{__('Score', 'all-feedback')}
+											</p>
+											<p className="mt-1 text-5xl font-semibold tabular-nums text-foreground">
+												{response.score}
+											</p>
+										</div>
+									</>
+								)}
+							</div>
+						)}
+					</div>
 
-							{orphanedKeys.map((key) => (
-								<form.Field key={key} name="response_data">
+					<div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+						{schemaFields.filter((f) => f.required || isAnswered(responseData[f.id])).map((schField) => {
+							const rawValue = responseData[schField.id];
+							return (
+								<form.Field key={schField.id} name="response_data">
 									{(field) => (
-										<div className={cn('px-6 py-5 transition-colors', isEditing && 'hover:bg-muted/[0.04]')}>
-											<div className="mb-2.5 flex items-center gap-2">
-												<span className="flex size-5 shrink-0 items-center justify-center rounded-md bg-muted text-2xs font-bold text-muted-foreground">?</span>
-												<p className="text-xs font-medium text-muted-foreground">
-													{__('Unknown field', 'all-feedback')}
-													<span className="ml-1.5 font-normal text-foreground/30">({key})</span>
-												</p>
-											</div>
-											<div className="pl-7">
+										<div className={cn(
+											'border-b border-border/60 px-6 py-5 last:border-0 transition-colors',
+											isEditing && 'hover:bg-muted/30',
+										)}>
+											{(() => {
+												const typeConfig = FIELD_TYPES.find((t) => t.type === schField.type);
+												return (
+													<div className="mb-3 flex items-center gap-3">
+														<span
+															className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted"
+															title={typeConfig?.label}
+														>
+															{typeConfig ? (
+																<typeConfig.Icon className="size-4 text-muted-foreground" />
+															) : (
+																<MessageSquare className="size-4 text-muted-foreground" />
+															)}
+														</span>
+														<div className="flex items-baseline gap-1 text-base font-medium text-foreground/80">
+															<span
+																className="[&_p]:m-0 [&_p]:inline"
+																dangerouslySetInnerHTML={{ __html: schField.label }}
+															/>
+															{schField.required && <span className="text-destructive">*</span>}
+														</div>
+													</div>
+												);
+											})()}
+											<div className="pl-11">
 												{isEditing ? (
 													<EditField
-														field={null}
-														value={field.state.value[key] ?? responseData[key]}
-														onChange={(v) => { field.handleChange({ ...field.state.value, [key]: v }); setIsDirty(true); }}
+														field={schField}
+														value={field.state.value[schField.id] ?? rawValue}
+														onChange={(v) => { field.handleChange({ ...field.state.value, [schField.id]: v }); setIsDirty(true); }}
 													/>
 												) : (
-													<ViewField field={null} value={responseData[key]} />
+													<ViewField field={schField} value={rawValue} />
 												)}
 											</div>
 										</div>
 									)}
 								</form.Field>
-							))}
+							);
+						})}
 
-							{schemaFields.length === 0 && Object.keys(responseData).length === 0 && (
-								<div className="flex flex-col items-center gap-2 py-16 text-center">
-									<MessageSquare className="size-7 text-muted-foreground/25" />
-									<p className="text-base text-muted-foreground">{__('No response data recorded.', 'all-feedback')}</p>
-								</div>
-							)}
-						</div>
+						{orphanedKeys.map((key) => (
+							<form.Field key={key} name="response_data">
+								{(field) => (
+									<div className={cn('border-b border-border/60 px-6 py-5 last:border-0 transition-colors', isEditing && 'hover:bg-muted/30')}>
+										<div className="mb-3 flex items-center gap-2.5">
+											<span className="flex size-5 shrink-0 items-center justify-center rounded-md bg-muted text-2xs font-bold text-muted-foreground">?</span>
+											<p className="text-sm font-medium text-foreground/70">
+												{__('Unknown field', 'all-feedback')}
+												<span className="ml-1.5 font-normal text-muted-foreground/50">({key})</span>
+											</p>
+										</div>
+										<div className="pl-7">
+											{isEditing ? (
+												<EditField
+													field={null}
+													value={field.state.value[key] ?? responseData[key]}
+													onChange={(v) => { field.handleChange({ ...field.state.value, [key]: v }); setIsDirty(true); }}
+												/>
+											) : (
+												<ViewField field={null} value={responseData[key]} />
+											)}
+										</div>
+									</div>
+								)}
+							</form.Field>
+						))}
+
+						{schemaFields.length === 0 && Object.keys(responseData).length === 0 && (
+							<div className="flex flex-col items-center gap-2 py-16 text-center">
+								<MessageSquare className="size-7 text-muted-foreground/25" />
+								<p className="text-base text-muted-foreground">{__('No response data recorded.', 'all-feedback')}</p>
+							</div>
+						)}
 					</div>
 
-					<div className="rounded-2xl border border-border/60 bg-white">
-						<div className="flex items-center justify-between border-b border-border/50 px-5 py-4">
-							<h2 className="text-sm font-semibold text-foreground">
-								{__('Details', 'all-feedback')}
-							</h2>
-							{response.is_read ? (
-								<span className="rounded-full bg-muted/60 px-2 py-0.5 text-2xs font-medium text-muted-foreground">
-									{__('Read', 'all-feedback')}
-								</span>
-							) : (
-								<span className="rounded-full bg-primary/10 px-2 py-0.5 text-2xs font-semibold text-primary">
-									{__('Unread', 'all-feedback')}
-								</span>
-							)}
+					{unansweredOptional.length > 0 && !isEditing && (
+						<button
+							type="button"
+							onClick={() => setShowUnanswered((v) => !v)}
+							className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+						>
+							<ChevronDown className={cn('size-4 transition-transform', showUnanswered && 'rotate-180')} />
+							{showUnanswered
+								? __('Hide unanswered optional fields', 'all-feedback')
+								: `${__('Show', 'all-feedback')} ${unansweredOptional.length} ${__('unanswered optional fields', 'all-feedback')}`
+							}
+						</button>
+					)}
+
+					{showUnanswered && !isEditing && unansweredOptional.length > 0 && (
+						<div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+							{unansweredOptional.map((schField) => {
+								const typeConfig = FIELD_TYPES.find((t) => t.type === schField.type);
+								return (
+									<div key={schField.id} className="border-b border-border/60 px-6 py-4 last:border-0 opacity-50">
+										<div className="mb-1.5 flex items-center gap-3">
+											<span
+												className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted"
+												title={typeConfig?.label}
+											>
+												{typeConfig ? (
+													<typeConfig.Icon className="size-4 text-muted-foreground" />
+												) : (
+													<MessageSquare className="size-4 text-muted-foreground" />
+												)}
+											</span>
+											<div
+												className="text-base font-medium text-foreground/70 [&_p]:m-0 [&_p]:inline"
+												dangerouslySetInnerHTML={{ __html: schField.label }}
+											/>
+										</div>
+										<div className="pl-11">
+											<span className="text-base italic text-muted-foreground/40">
+												{__('No answer provided', 'all-feedback')}
+											</span>
+										</div>
+									</div>
+								);
+							})}
 						</div>
+					)}
 
-						<div className="divide-y divide-border/40">
-							<MetaItem icon={CalendarDays} label={__('Submitted', 'all-feedback')}>
-								<span>{format(new Date(response.created_at), 'MMM d, yyyy · h:mm a')}</span>
-							</MetaItem>
+				</div>
 
-							{response.score !== null && (
-								<MetaItem icon={Star} label={__('Score', 'all-feedback')}>
-									<span className="text-md font-semibold tabular-nums">{response.score}</span>
-								</MetaItem>
-							)}
+				<aside className="w-[30%] shrink-0 overflow-y-auto border-l border-border/60 p-6 space-y-4">
 
-							<MetaItem icon={getDeviceIcon(response.device_type)} label={__('Device', 'all-feedback')}>
+					<div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+						<div className="px-5 pt-4 pb-2">
+							<p className="text-2xs font-semibold uppercase tracking-widest text-muted-foreground/50">
+								{__('Details', 'all-feedback')}
+							</p>
+						</div>
+						<div className="divide-y divide-border/60">
+							<SidebarRow icon={CalendarDays} label={__('Submitted', 'all-feedback')}>
+								{format(new Date(response.created_at), 'MMM d, yyyy · h:mm a')}
+							</SidebarRow>
+
+							<SidebarRow icon={getDeviceIcon(response.device_type)} label={__('Device', 'all-feedback')}>
 								{response.device_type ? (
 									<span className="capitalize">{response.device_type}</span>
 								) : (
 									<span className="text-muted-foreground">—</span>
 								)}
-							</MetaItem>
+							</SidebarRow>
 
-							<MetaItem icon={Globe} label={__('Page URL', 'all-feedback')}>
+							<SidebarRow icon={Globe} label={__('Page URL', 'all-feedback')}>
 								{response.page_url ? (
 									<a
 										href={response.page_url}
 										target="_blank"
 										rel="noopener noreferrer"
-										className="break-all text-primary underline-offset-2 hover:underline"
+										title={response.page_url}
+										className="block truncate font-medium !text-primary underline underline-offset-2 hover:!opacity-80"
 									>
 										{response.page_url}
 									</a>
 								) : (
-									<span className="text-muted-foreground">—</span>
+									<span className="text-muted-foreground/60">—</span>
 								)}
-							</MetaItem>
+							</SidebarRow>
 
+							{response.score !== null && (
+								<SidebarRow icon={Star} label={__('Score', 'all-feedback')}>
+									{response.score}
+								</SidebarRow>
+							)}
 						</div>
 					</div>
 
-				</div>
+					<div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+						<div className="px-5 pt-4 pb-2">
+							<p className="text-2xs font-semibold uppercase tracking-widest text-muted-foreground/50">
+								{__('Actions', 'all-feedback')}
+							</p>
+						</div>
+						<div className="divide-y divide-border/60">
+							{!isEditing && (
+								<button
+									type="button"
+									onClick={() => setIsEditing(true)}
+									className="flex w-full items-center gap-2.5 px-5 py-3 text-left text-base font-normal text-foreground/80 transition-colors hover:bg-muted/50 hover:text-foreground"
+								>
+									<Pencil className="size-3.5 shrink-0 text-muted-foreground/50" />
+									{__('Edit response', 'all-feedback')}
+								</button>
+							)}
+
+							<button
+								type="button"
+								onClick={() => markReadMutation.mutate(!response.is_read)}
+								disabled={markReadMutation.isPending}
+								className="flex w-full items-center gap-2.5 px-5 py-3 text-left text-base font-normal text-foreground/80 transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-50"
+							>
+								{response.is_read ? (
+									<Mail className="size-3.5 shrink-0 text-muted-foreground/50" />
+								) : (
+									<MailOpen className="size-3.5 shrink-0 text-muted-foreground/50" />
+								)}
+								{response.is_read ? __('Mark as unread', 'all-feedback') : __('Mark as read', 'all-feedback')}
+							</button>
+
+							<button
+								type="button"
+								onClick={handleDelete}
+								disabled={deleteMutation.isPending}
+								className="flex w-full items-center gap-2.5 px-5 py-3 text-left text-base font-normal text-destructive/80 transition-colors hover:bg-destructive/5 hover:text-destructive disabled:opacity-50"
+							>
+								{deleteMutation.isPending ? (
+									<Loader2 className="size-3.5 shrink-0 animate-spin" />
+								) : (
+									<Trash2 className="size-3.5 shrink-0" />
+								)}
+								{__('Delete response', 'all-feedback')}
+							</button>
+						</div>
+					</div>
+				</aside>
 			</form>
+
+			<div className="shrink-0 border-t border-border bg-card">
+				<div className="flex items-center">
+					<button
+						type="button"
+						onClick={() => prevNavResponse && navigateToResponse(prevNavResponse)}
+						disabled={!prevNavResponse}
+						className="flex flex-1 items-center justify-center gap-2 py-5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+					>
+						<ArrowLeft className="size-3.5" />
+						{__('Previous', 'all-feedback')}
+					</button>
+					<div className="flex shrink-0 items-center gap-2 px-4 text-xs text-muted-foreground/50">
+						{currentNavIndex >= 0 && sortedForNav.length > 0 && (
+							<span className="tabular-nums">{currentNavIndex + 1} / {sortedForNav.length}</span>
+						)}
+					</div>
+					<button
+						type="button"
+						onClick={() => nextNavResponse && navigateToResponse(nextNavResponse)}
+						disabled={!nextNavResponse}
+						className="flex flex-1 items-center justify-center gap-2 py-5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+					>
+						{__('Next', 'all-feedback')}
+						<ArrowRight className="size-3.5" />
+					</button>
+				</div>
+			</div>
 		</div>
 	);
 };
