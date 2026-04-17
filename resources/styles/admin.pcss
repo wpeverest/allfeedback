@@ -447,6 +447,21 @@
 	box-shadow:   none;
 }
 
+/* ── allfb primary button in admin preview ───────────────────────────────── */
+/* WP admin's #wpcontent button rule sits at (1,0,1) and beats the plain      */
+/* .allfb-btn--primary selector at (0,1,0). Scope with #ALLFB-Admin-Root to   */
+/* reach (1,1,0) and restore the widget accent colour.                        */
+#ALLFB-Admin-Root .allfb-btn--primary {
+	background:   var(--allfb-color, #6366f1) !important;
+	border-color: var(--allfb-color, #6366f1) !important;
+	color:        #fff !important;
+}
+
+#ALLFB-Admin-Root .allfb-btn--primary:hover:not(:disabled) {
+	background:   var(--allfb-color-dark, #4f46e5) !important;
+	border-color: var(--allfb-color-dark, #4f46e5) !important;
+}
+
 /* ── allfb field error text inside admin root ────────────────────────────── */
 /* WP admin p rules can reach (1,1,1)+ specificity — use !important on the   */
 /* two properties most likely to be overridden so they match frontend.pcss.  */
