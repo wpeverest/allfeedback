@@ -7,6 +7,7 @@ namespace AllFeedback\Admin;
 use AllFeedback\Core\Constants;
 use AllFeedback\Core\Container;
 use AllFeedback\Core\ServiceProvider;
+use AllFeedback\Core\Settings\SettingsManager;
 use AllFeedback\Domain\Response\ResponseRepository;
 use AllFeedback\Support\AssetManager;
 use AllFeedback\Traits\Hooks;
@@ -42,6 +43,7 @@ class AdminServiceProvider implements ServiceProvider {
 		private readonly Container $container,
 		private readonly AssetManager $assetManager,
 		private readonly ResponseRepository $responseRepository,
+		private readonly SettingsManager $settingsManager,
 	) {}
 
 	// ServiceProvider::register() — nothing to add to the DI container here.
@@ -256,10 +258,14 @@ class AdminServiceProvider implements ServiceProvider {
 			? $curlVersion['version'] . ( ! empty( $curlVersion['ssl_version'] ) ? ', ' . $curlVersion['ssl_version'] : '' )
 			: null;
 
+		$widget = (array) $this->settingsManager->get( 'general.widget' );
+
 		$adminData = $this->applyFilters(
 			'allfeedback:admin:script_data',
 			[
-				'adminUrl'      => admin_url( 'admin.php' ),
+				'adminUrl'       => admin_url( 'admin.php' ),
+				'widgetColor'    => $widget['color']    ?? '#6366f1',
+				'widgetPosition' => $widget['position'] ?? 'bottom-right',
 				'pluginUrl'     => Constants::url(),
 				'buildUrl'      => Constants::url( 'resources/build/' ),
 				'currentUserId' => get_current_user_id(),

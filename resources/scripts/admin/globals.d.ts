@@ -2,6 +2,10 @@ declare const __ALLFB_ADMIN__: {
 
 	adminUrl: string;
 
+	widgetColor: string;
+
+	widgetPosition: string;
+
 	pluginUrl: string;
 
 	buildUrl: string;

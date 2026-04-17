@@ -154,7 +154,8 @@ const FormBuilder = () => {
 
 	const { data: surveyData } = useQuery({
 		...surveyQuery(formId!),
-		enabled: !!formId,
+		enabled:   !!formId,
+		staleTime: Infinity,
 	});
 
 	const [surveyStatus, setSurveyStatus] = useState<SurveyStatus>('draft');

@@ -6,8 +6,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { EmptyState } from '@/components/ui/empty-state';
 import { Pagination } from '@/components/ui/pagination';
 import { surveysApi } from '@/admin/api/surveys';
+import { surveyResponsesQuery } from '@/admin/queries/surveys';
 import { cn } from '@/lib/utils';
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { __ } from '@wordpress/i18n';
 import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown, MessageSquare, MoreVertical, Trash2 } from 'lucide-react';
 import { useState } from 'react';
@@ -53,8 +54,7 @@ const ResponsesPanel = ({ surveyId }: ResponsesPanelProps) => {
 	const queryParams = { page, per_page: perPage };
 
 	const { data, isLoading, isError, isFetching } = useQuery({
-		queryKey: ['responses', surveyId, queryParams],
-		queryFn:  () => surveysApi.listResponses(surveyId, queryParams),
+		...surveyResponsesQuery(surveyId, queryParams),
 		placeholderData: keepPreviousData,
 	});
 

@@ -2,10 +2,10 @@ import { surveysApi } from '@/admin/api/surveys';
 import type { SubmitFormData, SurveyStatus } from '@/admin/api/surveys';
 import { FieldPreview } from '@/shared/FieldPreview';
 import { cn } from '@/lib/utils';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { __ } from '@wordpress/i18n';
 import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Eye, Globe, Lock, MessageSquare, Minus, Monitor, MoreHorizontal, Plus, RotateCw, Smartphone, Star, Tablet, X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { toast } from 'sonner';
 import { settingsQuery } from '@/admin/queries/settings';
@@ -295,13 +295,15 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 	const pageMaxW     = DEVICE_PAGE_W[device];
 	const isMobile     = device === 'mobile';
 	const siteHostname = getSiteHostname();
+	const queryClient  = useQueryClient();
 
-	const { data: globalSettings } = useQuery(settingsQuery());
-	const widgetColor = globalSettings?.general?.widget?.color ?? '#6366f1';
+	const cachedWidget = (queryClient.getQueryData(settingsQuery().queryKey) as any)?.general?.widget;
+	const widgetColor  = cachedWidget?.color    ?? __ALLFB_ADMIN__.widgetColor    ?? '#6366f1';
 
 	const [viewMode,       setViewMode]       = useState<PreviewView>('page');
-	const [widgetPosition, setWidgetPosition] = useState<WidgetPosition>('bottom-right');
-	const positionInitializedRef              = useRef(false);
+	const [widgetPosition, setWidgetPosition] = useState<WidgetPosition>(
+		cachedWidget?.position ?? (__ALLFB_ADMIN__.widgetPosition as WidgetPosition) ?? 'bottom-right',
+	);
 	const [isMinimized,    setIsMinimized]    = useState(false);
 	const [isClosed,     setIsClosed]     = useState(false);
 	const [fieldValues,  setFieldValues]  = useState<Record<string, string | string[]>>({});
@@ -319,6 +321,7 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 		onSuccess: () => {
 			setIsSubmitted(true);
 			setSubmitError('');
+			void queryClient.invalidateQueries({ queryKey: ['responses', 'unread-count'] });
 			toast.success(
 				surveyStatus === 'draft'
 					? __('Form preview submitted successfully.', 'all-feedback')
@@ -337,13 +340,6 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 		setCurrentStep(0);
 		setIsSubmitted(false);
 	}, [allFields(sections).map((f) => f.id).join(',')]);
-
-	// Seed position from global settings on first load (user can still override via the picker)
-	useEffect(() => {
-		if (!globalSettings || positionInitializedRef.current) return;
-		positionInitializedRef.current = true;
-		setWidgetPosition(globalSettings.general.widget.position);
-	}, [globalSettings]);
 
 	// Sync preview page when the user interacts with a section in the canvas
 	useEffect(() => {
