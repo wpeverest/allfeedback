@@ -200,6 +200,17 @@ const FormBuilder = () => {
 
 	const [isDirty, setIsDirty] = useState(false);
 
+	useEffect(() => {
+		if (!isDirty) return;
+		const unblock = router.history.block({
+			blockerFn: () => !window.confirm(
+				__('You have unsaved changes. Are you sure you want to leave?', 'all-feedback'),
+			),
+			enableBeforeUnload: false,
+		});
+		return unblock;
+	}, [isDirty, router.history]);
+
 	const handleSettingsChange = useCallback((next: FormSettings) => {
 		form.setFieldValue('settings', next);
 		setIsDirty(true);
@@ -393,12 +404,6 @@ const FormBuilder = () => {
 	};
 
  	const handleBack = () => {
-		if (isDirty) {
-			const confirmed = window.confirm(
-				__('You have unsaved changes. Are you sure you want to leave?', 'all-feedback'),
-			);
-			if (!confirmed) return;
-		}
 		router.history.back();
 	};
 

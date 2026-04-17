@@ -17,8 +17,14 @@
 }
 
 /* ── Neutralise WP admin margins on the React mount point ────────────────── */
+/* Enforce Inter font — WP admin sets font-family on body/headings/inputs via */
+/* non-layered CSS that beats Tailwind's @layer base. This (1,0,0) rule       */
+/* re-asserts Inter on the root; inherited by all children.                   */
 #ALLFB-Admin-Root {
 	min-height: calc(100vh - var(--wp-admin--admin-bar--height, 32px));
+	font-family: var(--font-sans);
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
 }
 
 /* ── Reset WP global link styles inside the React root ───────────────────── */
