@@ -89,7 +89,9 @@ const SectionCard = ({
 	};
 
 	const cancelTitle = () => {
-		onSectionChange({ ...section, title: titleSnapshotRef.current });
+		if (section.title !== titleSnapshotRef.current) {
+			onSectionChange({ ...section, title: titleSnapshotRef.current });
+		}
 		setIsEditingTitle(false);
 	};
 
@@ -179,7 +181,7 @@ const SectionCard = ({
 				}}
 				onDragEnd={(e) => { e.stopPropagation(); onDragEnd(); }}
 				onClick={() => setIsCollapsed((v) => !v)}
-				className="flex cursor-pointer items-center border-b border-border/50 bg-white px-5 py-4 transition-colors hover:bg-muted/20"
+				className="flex cursor-pointer items-center border-b border-border/50 bg-white px-5 py-3.5 transition-colors hover:bg-muted/20"
 			>
 				<div className="flex flex-1 items-center gap-2">
 					<span title={__('Drag to reorder', 'all-feedback')} className="cursor-grab text-muted-foreground/40 transition-colors hover:text-muted-foreground/70 active:cursor-grabbing">

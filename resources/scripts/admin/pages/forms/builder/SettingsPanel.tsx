@@ -53,10 +53,8 @@ const Row = ({ label, children }: { label: string; children: React.ReactNode }) 
 
 const Card = ({ title, children }: { title: string; children: React.ReactNode }) => (
 	<div className="overflow-hidden rounded-2xl border border-border/60 bg-white">
-		<div className="border-b border-border/50 px-5 py-3.5">
-			<h3 className="text-base font-semibold text-foreground" style={{ margin: 0 }}>
-				{title}
-			</h3>
+		<div className="border-b border-border/50 p-5">
+			<div className="text-md font-medium text-foreground">{title}</div>
 		</div>
 		<div className="space-y-4 p-5">{children}</div>
 	</div>

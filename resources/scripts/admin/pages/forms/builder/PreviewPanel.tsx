@@ -106,6 +106,7 @@ interface WidgetBodyProps {
 	isClosed:      boolean;
 	showControls:   boolean;
 	showMinimize:   boolean;
+	className?:     string;
 	settings:       FormSettings;
 	widgetPosition: WidgetPosition;
 	widgetColor:    string;
@@ -122,7 +123,7 @@ interface WidgetBodyProps {
 const WidgetBody = ({
 	steps, stepIndex, totalSteps, hasSteps, isLastStep, currentFields,
 	isSubmitted, fieldValues, fieldErrors, submitError, isMinimized, isClosed, showControls, showMinimize, settings,
-	isSubmitting, onMinimize, onClose, onChange, onNext, onBack, onSubmit, widgetPosition, widgetColor,
+	isSubmitting, onMinimize, onClose, onChange, onNext, onBack, onSubmit, widgetPosition, widgetColor, className,
 }: WidgetBodyProps) => {
 	const handleKeyDown = (e: React.KeyboardEvent) => {
 		if (e.key !== 'Enter') return;
@@ -140,6 +141,7 @@ const WidgetBody = ({
 		<div
 			className={ cn(
 				'allfb-preview-panel flex flex-col overflow-hidden rounded-2xl shadow-lg transition-all duration-200',
+				className,
 				isClosed || isMinimized ? 'pointer-events-none scale-90 opacity-0' : 'scale-100 opacity-100',
 			) }
 			style={ {
@@ -286,6 +288,7 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 	const hasSteps     = totalSteps > 0;
 	const maxW         = DEVICE_MAX_W[device];
 	const pageMaxW     = DEVICE_PAGE_W[device];
+	const isMobile     = device === 'mobile';
 	const siteHostname = getSiteHostname();
 
 	const { data: globalSettings } = useQuery(settingsQuery());
@@ -294,7 +297,7 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 	const [viewMode,       setViewMode]       = useState<PreviewView>('page');
 	const [widgetPosition, setWidgetPosition] = useState<WidgetPosition>('bottom-right');
 	const positionInitializedRef              = useRef(false);
-	const [isMinimized,    setIsMinimized]    = useState(true);
+	const [isMinimized,    setIsMinimized]    = useState(false);
 	const [isClosed,     setIsClosed]     = useState(false);
 	const [fieldValues,  setFieldValues]  = useState<Record<string, string | string[]>>({});
 	const [fieldErrors,  setFieldErrors]  = useState<Record<string, string>>({});
@@ -555,12 +558,10 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 									</div>
 									<div className="flex flex-1 justify-center overflow-hidden">
 										<div className="w-full max-w-[480px]">
-											<div className="flex flex-col items-center gap-2 px-6 pt-7">
-												<div className="h-3 w-3/5 rounded-full bg-foreground/10" />
-												<div className="h-2 w-2/5 rounded-full bg-foreground/[0.07]" />
-												<div className="mt-1.5 h-6 w-20 rounded-md bg-foreground/[0.08]" />
-											</div>
-											<div className="mt-5 grid grid-cols-3 gap-2 px-4">
+											<p className="px-4 pt-4 text-center text-[7px] font-medium leading-snug tracking-wide text-foreground/30">
+												{__('Approximate preview — styling may vary on your live site', 'all-feedback')}
+											</p>
+											<div className="mt-4 grid grid-cols-3 gap-2 px-4">
 												{[0, 1, 2].map((i) => (
 													<div key={i} className="rounded-lg bg-white/75 p-2 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
 														<div className="mb-1.5 h-7 rounded-md bg-foreground/[0.06]" />
@@ -569,14 +570,11 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 													</div>
 												))}
 											</div>
-											<p className="mt-4 px-4 text-center text-[7.5px] font-medium leading-[1.5] tracking-wide text-foreground/35">
-												{__('Approximate preview — position, size, and styling may vary on your live site based on your theme and screen size', 'all-feedback')}
-											</p>
 										</div>
 									</div>
 								</div>
 
-								{widgetPosition === 'side-tab' ? (
+								{!isMobile && (widgetPosition === 'side-tab' ? (
 									/* Side-tab launcher — always visible, matches the frontend's vertical pill */
 									<div
 										className={cn(
@@ -635,11 +633,18 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 									>
 										<MessageSquare className="size-5 text-white" />
 									</button>
-								)}
+								))}
 
 								<div
 									className={cn((isClosed || isMinimized) && 'pointer-events-none')}
-									style={{
+									style={isMobile ? {
+										/* Mobile: bottom-sheet — full width with side breathing room */
+										position: 'absolute',
+										bottom: 0,
+										left: '10px',
+										right: '10px',
+										width: 'auto',
+									} : {
 										position: 'absolute',
 										width: `min(${maxW}, calc(100% - 2rem))`,
 										// bottom positions: 20px launcher bottom + 48px launcher height + 12px gap = 80px
@@ -651,7 +656,12 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 												: { top: '50%', right: '44px', transform: 'translateY(-50%)' }),
 									}}
 								>
-									<WidgetBody {...sharedWidgetProps} showControls={true} />
+									<WidgetBody
+										{...sharedWidgetProps}
+										showControls={true}
+										showMinimize={!isMobile}
+										className={isMobile ? 'rounded-t-2xl rounded-b-none' : undefined}
+									/>
 								</div>
 							</div>
 						</div>
