@@ -80,7 +80,8 @@
 
 /* ── Remove WP's default button styling inside the SPA ───────────────────── */
 /* Exclude allfb-* widget buttons so preview styles apply unmodified.        */
-#ALLFB-Admin-Root button:not(.allfb-btn):not(.allfb-star):not(.allfb-scale__btn):not(.allfb-panel__close):not(.allfb-launcher) {
+/* Exclude [data-slot='select-trigger'] so Radix Select keeps its border.    */
+#ALLFB-Admin-Root button:not(.allfb-btn):not(.allfb-star):not(.allfb-scale__btn):not(.allfb-panel__close):not(.allfb-launcher):not([data-slot='select-trigger']) {
 	border:      none;
 	appearance:  none;
 	margin:      0;
@@ -101,6 +102,16 @@
 /* ── Pointer cursor on select options ────────────────────────────────────── */
 #ALLFB-Admin-Root select option {
 	cursor: pointer;
+}
+
+/* ── Radix SelectTrigger focus styles ─────────────────────────────────────── */
+/* SelectTrigger is excluded from the button reset above, so Tailwind's       */
+/* border classes apply. Only focus-visible needs a non-layered override to   */
+/* beat any WP admin :focus rules.                                            */
+#ALLFB-Admin-Root [data-slot='select-trigger']:focus-visible {
+	border-color: var(--primary);
+	box-shadow:   0 0 0 1px var(--primary);
+	outline:      none;
 }
 
 /* ── Builder root: establish 14 px font baseline ─────────────────────────── */

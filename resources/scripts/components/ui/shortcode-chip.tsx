@@ -39,7 +39,7 @@ const ShortcodeChip = ({ shortcode, size = 'sm', className }: ShortcodeChipProps
 		}
 	};
 
-	const iconCls = size === 'md' ? 'size-3.5' : 'size-3';
+	const iconCls = size === 'md' ? 'size-3.5' : 'size-3.5';
 
 	return (
 		<button
@@ -52,11 +52,11 @@ const ShortcodeChip = ({ shortcode, size = 'sm', className }: ShortcodeChipProps
 			)}
 		>
 			<Code2 className={cn(iconCls, 'shrink-0 text-muted-foreground/70')} />
-			<span className={cn('min-w-0 flex-1 truncate font-mono text-foreground/90', size === 'md' ? 'text-[13px]' : 'text-xs')}>
+			<span className={cn('min-w-0 flex-1 truncate font-medium leading-none text-muted-foreground', size === 'md' ? 'text-[13px]' : 'text-[13px]')}>
 				{shortcode}
 			</span>
 			{copied
-				? <Check className={cn(iconCls, 'shrink-0 text-green-500 stroke-[2.5]')} />
+				? <Check className={cn(iconCls, 'shrink-0 text-green-600 stroke-[2.5]')} />
 				: <Copy className={cn(iconCls, 'shrink-0 text-foreground/70 stroke-[2.5]')} />
 			}
 		</button>

@@ -29,7 +29,7 @@ import {
 	Tablet,
 	X,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import type { SurveyFormSchemaField } from '@/admin/api/surveys';
 
@@ -338,17 +338,25 @@ const ResponseDetail = () => {
 	const responseData   = response?.response_data ?? {};
 	const orphanedKeys   = Object.keys(responseData).filter((k) => !(k in schemaFieldMap));
 
+	const autoMarkRef = useRef(false);
+
 	const markReadMutation = useMutation({
 		mutationFn: (isRead: boolean) =>
 			surveysApi.updateResponse(surveyId, Number(responseId), { is_read: isRead }),
 		onSuccess: (_, isRead) => {
 			void queryClient.invalidateQueries({ queryKey: ['responses'] });
-			toast.success(isRead ? __('Marked as read.', 'all-feedback') : __('Marked as unread.', 'all-feedback'));
+			if (!autoMarkRef.current) {
+				toast.success(isRead ? __('Marked as read.', 'all-feedback') : __('Marked as unread.', 'all-feedback'));
+			}
+			autoMarkRef.current = false;
 		},
 	});
 
 	useEffect(() => {
-		if (response && !response.is_read) markReadMutation.mutate(true);
+		if (response && !response.is_read) {
+			autoMarkRef.current = true;
+			markReadMutation.mutate(true);
+		}
 	}, [response?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	const saveMutation = useMutation({

@@ -121,9 +121,9 @@ const Responses = () => {
 		)
 		: byReadFilter;
 
-	const allChecked  = responses.length > 0 && responses.every((r) => checked.includes(r.id));
+	const allChecked  = filtered.length > 0 && filtered.every((r) => checked.includes(r.id));
 	const someChecked = checked.length > 0 && !allChecked;
-	const toggleAll   = () => setChecked(allChecked ? [] : responses.map((r) => r.id));
+	const toggleAll   = () => setChecked(allChecked ? [] : filtered.map((r) => r.id));
 	const toggleOne   = (id: number) =>
 		setChecked((prev) => prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]);
 
@@ -322,7 +322,7 @@ const Responses = () => {
 									<Checkbox
 										checked={someChecked ? 'indeterminate' : allChecked}
 										onCheckedChange={toggleAll}
-										disabled={isLoading || responses.length === 0}
+										disabled={isLoading || filtered.length === 0}
 									/>
 								</th>
 								<th className="w-16 px-4 py-4 text-left">
