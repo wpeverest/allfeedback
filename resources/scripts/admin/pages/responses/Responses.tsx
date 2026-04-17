@@ -548,8 +548,8 @@ const Responses = () => {
 				onRestore={() => {}}
 				onClone={() => {}}
 				onClear={() => setChecked([])}
-				isMarkingRead={bulkMarkReadMutation.isPending && bulkMarkReadMutation.variables === true}
-				isMarkingUnread={bulkMarkReadMutation.isPending && bulkMarkReadMutation.variables === false}
+				isMarkingRead={bulkMarkReadMutation.isPending && bulkMarkReadMutation.variables?.isRead === true}
+				isMarkingUnread={bulkMarkReadMutation.isPending && bulkMarkReadMutation.variables?.isRead === false}
 				isDeleting={bulkDeleteMutation.isPending}
 			/>
 		</div>

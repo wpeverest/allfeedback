@@ -338,15 +338,30 @@ const ResponseDetail = () => {
 	const responseData   = response?.response_data ?? {};
 	const orphanedKeys   = Object.keys(responseData).filter((k) => !(k in schemaFieldMap));
 
-	const autoMarkRef = useRef(false);
+	const autoMarkRef  = useRef(false);
+	const isMountedRef = useRef(true);
+	useEffect(() => () => { isMountedRef.current = false; }, []);
 
 	const markReadMutation = useMutation({
 		mutationFn: (isRead: boolean) =>
 			surveysApi.updateResponse(surveyId, Number(responseId), { is_read: isRead }),
-		onSuccess: (_, isRead) => {
-			void queryClient.invalidateQueries({ queryKey: ['responses'] });
-			if (!autoMarkRef.current) {
-				toast.success(isRead ? __('Marked as read.', 'all-feedback') : __('Marked as unread.', 'all-feedback'));
+		onSuccess: (updatedResponse, isRead) => {
+			if (isMountedRef.current) {
+				void queryClient.invalidateQueries({ queryKey: ['responses'] });
+				if (!autoMarkRef.current) {
+					toast.success(isRead ? __('Marked as read.', 'all-feedback') : __('Marked as unread.', 'all-feedback'));
+				}
+			} else if (!autoMarkRef.current) {
+				// Explicit user action that completed after navigating away — still sync the list.
+				void queryClient.invalidateQueries({ queryKey: ['responses'] });
+			} else {
+				// Auto-mark completed after navigating away — update only the single-response
+				// cache entry so a full list refresh doesn't race with any bulk action the
+				// user may have already triggered on the list page.
+				queryClient.setQueryData(
+					['responses', surveyId, Number(responseId)] as const,
+					updatedResponse,
+				);
 			}
 			autoMarkRef.current = false;
 		},
