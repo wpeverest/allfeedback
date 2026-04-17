@@ -81,7 +81,8 @@
 /* ── Remove WP's default button styling inside the SPA ───────────────────── */
 /* Exclude allfb-* widget buttons so preview styles apply unmodified.        */
 /* Exclude [data-slot='select-trigger'] so Radix Select keeps its border.    */
-#ALLFB-Admin-Root button:not(.allfb-btn):not(.allfb-star):not(.allfb-scale__btn):not(.allfb-panel__close):not(.allfb-launcher):not([data-slot='select-trigger']) {
+/* Exclude [role='switch'] so Radix Switch keeps its border-2 thumb spacing. */
+#ALLFB-Admin-Root button:not(.allfb-btn):not(.allfb-star):not(.allfb-scale__btn):not(.allfb-panel__close):not(.allfb-launcher):not([data-slot='select-trigger']):not([role='switch']) {
 	border:      none;
 	appearance:  none;
 	margin:      0;

@@ -7,6 +7,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { cn } from '@/lib/utils';
 import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query';
@@ -60,24 +61,6 @@ const Card = ({ title, children }: { title: string; children: React.ReactNode })
 	</div>
 );
 
-const Toggle = ({ checked, onChange }: { checked: boolean; onChange: () => void }) => (
-	<button
-		type="button"
-		role="switch"
-		aria-checked={checked}
-		onClick={onChange}
-		className={cn(
-			'relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200',
-			'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
-			checked ? 'bg-primary' : 'bg-muted-foreground/25',
-		)}
-	>
-		<span className={cn(
-			'pointer-events-none inline-block size-4 rounded-full bg-white shadow-sm ring-0 transition-transform duration-200',
-			checked ? 'translate-x-4' : 'translate-x-0',
-		)} />
-	</button>
-);
 
 const Chips = <T extends string>({
 	options,
@@ -498,9 +481,9 @@ const SettingsPanel = ({ settings, onChange, onScrollChange }: SettingsPanelProp
 
 				<Card title={__('Thank You Page', 'all-feedback')}>
 					<Row label={__('Enable', 'all-feedback')}>
-						<Toggle
+						<Switch
 							checked={settings.thankYouEnabled}
-							onChange={() => update({ thankYouEnabled: !settings.thankYouEnabled })}
+							onCheckedChange={(v) => update({ thankYouEnabled: v })}
 						/>
 					</Row>
 					<Collapse open={settings.thankYouEnabled}>
