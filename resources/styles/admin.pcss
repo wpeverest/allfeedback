@@ -500,6 +500,12 @@
 #ALLFB-Admin-Root .allfb-field__label ol     { margin: 0; padding-left: 1.25rem; }
 #ALLFB-Admin-Root .allfb-field__label li     { margin: 0; }
 
+/* ── Preview panel page-transition animation ─────────────────────────────── */
+@keyframes allfb-page-enter {
+	from { opacity: 0; transform: translateY(5px); }
+	to   { opacity: 1; transform: translateY(0);   }
+}
+
 /* ── Loading cursor while async operations run ───────────────────────────── */
 body[data-wait] {
 	cursor: wait !important;

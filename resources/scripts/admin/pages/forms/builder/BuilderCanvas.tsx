@@ -10,11 +10,12 @@ interface BuilderCanvasProps {
 	sections: FormSection[];
 	onSectionsChange: (sections: FormSection[]) => void;
 	onScrollChange?: (scrolled: boolean, progress: number) => void;
+	onActiveSectionChange?: (sectionIndex: number) => void;
 }
 
 interface FieldPos { sectionIdx: number; fieldIdx: number }
 
-const BuilderCanvas = ({ sections, onSectionsChange, onScrollChange }: BuilderCanvasProps) => {
+const BuilderCanvas = ({ sections, onSectionsChange, onScrollChange, onActiveSectionChange }: BuilderCanvasProps) => {
 	const [sectionDragIdx, setSectionDragIdx] = useState<number | null>(null);
 	const [sectionDropIdx, setSectionDropIdx] = useState<number | null>(null);
 	const [newSectionId,   setNewSectionId]   = useState<string | null>(null);
@@ -168,6 +169,7 @@ const BuilderCanvas = ({ sections, onSectionsChange, onScrollChange }: BuilderCa
 						onSectionChange={(s) => handleSectionChange(idx, s)}
 						onSectionDelete={() => deleteSection(idx)}
 						onSectionDuplicate={() => duplicateSection(idx)}
+						onSectionFocus={() => onActiveSectionChange?.(idx)}
 						onDragStart={handleSectionDragStart}
 						onDragOver={handleSectionDragOver}
 						onDragEnd={handleSectionDragEnd}

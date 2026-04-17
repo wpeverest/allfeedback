@@ -220,6 +220,7 @@ const FormBuilder = () => {
 	const titleSnapshotRef                    = useRef('');
 	const titleInputRef                       = useRef<HTMLInputElement>(null);
 
+	const [activeSectionIndex, setActiveSectionIndex] = useState(-1);
 	const [canvasScrolled,    setCanvasScrolled]    = useState(false);
 	const [canvasProgress,    setCanvasProgress]    = useState(0);
 	const [settingsScrolled,  setSettingsScrolled]  = useState(false);
@@ -680,6 +681,7 @@ const FormBuilder = () => {
 							<BuilderCanvas
 								sections={sections}
 								onSectionsChange={handleSectionsChange}
+								onActiveSectionChange={setActiveSectionIndex}
 								onScrollChange={(scrolled, progress) => {
 									setCanvasScrolled(scrolled);
 									setCanvasProgress(progress);
@@ -737,6 +739,7 @@ const FormBuilder = () => {
 						onDeviceChange={setPreviewDevice}
 						surveyId={formId ?? undefined}
 						surveyStatus={surveyStatus}
+						activeSectionIndex={activeSectionIndex}
 					/>
 				</div>
 			</div>

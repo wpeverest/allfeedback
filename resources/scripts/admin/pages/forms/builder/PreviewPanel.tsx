@@ -14,12 +14,13 @@ import type { FormField, FormSection, FormSettings, PreviewDevice } from './type
 type WidgetPosition = 'bottom-right' | 'bottom-left' | 'side-tab';
 
 interface PreviewPanelProps {
-	sections:       FormSection[];
-	settings:       FormSettings;
-	device:         PreviewDevice;
-	onDeviceChange: (device: PreviewDevice) => void;
-	surveyId?:      number;
-	surveyStatus?:  SurveyStatus;
+	sections:            FormSection[];
+	settings:            FormSettings;
+	device:              PreviewDevice;
+	onDeviceChange:      (device: PreviewDevice) => void;
+	surveyId?:           number;
+	surveyStatus?:       SurveyStatus;
+	activeSectionIndex?: number;
 }
 
 const DEVICES: { value: PreviewDevice; Icon: typeof Monitor; label: string }[] = [
@@ -286,7 +287,7 @@ const getSiteHostname = (): string => {
 	}
 };
 
-const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, surveyStatus }: PreviewPanelProps) => {
+const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, surveyStatus, activeSectionIndex }: PreviewPanelProps) => {
 	const steps        = activeSections(sections);
 	const totalSteps   = steps.length;
 	const hasSteps     = totalSteps > 0;
@@ -343,6 +344,18 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 		positionInitializedRef.current = true;
 		setWidgetPosition(globalSettings.general.widget.position);
 	}, [globalSettings]);
+
+	// Sync preview page when the user interacts with a section in the canvas
+	useEffect(() => {
+		if (activeSectionIndex == null || activeSectionIndex < 0) return;
+		const targetId   = sections[activeSectionIndex]?.id;
+		if (!targetId) return;
+		const targetStep = activeSections(sections).findIndex((s) => s.id === targetId);
+		if (targetStep >= 0 && targetStep !== currentStep) {
+			setFieldErrors({});
+			setCurrentStep(targetStep);
+		}
+	}, [activeSectionIndex, sections]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	const handleChange = (fieldId: string, value: string | string[]) => {
 		setFieldValues((prev) => ({ ...prev, [fieldId]: value }));
@@ -721,11 +734,11 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 								onClick={adminPrev}
 								disabled={!adminCanPrev}
 								title={__('Previous page', 'all-feedback')}
-								className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+								className="flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
 							>
-								<ChevronLeft className="size-3.5" />
+								<ChevronLeft className="size-5" />
 							</button>
-							<span className="min-w-[44px] text-center text-xs text-muted-foreground/60">
+							<span className="min-w-[52px] text-center text-sm font-medium text-muted-foreground">
 								{isSubmitted ? __('Thanks', 'all-feedback') : `${stepIndex + 1} / ${adminTotalPages}`}
 							</span>
 							<button
@@ -733,9 +746,9 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 								onClick={adminNext}
 								disabled={!adminCanNext}
 								title={__('Next page', 'all-feedback')}
-								className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+								className="flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
 							>
-								<ChevronRight className="size-3.5" />
+								<ChevronRight className="size-5" />
 							</button>
 						</div>
 					)}

@@ -22,6 +22,7 @@ interface SectionCardProps {
 	onSectionChange: (section: FormSection) => void;
 	onSectionDelete: () => void;
 	onSectionDuplicate: () => void;
+	onSectionFocus?: () => void;
 	onDragStart: (index: number) => void;
 	onDragOver: (e: React.DragEvent, index: number) => void;
 	onDragEnd: () => void;
@@ -44,6 +45,7 @@ const SectionCard = ({
 	onSectionChange,
 	onSectionDelete,
 	onSectionDuplicate,
+	onSectionFocus,
 	onDragStart,
 	onDragOver,
 	onDragEnd,
@@ -151,6 +153,7 @@ const SectionCard = ({
 	return (
 		<div
 			ref={cardRef}
+			onPointerDown={() => onSectionFocus?.()}
 			onDragOver={(e) => { e.preventDefault(); onDragOver(e, index); }}
 			onDrop={(e) => { e.preventDefault(); onDrop(e, index); }}
 			className={cn(
