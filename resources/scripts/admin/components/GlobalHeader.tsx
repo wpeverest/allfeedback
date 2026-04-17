@@ -95,7 +95,7 @@ const GlobalHeader = () => {
 							return (
 								<span
 									key={item.label}
-									className="cursor-default px-3.5 py-1.5 text-[14px] font-medium text-muted-foreground/50"
+									className="cursor-default px-3.5 py-1.5 text-base font-medium text-muted-foreground/50"
 								>
 									{item.label}
 								</span>
@@ -107,7 +107,7 @@ const GlobalHeader = () => {
 								key={item.to}
 								to={item.to}
 								className={cn(
-									'rounded-full border-[1.5px] px-3.5 py-1.5 text-[14px] font-medium transition-colors',
+									'rounded-full border-[1.5px] px-3.5 py-1.5 text-base font-medium transition-colors',
 									active
 										? 'border-[1.5px] border-brand-400 bg-primary/[0.06] text-primary'
 										: 'border-transparent text-muted-foreground hover:text-foreground',
@@ -120,7 +120,7 @@ const GlobalHeader = () => {
 				</nav>
 
 				<div className="ml-auto flex shrink-0 items-center gap-2">
-					<Badge variant="secondary" className="border-[1.5px] border-brand-400 bg-white px-2.5 py-1 text-[14px] font-medium">
+					<Badge variant="secondary" className="border-[1.5px] border-brand-400 bg-white px-2.5 py-1 text-base font-medium">
 						v{__ALLFB_ADMIN__.version}
 					</Badge>
 					<button

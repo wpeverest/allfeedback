@@ -14,8 +14,8 @@ const BoolValue = ({ value }: { value: boolean }) =>
 	);
 
 const Row = ({ label, value }: { label: string; value: string | boolean | null | undefined }) => (
-	<div className="flex items-center gap-4 py-2.5">
-		<span className={`${labelCls} w-[48%] shrink-0`}>{label}</span>
+	<div className="flex items-center gap-4 py-2">
+		<label className={`${labelCls} w-[48%] shrink-0`}>{label}</label>
 		{typeof value === 'boolean' ? (
 			<BoolValue value={value} />
 		) : (
@@ -54,7 +54,7 @@ const SystemInfo = () => {
 					<SectionLabel>{__('WordPress Environment', 'all-feedback')}</SectionLabel>
 					<div className="grid grid-cols-2 gap-x-8">
 						{/* left column */}
-						<div className="divide-y divide-border/40">
+						<div className="">
 							<Row label={__('Home URL:', 'all-feedback')}             value={info.homeUrl} />
 							<Row label={__('WordPress Version:', 'all-feedback')}    value={info.wpVersion} />
 							<Row label={__('WordPress Multisite:', 'all-feedback')}  value={info.isMultisite} />
@@ -62,7 +62,7 @@ const SystemInfo = () => {
 							<Row label={__('Language:', 'all-feedback')}             value={info.language} />
 						</div>
 						{/* right column */}
-						<div className="divide-y divide-border/40">
+						<div className="">
 							<Row label={__('Site URL:', 'all-feedback')}               value={info.siteUrl} />
 							<Row label={__('Plugin Version:', 'all-feedback')}         value={`v${info.version ?? '—'}`} />
 							<Row label={__('WordPress Memory Limit:', 'all-feedback')} value={info.wpMemoryLimit} />
@@ -79,7 +79,7 @@ const SystemInfo = () => {
 					<SectionLabel>{__('Server Environment', 'all-feedback')}</SectionLabel>
 					<div className="grid grid-cols-2 gap-x-8">
 						{/* left column */}
-						<div className="divide-y divide-border/40">
+						<div className="">
 							<Row label={__('Server Info:', 'all-feedback')}       value={info.serverInfo} />
 							<Row label={__('PHP Version:', 'all-feedback')}       value={info.phpVersion} />
 							<Row label={__('PHP Post Max Size:', 'all-feedback')} value={info.phpPostMaxSize} />
@@ -88,7 +88,7 @@ const SystemInfo = () => {
 							<Row label={__('Multibyte String:', 'all-feedback')}  value={info.hasMultibyte} />
 						</div>
 						{/* right column */}
-						<div className="divide-y divide-border/40">
+						<div className="">
 							<Row label={__('MySQL Version:', 'all-feedback')}   value={info.mysqlVersion} />
 							<Row label={__('Default Timezone:', 'all-feedback')} value={info.defaultTimezone} />
 							<Row label={__('fsockopen/cURL:', 'all-feedback')}  value={info.hasFsockopen} />
