@@ -157,7 +157,7 @@ class Logger {
 	 */
 	public function registerShutdownHandler(): void {
 		$pluginDir = defined( 'ABSPATH' )
-			? realpath( WP_PLUGIN_DIR . '/allfeedback' )
+			? ( realpath( WP_PLUGIN_DIR . '/allfeedback' ) ?: '' )
 			: '';
 
 		register_shutdown_function(
