@@ -764,21 +764,8 @@ class ResponsesController extends RestController {
 			return $this->errorResponse( __( 'No response IDs provided.', 'all-feedback' ), 422 );
 		}
 
-		$updated = 0;
-		$failed  = [];
-
-		foreach ( $ids as $id ) {
-			if ( $this->responseRepository->findById( $id ) === null ) {
-				$failed[] = $id;
-				continue;
-			}
-
-			if ( $this->responseRepository->update( $id, [ 'is_read' => $isRead ? 1 : 0 ] ) ) {
-				++$updated;
-			} else {
-				$failed[] = $id;
-			}
-		}
+		$failed  = $this->responseRepository->bulkUpdateReadStatus( $ids, $isRead );
+		$updated = count( $ids ) - count( $failed );
 
 		$this->logger->info(
 			'Bulk response read-status update.',

@@ -342,6 +342,51 @@ class WpdbResponseRepository implements ResponseRepository {
 	}
 
 	/**
+	 * Bulk-update is_read for a set of response IDs in two queries (find existing + UPDATE IN).
+	 *
+	 * @param  int[]  $ids    Response primary keys to update.
+	 * @param  bool   $isRead Target read state.
+	 * @return int[]          IDs from $ids that were not found in the database.
+	 * @since 1.0.0
+	 */
+	public function bulkUpdateReadStatus( array $ids, bool $isRead ): array {
+		if ( empty( $ids ) ) {
+			return [];
+		}
+
+		global $wpdb;
+
+		$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+
+		// 1. Find which of the requested IDs actually exist.
+		$existingIds = $wpdb->get_col( // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			$wpdb->prepare(
+				"SELECT id FROM {$this->table} WHERE id IN ({$placeholders})", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				...$ids
+			)
+		);
+
+		$existingIds = array_map( 'intval', $existingIds );
+		$missingIds  = array_values( array_diff( $ids, $existingIds ) );
+
+		if ( ! empty( $existingIds ) ) {
+			// 2. Single UPDATE for all found IDs.
+			$updatePlaceholders = implode( ',', array_fill( 0, count( $existingIds ), '%d' ) );
+			$wpdb->query( // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+				$wpdb->prepare(
+					"UPDATE {$this->table} SET is_read = %d WHERE id IN ({$updatePlaceholders})", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$isRead ? 1 : 0,
+					...$existingIds
+				)
+			);
+
+			delete_transient( self::UNREAD_CACHE_KEY );
+		}
+
+		return $missingIds;
+	}
+
+	/**
 	 * Return true if a logged-in user has already submitted a response for this survey.
 	 *
 	 * @param int $surveyId    Survey to check against.

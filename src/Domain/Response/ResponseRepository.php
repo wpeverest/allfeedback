@@ -110,6 +110,19 @@ interface ResponseRepository {
 	public function existsByIpHash( int $surveyId, string $ipHash, int $windowHours = 0 ): bool;
 
 	/**
+	 * Bulk-update is_read for a set of response IDs in one query.
+	 *
+	 * Returns a list of IDs from $ids that did not exist in the database (and
+	 * were therefore not updated), so callers can report partial failures.
+	 *
+	 * @param  int[]  $ids    Response primary keys to update.
+	 * @param  bool   $isRead Target read state.
+	 * @return int[]          IDs that were not found (missing / not updated).
+	 * @since 1.0.0
+	 */
+	public function bulkUpdateReadStatus( array $ids, bool $isRead ): array;
+
+	/**
 	 * Return true if a logged-in user has already submitted a response for this survey.
 	 *
 	 * @param int $surveyId    Survey to check against.
