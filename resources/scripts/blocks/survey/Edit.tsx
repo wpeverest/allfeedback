@@ -1,21 +1,18 @@
 /**
  * Survey block — editor component.
  *
- * Renders a sidebar survey picker (InspectorControls) and a static preview
- * on the canvas via the shared surveyPreviewHtml() renderer.
- *
- * @see resources/scripts/shared/formPreview.ts – surveyPreviewHtml()
+ * Canvas: logo + inline survey picker (no survey) or static preview (survey selected).
+ * Sidebar: InspectorControls panel with a combobox for searching/changing the survey.
  */
 
 import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
 import {
 	PanelBody,
-	ComboboxControl,
-	Placeholder,
+	SelectControl,
 	Spinner,
 	Notice,
 }                                           from '@wordpress/components';
-import { useState, useEffect, useMemo }     from '@wordpress/element';
+import { useState, useEffect, useMemo }  from '@wordpress/element';
 import { __ }                               from '@wordpress/i18n';
 import apiFetch                             from '@wordpress/api-fetch';
 import type { BlockEditProps }              from '@wordpress/blocks';
@@ -47,17 +44,35 @@ export interface Attributes {
 }
 
 // ---------------------------------------------------------------------------
+// Brand icon
+// ---------------------------------------------------------------------------
+const AllFeedbackIcon = () => (
+	<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+		<rect width="48" height="48" rx="12" fill={ ACCENT_COLOR } fillOpacity="0.12" />
+		<path
+			d="M24 10C16.268 10 10 15.82 10 23c0 3.406 1.374 6.51 3.627 8.847L12 38l6.763-2.118A14.7 14.7 0 0 0 24 36c7.732 0 14-5.82 14-13S31.732 10 24 10Z"
+			fill={ ACCENT_COLOR }
+			fillOpacity="0.18"
+			stroke={ ACCENT_COLOR }
+			strokeWidth="2"
+			strokeLinejoin="round"
+		/>
+		<rect x="18" y="21" width="12" height="2" rx="1" fill={ ACCENT_COLOR } />
+		<rect x="18" y="25" width="8"  height="2" rx="1" fill={ ACCENT_COLOR } />
+	</svg>
+);
+
+// ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
 export default function Edit( { attributes, setAttributes }: BlockEditProps<Attributes> ) {
 	const { surveyId } = attributes;
-	const blockProps    = useBlockProps();
+	const blockProps    = useBlockProps( { style: { padding: 0 } } );
 
 	const [ options,        setOptions        ] = useState<SurveyOption[]>( [] );
 	const [ loadingOptions, setLoadingOptions ] = useState( true );
 	const [ optionsError,   setOptionsError   ] = useState( '' );
-	const [ filter,         setFilter         ] = useState( '' );
 
 	const [ survey,         setSurvey         ] = useState<PreviewSurvey | null>( null );
 	const [ loadingPreview, setLoadingPreview  ] = useState( false );
@@ -93,71 +108,141 @@ export default function Edit( { attributes, setAttributes }: BlockEditProps<Attr
 			.finally( () => setLoadingPreview( false ) );
 	}, [ surveyId ] );
 
-	const filteredOptions = filter
-		? options.filter( ( o ) => o.label.toLowerCase().includes( filter.toLowerCase() ) )
-		: options;
+	const selectOptions = [
+		{ value: '', label: __( 'Select a survey', 'all-feedback' ) },
+		...options,
+	];
 
 	const previewHtml = useMemo(
 		() => ( survey ? surveyPreviewHtml( survey, ACCENT_COLOR ) : '' ),
 		[ survey ]
 	);
 
+	// -------------------------------------------------------------------------
+	// Sidebar panel (always shown)
+	// -------------------------------------------------------------------------
+	const sidebarPanel = (
+		<InspectorControls>
+			<PanelBody title={ __( 'All Feedback Survey', 'all-feedback' ) } initialOpen>
+				{ optionsError ? (
+					<Notice status="error" isDismissible={ false }>{ optionsError }</Notice>
+				) : loadingOptions ? (
+					<Spinner />
+				) : (
+					<SelectControl
+						label={ __( 'Select survey', 'all-feedback' ) }
+						help={ __( 'Only published surveys render on the frontend.', 'all-feedback' ) }
+						value={ surveyId ? String( surveyId ) : '' }
+						options={ selectOptions }
+						onChange={ ( val: string ) =>
+							setAttributes( { surveyId: val ? parseInt( val, 10 ) : 0 } )
+						}
+						__nextHasNoMarginBottom
+					/>
+				) }
+			</PanelBody>
+		</InspectorControls>
+	);
+
+	// -------------------------------------------------------------------------
+	// Canvas — no survey selected: show logo + inline picker
+	// -------------------------------------------------------------------------
+	if ( surveyId === 0 ) {
+		return (
+			<>
+				{ sidebarPanel }
+				<div { ...blockProps }>
+					<div style={ {
+						display:        'flex',
+						flexDirection:  'column',
+						alignItems:     'center',
+						justifyContent: 'center',
+						gap:            '16px',
+						padding:        '40px 24px',
+						border:         '1px dashed #d1d5db',
+						borderRadius:   '4px',
+						background:     '#fafafa',
+						minHeight:      '160px',
+					} }>
+						{ loadingOptions ? (
+							<Spinner />
+						) : (
+							<>
+								<AllFeedbackIcon />
+
+								<p style={ {
+									margin:     0,
+									fontWeight: 600,
+									fontSize:   '15px',
+									color:      '#1a1a1a',
+								} }>
+									{ __( 'All Feedback Survey', 'all-feedback' ) }
+								</p>
+
+								{ optionsError ? (
+									<Notice status="error" isDismissible={ false }>
+										{ optionsError }
+									</Notice>
+								) : (
+									<div style={ { width: '100%', maxWidth: '360px' } }>
+										<SelectControl
+											value={ '' }
+											options={ selectOptions }
+											onChange={ ( val: string ) =>
+												setAttributes( { surveyId: val ? parseInt( val, 10 ) : 0 } )
+											}
+											__nextHasNoMarginBottom
+										/>
+									</div>
+								) }
+							</>
+						) }
+					</div>
+				</div>
+			</>
+		);
+	}
+
+	// -------------------------------------------------------------------------
+	// Canvas — survey selected: show preview or loading state
+	// -------------------------------------------------------------------------
 	return (
 		<>
-			<InspectorControls>
-				<PanelBody title={ __( 'Survey', 'all-feedback' ) } initialOpen>
-					{ optionsError ? (
-						<Notice status="error" isDismissible={ false }>{ optionsError }</Notice>
-					) : loadingOptions ? (
-						<Spinner />
-					) : (
-						<ComboboxControl
-							label={ __( 'Select survey', 'all-feedback' ) }
-							help={ __( 'Only published surveys render on the frontend.', 'all-feedback' ) }
-							value={ surveyId ? String( surveyId ) : '' }
-							options={ filteredOptions }
-							onFilterValueChange={ ( v: string | null ) => setFilter( v ?? '' ) }
-							onChange={ ( val: string | null ) =>
-								setAttributes( { surveyId: val ? parseInt( val, 10 ) : 0 } )
-							}
-						/>
-					) }
-				</PanelBody>
-			</InspectorControls>
-
+			{ sidebarPanel }
 			<div { ...blockProps }>
-				{ surveyId === 0 ? (
-
-					<Placeholder
-						icon="megaphone"
-						label={ __( 'All Feedback Survey', 'all-feedback' ) }
-						instructions={ __(
-							'Select a survey using the block settings panel on the right.',
-							'all-feedback',
-						) }
-					/>
-
-				) : loadingPreview ? (
-
-					<div style={ { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, minHeight: 80, padding: 16 } }>
+				{ loadingPreview ? (
+					<div style={ {
+						display:        'flex',
+						alignItems:     'center',
+						justifyContent: 'center',
+						gap:            '10px',
+						minHeight:      '80px',
+						padding:        '16px',
+					} }>
 						<Spinner />
-						<span style={ { fontSize: 13, color: '#6b7280' } }>
+						<span style={ { fontSize: '13px', color: '#6b7280' } }>
 							{ __( 'Loading preview…', 'all-feedback' ) }
 						</span>
 					</div>
-
 				) : previewHtml ? (
-
 					<div dangerouslySetInnerHTML={ { __html: previewHtml } } />
-
 				) : (
-
-					<div className="allfb-embed">
-						<p className="allfb-panel__error">
-							{ __( 'Survey not found.', 'all-feedback' ) }
+					<div style={ {
+						display:        'flex',
+						flexDirection:  'column',
+						alignItems:     'center',
+						justifyContent: 'center',
+						gap:            '12px',
+						padding:        '40px 24px',
+						border:         '1px dashed #d1d5db',
+						borderRadius:   '4px',
+						background:     '#fafafa',
+					} }>
+						<AllFeedbackIcon />
+						<p style={ { margin: 0, fontSize: '13px', color: '#6b7280' } }>
+							{ __( 'Survey not found or no longer available.', 'all-feedback' ) }
 						</p>
 					</div>
-
 				) }
 			</div>
 		</>

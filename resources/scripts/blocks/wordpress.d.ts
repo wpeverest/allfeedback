@@ -61,6 +61,18 @@ declare module '@wordpress/components' {
 
 	export const Spinner: FC<{ children?: ReactNode }>;
 
+	interface SelectControlOption { value: string; label: string }
+	interface SelectControlProps {
+		label?:                  string;
+		help?:                   string;
+		value:                   string;
+		options:                 SelectControlOption[];
+		onChange:                ( value: string ) => void;
+		__nextHasNoMarginBottom?: boolean;
+		children?:               ReactNode;
+	}
+	export const SelectControl: FC<SelectControlProps>;
+
 	interface NoticeProps {
 		status?:       'info' | 'warning' | 'error' | 'success';
 		isDismissible?: boolean;
