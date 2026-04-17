@@ -24,10 +24,30 @@ export function activeSections( sections: FormSection[] ): FormSection[] {
 	return sections.filter( ( s ) => s.fields.length > 0 );
 }
 
+function normalizeField( raw: unknown ): SurveyField {
+	const f        = raw as Record<string, unknown>;
+	const settings = ( ( f.settings as Record<string, unknown> ) ?? {} );
+	return {
+		...( f as object ),
+		...( settings.options        !== undefined && { options:        settings.options        as string[] } ),
+		...( settings.placeholder    !== undefined && { placeholder:    settings.placeholder    as string } ),
+		...( settings.starScale      !== undefined && { starScale:      settings.starScale      as 'star' | 'number' } ),
+		...( settings.starRange      !== undefined && { starRange:      settings.starRange      as 5 | 10 } ),
+		...( settings.scaleMin       !== undefined && { scaleMin:       settings.scaleMin       as number } ),
+		...( settings.scaleMax       !== undefined && { scaleMax:       settings.scaleMax       as number } ),
+		...( settings.scaleLowLabel  !== undefined && { scaleLowLabel:  settings.scaleLowLabel  as string } ),
+		...( settings.scaleHighLabel !== undefined && { scaleHighLabel: settings.scaleHighLabel as string } ),
+	} as SurveyField;
+}
+
 export function parseSections( rawSchema: unknown ): FormSection[] {
 	if ( Array.isArray( rawSchema ) ) {
-		return [ { id: 'default', title: '', fields: rawSchema as SurveyField[] } ];
+		return [ { id: 'default', title: '', fields: rawSchema.map( normalizeField ) } ];
 	}
-	const schema = rawSchema as { sections?: FormSection[] } | null;
-	return schema?.sections ?? [];
+	const schema = rawSchema as { sections?: Array<{ id: string; title: string; fields?: unknown[] }> } | null;
+	return ( schema?.sections ?? [] ).map( ( s ) => ( {
+		id:     s.id,
+		title:  s.title,
+		fields: ( s.fields ?? [] ).map( normalizeField ),
+	} ) );
 }
