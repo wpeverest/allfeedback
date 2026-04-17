@@ -28,11 +28,11 @@ const getResponseSummary = (data: Record<string, unknown> | null): string => {
 
 const SkeletonRow = () => (
 	<tr className="border-b border-border">
-		<td className="w-12 px-4 py-4"><div className="size-[16px] animate-pulse rounded-[4px] bg-muted" /></td>
-		<td className="w-14 px-4 py-4"><div className="h-4 w-8 animate-pulse rounded bg-muted" /></td>
-		<td className="w-[220px] px-4 py-4"><div className="h-4 w-36 animate-pulse rounded bg-muted" /></td>
-		<td className="w-32 px-4 py-4"><div className="h-4 w-20 animate-pulse rounded bg-muted" /></td>
-		<td className="w-24 px-4 py-4"><div className="size-7 animate-pulse rounded-lg bg-muted" /></td>
+		<td className="w-12 px-4 py-5"><div className="size-[16px] animate-pulse rounded-[4px] bg-muted" /></td>
+		<td className="w-14 px-4 py-5"><div className="h-4 w-8 animate-pulse rounded bg-muted" /></td>
+		<td className="w-[220px] px-4 py-5"><div className="h-4 w-36 animate-pulse rounded bg-muted" /></td>
+		<td className="w-32 px-4 py-5"><div className="h-4 w-20 animate-pulse rounded bg-muted" /></td>
+		<td className="w-24 px-4 py-5"><div className="size-7 animate-pulse rounded-lg bg-muted" /></td>
 	</tr>
 );
 
@@ -165,17 +165,17 @@ const ResponsesPanel = ({ surveyId }: ResponsesPanelProps) => {
 					<table className="w-full table-fixed">
 						<thead>
 							<tr className="border-b border-border bg-muted/30">
-								<th className="w-12 px-4 py-4 text-left">
+								<th className="w-12 px-4 py-5 text-left">
 									<Checkbox
 										checked={someChecked ? 'indeterminate' : allChecked}
 										onCheckedChange={toggleAll}
 										disabled={isLoading || responses.length === 0}
 									/>
 								</th>
-								<th className="w-14 px-4 py-4 text-left"><ColHead label={__('ID', 'all-feedback')} col="id" /></th>
-								<th className="w-[220px] px-4 py-4 text-left"><ColHead label={__('Response', 'all-feedback')} /></th>
-								<th className="w-32 px-4 py-4 text-left"><ColHead label={__('Submitted', 'all-feedback')} col="created_at" /></th>
-								<th className="w-24 px-4 py-4 text-left"><ColHead label={__('Actions', 'all-feedback')} /></th>
+								<th className="w-14 px-4 py-5 text-left"><ColHead label={__('ID', 'all-feedback')} col="id" /></th>
+								<th className="w-[220px] px-4 py-5 text-left"><ColHead label={__('Response', 'all-feedback')} /></th>
+								<th className="w-32 px-4 py-5 text-left"><ColHead label={__('Submitted', 'all-feedback')} col="created_at" /></th>
+								<th className="w-24 px-4 py-5 text-left"><ColHead label={__('Actions', 'all-feedback')} /></th>
 							</tr>
 						</thead>
 						<tbody>
@@ -212,19 +212,19 @@ const ResponsesPanel = ({ surveyId }: ResponsesPanelProps) => {
 											isSelected ? 'bg-primary/[0.03]' : 'hover:bg-muted/20',
 										)}
 									>
-										<td className="w-12 px-4 py-4">
+										<td className="w-12 px-4 py-5">
 											<Checkbox checked={isSelected} onCheckedChange={() => toggleOne(response.id)} />
 										</td>
-										<td className="w-14 px-4 py-4">
+										<td className="w-14 px-4 py-5">
 											<span className={cn(cellCls, 'tabular-nums text-foreground/40')}>#{response.id}</span>
 										</td>
-										<td className="w-[220px] px-4 py-4">
+										<td className="w-[220px] px-4 py-5">
 											<span className={cn(cellCls, 'line-clamp-1 block')}>{summary}</span>
 										</td>
-										<td className="w-32 px-4 py-4">
+										<td className="w-32 px-4 py-5">
 											<span className={cellCls}>{format(new Date(response.created_at), 'MMM d, yyyy')}</span>
 										</td>
-										<td className="w-24 px-4 py-4">
+										<td className="w-24 px-4 py-5">
 											<div className="flex items-center gap-1">
 												<DropdownMenu>
 													<DropdownMenuTrigger asChild>

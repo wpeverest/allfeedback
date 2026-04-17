@@ -47,7 +47,8 @@ const ShortcodeChip = ({ shortcode, size = 'sm', className }: ShortcodeChipProps
 			onClick={handleCopy}
 			title={__('Copy shortcode', 'all-feedback')}
 			className={cn(
-				'group flex w-full cursor-pointer items-center gap-1.5 rounded-md border border-border bg-muted/60 py-2.5 pl-3 pr-2 text-left transition-colors hover:border-border hover:bg-muted',
+				'group flex w-full cursor-pointer items-center gap-1.5 rounded-md border border-border bg-muted/60 pl-3 pr-2 text-left transition-colors hover:border-border hover:bg-muted',
+				size === 'sm' ? 'py-2' : 'py-2.5',
 				className,
 			)}
 		>

@@ -1,8 +1,8 @@
-import { keepPreviousData, Query, QueryCache, QueryClient } from '@tanstack/react-query';
+import { keepPreviousData, QueryCache, QueryClient } from '@tanstack/react-query';
+import type { Query } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-const onError = (error: Error, query: Query) => {
-	if (query.meta?.suppressToast) return;
+const showErrorToast = (error: Error) => {
 	toast.error(error?.message || 'Unknown error', {
 		dismissible: true,
 		duration:    5000,
@@ -10,18 +10,23 @@ const onError = (error: Error, query: Query) => {
 	});
 };
 
-export const queryCache = new QueryCache({ onError });
+export const queryCache = new QueryCache({
+	onError: (error: Error, query: Query<unknown, unknown, unknown, readonly unknown[]>) => {
+		if (query.meta?.suppressToast) return;
+		showErrorToast(error);
+	},
+});
 
 export const queryClient = new QueryClient({
 	defaultOptions: {
 		queries: {
 			refetchOnWindowFocus: false,
 			retry:                false,
-			staleTime:            60_000,
+			staleTime:            5_000,
 			placeholderData:      keepPreviousData,
 		},
 		mutations: {
-			onError,
+			onError: (error: Error) => showErrorToast(error),
 		},
 	},
 	queryCache,

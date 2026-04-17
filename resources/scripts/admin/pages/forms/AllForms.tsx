@@ -89,7 +89,7 @@ const SkeletonRow = () => (
 		<td className="w-20 px-4 py-5">
 			<div className="h-4 w-10 animate-pulse rounded bg-muted" />
 		</td>
-		<td className="w-[200px] px-4 py-5">
+		<td className="w-[200px] px-4 py-3">
 			<div className="h-6 w-36 animate-pulse rounded-md bg-muted" />
 		</td>
 		<td className="w-24 px-4 py-5">
@@ -191,6 +191,7 @@ const AllForms = () => {
 	const createMutation = useMutation({
 		mutationFn: () => surveysApi.create({ title: __('Untitled Form', 'all-feedback') }),
 		onSuccess: (survey) => {
+			void queryClient.invalidateQueries({ queryKey: ['surveys'] });
 			void navigate({ to: '/builder/', search: { new: true, id: survey.id } });
 		},
 	});
@@ -370,32 +371,32 @@ const AllForms = () => {
 					<table className="w-full table-fixed">
 						<thead>
 							<tr className="border-b border-border bg-muted/30">
-								<th className="w-12 px-4 py-4 text-left">
+								<th className="w-12 px-4 py-5 text-left">
 									<Checkbox
 										checked={someChecked ? 'indeterminate' : allChecked}
 										onCheckedChange={toggleAll}
 										disabled={isLoading || surveys.length === 0}
 									/>
 								</th>
-								<th className="w-16 px-4 py-4 text-left">
+								<th className="w-16 px-4 py-5 text-left">
 									<ColHead column="id" label={__('ID', 'all-feedback')} sortable />
 								</th>
-								<th className="w-[220px] px-4 py-4 text-left">
+								<th className="w-[220px] px-4 py-5 text-left">
 									<ColHead label={__('Form Name', 'all-feedback')} />
 								</th>
-								<th className="w-20 px-4 py-4 text-left">
+								<th className="w-20 px-4 py-5 text-left">
 									<ColHead column="response_count" label={__('Responses', 'all-feedback')} sortable />
 								</th>
-								<th className="w-[200px] px-4 py-4 text-left">
+								<th className="w-[200px] px-4 py-3 text-left">
 									<ColHead label={__('Shortcode', 'all-feedback')} />
 								</th>
-								<th className="w-24 px-4 py-4 text-left">
+								<th className="w-24 px-4 py-5 text-left">
 									<ColHead label={__('Status', 'all-feedback')} />
 								</th>
-								<th className="w-28 px-4 py-4 text-left">
+								<th className="w-28 px-4 py-5 text-left">
 									<ColHead column="created_at" label={__('Created', 'all-feedback')} sortable />
 								</th>
-								<th className="w-24 px-4 py-4 text-left">
+								<th className="w-24 px-4 py-5 text-left">
 									<ColHead label={__('Actions', 'all-feedback')} />
 								</th>
 							</tr>
@@ -488,7 +489,7 @@ const AllForms = () => {
 											</button>
 										</td>
 
-										<td className="w-[200px] px-4 py-5">
+										<td className="w-[200px] px-4 py-3">
 											<ShortcodeChip shortcode={`[allfb_survey id="${survey.id}"]`} size="sm" />
 										</td>
 
