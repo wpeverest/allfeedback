@@ -388,12 +388,16 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 		setFieldErrors({});
 
 		if (surveyId) {
-			const scoreField = allFields(sections).find((f) => ['nps', 'star_rating', 'scale'].includes(f.type));
-			const scoreRaw   = scoreField ? fieldValues[scoreField.id] : '';
-			const score      = typeof scoreRaw === 'string' && scoreRaw !== '' ? Number(scoreRaw) : undefined;
+			const allFormFields = allFields(sections);
+			const scoreField    = allFormFields.find((f) => ['nps', 'star_rating', 'scale'].includes(f.type));
+			const scoreRaw      = scoreField ? fieldValues[scoreField.id] : '';
+			const score         = typeof scoreRaw === 'string' && scoreRaw !== '' ? Number(scoreRaw) : undefined;
+			const responseData: Record<string, unknown> = Object.fromEntries(
+				allFormFields.map((f) => [f.id, fieldValues[f.id] ?? (f.type === 'checkboxes' ? [] : '')])
+			);
 			submitMutation.mutate({
 				nonce:         __ALLFB_ADMIN__.submitNonce,
-				response_data: fieldValues as Record<string, unknown>,
+				response_data: responseData,
 				...(score !== undefined && !isNaN(score) && { score }),
 				page_url:    window.location.href,
 				device_type: device,

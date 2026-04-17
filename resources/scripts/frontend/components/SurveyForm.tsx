@@ -83,7 +83,7 @@ export const SurveyForm = ( { cfg, survey, submitNonce, onSuccess }: SurveyFormP
 
 		const responseData: Record<string, string | string[]> = {};
 		sections.forEach( ( s ) => s.fields.forEach( ( f ) => {
-			if ( fieldValues[ f.id ] !== undefined ) responseData[ f.id ] = fieldValues[ f.id ];
+			responseData[ f.id ] = fieldValues[ f.id ] ?? ( f.type === 'checkboxes' ? [] : '' );
 		} ) );
 
 		try {

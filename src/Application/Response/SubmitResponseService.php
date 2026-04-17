@@ -8,6 +8,7 @@ defined( 'ABSPATH' ) || exit;
 
 use AllFeedback\Application\Response\Pipes\ResponseContext;
 use AllFeedback\Application\Response\Pipes\ValidateConsentIfRequired;
+use AllFeedback\Application\Response\Pipes\ValidateResponseData;
 use AllFeedback\Application\Response\Pipes\ValidateSurveyIsActive;
 use AllFeedback\Core\Exceptions\NotFoundException;
 use AllFeedback\Domain\Response\Response;
@@ -51,6 +52,7 @@ class SubmitResponseService {
 
 		$pipeline = [
 			new ValidateSurveyIsActive(),
+			new ValidateResponseData(),
 			new ValidateConsentIfRequired(),
 		];
 
