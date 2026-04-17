@@ -41,7 +41,8 @@ Plugin bootstrap: `src/Plugin.php`
 | `config/` | `app.php` (identity/paths), `services.php` (DI bindings) |
 | `database/migrations/` | Numbered migrations (`0001_*.php`) |
 | `resources/scripts/admin/` | React admin SPA entry (`index.tsx`) |
-| `resources/scripts/frontend/` | Public widget entry (`index.ts`) |
+| `resources/scripts/frontend/` | Public widget entry (`index.tsx`) |
+| `resources/scripts/blocks/` | Gutenberg blocks — each block is a self-contained folder with `block.json`, `Edit.tsx`, `index.ts` |
 | `resources/build/` | Webpack output — do not edit |
 
 ---

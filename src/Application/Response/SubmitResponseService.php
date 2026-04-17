@@ -67,7 +67,7 @@ class SubmitResponseService {
 			ipHash: $ipHash,
 			ipAddress: $ipAddress,
 			userId: $dto->userId > 0 ? $dto->userId : null,
-			guestToken: $dto->userId === 0 ? $dto->guestToken : null,
+			guestToken: $dto->guestToken, // stored for all users — enables cross-session block after logout
 			consentGiven: $dto->consentGiven,
 		);
 

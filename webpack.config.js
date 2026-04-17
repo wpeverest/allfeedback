@@ -84,6 +84,7 @@ module.exports = {
         }),
         ! isProd && new ReactRefreshPlugin( {
             include: /resources[/\\]scripts[/\\](?:admin|blocks)/,
+            exclude: /\.json$/,
         } ),
         new WebpackBar({ name: 'All Feedback' }),
     ].filter(Boolean),

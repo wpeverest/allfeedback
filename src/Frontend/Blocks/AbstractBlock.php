@@ -13,10 +13,10 @@ use AllFeedback\Core\Constants;
  *
  * How to add a new block
  * ──────────────────────
- * 1. Create  blocks/{slug}/block.json  (editorScript: "file:../../resources/build/blocks.js")
- * 2. Create  resources/scripts/blocks/{slug}/Edit.tsx + index.ts  (exports Edit + metadata)
+ * 1. Create  resources/scripts/blocks/{slug}/block.json  (editorScript: "file:../../../build/blocks.js")
+ * 2. Create  resources/scripts/blocks/{slug}/Edit.tsx + index.ts  (exports Edit + metadata from ./block.json)
  * 3. Add     import * as {slug} from './{slug}'  to resources/scripts/blocks/index.ts
- * 4. Create  src/Frontend/Blocks/{Name}Block.php  (extend this class)
+ * 4. Create  src/Frontend/Blocks/{Name}Block.php  (extend this class, getSlug() returns '{slug}')
  * 5. In config/services.php:
  *      a. Add  {Name}Block::class => autowire()
  *      b. Add  {Name}Block::class  to the 'block.classes' array
@@ -28,10 +28,10 @@ use AllFeedback\Core\Constants;
 abstract class AbstractBlock {
 
 	/**
-	 * The block directory slug inside /blocks/.
+	 * The block folder name inside resources/scripts/blocks/.
 	 *
-	 * Must match the folder name: blocks/{slug}/block.json.
-	 * Example: "allfb-survey" for the folder blocks/allfb-survey/.
+	 * Must match the folder name: resources/scripts/blocks/{slug}/block.json.
+	 * Example: "survey" for the folder resources/scripts/blocks/survey/.
 	 *
 	 * @since 1.0.0
 	 */
@@ -63,7 +63,7 @@ abstract class AbstractBlock {
 			return;
 		}
 
-		$blockDir = Constants::path( 'blocks/' . $this->getSlug() );
+		$blockDir = Constants::path( 'resources/scripts/blocks/' . $this->getSlug() );
 
 		if ( ! is_dir( $blockDir ) || ! file_exists( $blockDir . '/block.json' ) ) {
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error

@@ -19,6 +19,6 @@
 		"html": false,
 		"align": [ "wide", "full" ]
 	},
-	"editorScript": "file:../../resources/build/blocks.js",
-	"style": "file:../../resources/build/frontend.css"
+	"editorScript": "file:../../../build/blocks.js",
+	"style": "file:../../../build/frontend.css"
 }

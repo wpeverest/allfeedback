@@ -41,7 +41,7 @@ class SurveyBlock extends AbstractBlock {
 	 * @since 1.0.0
 	 */
 	protected function getSlug(): string {
-		return 'allfb-survey';
+		return 'survey';
 	}
 
 	/**

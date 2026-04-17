@@ -174,25 +174,32 @@ When adding a new field type: add it to `Manager::FIELD_TYPES` only — `Surveys
 
 ## 15. Gutenberg Block System
 
-All blocks are compiled into a **single `blocks.js` bundle** (entry: `resources/scripts/blocks/index.ts`). Each block lives in its own subdirectory under `resources/scripts/blocks/{slug}/` and exposes a barrel:
+All blocks are compiled into a **single `blocks.js` bundle** (entry: `resources/scripts/blocks/index.ts`). Each block is **fully self-contained** inside its own subdirectory under `resources/scripts/blocks/{slug}/` — `block.json`, `Edit.tsx`, and `index.ts` all live together:
 
 ```
 resources/scripts/blocks/
-  index.ts           ← registers all blocks from a single imports list
+  index.ts              ← registers all blocks from a single imports list
   survey/
-    Edit.tsx         ← editor component only (no registerBlockType call)
-    index.ts         ← barrel: export { Edit, metadata }
+    block.json          ← WP block metadata (editorScript, attributes, etc.)
+    Edit.tsx            ← editor component only (no registerBlockType call)
+    index.ts            ← barrel: export { Edit, metadata } from './block.json'
+    wordpress.d.ts      ← TypeScript stubs for @wordpress/* (globally available via tsconfig include)
 ```
 
-`metadata` is imported directly from `blocks/{slug}/block.json`, so the block name, attributes, and `editorScript: "blocks.js"` are co-located with the PHP `block.json`.
+`block.json` relative paths are written from `resources/scripts/blocks/{slug}/`:
+- `editorScript`: `"file:../../../build/blocks.js"` → `resources/build/blocks.js`
+- `style`:        `"file:../../../build/frontend.css"` → `resources/build/frontend.css`
 
-**Adding a new block (2-step):**
-1. Create `resources/scripts/blocks/{slug}/Edit.tsx` + `index.ts` barrel.
-2. Add one `import * as myBlock from './{slug}'` line to `resources/scripts/blocks/index.ts`.
+**Adding a new block (5 steps):**
+1. Create `resources/scripts/blocks/{slug}/block.json` (copy survey's, update name/attributes/paths)
+2. Create `resources/scripts/blocks/{slug}/Edit.tsx` + `index.ts` barrel (`export { Edit, metadata } from './block.json'`)
+3. Add `import * as myBlock from './{slug}'` + add to `blocks` array in `resources/scripts/blocks/index.ts`
+4. Create `src/Frontend/Blocks/{Name}Block.php` extending `AbstractBlock`; `getSlug()` returns `'{slug}'`
+5. In `config/services.php`: add `{Name}Block::class => autowire()` and to `'block.classes'` array
 
-No webpack config changes. No `FrontendServiceProvider` changes.
+No webpack config changes. No `FrontendServiceProvider` changes. No `BlockRegistry` changes.
 
-**PHP side** — block classes live in `src/Frontend/Blocks/`. Each extends `AbstractBlock` and implements `getSlug()` + `render()`. They are registered via a factory in `config/services.php`:
+**PHP side** — block classes live in `src/Frontend/Blocks/`. They are registered via a factory in `config/services.php`:
 
 ```php
 'block.classes' => [
@@ -201,7 +208,7 @@ No webpack config changes. No `FrontendServiceProvider` changes.
 ],
 ```
 
-`AbstractBlock::register()` validates that `blocks/{slug}/block.json` exists before calling `register_block_type()` and emits a `E_USER_WARNING` if it is missing.
+`AbstractBlock::register()` looks for `block.json` at `resources/scripts/blocks/{slug}/block.json`, validates it exists, then calls `register_block_type()`. Emits `E_USER_WARNING` if missing.
 
 ---
 
