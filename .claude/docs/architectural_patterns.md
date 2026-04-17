@@ -1,6 +1,6 @@
 # Architectural Patterns
 
-> Last updated: session 3 (form builder API completed and field types aligned).
+> Last updated: session 6 (duplicate detection redesign, block system refactor, bulk query optimisation, admin notice suppression, live unread badge).
 
 ## 1. Service Provider Pattern
 
@@ -56,10 +56,11 @@ All controllers extend `src/API/RestController.php`.
 
 - Files in `database/migrations/` named `NNNN_ClassName.php`
 - `src/Infrastructure/Database/Migrator.php` discovers, versions, and runs them
-- Ran migrations tracked in `wp_options` under `_allfb_migrations`
+- Ran migrations tracked in the `wp_af_migrations` DB table (columns: `id`, `name`, `batch`, `ran_at`) — **not** `wp_options`
 - Executed automatically on `admin_init` if any are pending
 - Each migration implements `up()` / `down()` for reversibility
 - Hooks fired before/after each migration for extensibility
+- In development, prefer direct `ALTER TABLE` over a new migration file for schema tweaks (avoids migration overhead during active development)
 
 ---
 
@@ -83,8 +84,9 @@ Used by `Plugin` and `Modules/ModuleRegistry`. Guards against double-boot during
 
 - A single `queryClient` is created in `resources/scripts/admin/index.tsx` and shared app-wide.
 - Query definitions live in `resources/scripts/admin/queries/` — each file exports typed query/mutation options.
-- Query keys follow a nested array structure (`['forms', id]`) to allow precise cache invalidation.
-- Mutations call the query client's `invalidateQueries` on success.
+- Query keys follow a nested array structure (`['responses', surveyId, responseId]`) to allow precise cache invalidation.
+- Mutations call `queryClient.invalidateQueries({ queryKey: ['responses'] })` on success. TanStack Query uses prefix matching, so this single call invalidates all response queries including `['responses', 'unread-count']`.
+- The unread count query (`['responses', 'unread-count']`) polls every 60 s and refetches on window focus (`refetchInterval: 60_000`, `refetchOnWindowFocus: true`, `staleTime: 30_000`). A `useEffect` in `GlobalHeader.tsx` syncs the result to the WP admin sidebar badge DOM outside the React root.
 - Devtools (`ReactQueryDevtools`) are rendered only in dev builds.
 
 ---
@@ -167,3 +169,88 @@ Centralised in `src/Survey/Manager.php` as public constants so controllers, vali
 When adding a new field type: add it to `Manager::FIELD_TYPES` only — `SurveysController::validateFormSchema()` reads from that constant automatically. No other PHP file needs updating.
 
 > **Naming rule:** Use the React builder's `FieldType` value as the canonical name. Do not use legacy WordPress/PHP naming conventions (`text`, `textarea`, `checkbox`) — those caused a breaking mismatch that was fixed in session 3.
+
+---
+
+## 15. Gutenberg Block System
+
+All blocks are compiled into a **single `blocks.js` bundle** (entry: `resources/scripts/blocks/index.ts`). Each block lives in its own subdirectory under `resources/scripts/blocks/{slug}/` and exposes a barrel:
+
+```
+resources/scripts/blocks/
+  index.ts           ← registers all blocks from a single imports list
+  survey/
+    Edit.tsx         ← editor component only (no registerBlockType call)
+    index.ts         ← barrel: export { Edit, metadata }
+```
+
+`metadata` is imported directly from `blocks/{slug}/block.json`, so the block name, attributes, and `editorScript: "blocks.js"` are co-located with the PHP `block.json`.
+
+**Adding a new block (2-step):**
+1. Create `resources/scripts/blocks/{slug}/Edit.tsx` + `index.ts` barrel.
+2. Add one `import * as myBlock from './{slug}'` line to `resources/scripts/blocks/index.ts`.
+
+No webpack config changes. No `FrontendServiceProvider` changes.
+
+**PHP side** — block classes live in `src/Frontend/Blocks/`. Each extends `AbstractBlock` and implements `getSlug()` + `render()`. They are registered via a factory in `config/services.php`:
+
+```php
+'block.classes' => [
+    SurveyBlock::class,
+    // NewBlock::class,  ← add one line per block
+],
+```
+
+`AbstractBlock::register()` validates that `blocks/{slug}/block.json` exists before calling `register_block_type()` and emits a `E_USER_WARNING` if it is missing.
+
+---
+
+## 16. Duplicate Submission Detection
+
+`SubmitController::handle()` runs a three-tier check before persisting any response. All checks are skipped when `advanced.privacy.disable_user_details = true` or when the submitter has `manage_options` (admin preview).
+
+| Tier | Condition | Check | Column used |
+|------|-----------|-------|-------------|
+| 1 | Logged-in (`user_id > 0`) | `existsByUserId()` | `wp_af_responses.user_id` |
+| 2 | Guest + `visitor_token` present | `existsByGuestToken()` | `wp_af_responses.guest_token` |
+| 3 | Guest + no token (fallback) | `existsByIpHash()` | `wp_af_responses.ip_hash` |
+
+All three methods accept an optional `$windowHours` parameter driven by the `allfeedback_duplicate_window_hours` filter (default `0` = all-time block).
+
+**Guest token lifecycle:**
+- Generated once in the browser via `crypto.randomUUID()` (requires a secure context / modern browser).
+- Stored in `localStorage` under key `allfb_visitor_id` and reused across page views.
+- Sent as `visitor_token` in the submit request body.
+- `ResponseDTO::fromArray()` validates it matches UUID v4 regex before accepting it; invalid values are treated as `null` (falls through to IP hash).
+- Stored in `wp_af_responses.guest_token` (VARCHAR 36, index `idx_guest_token_survey`).
+- `SubmitResponseService` only sets `guest_token` when `userId === 0`; logged-in responses store `user_id` and leave `guest_token` NULL.
+
+---
+
+## 17. Bulk Repository Pattern
+
+For operations that affect many rows, avoid N+1 queries. Use two queries instead:
+
+1. **SELECT IN** — fetch the subset of requested IDs that actually exist.
+2. **Single UPDATE/DELETE IN** — operate on the confirmed IDs.
+
+Return the diff (requested − found) as the `missing`/`failed` set for the caller.
+
+Example: `WpdbResponseRepository::bulkUpdateReadStatus(array $ids, bool $isRead): array`
+
+```php
+// 1. Which IDs exist?
+$existingIds = $wpdb->get_col( $wpdb->prepare(
+    "SELECT id FROM {$table} WHERE id IN ({$placeholders})", ...$ids
+) );
+
+// 2. Single UPDATE for all of them.
+$wpdb->query( $wpdb->prepare(
+    "UPDATE {$table} SET is_read = %d WHERE id IN ({$updatePlaceholders})",
+    $isRead ? 1 : 0, ...$existingIds
+) );
+
+return array_diff( $ids, $existingIds ); // missing IDs → "failed"
+```
+
+Apply the same pattern to any future bulk operations (bulk status change, bulk export, etc.).
