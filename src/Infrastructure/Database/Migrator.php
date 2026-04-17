@@ -242,6 +242,32 @@ class Migrator {
 	}
 
 	/**
+	 * Clear all ran-migration records when any of the given unprefixed table
+	 * names are absent from the database.
+	 *
+	 * Call this on plugin activation before run() so that manually-deleted
+	 * tables are recreated: the tracking records are removed, which makes every
+	 * migration appear pending, and run() executes them all again.  Safe
+	 * because every migration uses existence guards (IF NOT EXISTS / SHOW
+	 * COLUMNS / indexExists) so re-running on intact tables is a no-op.
+	 *
+	 * @param string[] $tables Unprefixed table names, e.g. ['af_surveys', 'af_responses'].
+	 * @since 1.0.0
+	 */
+	public function resetIfTablesMissing( array $tables ): void {
+		global $wpdb;
+
+		foreach ( $tables as $unprefixed ) {
+			$full = $wpdb->prefix . $unprefixed;
+			if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $full ) ) !== $full ) {
+				$this->ensureTable();
+				$wpdb->query( 'DELETE FROM ' . $this->tableName() ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				return;
+			}
+		}
+	}
+
+	/**
 	 * Return true when there are migration files that have not been run yet.
 	 *
 	 * @since 1.0.0

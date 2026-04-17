@@ -62,6 +62,7 @@ class CoreServiceProvider implements ServiceProviderInterface {
 	 * @since 1.0.0
 	 */
 	public function onActivation(): void {
+		$this->migrator->resetIfTablesMissing( [ 'af_surveys', 'af_responses' ] );
 		$this->migrator->run();
 		$this->roleManager->createRoles();
 		$this->logger->ensureDirectory();
