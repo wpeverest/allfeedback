@@ -661,7 +661,7 @@ const ResponseDetail = () => {
 											<p className="text-2xs font-medium uppercase tracking-widest text-muted-foreground/50">
 												{__('Score', 'all-feedback')}
 											</p>
-											<p className="mt-1 text-5xl font-semibold tabular-nums text-foreground">
+											<p className="mt-1 text-lg font-semibold tabular-nums text-foreground">
 												{response.score}
 											</p>
 										</div>
@@ -697,7 +697,7 @@ const ResponseDetail = () => {
 														</span>
 														<div className="flex items-baseline gap-1 text-base font-medium text-foreground/80">
 															<span
-																className="[&_p]:m-0 [&_p]:inline"
+																className="[&_p]:m-0 [&_p]:inline text-base"
 																dangerouslySetInnerHTML={{ __html: schField.label }}
 															/>
 															{schField.required && <span className="text-destructive">*</span>}
