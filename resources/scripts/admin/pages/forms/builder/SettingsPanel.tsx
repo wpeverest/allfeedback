@@ -16,10 +16,12 @@ import { FileText, Loader2, Search, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type {
+	DelayUnit,
 	DisplayFrequency,
 	DismissUnit,
 	FormSettings,
 	TargetPages,
+	TriggerType,
 	UserState,
 } from './types';
 
@@ -355,6 +357,12 @@ const DISMISS_UNIT_OPTIONS: { value: DismissUnit; label: string }[] = [
 	{ value: 'weeks', label: __('Weeks', 'all-feedback') },
 ];
 
+const DELAY_UNIT_OPTIONS: { value: DelayUnit; label: string }[] = [
+	{ value: 'seconds', label: __('Seconds', 'all-feedback') },
+	{ value: 'minutes', label: __('Minutes', 'all-feedback') },
+	{ value: 'hours',   label: __('Hours',   'all-feedback') },
+];
+
 
 const SettingsPanel = ({ settings, onChange, onScrollChange }: SettingsPanelProps) => {
 	const update = (patch: Partial<FormSettings>) => onChange({ ...settings, ...patch });
@@ -443,7 +451,40 @@ const SettingsPanel = ({ settings, onChange, onScrollChange }: SettingsPanelProp
 					</div>
 				</Card>
 
-<Card title={__('Frequency & Limits', 'all-feedback')}>
+<Card title={__('Trigger', 'all-feedback')}>
+					<Row label={__('When to appear', 'all-feedback')}>
+						<Select
+							value={settings.triggerType}
+							onValueChange={(v) => update({ triggerType: v as TriggerType })}
+						>
+							<SelectTrigger className="w-full">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent className="z-[100000]">
+								<SelectItem value="immediate">
+									{__('Immediately', 'all-feedback')}
+								</SelectItem>
+								<SelectItem value="time_delay">
+									{__('After a delay', 'all-feedback')}
+								</SelectItem>
+							</SelectContent>
+						</Select>
+					</Row>
+					<Collapse open={settings.triggerType === 'time_delay'}>
+						<Row label={__('Delay', 'all-feedback')}>
+							<NumberWithUnit
+								numberValue={settings.delayValue}
+								unit={settings.delayUnit}
+								unitOptions={DELAY_UNIT_OPTIONS}
+								onNumberChange={(v) => update({ delayValue: v })}
+								onUnitChange={(v) => update({ delayUnit: v })}
+								min={1}
+							/>
+						</Row>
+					</Collapse>
+				</Card>
+
+				<Card title={__('Frequency & Limits', 'all-feedback')}>
 					<Row label={__('Display frequency', 'all-feedback')}>
 						<Select value={settings.displayFrequency} onValueChange={(v) => update({ displayFrequency: v as DisplayFrequency })}>
 							<SelectTrigger className="w-full">

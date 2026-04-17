@@ -288,7 +288,9 @@ class FrontendServiceProvider implements ServiceProvider {
 
 		// ── Delay in seconds from delay_value + delay_unit ────────────────────
 		$delay = null;
-		if ( isset( $form['delay_value'], $form['delay_unit'] ) ) {
+		if ( isset( $form['trigger_type'] ) && $form['trigger_type'] === 'immediate' ) {
+			$delay = 0;
+		} elseif ( isset( $form['delay_value'], $form['delay_unit'] ) ) {
 			$unitMultiplier = [ 'seconds' => 1, 'minutes' => 60, 'hours' => 3600 ];
 			$delay = (int) round( (float) $form['delay_value'] * ( $unitMultiplier[ $form['delay_unit'] ] ?? 1 ) );
 		}
