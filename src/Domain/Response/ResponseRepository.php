@@ -110,6 +110,26 @@ interface ResponseRepository {
 	public function existsByIpHash( int $surveyId, string $ipHash, int $windowHours = 0 ): bool;
 
 	/**
+	 * Return true if a logged-in user has already submitted a response for this survey.
+	 *
+	 * @param int $surveyId    Survey to check against.
+	 * @param int $userId      WordPress user ID.
+	 * @param int $windowHours How far back to look (0 = all-time).
+	 * @since 1.0.0
+	 */
+	public function existsByUserId( int $surveyId, int $userId, int $windowHours = 0 ): bool;
+
+	/**
+	 * Return true if a guest visitor UUID has already submitted a response for this survey.
+	 *
+	 * @param int    $surveyId    Survey to check against.
+	 * @param string $guestToken  UUID stored in the visitor's localStorage.
+	 * @param int    $windowHours How far back to look (0 = all-time).
+	 * @since 1.0.0
+	 */
+	public function existsByGuestToken( int $surveyId, string $guestToken, int $windowHours = 0 ): bool;
+
+	/**
 	 * Aggregate score statistics for a survey using SQL.
 	 *
 	 * Returns: total, score_count, score_sum, promoters (9-10), passives (7-8), detractors (0-6).

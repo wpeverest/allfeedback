@@ -156,7 +156,7 @@ class SubmitController extends RestController {
 		// or when an admin is submitting (e.g. previewing a survey in the builder).
 		$disableUserDetails = (bool) $this->settingsManager->get( 'advanced.privacy.disable_user_details' );
 
-		if ( ! $disableUserDetails && $ipHash !== '' && ! current_user_can( 'manage_options' ) ) {
+		if ( ! $disableUserDetails && ! current_user_can( 'manage_options' ) ) {
 			/**
 			 * Filter: allfeedback_duplicate_window_hours
 			 *
@@ -169,10 +169,29 @@ class SubmitController extends RestController {
 			 * @since 1.0.0
 			 */
 			$duplicateWindowHours = max( 0, (int) apply_filters( 'allfeedback_duplicate_window_hours', 0, $surveyId ) );
+			$userId               = get_current_user_id();
 
-			if ( $this->responseRepository->existsByIpHash( $surveyId, $ipHash, $duplicateWindowHours ) ) {
-				$this->logger->debug( 'Duplicate submission blocked.', [ 'survey_id' => $surveyId ] );
-				return $this->errorResponse( __( 'A response from this visitor has already been recorded.', 'all-feedback' ), 409 );
+			if ( $userId > 0 ) {
+				// Logged-in: authoritative identity is the WordPress user ID.
+				if ( $this->responseRepository->existsByUserId( $surveyId, $userId, $duplicateWindowHours ) ) {
+					$this->logger->debug( 'Duplicate submission blocked (user_id).', [ 'survey_id' => $surveyId, 'user_id' => $userId ] );
+					return $this->errorResponse( __( 'A response from this user has already been recorded.', 'all-feedback' ), 409 );
+				}
+			} else {
+				// Guest: prefer the persistent UUID; fall back to IP hash if no token was sent.
+				$visitorToken = sanitize_text_field( (string) ( $request->get_param( 'visitor_token' ) ?? '' ) );
+
+				if ( $visitorToken !== '' ) {
+					if ( $this->responseRepository->existsByGuestToken( $surveyId, $visitorToken, $duplicateWindowHours ) ) {
+						$this->logger->debug( 'Duplicate submission blocked (guest_token).', [ 'survey_id' => $surveyId ] );
+						return $this->errorResponse( __( 'A response from this visitor has already been recorded.', 'all-feedback' ), 409 );
+					}
+				} elseif ( $ipHash !== '' ) {
+					if ( $this->responseRepository->existsByIpHash( $surveyId, $ipHash, $duplicateWindowHours ) ) {
+						$this->logger->debug( 'Duplicate submission blocked (ip_hash).', [ 'survey_id' => $surveyId ] );
+						return $this->errorResponse( __( 'A response from this visitor has already been recorded.', 'all-feedback' ), 409 );
+					}
+				}
 			}
 		}
 
@@ -294,6 +313,10 @@ class SubmitController extends RestController {
 			'consent_given' => $this->argBoolean(
 				description: __( 'Whether the visitor gave GDPR data-processing consent.', 'all-feedback' ),
 				default:     false,
+			),
+			'visitor_token' => $this->argString(
+				description: __( 'Persistent guest visitor UUID (v4) for duplicate detection.', 'all-feedback' ),
+				maxLength:   36,
 			),
 		];
 	}

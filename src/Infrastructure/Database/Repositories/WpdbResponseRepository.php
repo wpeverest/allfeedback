@@ -65,10 +65,11 @@ class WpdbResponseRepository implements ResponseRepository {
 				'ip_hash'       => $response->getIpHash(),
 				'ip_address'    => $response->getIpAddress(),
 				'user_id'       => $response->getUserId(),
+				'guest_token'   => $response->getGuestToken(),
 				'consent_given' => $response->isConsentGiven() ? 1 : 0,
 				'created_at'    => $response->getCreatedAt()->format( 'Y-m-d H:i:s' ),
 			],
-			[ '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%s' ]
+			[ '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%d', '%s' ]
 		);
 
 		if ( false === $result ) {
@@ -87,6 +88,7 @@ class WpdbResponseRepository implements ResponseRepository {
 			ipHash: $response->getIpHash(),
 			ipAddress: $response->getIpAddress(),
 			userId: $response->getUserId(),
+			guestToken: $response->getGuestToken(),
 			consentGiven: $response->isConsentGiven(),
 			createdAt: $response->getCreatedAt(),
 		);
@@ -340,6 +342,80 @@ class WpdbResponseRepository implements ResponseRepository {
 	}
 
 	/**
+	 * Return true if a logged-in user has already submitted a response for this survey.
+	 *
+	 * @param int $surveyId    Survey to check against.
+	 * @param int $userId      WordPress user ID.
+	 * @param int $windowHours Look-back window in hours (0 = all-time).
+	 * @since 1.0.0
+	 */
+	public function existsByUserId( int $surveyId, int $userId, int $windowHours = 0 ): bool {
+		global $wpdb;
+
+		if ( $windowHours > 0 ) {
+			$count = (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM {$this->table}
+					 WHERE survey_id = %d
+					   AND user_id   = %d
+					   AND created_at >= DATE_SUB( NOW(), INTERVAL %d HOUR )", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$surveyId,
+					$userId,
+					$windowHours
+				)
+			);
+		} else {
+			$count = (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM {$this->table}
+					 WHERE survey_id = %d AND user_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$surveyId,
+					$userId
+				)
+			);
+		}
+
+		return $count > 0;
+	}
+
+	/**
+	 * Return true if a guest visitor UUID has already submitted a response for this survey.
+	 *
+	 * @param int    $surveyId    Survey to check against.
+	 * @param string $guestToken  UUID stored in the visitor's localStorage.
+	 * @param int    $windowHours Look-back window in hours (0 = all-time).
+	 * @since 1.0.0
+	 */
+	public function existsByGuestToken( int $surveyId, string $guestToken, int $windowHours = 0 ): bool {
+		global $wpdb;
+
+		if ( $windowHours > 0 ) {
+			$count = (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM {$this->table}
+					 WHERE survey_id   = %d
+					   AND guest_token = %s
+					   AND created_at >= DATE_SUB( NOW(), INTERVAL %d HOUR )", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$surveyId,
+					$guestToken,
+					$windowHours
+				)
+			);
+		} else {
+			$count = (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM {$this->table}
+					 WHERE survey_id = %d AND guest_token = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$surveyId,
+					$guestToken
+				)
+			);
+		}
+
+		return $count > 0;
+	}
+
+	/**
 	 * Aggregate score statistics for a survey using SQL.
 	 *
 	 * @return array{total: int, score_count: int, score_sum: float, promoters: int, passives: int, detractors: int}
@@ -448,6 +524,7 @@ class WpdbResponseRepository implements ResponseRepository {
 			ipHash: $row['ip_hash'] ?? null,
 			ipAddress: $row['ip_address'] ?? null,
 			userId: isset( $row['user_id'] ) && $row['user_id'] !== null ? (int) $row['user_id'] : null,
+			guestToken: $row['guest_token'] ?? null,
 			consentGiven: (bool) ( $row['consent_given'] ?? false ),
 			createdAt: new DateTimeImmutable( (string) $row['created_at'] ),
 			isRead: (bool) ( $row['is_read'] ?? false ),

@@ -35,6 +35,7 @@ class Response extends Entity {
 		private ?string $ipHash = null,
 		private ?string $ipAddress = null,
 		private ?int $userId = null,
+		private ?string $guestToken = null,
 		private bool $consentGiven = false,
 		private bool $isRead = false,
 	) {
@@ -56,11 +57,12 @@ class Response extends Entity {
 		?string $ipHash,
 		?string $ipAddress,
 		?int $userId,
+		?string $guestToken,
 		bool $consentGiven,
 		DateTimeImmutable $createdAt,
 		bool $isRead = false,
 	): self {
-		$response            = new self( $surveyId, $responseData, $score, $pageUrl, $deviceType, $ipHash, $ipAddress, $userId, $consentGiven, $isRead );
+		$response            = new self( $surveyId, $responseData, $score, $pageUrl, $deviceType, $ipHash, $ipAddress, $userId, $guestToken, $consentGiven, $isRead );
 		$response->id        = $id;
 		$response->createdAt = $createdAt;
 		return $response;
@@ -139,6 +141,15 @@ class Response extends Entity {
 	}
 
 	/**
+	 * Return the persistent guest UUID used for duplicate detection, or null for logged-in users.
+	 *
+	 * @since 1.0.0
+	 */
+	public function getGuestToken(): ?string {
+		return $this->guestToken;
+	}
+
+	/**
 	 * Return true when the respondent explicitly granted data-processing consent.
 	 *
 	 * @since 1.0.0
@@ -181,6 +192,7 @@ class Response extends Entity {
 			'ip_hash'       => $this->ipHash,
 			'ip_address'    => $this->ipAddress,
 			'user_id'       => $this->userId,
+			'guest_token'   => $this->guestToken,
 			'consent_given' => $this->consentGiven,
 			'is_read'       => $this->isRead,
 			'created_at'    => $this->createdAt->format( 'Y-m-d H:i:s' ),

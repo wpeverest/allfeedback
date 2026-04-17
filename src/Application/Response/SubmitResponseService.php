@@ -60,13 +60,14 @@ class SubmitResponseService {
 
 		$response = new Response(
 			surveyId: $dto->surveyId,
-			userId: $dto->userId,
 			responseData: $dto->responseData,
 			score: $dto->score,
 			pageUrl: $dto->pageUrl,
 			deviceType: $dto->deviceType,
 			ipHash: $ipHash,
 			ipAddress: $ipAddress,
+			userId: $dto->userId > 0 ? $dto->userId : null,
+			guestToken: $dto->userId === 0 ? $dto->guestToken : null,
 			consentGiven: $dto->consentGiven,
 		);
 

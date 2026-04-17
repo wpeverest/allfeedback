@@ -3,6 +3,16 @@ import { activeSections, normalizeSettings, parseSections } from '../utils';
 import type { AllfbConfig, Survey } from '../types';
 import { FieldPreview } from './FieldPreview';
 
+function getOrCreateVisitorId(): string {
+	const KEY = 'allfb_visitor_id';
+	let id = localStorage.getItem( KEY );
+	if ( ! id ) {
+		id = crypto.randomUUID();
+		try { localStorage.setItem( KEY, id ); } catch { /* storage blocked */ }
+	}
+	return id;
+}
+
 interface SurveyFormProps {
 	cfg:         AllfbConfig;
 	survey:      Survey;
@@ -80,7 +90,7 @@ export const SurveyForm = ( { cfg, survey, submitNonce, onSuccess }: SurveyFormP
 			const res = await fetch( `${ cfg.restUrl }surveys/${ survey.id }/submit`, {
 				method:  'POST',
 				headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': cfg.nonce },
-				body:    JSON.stringify( { nonce: submitNonce, response_data: responseData, page_url: window.location.href } ),
+				body:    JSON.stringify( { nonce: submitNonce, response_data: responseData, page_url: window.location.href, visitor_token: getOrCreateVisitorId() } ),
 			} );
 			if ( ! res.ok ) throw new Error( `HTTP ${ res.status }` );
 			onSuccess();
