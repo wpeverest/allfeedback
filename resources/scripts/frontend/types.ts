@@ -12,6 +12,10 @@ export interface SurveyConfig {
 	max_impressions?:   number;
 	reshow_after_days?: number;
 	server_state?:      WidgetState;
+	trigger_icon?:      'message' | 'chat' | 'typing' | 'comment' | 'mail';
+	widget_position?:   'bottom-right' | 'bottom-left' | 'side-tab';
+	widget_color?:      string;
+	widget_label?:      string;
 }
 
 export interface AllfbSettings {
@@ -70,6 +74,8 @@ export interface SurveySettings {
 	submit_label?:        string;
 	next_label?:          string;
 	back_label?:          string;
+	progressIndicator?:   'dots' | 'numbers' | 'bar' | 'none';
+	triggerIcon?:         'message' | 'chat' | 'typing' | 'comment' | 'mail';
 }
 
 export interface Survey {
@@ -86,4 +92,6 @@ export interface NormalizedSettings {
 	thankYouEnabled:     boolean;
 	thankYouTitle:       string;
 	thankYouDescription: string;
+	progressIndicator:   'dots' | 'numbers' | 'bar' | 'none';
+	triggerIcon:         'message' | 'chat' | 'typing' | 'comment' | 'mail';
 }

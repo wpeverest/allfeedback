@@ -115,17 +115,29 @@ export const SurveyForm = ( { cfg, survey, submitNonce, onSuccess }: SurveyFormP
 
 	return (
 		<div className="allfb-form-wrapper" onKeyDown={ handleKeyDown }>
-			{ totalSteps > 1 && (
-				<div className="allfb-steps">
-					<div className="allfb-steps__dots">
-						{ sections.map( ( _, i ) => (
-							<span
-								key={ i }
-								className={ `allfb-steps__dot${ i === stepIndex ? ' is-active' : i < stepIndex ? ' is-done' : '' }` }
+			{ totalSteps > 1 && ss.progressIndicator !== 'none' && (
+				<div className={ `allfb-steps${ ss.progressIndicator === 'bar' ? ' allfb-steps--bar' : '' }` }>
+					{ ss.progressIndicator === 'dots' && (
+						<div className="allfb-steps__dots">
+							{ sections.map( ( _, i ) => (
+								<span
+									key={ i }
+									className={ `allfb-steps__dot${ i === stepIndex ? ' is-active' : i < stepIndex ? ' is-done' : '' }` }
+								/>
+							) ) }
+						</div>
+					) }
+					{ ss.progressIndicator === 'numbers' && (
+						<span className="allfb-steps__count allfb-steps__count">{ stepIndex + 1 } / { totalSteps }</span>
+					) }
+					{ ss.progressIndicator === 'bar' && (
+						<div className="allfb-steps__bar-track">
+							<div
+								className="allfb-steps__bar-fill"
+								style={ { width: `${ ( ( stepIndex + 1 ) / totalSteps ) * 100 }%` } }
 							/>
-						) ) }
-					</div>
-					<span className="allfb-steps__count">{ stepIndex + 1 } / { totalSteps }</span>
+						</div>
+					) }
 				</div>
 			) }
 

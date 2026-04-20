@@ -158,8 +158,9 @@
 }
 
 .allfb-panel__title {
-  font-size:   15px;
-  font-weight: 600;
+  font-size:    15px;
+  font-weight:  600;
+  margin-right: auto;
 }
 
 .allfb-panel__close {
@@ -221,11 +222,15 @@
 
 /* ── Step indicators ──────────────────────────────────────────────────────── */
 .allfb-steps {
-  display:     flex;
-  align-items: center;
+  display:         flex;
+  align-items:     center;
   justify-content: space-between;
-  padding-bottom: 4px;
-  border-bottom:  1px solid var(--allfb-border);
+  margin-top:      -8px;
+
+  &.allfb-steps--bar {
+    margin:  -20px -16px 0;
+    padding: 0;
+  }
 }
 
 .allfb-steps__dots {
@@ -236,19 +241,36 @@
 
 .allfb-steps__dot {
   display:       block;
-  height:        6px;
-  width:         6px;
+  height:        7px;
+  width:         7px;
   border-radius: 99px;
-  background:    var(--allfb-border);
+  background:    color-mix(in srgb, var(--allfb-border) 80%, #000 20%);
   transition:    background 0.2s, width 0.2s;
 
-  &.is-active { width: 12px; background: var(--allfb-color); }
-  &.is-done   { background: color-mix(in srgb, var(--allfb-color) 40%, #fff); }
+  &.is-active { width: 14px; background: var(--allfb-color); }
+  &.is-done   { background: color-mix(in srgb, var(--allfb-color) 55%, #fff); }
 }
 
 .allfb-steps__count {
-  font-size: 11px;
-  color:     var(--allfb-muted);
+  font-size:   12px;
+  font-weight: 500;
+  color:       var(--allfb-text);
+  opacity:     0.55;
+}
+
+.allfb-steps__bar-track {
+  flex:          1;
+  height:        5px;
+  border-radius: 0;
+  background:    color-mix(in srgb, var(--allfb-color) 18%, transparent);
+  overflow:      hidden;
+}
+
+.allfb-steps__bar-fill {
+  height:        100%;
+  border-radius: 0;
+  background:    color-mix(in srgb, var(--allfb-color) 60%, #fff);
+  transition:    width 0.35s ease;
 }
 
 /* ── Fields container ─────────────────────────────────────────────────────── */

@@ -4,12 +4,29 @@ import { FieldPreview } from '@/shared/FieldPreview';
 import { cn } from '@/lib/utils';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { __ } from '@wordpress/i18n';
-import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Eye, Globe, Lock, MessageSquare, Minus, Monitor, MoreHorizontal, Plus, RotateCw, Smartphone, Star, Tablet, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Eye, Globe, Lock, Mail, MessageCircle, MessageSquare, Minus, Monitor, MoreHorizontal, Plus, RotateCw, Smartphone, Star, Tablet, X } from 'lucide-react';
+
+const TypingBubbleIcon = ( props: React.SVGProps<SVGSVGElement> ) => (
+	<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" { ...props }>
+		<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+		<circle cx="9" cy="11" r="1" fill="currentColor" stroke="none" />
+		<circle cx="12" cy="11" r="1" fill="currentColor" stroke="none" />
+		<circle cx="15" cy="11" r="1" fill="currentColor" stroke="none" />
+	</svg>
+);
+
+const CommentBubbleIcon = ( props: React.SVGProps<SVGSVGElement> ) => (
+	<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" { ...props }>
+		<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+		<line x1="9" y1="9" x2="15" y2="9" />
+		<line x1="9" y1="13" x2="13" y2="13" />
+	</svg>
+);
 import { useEffect, useState } from 'react';
 
 import { toast } from 'sonner';
 import { settingsQuery } from '@/admin/queries/settings';
-import type { FormField, FormSection, FormSettings, PreviewDevice } from './types';
+import type { FormField, FormSection, FormSettings, PreviewDevice, WidgetPosition } from './types';
 
 type WidgetPosition = 'bottom-right' | 'bottom-left' | 'side-tab';
 
@@ -41,40 +58,15 @@ const DEVICE_PAGE_W: Record<PreviewDevice, string | null> = {
 	mobile:  '390px',
 };
 
-const POSITIONS: { value: WidgetPosition; label: string; Icon: () => React.ReactElement }[] = [
-	{
-		value: 'bottom-left',
-		label: __('Bottom left', 'all-feedback'),
-		Icon: () => (
-			<svg viewBox="0 0 16 16" fill="none" className="size-4" aria-hidden="true">
-				<rect x="1" y="1" width="14" height="14" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-				<circle cx="4" cy="12" r="2" fill="currentColor"/>
-			</svg>
-		),
-	},
-	{
-		value: 'bottom-right',
-		label: __('Bottom right', 'all-feedback'),
-		Icon: () => (
-			<svg viewBox="0 0 16 16" fill="none" className="size-4" aria-hidden="true">
-				<rect x="1" y="1" width="14" height="14" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-				<circle cx="12" cy="12" r="2" fill="currentColor"/>
-			</svg>
-		),
-	},
-	{
-		value: 'side-tab',
-		label: __('Side tab', 'all-feedback'),
-		Icon: () => (
-			<svg viewBox="0 0 16 16" fill="none" className="size-4" aria-hidden="true">
-				<rect x="1" y="1" width="11" height="14" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-				<rect x="12" y="5" width="3" height="6" rx="1" fill="currentColor"/>
-			</svg>
-		),
-	},
-];
-
 type PreviewView = 'page' | 'widget';
+
+const TRIGGER_ICON_MAP: Record<string, React.ElementType> = {
+	message: MessageSquare,
+	chat:    MessageCircle,
+	typing:  TypingBubbleIcon,
+	comment: CommentBubbleIcon,
+	mail:    Mail,
+};
 
 const ALLFB_VARS_BASE = {
 	'--allfb-white':   '#ffffff',
@@ -152,6 +144,9 @@ const WidgetBody = ({
 			onKeyDown={ handleKeyDown }
 		>
 			<div className="allfb-panel__header">
+				{ settings.widgetLabel && (
+					<span className="allfb-panel__title">{ settings.widgetLabel }</span>
+				) }
 				{ showControls && (
 					<>
 						{ showMinimize && (
@@ -204,17 +199,29 @@ const WidgetBody = ({
 					</div>
 				) : (
 					<div className="allfb-form-wrapper">
-						{ totalSteps > 1 && (
-							<div className="allfb-steps">
-								<div className="allfb-steps__dots">
-									{ steps.map( ( _, i ) => (
-										<span
-											key={ i }
-											className={ `allfb-steps__dot${ i === stepIndex ? ' is-active' : i < stepIndex ? ' is-done' : '' }` }
+						{ totalSteps > 1 && settings.progressIndicator !== 'none' && (
+							<div className={ `allfb-steps${ settings.progressIndicator === 'bar' ? ' allfb-steps--bar' : '' }` }>
+								{ settings.progressIndicator === 'dots' && (
+									<div className="allfb-steps__dots">
+										{ steps.map( ( _, i ) => (
+											<span
+												key={ i }
+												className={ `allfb-steps__dot${ i === stepIndex ? ' is-active' : i < stepIndex ? ' is-done' : '' }` }
+											/>
+										) ) }
+									</div>
+								) }
+								{ settings.progressIndicator === 'numbers' && (
+									<span className="allfb-steps__count allfb-steps__count">{ stepIndex + 1 } / { totalSteps }</span>
+								) }
+								{ settings.progressIndicator === 'bar' && (
+									<div className="allfb-steps__bar-track">
+										<div
+											className="allfb-steps__bar-fill"
+											style={ { width: `${ ( ( stepIndex + 1 ) / totalSteps ) * 100 }%` } }
 										/>
-									) ) }
-								</div>
-								<span className="allfb-steps__count">{ stepIndex + 1 } / { totalSteps }</span>
+									</div>
+								) }
 							</div>
 						) }
 
@@ -297,13 +304,13 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 	const siteHostname = getSiteHostname();
 	const queryClient  = useQueryClient();
 
-	const cachedWidget = (queryClient.getQueryData(settingsQuery().queryKey) as any)?.general?.widget;
-	const widgetColor  = cachedWidget?.color    ?? __ALLFB_ADMIN__.widgetColor    ?? '#6366f1';
+	const cachedWidget    = (queryClient.getQueryData(settingsQuery().queryKey) as any)?.general?.widget;
+	const globalColor     = cachedWidget?.color    ?? __ALLFB_ADMIN__.widgetColor    ?? '#6366f1';
+	const globalPosition  = (cachedWidget?.position ?? (__ALLFB_ADMIN__.widgetPosition as WidgetPosition) ?? 'bottom-right') as Exclude<WidgetPosition, ''>;
+	const widgetColor     = settings.widgetColor    || globalColor;
+	const widgetPosition  = (settings.widgetPosition as Exclude<WidgetPosition, ''>) || globalPosition;
 
-	const [viewMode,       setViewMode]       = useState<PreviewView>('page');
-	const [widgetPosition, setWidgetPosition] = useState<WidgetPosition>(
-		cachedWidget?.position ?? (__ALLFB_ADMIN__.widgetPosition as WidgetPosition) ?? 'bottom-right',
-	);
+	const [viewMode, setViewMode] = useState<PreviewView>('page');
 	const [isMinimized,    setIsMinimized]    = useState(false);
 	const [isClosed,     setIsClosed]     = useState(false);
 	const [fieldValues,  setFieldValues]  = useState<Record<string, string | string[]>>({});
@@ -626,7 +633,7 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 												userSelect:     'none',
 												color:          '#fff',
 											}}>
-												{__('Feedback', 'all-feedback')}
+												{ settings.widgetLabel || __( 'Feedback', 'all-feedback' ) }
 											</span>
 										</button>
 									</div>
@@ -648,7 +655,7 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 										}}
 										aria-label={__('Open feedback widget', 'all-feedback')}
 									>
-										<MessageSquare className="size-5 text-white" />
+										{ (() => { const TriggerIcon = TRIGGER_ICON_MAP[settings.triggerIcon] ?? MessageSquare; return <TriggerIcon className="size-5 text-white" />; })() }
 									</button>
 								))}
 

@@ -380,6 +380,18 @@ const SettingsPanel = ({ settings, onChange, onScrollChange }: SettingsPanelProp
 		<div className="flex-1 overflow-y-auto bg-background p-5" onScroll={handleScroll}>
 			<div className="w-full space-y-4">
 
+				<Card title={__('Widget Label', 'all-feedback')}>
+					<Row label={__('Widget label', 'all-feedback')}>
+						<input
+							type="text"
+							className={inputCls}
+							value={settings.widgetLabel}
+							placeholder={__('Feedback', 'all-feedback')}
+							onChange={(e) => update({ widgetLabel: e.target.value })}
+						/>
+					</Row>
+				</Card>
+
 				<Card title={__('Targeting', 'all-feedback')}>
 					<Row label={__('Show to', 'all-feedback')}>
 						<Select value={settings.userState} onValueChange={(v) => update({ userState: v as UserState })}>

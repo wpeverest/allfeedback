@@ -15,6 +15,7 @@ import UnsavedChangesBadge from '@/components/ui/unsaved-changes-badge';
 import BuilderCanvas from './builder/BuilderCanvas';
 import PreviewPanel from './builder/PreviewPanel';
 import SettingsPanel from './builder/SettingsPanel';
+import StylingPanel from './builder/StylingPanel';
 import type { BuilderTab, FieldType, FormField, FormSection, FormSettings, PreviewDevice } from './builder/types';
 import { DEFAULT_FORM_SETTINGS } from './builder/types';
 import { surveysApi } from '@/admin/api/surveys';
@@ -25,7 +26,7 @@ const WP_ELEMENTS = ['#wpadminbar', '#adminmenuwrap', '#adminmenuback'] as const
 const TABS: { value: BuilderTab; label: string; Icon: typeof LayoutGrid; pro?: boolean }[] = [
 	{ value: 'builder',  label: __('Builder',  'all-feedback'), Icon: LayoutGrid },
 	{ value: 'settings', label: __('Settings', 'all-feedback'), Icon: Settings2  },
-	{ value: 'styling',  label: __('Styling',  'all-feedback'), Icon: Palette,   pro: true },
+	{ value: 'styling',  label: __('Styling',  'all-feedback'), Icon: Palette },
 ];
 
 const deserializeFormSchema = (schema: SurveyFormSchema | null): FormSection[] => {
@@ -81,6 +82,12 @@ const serializeSettings = (s: FormSettings): Record<string, unknown> => ({
 	targetPages:         s.targetPages,
 	targetPageIds:       s.targetPageIds,
 	targetPostIds:       s.targetPostIds,
+
+	progressIndicator:   s.progressIndicator,
+	triggerIcon:         s.triggerIcon,
+	widgetPosition:      s.widgetPosition,
+	widgetColor:         s.widgetColor,
+	widgetLabel:         s.widgetLabel,
 });
 
 const deserializeSettings = (raw: Record<string, unknown>): Partial<FormSettings> => ({
@@ -119,6 +126,11 @@ const deserializeSettings = (raw: Record<string, unknown>): Partial<FormSettings
 	...(raw.thankYouDescription !== undefined && { thankYouDescription: raw.thankYouDescription as string }),
 	...(raw.targetDevice        !== undefined && { targetDevice:        raw.targetDevice        as FormSettings['targetDevice'] }),
 	...(raw.targetUrls          !== undefined && { targetUrls:          raw.targetUrls          as string }),
+	...(raw.progressIndicator   !== undefined && { progressIndicator:   raw.progressIndicator   as FormSettings['progressIndicator'] }),
+	...(raw.triggerIcon         !== undefined && { triggerIcon:         raw.triggerIcon         as FormSettings['triggerIcon'] }),
+	...(raw.widgetPosition      !== undefined && { widgetPosition:      raw.widgetPosition      as FormSettings['widgetPosition'] }),
+	...(raw.widgetColor         !== undefined && { widgetColor:         raw.widgetColor         as string }),
+	...(raw.widgetLabel         !== undefined && { widgetLabel:         raw.widgetLabel         as string }),
 });
 
 const serializeFormSchema = (sections: FormSection[]): SurveyFormSchema => ({
@@ -622,31 +634,26 @@ const FormBuilder = () => {
 						'relative flex h-[72px] shrink-0 items-center justify-center bg-white px-8 transition-shadow duration-150',
 						((canvasScrolled && activeTab === 'builder') || (settingsScrolled && activeTab === 'settings')) && 'shadow-[0_1px_0_0_hsl(var(--border)),0_4px_10px_-2px_rgba(0,0,0,0.06)]',
 					)}>
-						{TABS.map(({ value, label, Icon, pro }, idx) => {
-							const activeIdx = TABS.findIndex((t) => t.value === activeTab);
-							const isActive  = activeTab === value;
-							const isPast    = idx < activeIdx;
+						{TABS.map(({ value, label, Icon }, idx) => {
+							const isActive = activeTab === value;
 							return (
 								<Fragment key={value}>
 									{idx > 0 && (
-										<div className={cn(
-											'mx-4 h-px w-12 shrink-0 transition-colors',
-											isPast ? 'bg-primary/35' : 'bg-border/70',
-										)} />
+										<div className="mx-4 h-px w-12 shrink-0 bg-border/70" />
 									)}
 									<button
 										type="button"
 										onClick={() => setActiveTab(value)}
 										className={cn(
 											'group flex items-center gap-2.5 text-base font-medium transition-colors',
-											isActive
-												? 'text-primary'
-												: 'text-muted-foreground hover:text-foreground',
+											isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
 										)}
 									>
- 										<span className={cn(
+										<span className={cn(
 											'flex size-10 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-200',
-											isActive ? 'border-primary bg-primary' : 'border-border bg-white group-hover:border-border/80 group-hover:bg-muted/40',
+											isActive
+												? 'border-primary bg-primary'
+												: 'border-border bg-white group-hover:border-border/80 group-hover:bg-muted/40',
 										)}>
 											<Icon className={cn(
 												'size-4 transition-colors',
@@ -702,18 +709,11 @@ const FormBuilder = () => {
 						)}
 
 						{activeTab === 'styling' && (
-							<div className="flex flex-1 items-center justify-center">
-								<div className="text-center">
-									<Palette className="mx-auto mb-3 size-8 text-muted-foreground/30" />
-									<p className="text-base font-medium text-foreground">
-										{__('Form Styling', 'all-feedback')}
-									</p>
-									<p className="mt-1 text-sm text-muted-foreground">
-										{__('Available in', 'all-feedback')}{' '}
-										<span className="font-semibold text-amber-600">PRO</span>
-									</p>
-								</div>
-							</div>
+							<StylingPanel
+								settings={settings}
+								onChange={handleSettingsChange}
+								isMultiStep={sections.filter((s) => s.fields.length > 0).length > 1}
+							/>
 						)}
 
 					</div>

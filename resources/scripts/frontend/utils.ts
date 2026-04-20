@@ -9,6 +9,8 @@ export function normalizeSettings( raw: SurveySettings | null | undefined ): Nor
 		thankYouEnabled:     s.thankYouEnabled     ?? false,
 		thankYouTitle:       s.thankYouTitle       || 'Thank you!',
 		thankYouDescription: s.thankYouDescription || 'Your response has been recorded.',
+		progressIndicator:   s.progressIndicator   ?? 'dots',
+		triggerIcon:         s.triggerIcon         ?? 'message',
 	};
 }
 

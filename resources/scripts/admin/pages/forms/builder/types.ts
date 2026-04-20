@@ -28,13 +28,16 @@ export interface FormSection {
 	fields: FormField[];
 }
 
-export type TargetDevice     = 'all' | 'desktop' | 'tablet' | 'mobile';
-export type TargetPages      = 'all' | 'specific_pages' | 'specific_posts';
-export type UserState        = 'all' | 'logged_in' | 'logged_out';
-export type TriggerType      = 'immediate' | 'time_delay' | 'scroll_depth';
-export type DelayUnit        = 'seconds' | 'minutes' | 'hours';
-export type DisplayFrequency = 'once' | 'until_submit';
-export type DismissUnit      = 'hours' | 'days' | 'weeks';
+export type TargetDevice      = 'all' | 'desktop' | 'tablet' | 'mobile';
+export type TargetPages       = 'all' | 'specific_pages' | 'specific_posts';
+export type UserState         = 'all' | 'logged_in' | 'logged_out';
+export type TriggerType       = 'immediate' | 'time_delay' | 'scroll_depth';
+export type DelayUnit         = 'seconds' | 'minutes' | 'hours';
+export type DisplayFrequency  = 'once' | 'until_submit';
+export type DismissUnit       = 'hours' | 'days' | 'weeks';
+export type ProgressIndicator = 'dots' | 'numbers' | 'bar' | 'none';
+export type TriggerIcon       = 'message' | 'chat' | 'typing' | 'comment' | 'mail';
+export type WidgetPosition    = '' | 'bottom-right' | 'bottom-left' | 'side-tab';
 
 export interface FormSettings {
 
@@ -48,17 +51,22 @@ export interface FormSettings {
 	targetPages:         TargetPages;
 	targetUrls:          string;
 
-	userState:        UserState;
-	targetPageIds:    { id: number; title: string }[];
-	targetPostIds:    { id: number; title: string }[];
-	triggerType:      TriggerType;
-	delayValue:       number;
-	delayUnit:        DelayUnit;
-	scrollDepth:      number;
-	displayFrequency: DisplayFrequency;
-	maxImpressions:   number;
-	dismissWaitValue: number;
-	dismissWaitUnit:  DismissUnit;
+	userState:         UserState;
+	targetPageIds:     { id: number; title: string }[];
+	targetPostIds:     { id: number; title: string }[];
+	triggerType:       TriggerType;
+	delayValue:        number;
+	delayUnit:         DelayUnit;
+	scrollDepth:       number;
+	displayFrequency:  DisplayFrequency;
+	maxImpressions:    number;
+	dismissWaitValue:  number;
+	dismissWaitUnit:   DismissUnit;
+	progressIndicator: ProgressIndicator;
+	triggerIcon:       TriggerIcon;
+	widgetPosition:    WidgetPosition;
+	widgetColor:       string;
+	widgetLabel:       string;
 }
 
 export const DEFAULT_FORM_SETTINGS: FormSettings = {
@@ -82,6 +90,11 @@ export const DEFAULT_FORM_SETTINGS: FormSettings = {
 	maxImpressions:      3,
 	dismissWaitValue:    3,
 	dismissWaitUnit:     'days',
+	progressIndicator:   'dots',
+	triggerIcon:         'message',
+	widgetPosition:      '',
+	widgetColor:         '',
+	widgetLabel:         '',
 };
 
 export type PreviewMode   = 'widget' | 'page' | 'success';

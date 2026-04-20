@@ -15,6 +15,44 @@ const MsgIcon = () => (
 	</svg>
 );
 
+const ChatIcon = () => (
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+		<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
+	</svg>
+);
+
+const TypingIcon = () => (
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+		<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+		<circle cx="9" cy="11" r="1" fill="currentColor" stroke="none" />
+		<circle cx="12" cy="11" r="1" fill="currentColor" stroke="none" />
+		<circle cx="15" cy="11" r="1" fill="currentColor" stroke="none" />
+	</svg>
+);
+
+const CommentIcon = () => (
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+		<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+		<line x1="9" y1="9" x2="15" y2="9" />
+		<line x1="9" y1="13" x2="13" y2="13" />
+	</svg>
+);
+
+const MailIcon = () => (
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+		<rect width="20" height="16" x="2" y="4" rx="2" />
+		<path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+	</svg>
+);
+
+const TRIGGER_ICONS: Record<string, () => React.ReactElement> = {
+	message: MsgIcon,
+	chat:    ChatIcon,
+	typing:  TypingIcon,
+	comment: CommentIcon,
+	mail:    MailIcon,
+};
+
 const MinusIcon = () => (
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
 		<line x1="5" y1="12" x2="19" y2="12" />
@@ -29,7 +67,11 @@ const CloseIcon = () => (
 );
 
 export const Widget = ( { cfg, surveyConfig, stateManager }: WidgetProps ) => {
-	const { position, trigger, delay, scroll_threshold, color } = cfg.settings;
+	const { trigger, delay, scroll_threshold } = cfg.settings;
+	const position     = surveyConfig.widget_position || cfg.settings.position;
+	const color        = surveyConfig.widget_color    || cfg.settings.color;
+	const widgetLabel  = surveyConfig.widget_label    || 'Feedback';
+	const LauncherIcon = TRIGGER_ICONS[ surveyConfig.trigger_icon ?? 'message' ] ?? MsgIcon;
 
 	const [ isRevealed, setIsRevealed ] = useState( trigger === 'manual' );
 	const [ isOpen,     setIsOpen     ] = useState( false );
@@ -117,9 +159,9 @@ export const Widget = ( { cfg, surveyConfig, stateManager }: WidgetProps ) => {
 				onClick={ toggle }
 			>
 				{ position === 'side-tab' ? (
-					<span className="allfb-launcher__tab-label">Feedback</span>
+					<span className="allfb-launcher__tab-label">{ widgetLabel }</span>
 				) : (
-					<MsgIcon />
+					<LauncherIcon />
 				) }
 			</button>
 
@@ -132,6 +174,7 @@ export const Widget = ( { cfg, surveyConfig, stateManager }: WidgetProps ) => {
 				aria-label="Feedback"
 			>
 				<div className="allfb-panel__header">
+					{ widgetLabel && <span className="allfb-panel__title">{ widgetLabel }</span> }
 					<button
 						type="button"
 						className="allfb-panel__close"
