@@ -23,7 +23,7 @@ const Row = ({ label, children, top }: { label: string; children: React.ReactNod
 
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
 	<div className="flex items-center gap-3">
-		<span className="text-2xs font-semibold uppercase tracking-widest text-muted-foreground/50">
+		<span className="text-2xs font-semibold uppercase tracking-widest text-muted-foreground/70">
 			{children}
 		</span>
 		<div className="flex-1 border-t border-border/50" />

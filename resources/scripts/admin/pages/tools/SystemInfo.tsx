@@ -25,7 +25,7 @@ const Row = ({ label, value }: { label: string; value: string | boolean | null |
 );
 
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
-	<p className="text-2xs font-semibold uppercase tracking-widest text-muted-foreground/50">
+	<p className="text-2xs font-semibold uppercase tracking-widest text-muted-foreground/70">
 		{children}
 	</p>
 );

@@ -95,7 +95,7 @@ const ViewField = ({ field, value }: { field: SurveyFormSchemaField | null; valu
 
 	if (value === null || value === undefined || value === '') {
 		return (
-			<span className="text-base italic text-muted-foreground/50">
+			<span className="text-base italic text-muted-foreground/70">
 				{__('No answer provided', 'all-feedback')}
 			</span>
 		);
@@ -325,7 +325,7 @@ const SidebarRow = ({ icon: Icon, label, children }: { icon: LucideIcon; label: 
 			{label}
 		</p>
 		<div className="flex min-w-0 items-center gap-2 text-base font-normal text-foreground">
-			<Icon className="size-3.5 shrink-0 text-muted-foreground/50" />
+			<Icon className="size-3.5 shrink-0 text-muted-foreground/70" />
 			<span className="min-w-0">{children}</span>
 		</div>
 	</div>
@@ -728,7 +728,7 @@ const ResponseDetail = () => {
 						{schemaFields.length > 0 && (
 							<div className="flex shrink-0 items-center gap-6">
 								<div className="text-center">
-									<p className="text-2xs font-medium uppercase tracking-widest text-muted-foreground/50">
+									<p className="text-2xs font-medium uppercase tracking-widest text-muted-foreground/70">
 										{__('Fields answered', 'all-feedback')}
 									</p>
 									<p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
@@ -739,7 +739,7 @@ const ResponseDetail = () => {
 									<>
 										<div className="h-10 w-px bg-border/60" />
 										<div className="text-center">
-											<p className="text-2xs font-medium uppercase tracking-widest text-muted-foreground/50">
+											<p className="text-2xs font-medium uppercase tracking-widest text-muted-foreground/70">
 												{__('Score', 'all-feedback')}
 											</p>
 											<p className="mt-1 text-lg font-semibold tabular-nums text-foreground">
@@ -889,8 +889,8 @@ const ResponseDetail = () => {
 				<aside className="w-[30%] shrink-0 overflow-y-auto border-l border-border p-6 space-y-5">
 
 					<div className="rounded-xl border border-border bg-card overflow-hidden">
-						<div className="px-5 pt-5 pb-2.5">
-							<p className="text-2xs font-semibold uppercase tracking-widest text-muted-foreground/50">
+						<div className="px-5 pt-5">
+							<p className="!mb-0 text-2xs font-semibold uppercase tracking-widest text-muted-foreground/70">
 								{__('Details', 'all-feedback')}
 							</p>
 						</div>
@@ -948,7 +948,7 @@ const ResponseDetail = () => {
 					</Button>
 					<div className="flex flex-col items-center gap-0.5">
 						{currentNavIndex >= 0 && sortedForNav.length > 0 && (
-							<span className="text-xs tabular-nums text-muted-foreground/50">
+							<span className="text-xs tabular-nums text-muted-foreground/70">
 								{currentNavIndex + 1} / {sortedForNav.length}
 							</span>
 						)}
