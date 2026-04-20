@@ -15,7 +15,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useForm } from '@tanstack/react-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useBlocker, useNavigate, useParams, useRouter, useSearch } from '@tanstack/react-router';
+import { useBlocker, useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import UnsavedChangesBadge from '@/components/ui/unsaved-changes-badge';
 import {
 	DropdownMenu,
@@ -342,7 +342,6 @@ const isAnswered = (value: unknown) =>
 	value !== null && value !== undefined && value !== '' && !(Array.isArray(value) && value.length === 0);
 
 const ResponseDetail = () => {
-	const router      = useRouter();
 	const navigate    = useNavigate();
 	const queryClient = useQueryClient();
 	const { responseId }     = useParams({ from: '/_app/responses/$responseId' });
@@ -459,7 +458,7 @@ const ResponseDetail = () => {
 			void queryClient.invalidateQueries({ queryKey: ['responses'] });
 			setConfirmDeleteOpen(false);
 			toast.success(__('Response deleted.', 'all-feedback'));
-			router.history.back();
+			void navigate({ to: '/responses', search: { surveyId } });
 		},
 		onError: () => { toast.error(__('Failed to delete response.', 'all-feedback')); },
 	});
@@ -520,7 +519,7 @@ const ResponseDetail = () => {
 		shouldBlockFn: () => isEditing && isDirty,
 	});
 
-	const handleBack = () => { router.history.back(); };
+	const handleBack = () => { void navigate({ to: '/responses', search: { surveyId } }); };
 
 	const cancelEdit = () => {
 		form.reset({ response_data: (response?.response_data ?? {}) as Record<string, unknown> });
@@ -548,7 +547,7 @@ const ResponseDetail = () => {
 					<div className="flex flex-col items-center gap-2 text-center">
 						<MessageSquare className="size-8 text-muted-foreground/30" />
 						<p className="text-sm text-muted-foreground">{__('This response may have been deleted or does not exist.', 'all-feedback')}</p>
-						<Button variant="outline" size="sm" className="mt-2" onClick={() => router.history.back()}>
+						<Button variant="outline" size="sm" className="mt-2" onClick={() => void navigate({ to: '/responses', search: { surveyId } })}>
 							<ArrowLeft className="size-3.5" />
 							{__('Go back', 'all-feedback')}
 						</Button>
