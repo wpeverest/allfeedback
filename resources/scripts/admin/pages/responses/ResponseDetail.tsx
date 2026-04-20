@@ -583,8 +583,8 @@ const ResponseDetail = () => {
 				cancelLabel={__('Stay', 'all-feedback')}
 			/>
 
-			<div className="flex h-[60px] shrink-0 items-center justify-between border-b border-border bg-card px-6">
-				<div className="flex min-w-0 flex-1 items-center gap-3">
+			<div className="flex h-[60px] shrink-0 items-center justify-between border-b border-border bg-card px-3 sm:px-6">
+				<div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
 					<Button
 						variant="ghost"
 						size="icon-sm"
@@ -596,7 +596,7 @@ const ResponseDetail = () => {
 					</Button>
 					<span className="h-5 w-px bg-border" />
 					<Select value={String(surveyId)} onValueChange={(id) => { void handleSurveyChange(id); }} disabled={isChangingSurvey}>
-						<SelectTrigger className="h-8 w-auto max-w-[260px] border-transparent bg-transparent px-2 text-sm font-semibold shadow-none hover:border-border hover:bg-muted/50 focus:ring-0 disabled:opacity-60">
+						<SelectTrigger className="h-8 w-auto max-w-[140px] sm:max-w-[260px] border-transparent bg-transparent px-2 text-sm font-semibold shadow-none hover:border-border hover:bg-muted/50 focus:ring-0 disabled:opacity-60">
 							{isChangingSurvey
 								? <Loader2 className="size-3.5 animate-spin text-muted-foreground" />
 								: <SelectValue />
@@ -613,11 +613,11 @@ const ResponseDetail = () => {
 							)}
 						</SelectContent>
 					</Select>
-					<ChevronRight className="size-3.5 shrink-0 text-muted-foreground/40" />
-					<span className="text-sm text-muted-foreground">#{response.id}</span>
+					<ChevronRight className="size-3.5 shrink-0 text-muted-foreground/40 hidden sm:block" />
+					<span className="text-sm text-muted-foreground hidden sm:inline">#{response.id}</span>
 				</div>
 
-				<div className="flex items-center gap-2">
+				<div className="flex items-center gap-1.5 sm:gap-2">
 					{isEditing && isDirty && <UnsavedChangesBadge />}
 
 					{!isEditing ? (
@@ -625,6 +625,7 @@ const ResponseDetail = () => {
 							<Button
 								variant="ghost"
 								size="sm"
+								className="hidden sm:flex"
 								onClick={() => markReadMutation.mutate(!response.is_read)}
 								disabled={markReadMutation.isPending}
 							>
@@ -688,11 +689,11 @@ const ResponseDetail = () => {
 
 			<form
 				onSubmit={(e) => { e.preventDefault(); void form.handleSubmit(); }}
-				className="flex min-h-0 flex-1 overflow-hidden"
+				className="flex flex-col overflow-y-auto md:flex-row md:min-h-0 md:flex-1 md:overflow-hidden"
 			>
-				<div className="flex-1 overflow-y-auto p-6 space-y-6">
+				<div className="p-4 space-y-5 sm:p-6 sm:space-y-6 md:flex-1 md:overflow-y-auto">
 
-					<div className="flex items-center justify-between gap-6 rounded-xl border border-border bg-card px-6 py-6">
+					<div className="flex flex-col gap-4 rounded-xl border border-border bg-card px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-6 sm:py-6">
 						<div className="min-w-0">
 							{!response.is_read && (
 								<div className="mb-2 flex items-center gap-1.5">
@@ -725,7 +726,7 @@ const ResponseDetail = () => {
 						</div>
 
 						{schemaFields.length > 0 && (
-							<div className="flex shrink-0 items-center gap-6">
+							<div className="flex items-center gap-6 sm:shrink-0">
 								<div className="text-center">
 									<p className="text-2xs font-medium uppercase tracking-widest text-muted-foreground/70">
 										{__('Fields answered', 'all-feedback')}
@@ -758,7 +759,7 @@ const ResponseDetail = () => {
 								<form.Field key={schField.id} name="response_data">
 									{(field) => (
 										<div className={cn(
-											'border-b border-border px-6 py-6 last:border-0 transition-colors',
+											'border-b border-border px-4 py-5 sm:px-6 sm:py-6 last:border-0 transition-colors',
 											isEditing && 'hover:bg-muted/30',
 										)}>
 											{(() => {
@@ -805,7 +806,7 @@ const ResponseDetail = () => {
 						{orphanedKeys.map((key) => (
 							<form.Field key={key} name="response_data">
 								{(field) => (
-									<div className={cn('border-b border-border px-6 py-6 last:border-0 transition-colors', isEditing && 'hover:bg-muted/30')}>
+									<div className={cn('border-b border-border px-4 py-5 sm:px-6 sm:py-6 last:border-0 transition-colors', isEditing && 'hover:bg-muted/30')}>
 										<div className="mb-3 flex items-center gap-2.5">
 											<span className="flex size-5 shrink-0 items-center justify-center rounded-md bg-muted text-2xs font-bold text-muted-foreground">?</span>
 											<p className="text-sm font-medium text-foreground/70">
@@ -885,7 +886,7 @@ const ResponseDetail = () => {
 
 				</div>
 
-				<aside className="w-[30%] shrink-0 overflow-y-auto border-l border-border p-6 space-y-5">
+				<aside className="border-t border-border p-4 space-y-4 sm:p-6 sm:space-y-5 md:border-t-0 md:border-l md:w-[30%] md:shrink-0 md:overflow-y-auto">
 
 					<div className="rounded-xl border border-border bg-card overflow-hidden">
 						<div className="px-5 pt-5">
@@ -934,7 +935,7 @@ const ResponseDetail = () => {
 			</form>
 
 			<div className="sticky bottom-0 z-10 shrink-0 border-t border-border bg-card/95 backdrop-blur-sm">
-				<div className="flex items-center justify-between px-6 py-4">
+				<div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
 					<Button
 						type="button"
 						variant="outline"
