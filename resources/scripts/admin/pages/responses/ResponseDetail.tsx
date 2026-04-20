@@ -1,6 +1,7 @@
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Input } from '@/components/ui/input';
 import { surveysApi } from '@/admin/api/surveys';
 import { surveyQuery, surveyResponseQuery, surveyResponsesQuery } from '@/admin/queries/surveys';
@@ -63,7 +64,7 @@ const DetailSkeleton = () => (
 				</div>
 				<div className="rounded-xl bg-card">
 					{Array.from({ length: 3 }, (_, i) => (
-						<div key={i} className="border-b border-border/60 px-6 py-5 last:border-0">
+						<div key={i} className="border-b border-border px-6 py-5 last:border-0">
 							<div className="mb-2 h-3 w-24 animate-pulse rounded bg-muted" />
 							<div className="h-5 w-2/3 animate-pulse rounded bg-muted" />
 						</div>
@@ -72,7 +73,7 @@ const DetailSkeleton = () => (
 			</div>
 			<div className="w-[30%] shrink-0 border-l border-border bg-card">
 				{Array.from({ length: 4 }, (_, i) => (
-					<div key={i} className="border-b border-border/60 px-5 py-4">
+					<div key={i} className="border-b border-border px-5 py-4">
 						<div className="h-2.5 w-16 animate-pulse rounded bg-muted mb-2" />
 						<div className="h-4 w-24 animate-pulse rounded bg-muted" />
 					</div>
@@ -100,7 +101,7 @@ const ViewField = ({ field, value }: { field: SurveyFormSchemaField | null; valu
 				{(arr as string[]).map((opt) => (
 					<span
 						key={opt}
-						className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-muted/40 px-2.5 py-1 text-sm font-medium text-foreground"
+						className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted/40 px-2.5 py-1 text-sm font-medium text-foreground"
 					>
 						<CheckSquare className="size-3 text-primary" />
 						{opt}
@@ -343,6 +344,7 @@ const ResponseDetail = () => {
 	const [isEditing,           setIsEditing]           = useState(edit);
 	const [isDirty,             setIsDirty]             = useState(false);
 	const [showUnanswered,      setShowUnanswered]      = useState(false);
+	const [confirmDeleteOpen,   setConfirmDeleteOpen]   = useState(false);
 
 	const { data: survey } = useQuery({ ...surveyQuery(surveyId), enabled: surveyId > 0 });
 
@@ -421,6 +423,7 @@ const ResponseDetail = () => {
 		mutationFn: () => surveysApi.deleteResponse(surveyId, Number(responseId)),
 		onSuccess: () => {
 			void queryClient.invalidateQueries({ queryKey: ['responses'] });
+			setConfirmDeleteOpen(false);
 			toast.success(__('Response deleted.', 'all-feedback'));
 			router.history.back();
 		},
@@ -479,11 +482,8 @@ const ResponseDetail = () => {
 		return () => window.removeEventListener('beforeunload', handler);
 	}, [isEditing, isDirty]);
 
-	useBlocker({
-		shouldBlockFn: () => {
-			if (!isEditing || !isDirty) return false;
-			return !window.confirm(__('You have unsaved changes. Leave without saving?', 'all-feedback'));
-		},
+	const blocker = useBlocker({
+		shouldBlockFn: () => isEditing && isDirty,
 	});
 
 	const handleBack = () => { router.history.back(); };
@@ -495,9 +495,7 @@ const ResponseDetail = () => {
 	};
 
 	const handleDelete = () => {
-		if (window.confirm(__('Delete this response? This cannot be undone.', 'all-feedback'))) {
-			deleteMutation.mutate();
-		}
+		setConfirmDeleteOpen(true);
 	};
 
 	if (isLoading) return <DetailSkeleton />;
@@ -531,7 +529,28 @@ const ResponseDetail = () => {
 	return (
 		<div className="flex flex-1 flex-col bg-background overflow-hidden">
 
-			<div className="flex h-[64px] shrink-0 items-center justify-between border-b border-border bg-card px-7">
+			<ConfirmDialog
+				open={confirmDeleteOpen}
+				onOpenChange={(open) => { if (!open && !deleteMutation.isPending) setConfirmDeleteOpen(false); }}
+				onConfirm={() => { deleteMutation.mutate(); }}
+				title={__('Delete this response?', 'all-feedback')}
+				description={__('This cannot be undone. The response will be permanently removed.', 'all-feedback')}
+				confirmLabel={__('Delete', 'all-feedback')}
+				cancelLabel={__('Cancel', 'all-feedback')}
+				isPending={deleteMutation.isPending}
+			/>
+
+			<ConfirmDialog
+				open={blocker.status === 'blocked'}
+				onOpenChange={(open) => { if (!open) blocker.reset?.(); }}
+				onConfirm={() => { blocker.proceed?.(); }}
+				title={__('Leave without saving?', 'all-feedback')}
+				description={__('You have unsaved changes. They will be lost if you leave.', 'all-feedback')}
+				confirmLabel={__('Leave', 'all-feedback')}
+				cancelLabel={__('Stay', 'all-feedback')}
+			/>
+
+			<div className="flex h-[60px] shrink-0 items-center justify-between border-b border-border bg-card px-6">
 				<div className="flex min-w-0 flex-1 items-center gap-3">
 					<Button
 						variant="ghost"
@@ -621,9 +640,9 @@ const ResponseDetail = () => {
 				onSubmit={(e) => { e.preventDefault(); void form.handleSubmit(); }}
 				className="flex min-h-0 flex-1 overflow-hidden"
 			>
-				<div className="flex-1 overflow-y-auto p-8 space-y-7">
+				<div className="flex-1 overflow-y-auto p-6 space-y-6">
 
-					<div className="flex items-center justify-between gap-6 rounded-2xl border border-border/60 bg-card px-7 py-6">
+					<div className="flex items-center justify-between gap-6 rounded-xl border border-border bg-card px-6 py-6">
 						<div className="min-w-0">
 							{!response.is_read && (
 								<div className="mb-2 flex items-center gap-1.5">
@@ -661,7 +680,7 @@ const ResponseDetail = () => {
 									<p className="text-2xs font-medium uppercase tracking-widest text-muted-foreground/50">
 										{__('Fields answered', 'all-feedback')}
 									</p>
-									<p className="mt-1 text-5xl font-semibold tabular-nums text-foreground">
+									<p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
 										{completionPct}%
 									</p>
 								</div>
@@ -682,14 +701,14 @@ const ResponseDetail = () => {
 						)}
 					</div>
 
-					<div className="rounded-2xl border border-border/60 bg-card overflow-hidden">
+					<div className="rounded-xl border border-border bg-card overflow-hidden">
 						{schemaFields.filter((f) => f.required || isAnswered(responseData[f.id])).map((schField) => {
 							const rawValue = responseData[schField.id];
 							return (
 								<form.Field key={schField.id} name="response_data">
 									{(field) => (
 										<div className={cn(
-											'border-b border-border/60 px-7 py-6 last:border-0 transition-colors',
+											'border-b border-border px-6 py-6 last:border-0 transition-colors',
 											isEditing && 'hover:bg-muted/30',
 										)}>
 											{(() => {
@@ -736,7 +755,7 @@ const ResponseDetail = () => {
 						{orphanedKeys.map((key) => (
 							<form.Field key={key} name="response_data">
 								{(field) => (
-									<div className={cn('border-b border-border/60 px-7 py-6 last:border-0 transition-colors', isEditing && 'hover:bg-muted/30')}>
+									<div className={cn('border-b border-border px-6 py-6 last:border-0 transition-colors', isEditing && 'hover:bg-muted/30')}>
 										<div className="mb-3 flex items-center gap-2.5">
 											<span className="flex size-5 shrink-0 items-center justify-center rounded-md bg-muted text-2xs font-bold text-muted-foreground">?</span>
 											<p className="text-sm font-medium text-foreground/70">
@@ -782,11 +801,11 @@ const ResponseDetail = () => {
 					)}
 
 					{showUnanswered && !isEditing && unansweredOptional.length > 0 && (
-						<div className="rounded-2xl border border-border/60 bg-card overflow-hidden">
+						<div className="rounded-xl border border-border bg-card overflow-hidden">
 							{unansweredOptional.map((schField) => {
 								const typeConfig = FIELD_TYPES.find((t) => t.type === schField.type);
 								return (
-									<div key={schField.id} className="border-b border-border/60 px-7 py-5 last:border-0">
+									<div key={schField.id} className="border-b border-border px-6 py-5 last:border-0">
 										<div className="mb-1.5 flex items-center gap-3">
 											<span
 												className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted"
@@ -816,15 +835,15 @@ const ResponseDetail = () => {
 
 				</div>
 
-				<aside className="w-[30%] shrink-0 overflow-y-auto border-l border-border/60 p-8 space-y-5">
+				<aside className="w-[30%] shrink-0 overflow-y-auto border-l border-border p-6 space-y-5">
 
-					<div className="rounded-2xl border border-border/60 bg-card overflow-hidden">
+					<div className="rounded-xl border border-border bg-card overflow-hidden">
 						<div className="px-5 pt-5 pb-2.5">
 							<p className="text-2xs font-semibold uppercase tracking-widest text-muted-foreground/50">
 								{__('Details', 'all-feedback')}
 							</p>
 						</div>
-						<div className="divide-y divide-border/60">
+						<div className="divide-y divide-border">
 							<SidebarRow icon={CalendarDays} label={__('Submitted', 'all-feedback')}>
 								{format(new Date(response.created_at), 'MMM d, yyyy · h:mm a')}
 							</SidebarRow>
@@ -861,58 +880,11 @@ const ResponseDetail = () => {
 						</div>
 					</div>
 
-					<div className="rounded-2xl border border-border/60 bg-card overflow-hidden">
-						<div className="px-5 pt-5 pb-2.5">
-							<p className="text-2xs font-semibold uppercase tracking-widest text-muted-foreground/50">
-								{__('Actions', 'all-feedback')}
-							</p>
-						</div>
-						<div className="divide-y divide-border/60">
-							{!isEditing && (
-								<button
-									type="button"
-									onClick={() => setIsEditing(true)}
-									className="flex w-full items-center gap-2.5 px-5 py-3 text-left text-base font-normal text-foreground/80 transition-colors hover:bg-muted/50 hover:text-foreground"
-								>
-									<Pencil className="size-3.5 shrink-0 text-muted-foreground/50" />
-									{__('Edit response', 'all-feedback')}
-								</button>
-							)}
-
-							<button
-								type="button"
-								onClick={() => markReadMutation.mutate(!response.is_read)}
-								disabled={markReadMutation.isPending}
-								className="flex w-full items-center gap-2.5 px-5 py-3 text-left text-base font-normal text-foreground/80 transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-50"
-							>
-								{response.is_read ? (
-									<Mail className="size-3.5 shrink-0 text-muted-foreground/50" />
-								) : (
-									<MailOpen className="size-3.5 shrink-0 text-muted-foreground/50" />
-								)}
-								{response.is_read ? __('Mark as unread', 'all-feedback') : __('Mark as read', 'all-feedback')}
-							</button>
-
-							<button
-								type="button"
-								onClick={handleDelete}
-								disabled={deleteMutation.isPending}
-								className="flex w-full items-center gap-2.5 px-5 py-3 text-left text-base font-normal text-destructive/80 transition-colors hover:bg-destructive/5 hover:text-destructive disabled:opacity-50"
-							>
-								{deleteMutation.isPending ? (
-									<Loader2 className="size-3.5 shrink-0 animate-spin" />
-								) : (
-									<Trash2 className="size-3.5 shrink-0" />
-								)}
-								{__('Delete response', 'all-feedback')}
-							</button>
-						</div>
-					</div>
 				</aside>
 			</form>
 
-			<div className="sticky bottom-0 z-10 shrink-0 border-t border-border/60 bg-card/95 backdrop-blur-sm">
-				<div className="flex items-center justify-between px-7 py-4">
+			<div className="sticky bottom-0 z-10 shrink-0 border-t border-border bg-card/95 backdrop-blur-sm">
+				<div className="flex items-center justify-between px-6 py-4">
 					<Button
 						type="button"
 						variant="outline"
