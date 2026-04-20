@@ -9,11 +9,22 @@
 @import './app.pcss';
 @import './frontend.pcss';
 
-/* ── Remove WP default content padding so our SPA fills edge-to-edge ─────── */
+/* ── Remove WP default content padding and footer so our SPA fills edge-to-edge ─────── */
 .toplevel_page_all-feedback #wpcontent,
 [class*="_page_all-feedback"] #wpcontent {
 	padding-left:  0 !important;
 	padding-right: 0 !important;
+}
+
+.toplevel_page_all-feedback #wpfooter,
+.all-feedback-php #wpfooter,
+[class*="_page_all-feedback"] #wpfooter {
+	display: none !important;
+}
+
+.toplevel_page_all-feedback #wpbody-content,
+[class*="_page_all-feedback"] #wpbody-content {
+	padding-bottom: 0 !important;
 }
 
 /* ── Neutralise WP admin margins on the React mount point ────────────────── */
