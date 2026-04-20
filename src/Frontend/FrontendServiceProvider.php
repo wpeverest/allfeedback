@@ -195,6 +195,8 @@ class FrontendServiceProvider implements ServiceProvider {
 				if ( isset( $merged['widget_position'] ) )   $config['widget_position']   = (string) $merged['widget_position'];
 				if ( isset( $merged['widget_icon'] ) )       $config['widget_icon']       = (string) $merged['widget_icon'];
 				if ( isset( $merged['widget_label'] ) )      $config['widget_label']      = (string) $merged['widget_label'];
+				if ( isset( $merged['widget_color'] ) )      $config['widget_color']      = (string) $merged['widget_color'];
+				if ( isset( $merged['trigger_icon'] ) )      $config['trigger_icon']      = (string) $merged['trigger_icon'];
 
 				// For logged-in users, embed their current display state so the JS
 				// gate check is correct on first load — no extra REST call needed.
@@ -323,6 +325,10 @@ class FrontendServiceProvider implements ServiceProvider {
 			'widget_position'   => ( isset( $styling['widget_position'] ) && $styling['widget_position'] !== '' ) ? (string) $styling['widget_position'] : null,
 			'widget_icon'       => ( isset( $styling['widget_icon'] )     && $styling['widget_icon']     !== '' ) ? (string) $styling['widget_icon']     : null,
 			'widget_label'      => ( isset( $styling['widget_label'] )    && $styling['widget_label']    !== '' ) ? (string) $styling['widget_label']    : null,
+			'widget_color'      => ( isset( $styling['widget_color'] )    && $styling['widget_color']    !== '' ) ? (string) $styling['widget_color']    : null,
+
+			// Behaviour from settings column
+			'trigger_icon'      => isset( $form['triggerIcon'] ) ? (string) $form['triggerIcon'] : null,
 		];
 
 		// Only apply overrides that are actually set on the form (filter nulls).

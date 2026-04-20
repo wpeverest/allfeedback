@@ -1,4 +1,4 @@
-﻿import { Button } from '@/components/ui/button';
+﻿﻿import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useForm } from '@tanstack/react-form';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -16,8 +16,8 @@ import BuilderCanvas from './builder/BuilderCanvas';
 import PreviewPanel from './builder/PreviewPanel';
 import SettingsPanel from './builder/SettingsPanel';
 import StylingPanel from './builder/StylingPanel';
-import type { BuilderTab, FieldType, FormField, FormSection, FormSettings, FormStyling, PreviewDevice, WidgetPosition } from './builder/types';
-import { DEFAULT_FORM_SETTINGS, DEFAULT_FORM_STYLING } from './builder/types';
+import type { BuilderTab, FieldType, FormField, FormSection, FormSettings, PreviewDevice } from './builder/types';
+import { DEFAULT_FORM_SETTINGS } from './builder/types';
 import { surveysApi } from '@/admin/api/surveys';
 import type { SurveyFormSchema, SurveyStatus } from '@/admin/api/surveys';
 
@@ -126,19 +126,12 @@ const deserializeSettings = (raw: Record<string, unknown>): Partial<FormSettings
 	...(raw.thankYouDescription !== undefined && { thankYouDescription: raw.thankYouDescription as string }),
 	...(raw.targetDevice        !== undefined && { targetDevice:        raw.targetDevice        as FormSettings['targetDevice'] }),
 	...(raw.targetUrls          !== undefined && { targetUrls:          raw.targetUrls          as string }),
+	...(raw.progressIndicator   !== undefined && { progressIndicator:   raw.progressIndicator   as FormSettings['progressIndicator'] }),
+	...(raw.triggerIcon         !== undefined && { triggerIcon:         raw.triggerIcon         as FormSettings['triggerIcon'] }),
+	...(raw.widgetPosition      !== undefined && { widgetPosition:      raw.widgetPosition      as FormSettings['widgetPosition'] }),
+	...(raw.widgetColor         !== undefined && { widgetColor:         raw.widgetColor         as string }),
+	...(raw.widgetLabel         !== undefined && { widgetLabel:         raw.widgetLabel         as string }),
 });
-
-const serializeStyling = ( s: FormStyling ): Record<string, unknown> => ( {
-	widget_position: s.widgetPosition,
-	widget_icon:     s.widgetIcon,
-	widget_label:    s.widgetLabel,
-} );
-
-const deserializeStyling = ( raw: Record<string, unknown> ): Partial<FormStyling> => ( {
-	...( raw.widget_position !== undefined && { widgetPosition: raw.widget_position as WidgetPosition | '' } ),
-	...( raw.widget_icon     !== undefined && { widgetIcon:     raw.widget_icon     as string } ),
-	...( raw.widget_label    !== undefined && { widgetLabel:    raw.widget_label    as string } ),
-} );
 
 const serializeFormSchema = (sections: FormSection[]): SurveyFormSchema => ({
 	version:  '1.0',
@@ -169,8 +162,7 @@ const FormBuilder = () => {
 	const queryClient = useQueryClient();
 	const { new: isNewForm, id: formId } = Route.useSearch();
 
-	const [activeTab,    setActiveTab]    = useState<BuilderTab>('builder');
-	const [stylingState, setStylingState] = useState<FormStyling>(DEFAULT_FORM_STYLING);
+	const [activeTab, setActiveTab] = useState<BuilderTab>('builder');
 
 	const { data: surveyData } = useQuery({
 		...surveyQuery(formId!),
@@ -195,7 +187,6 @@ const FormBuilder = () => {
 				title:       value.title,
 				form_schema: serializeFormSchema(value.sections),
 				settings:    serializeSettings(value.settings),
-				styling:     serializeStyling(stylingState),
 			};
 			data.status = action === 'publish' ? 'published' : action === 'trashed' ? 'trashed' : 'draft';
 			const updated = await surveysApi.update(formId, data);
@@ -238,11 +229,6 @@ const FormBuilder = () => {
 		setIsDirty(true);
 	}, [form]);
 
-	const handleStylingChange = useCallback((next: FormStyling) => {
-		setStylingState(next);
-		setIsDirty(true);
-	}, []);
-
  	const [isEditingTitle, setIsEditingTitle] = useState(false);
 	const titleSnapshotRef                    = useRef('');
 	const titleInputRef                       = useRef<HTMLInputElement>(null);
@@ -275,11 +261,7 @@ const FormBuilder = () => {
 		const loadedSettings = surveyData.settings
 			? { ...DEFAULT_FORM_SETTINGS, ...deserializeSettings(surveyData.settings as Record<string, unknown>) }
 			: DEFAULT_FORM_SETTINGS;
-		const loadedStyling = surveyData.styling
-			? { ...DEFAULT_FORM_STYLING, ...deserializeStyling(surveyData.styling as Record<string, unknown>) }
-			: DEFAULT_FORM_STYLING;
 		setSurveyStatus(surveyData.status);
-		setStylingState(loadedStyling);
 		historyRef.current = [loadedSections];
 		setHistoryIdx(0);
 
@@ -728,8 +710,9 @@ const FormBuilder = () => {
 
 						{activeTab === 'styling' && (
 							<StylingPanel
-								styling={stylingState}
-								onChange={handleStylingChange}
+								settings={settings}
+								onChange={handleSettingsChange}
+								isMultiStep={sections.filter((s) => s.fields.length > 0).length > 1}
 							/>
 						)}
 

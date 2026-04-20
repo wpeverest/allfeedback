@@ -1,4 +1,4 @@
-﻿import { surveysApi } from '@/admin/api/surveys';
+﻿﻿import { surveysApi } from '@/admin/api/surveys';
 import type { ContentSearchItem } from '@/admin/api/surveys';
 import {
 	Select,

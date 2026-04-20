@@ -45,7 +45,7 @@ Create a new survey (always starts as `draft`).
 | `description` | string | No | Optional description |
 | `form_schema` | object/array | No | Field definitions |
 | `settings` | object | No | Behavioural settings. Keys: `trigger_type`, `delay_value`, `delay_unit`, `scroll_depth`, `display_frequency`, `max_impressions`, `dismiss_wait_value`, `dismiss_wait_unit`, `user_state`, `target_pages`, `target_page_ids`, `progress_indicator`, `trigger_icon`. Advanced page-targeting rules stored as nested `settings.targeting` object. |
-| `styling` | object | No | Visual appearance overrides — separate from behavioural settings. Keys: `widget_position` (`bottom_right` \| `bottom_left` \| `top_right` \| `top_left` \| `""`), `widget_icon` (string), `widget_label` (string). Empty string on any key means inherit the global default. |
+| `styling` | object | No | Visual appearance overrides — separate from behavioural settings. Keys: `widget_position` (`bottom-right` \| `bottom-left` \| `side-tab` \| `""`), `widget_icon` (string), `widget_label` (string), `widget_color` (string). Empty string on any key means inherit the global default. |
 
 **Response — 201**
 ```json
@@ -72,7 +72,7 @@ Non-admins can only read `published` surveys (widget/shortcode use-case).
     "progress_indicator": "dots", "trigger_icon": "message",
     "targeting": { "mode": "all", "rules": [], "exclusions": [] }
   },
-  "styling": { "widget_position": "bottom_right", "widget_icon": "", "widget_label": "Feedback" }
+  "styling": { "widget_position": "bottom-right", "widget_icon": "", "widget_label": "Feedback", "widget_color": "" }
 }
 ```
 

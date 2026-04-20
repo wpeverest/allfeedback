@@ -1316,9 +1316,10 @@ class SurveysController extends RestController {
 	 * Validate the styling parameter before persisting it.
 	 *
 	 * Allowed keys and their constraints:
-	 *   widget_position — enum: bottom_right, bottom_left, top_right, top_left, or empty string
+	 *   widget_position — enum: bottom-right, bottom-left, side-tab, or empty string
 	 *   widget_icon     — string (arbitrary icon identifier), max 64 chars
 	 *   widget_label    — string (launcher button text), max 80 chars
+	 *   widget_color    — string (CSS colour value), max 30 chars
 	 *
 	 * @param mixed $styling Raw styling value from the request.
 	 * @return true|\WP_Error
@@ -1337,7 +1338,7 @@ class SurveysController extends RestController {
 
 		$allowedPositions = apply_filters(
 			'allfeedback_styling_allowed_widget_positions',
-			[ '', 'bottom_right', 'bottom_left', 'top_right', 'top_left' ]
+			[ '', 'bottom-right', 'bottom-left', 'side-tab' ]
 		);
 
 		if ( array_key_exists( 'widget_position', $styling ) ) {
@@ -1345,15 +1346,15 @@ class SurveysController extends RestController {
 				return $this->errorResponse(
 					sprintf(
 						/* translators: %s: submitted value */
-						__( 'Invalid styling.widget_position "%s". Allowed: bottom_right, bottom_left, top_right, top_left, or empty string.', 'all-feedback' ),
-						sanitize_key( (string) $styling['widget_position'] )
+						__( 'Invalid styling.widget_position "%s". Allowed: bottom-right, bottom-left, side-tab, or empty string.', 'all-feedback' ),
+						sanitize_text_field( (string) $styling['widget_position'] )
 					),
 					422
 				);
 			}
 		}
 
-		foreach ( [ 'widget_icon', 'widget_label' ] as $key ) {
+		foreach ( [ 'widget_icon', 'widget_label', 'widget_color' ] as $key ) {
 			if ( array_key_exists( $key, $styling ) && ! is_string( $styling[ $key ] ) ) {
 				return $this->errorResponse(
 					sprintf(
