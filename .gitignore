@@ -44,3 +44,6 @@ tmp/
 # Logs
 *.log
 npm-debug.log*
+
+# Claude Code developer-local settings (never commit)
+.claude/settings.local.json

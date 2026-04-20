@@ -16,7 +16,7 @@ import {
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import type { LucideIcon } from 'lucide-react';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import {
 	ArrowLeft,
 	ArrowRight,
@@ -136,7 +136,7 @@ const ViewField = ({ field, value }: { field: SurveyFormSchemaField | null; valu
 					</span>
 					<div>
 						<p className={cn('text-md font-semibold leading-tight', text)}>{label}</p>
-						<p className="mt-0.5 text-sm text-muted-foreground">{score} {__('out of 10', 'all-feedback')}</p>
+						<p className="mt-0.5 text-sm text-muted-foreground">{sprintf(__('%d out of 10', 'all-feedback'), score)}</p>
 					</div>
 				</div>
 				<div className="h-1.5 w-full max-w-sm overflow-hidden rounded-full bg-muted/60">
@@ -368,9 +368,12 @@ const ResponseDetail = () => {
 		? Math.round((answeredFields.length / schemaFields.length) * 100)
 		: 100;
 
-	const firstTextField = schemaFields.find((f) => f.type === 'short_text' || f.type === 'long_text');
-	const respondentName = firstTextField && isAnswered(responseData[firstTextField.id])
-		? String(responseData[firstTextField.id])
+	const NAME_KEYWORDS = /name|nombre|nom|full name|first name|last name|your name/i;
+	const nameField = schemaFields.find(
+		(f) => (f.type === 'short_text' || f.type === 'long_text') && NAME_KEYWORDS.test(f.label),
+	);
+	const respondentName = nameField && isAnswered(responseData[nameField.id])
+		? String(responseData[nameField.id])
 		: null;
 
 	// Sorted newest-first (matches list default) for prev/next navigation.
@@ -512,7 +515,6 @@ const ResponseDetail = () => {
 				<div className="flex min-h-[300px] items-center justify-center p-6">
 					<div className="flex flex-col items-center gap-2 text-center">
 						<MessageSquare className="size-8 text-muted-foreground/30" />
-						<p className="text-md font-semibold text-foreground">{__('Response not found', 'all-feedback')}</p>
 						<p className="text-sm text-muted-foreground">{__('This response may have been deleted or does not exist.', 'all-feedback')}</p>
 						<Button variant="outline" size="sm" className="mt-2" onClick={() => router.history.back()}>
 							<ArrowLeft className="size-3.5" />
@@ -536,13 +538,14 @@ const ResponseDetail = () => {
 						size="icon-sm"
 						onClick={handleBack}
 						aria-label={__('Back', 'all-feedback')}
+						title={__('Back to responses', 'all-feedback')}
 					>
 						<ArrowLeft className="size-4" />
 					</Button>
 					<span className="h-5 w-px bg-border" />
 					<p className="truncate text-sm font-semibold text-foreground">{surveyTitle}</p>
 					<ChevronRight className="size-3.5 shrink-0 text-muted-foreground/40" />
-					<span className="text-sm text-muted-foreground">#{responseId}</span>
+					<span className="text-sm text-muted-foreground">#{response.id}</span>
 				</div>
 
 				<div className="flex items-center gap-2">
@@ -556,8 +559,11 @@ const ResponseDetail = () => {
 								onClick={() => markReadMutation.mutate(!response.is_read)}
 								disabled={markReadMutation.isPending}
 							>
-								{response.is_read ? <Mail className="size-3.5" /> : <MailOpen className="size-3.5" />}
-								{response.is_read ? __('Mark unread', 'all-feedback') : __('Mark read', 'all-feedback')}
+								{markReadMutation.isPending
+									? <Loader2 className="size-3.5 animate-spin" />
+									: response.is_read ? <Mail className="size-3.5" /> : <MailOpen className="size-3.5" />
+								}
+								{response.is_read ? __('Mark as unread', 'all-feedback') : __('Mark as read', 'all-feedback')}
 							</Button>
 							<Button
 								size="sm"
@@ -597,7 +603,12 @@ const ResponseDetail = () => {
 								<X className="size-3.5" />
 								{__('Cancel', 'all-feedback')}
 							</Button>
-							<Button size="sm" onClick={() => void form.handleSubmit()} disabled={saveMutation.isPending || !isDirty}>
+							<Button
+								size="sm"
+								onClick={() => void form.handleSubmit()}
+								disabled={saveMutation.isPending || !isDirty}
+								title={!isDirty ? __('No changes to save', 'all-feedback') : undefined}
+							>
 								{saveMutation.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
 								{__('Save changes', 'all-feedback')}
 							</Button>
@@ -648,7 +659,7 @@ const ResponseDetail = () => {
 							<div className="flex shrink-0 items-center gap-6">
 								<div className="text-center">
 									<p className="text-2xs font-medium uppercase tracking-widest text-muted-foreground/50">
-										{__('Completion', 'all-feedback')}
+										{__('Fields answered', 'all-feedback')}
 									</p>
 									<p className="mt-1 text-5xl font-semibold tabular-nums text-foreground">
 										{completionPct}%
@@ -729,8 +740,7 @@ const ResponseDetail = () => {
 										<div className="mb-3 flex items-center gap-2.5">
 											<span className="flex size-5 shrink-0 items-center justify-center rounded-md bg-muted text-2xs font-bold text-muted-foreground">?</span>
 											<p className="text-sm font-medium text-foreground/70">
-												{__('Unknown field', 'all-feedback')}
-												<span className="ml-1.5 font-normal text-muted-foreground/50">({key})</span>
+												{__('Deleted question', 'all-feedback')}
 											</p>
 										</div>
 										<div className="pl-7">
@@ -766,7 +776,7 @@ const ResponseDetail = () => {
 							<ChevronDown className={cn('size-4 transition-transform', showUnanswered && 'rotate-180')} />
 							{showUnanswered
 								? __('Hide unanswered optional fields', 'all-feedback')
-								: `${__('Show', 'all-feedback')} ${unansweredOptional.length} ${__('unanswered optional fields', 'all-feedback')}`
+								: sprintf(__('Show %d unanswered optional fields', 'all-feedback'), unansweredOptional.length)
 							}
 						</button>
 					)}
@@ -776,7 +786,7 @@ const ResponseDetail = () => {
 							{unansweredOptional.map((schField) => {
 								const typeConfig = FIELD_TYPES.find((t) => t.type === schField.type);
 								return (
-									<div key={schField.id} className="border-b border-border/60 px-7 py-5 last:border-0 opacity-50">
+									<div key={schField.id} className="border-b border-border/60 px-7 py-5 last:border-0">
 										<div className="mb-1.5 flex items-center gap-3">
 											<span
 												className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted"
@@ -793,7 +803,7 @@ const ResponseDetail = () => {
 												dangerouslySetInnerHTML={{ __html: schField.label }}
 											/>
 										</div>
-										<div className="pl-11">
+										<div className="pl-11 opacity-50">
 											<span className="text-base italic text-muted-foreground/40">
 												{__('No answer provided', 'all-feedback')}
 											</span>
@@ -913,11 +923,18 @@ const ResponseDetail = () => {
 						<ArrowLeft className="size-3.5" />
 						{__('Previous', 'all-feedback')}
 					</Button>
-					{currentNavIndex >= 0 && sortedForNav.length > 0 && (
-						<span className="text-xs tabular-nums text-muted-foreground/50">
-							{currentNavIndex + 1} / {sortedForNav.length}
-						</span>
-					)}
+					<div className="flex flex-col items-center gap-0.5">
+						{currentNavIndex >= 0 && sortedForNav.length > 0 && (
+							<span className="text-xs tabular-nums text-muted-foreground/50">
+								{currentNavIndex + 1} / {sortedForNav.length}
+							</span>
+						)}
+						{sortedForNav.length === 100 && (
+							<span className="text-2xs text-muted-foreground/40">
+								{__('Showing most recent 100 responses', 'all-feedback')}
+							</span>
+						)}
+					</div>
 					<Button
 						type="button"
 						variant="outline"

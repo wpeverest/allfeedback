@@ -24,7 +24,7 @@ import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { cn } from '@/lib/utils';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { __ } from '@wordpress/i18n';
+import { __, _n, sprintf } from '@wordpress/i18n';
 import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown, Edit2, Eye, Mail, MailOpen, MessageSquare, MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -158,12 +158,18 @@ const Responses = () => {
 			setBulkConfirmOpen(false);
 			const count = result.deleted;
 			toast.success(
-				count === 1
-					? __('1 response deleted.', 'all-feedback')
-					: `${count} ${__('responses deleted.', 'all-feedback')}`,
+				sprintf(
+					_n('%d response deleted.', '%d responses deleted.', count, 'all-feedback'),
+					count,
+				),
 			);
 			if (result.failed.length > 0) {
-				toast.error(`${result.failed.length} ${__('response(s) could not be deleted.', 'all-feedback')}`);
+				toast.error(
+					sprintf(
+						_n('%d response could not be deleted.', '%d responses could not be deleted.', result.failed.length, 'all-feedback'),
+						result.failed.length,
+					),
+				);
 			}
 		},
 		onError: () => {

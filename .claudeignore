@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+vendor/
+
+# Build output
+resources/build/
+
+# Release artifacts
+release/
+*.zip
+
+# PHP compiled container cache
+cache/
+tmp/
+
+# Logs
+*.log
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Auto-generated files
+resources/scripts/admin/routeTree.gen.ts
+languages/*.mo
+languages/*.pot
+
+# Lock files (large, not useful for code understanding)
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+composer.lock
