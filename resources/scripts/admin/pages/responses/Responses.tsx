@@ -423,7 +423,7 @@ const Responses = () => {
 											>
 												<span className={cn(
 													cellCls,
-													'line-clamp-1 underline-offset-2 transition-colors',
+													'line-clamp-1 font-semibold underline-offset-2 transition-colors',
 													'group-hover/resp:text-primary group-hover/resp:underline',
 													)}>
 													{summary}

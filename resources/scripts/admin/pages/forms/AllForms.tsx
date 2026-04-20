@@ -464,7 +464,7 @@ const AllForms = () => {
 													to: '/builder/', search: { new: false, id: survey.id },
 												})}
 											>
-												<span className={cn(cellCls, 'truncate font-medium underline-offset-2 transition-all group-hover/name:text-primary group-hover/name:underline')}>
+												<span className={cn(cellCls, 'truncate font-semibold underline-offset-2 transition-all group-hover/name:text-primary group-hover/name:underline')}>
 													{survey.title}
 												</span>
 												<Edit2 className="size-3 shrink-0 opacity-0 transition-all group-hover/name:text-primary group-hover/name:opacity-60" />
