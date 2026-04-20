@@ -1,4 +1,4 @@
-﻿import { format } from 'date-fns';
+import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { BulkActionBar } from '@/components/ui/bulk-action-bar';
 import { Button } from '@/components/ui/button';
@@ -37,6 +37,8 @@ import {
 
 	Copy,
 	Edit2,
+	Eye,
+	EyeOff,
 	FileText,
 	Loader2,
 	MoreVertical,
@@ -218,6 +220,18 @@ const AllForms = () => {
 		},
 		onError: () => {
 			toast.error(__('Failed to trash form. Please try again.', 'all-feedback'));
+		},
+	});
+
+	const statusMutation = useMutation({
+		mutationFn: ({ id, status }: { id: number; status: SurveyStatus }) => surveysApi.update(id, { status }),
+		onSuccess: (_, variables) => {
+			void queryClient.invalidateQueries({ queryKey: ['surveys'] });
+			const label = variables.status === 'published' ? __('published', 'all-feedback') : __('draft', 'all-feedback');
+			toast.success(sprintf(__('Form marked as %s.', 'all-feedback'), label));
+		},
+		onError: () => {
+			toast.error(__('Failed to update form status. Please try again.', 'all-feedback'));
 		},
 	});
 
@@ -551,6 +565,32 @@ const AllForms = () => {
 																	: <RotateCcw className="size-3.5" />
 																}
 																{__('Restore', 'all-feedback')}
+															</DropdownMenuItem>
+														)}
+
+														{survey.status === 'published' && (
+															<DropdownMenuItem
+																onSelect={() => statusMutation.mutate({ id: survey.id, status: 'draft' })}
+																disabled={statusMutation.isPending}
+															>
+																{statusMutation.isPending
+																	? <Loader2 className="size-3.5 animate-spin" />
+																	: <EyeOff className="size-3.5" />
+																}
+																{__('Save as Draft', 'all-feedback')}
+															</DropdownMenuItem>
+														)}
+
+														{survey.status === 'draft' && (
+															<DropdownMenuItem
+																onSelect={() => statusMutation.mutate({ id: survey.id, status: 'published' })}
+																disabled={statusMutation.isPending}
+															>
+																{statusMutation.isPending
+																	? <Loader2 className="size-3.5 animate-spin" />
+																	: <Eye className="size-3.5" />
+																}
+																{__('Save as Published', 'all-feedback')}
 															</DropdownMenuItem>
 														)}
 
