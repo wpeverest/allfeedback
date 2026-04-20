@@ -46,7 +46,7 @@ import type { SurveyFormSchemaField } from '@/admin/api/surveys';
 import { FIELD_TYPES } from '@/admin/pages/forms/builder/fieldTypes';
 
 const DetailSkeleton = () => (
-	<div className="flex flex-col bg-background">
+	<div className="flex flex-1 flex-col bg-background">
 		<div className="flex h-[60px] shrink-0 items-center justify-between border-b border-border bg-card px-6">
 			<div className="flex items-center gap-3">
 				<div className="size-8 animate-pulse rounded-lg bg-muted" />
@@ -501,7 +501,7 @@ const ResponseDetail = () => {
 
 	if (isError || !response) {
 		return (
-			<div className="flex flex-col bg-background">
+			<div className="flex flex-1 flex-col bg-background">
 				<div className="flex h-[60px] shrink-0 items-center border-b border-border bg-card px-6">
 					<Button variant="ghost" size="icon-sm" onClick={handleBack} aria-label={__('Back', 'all-feedback')}>
 						<ArrowLeft className="size-4" />
@@ -527,9 +527,9 @@ const ResponseDetail = () => {
 	const surveyTitle = survey?.title ?? `${__('Survey', 'all-feedback')} #${surveyId}`;
 
 	return (
-		<div className="flex h-full flex-col bg-background overflow-hidden">
+		<div className="flex flex-1 flex-col bg-background overflow-hidden">
 
-			<div className="flex h-[60px] shrink-0 items-center justify-between border-b border-border bg-card px-6">
+			<div className="flex h-[64px] shrink-0 items-center justify-between border-b border-border bg-card px-7">
 				<div className="flex min-w-0 flex-1 items-center gap-3">
 					<Button
 						variant="ghost"
@@ -610,9 +610,9 @@ const ResponseDetail = () => {
 				onSubmit={(e) => { e.preventDefault(); void form.handleSubmit(); }}
 				className="flex min-h-0 flex-1 overflow-hidden"
 			>
-				<div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
+				<div className="flex-1 overflow-y-auto p-8 space-y-7">
 
-					<div className="flex items-center justify-between gap-6 rounded-xl border border-border/60 bg-card px-6 py-5">
+					<div className="flex items-center justify-between gap-6 rounded-2xl border border-border/60 bg-card px-7 py-6">
 						<div className="min-w-0">
 							{!response.is_read && (
 								<div className="mb-2 flex items-center gap-1.5">
@@ -671,14 +671,14 @@ const ResponseDetail = () => {
 						)}
 					</div>
 
-					<div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+					<div className="rounded-2xl border border-border/60 bg-card overflow-hidden">
 						{schemaFields.filter((f) => f.required || isAnswered(responseData[f.id])).map((schField) => {
 							const rawValue = responseData[schField.id];
 							return (
 								<form.Field key={schField.id} name="response_data">
 									{(field) => (
 										<div className={cn(
-											'border-b border-border/60 px-6 py-5 last:border-0 transition-colors',
+											'border-b border-border/60 px-7 py-6 last:border-0 transition-colors',
 											isEditing && 'hover:bg-muted/30',
 										)}>
 											{(() => {
@@ -725,7 +725,7 @@ const ResponseDetail = () => {
 						{orphanedKeys.map((key) => (
 							<form.Field key={key} name="response_data">
 								{(field) => (
-									<div className={cn('border-b border-border/60 px-6 py-5 last:border-0 transition-colors', isEditing && 'hover:bg-muted/30')}>
+									<div className={cn('border-b border-border/60 px-7 py-6 last:border-0 transition-colors', isEditing && 'hover:bg-muted/30')}>
 										<div className="mb-3 flex items-center gap-2.5">
 											<span className="flex size-5 shrink-0 items-center justify-center rounded-md bg-muted text-2xs font-bold text-muted-foreground">?</span>
 											<p className="text-sm font-medium text-foreground/70">
@@ -772,11 +772,11 @@ const ResponseDetail = () => {
 					)}
 
 					{showUnanswered && !isEditing && unansweredOptional.length > 0 && (
-						<div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+						<div className="rounded-2xl border border-border/60 bg-card overflow-hidden">
 							{unansweredOptional.map((schField) => {
 								const typeConfig = FIELD_TYPES.find((t) => t.type === schField.type);
 								return (
-									<div key={schField.id} className="border-b border-border/60 px-6 py-4 last:border-0 opacity-50">
+									<div key={schField.id} className="border-b border-border/60 px-7 py-5 last:border-0 opacity-50">
 										<div className="mb-1.5 flex items-center gap-3">
 											<span
 												className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted"
@@ -806,10 +806,10 @@ const ResponseDetail = () => {
 
 				</div>
 
-				<aside className="w-[30%] shrink-0 overflow-y-auto border-l border-border/60 p-6 space-y-4">
+				<aside className="w-[30%] shrink-0 overflow-y-auto border-l border-border/60 p-8 space-y-5">
 
-					<div className="rounded-xl border border-border/60 bg-card overflow-hidden">
-						<div className="px-5 pt-4 pb-2">
+					<div className="rounded-2xl border border-border/60 bg-card overflow-hidden">
+						<div className="px-5 pt-5 pb-2.5">
 							<p className="text-2xs font-semibold uppercase tracking-widest text-muted-foreground/50">
 								{__('Details', 'all-feedback')}
 							</p>
@@ -851,8 +851,8 @@ const ResponseDetail = () => {
 						</div>
 					</div>
 
-					<div className="rounded-xl border border-border/60 bg-card overflow-hidden">
-						<div className="px-5 pt-4 pb-2">
+					<div className="rounded-2xl border border-border/60 bg-card overflow-hidden">
+						<div className="px-5 pt-5 pb-2.5">
 							<p className="text-2xs font-semibold uppercase tracking-widest text-muted-foreground/50">
 								{__('Actions', 'all-feedback')}
 							</p>
@@ -901,31 +901,33 @@ const ResponseDetail = () => {
 				</aside>
 			</form>
 
-			<div className="shrink-0 border-t border-border bg-card">
-				<div className="flex items-center">
-					<button
+			<div className="sticky bottom-0 z-10 shrink-0 border-t border-border/60 bg-card/95 backdrop-blur-sm">
+				<div className="flex items-center justify-between px-7 py-4">
+					<Button
 						type="button"
+						variant="outline"
+						size="sm"
 						onClick={() => prevNavResponse && navigateToResponse(prevNavResponse)}
 						disabled={!prevNavResponse}
-						className="flex flex-1 items-center justify-center gap-2 py-5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
 					>
 						<ArrowLeft className="size-3.5" />
 						{__('Previous', 'all-feedback')}
-					</button>
-					<div className="flex shrink-0 items-center gap-2 px-4 text-xs text-muted-foreground/50">
-						{currentNavIndex >= 0 && sortedForNav.length > 0 && (
-							<span className="tabular-nums">{currentNavIndex + 1} / {sortedForNav.length}</span>
-						)}
-					</div>
-					<button
+					</Button>
+					{currentNavIndex >= 0 && sortedForNav.length > 0 && (
+						<span className="text-xs tabular-nums text-muted-foreground/50">
+							{currentNavIndex + 1} / {sortedForNav.length}
+						</span>
+					)}
+					<Button
 						type="button"
+						variant="outline"
+						size="sm"
 						onClick={() => nextNavResponse && navigateToResponse(nextNavResponse)}
 						disabled={!nextNavResponse}
-						className="flex flex-1 items-center justify-center gap-2 py-5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
 					>
 						{__('Next', 'all-feedback')}
 						<ArrowRight className="size-3.5" />
-					</button>
+					</Button>
 				</div>
 			</div>
 		</div>

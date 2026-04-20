@@ -76,7 +76,7 @@ const GlobalHeader = () => {
 	};
 
 	return (
-		<header className="sticky top-[var(--wp-admin--admin-bar--height,32px)] z-50 border-b border-border bg-white">
+		<header className="z-50 border-b border-border bg-white">
 			<div className="flex h-[60px] items-center px-5">
 
 				<div className="flex shrink-0 items-center gap-2">
