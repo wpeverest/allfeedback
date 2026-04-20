@@ -173,7 +173,7 @@ const AllForms = () => {
 				)}
 			>
 				{label}
-				{sortable && <Icon className={cn('size-3 shrink-0', isActive ? 'opacity-100' : 'opacity-35')} />}
+				{sortable && <Icon className="size-3 shrink-0" />}
 			</span>
 		);
 	};
@@ -451,7 +451,7 @@ const AllForms = () => {
 										</td>
 
 										<td className="w-16 px-4 py-5">
-											<span className={cn(cellCls, 'tabular-nums text-foreground/40')}>
+											<span className={cn(cellCls, 'tabular-nums')}>
 												#{survey.id}
 											</span>
 										</td>

@@ -409,7 +409,7 @@ const Responses = () => {
 
 										{/* ID */}
 										<td className="w-16 px-4 py-5">
-											<span className={cn(cellCls, 'tabular-nums text-foreground/40')}>
+											<span className={cn(cellCls, 'tabular-nums')}>
 												#{response.id}
 											</span>
 										</td>
