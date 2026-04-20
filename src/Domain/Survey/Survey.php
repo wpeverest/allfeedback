@@ -40,7 +40,7 @@ class Survey extends Entity {
 		private string $description = '',
 		private array $formSchema = [],
 		private array $settings = [],
-		private array $targeting = [],
+		private array $styling = [],
 		private int $createdBy = 0,
 		?SurveyStatus $status = null,
 		int $responseCount = 0,
@@ -61,14 +61,14 @@ class Survey extends Entity {
 		string $description,
 		array $formSchema,
 		array $settings,
-		array $targeting,
 		SurveyStatus $status,
 		int $responseCount,
 		int $createdBy,
 		DateTimeImmutable $createdAt,
 		?DateTimeImmutable $updatedAt = null,
+		array $styling = [],
 	): self {
-		$survey                = new self( $title, $description, $formSchema, $settings, $targeting, $createdBy, $status, $responseCount );
+		$survey                = new self( $title, $description, $formSchema, $settings, $styling, $createdBy, $status, $responseCount );
 		$survey->id            = $id;
 		$survey->createdAt     = $createdAt;
 		$survey->updatedAt     = $updatedAt;
@@ -138,15 +138,15 @@ class Survey extends Entity {
 	/**
 	 * @since 1.0.0
 	 */
-	public function getTargeting(): array {
-		return $this->targeting;
+	public function getStyling(): array {
+		return $this->styling;
 	}
 
 	/**
 	 * @since 1.0.0
 	 */
-	public function setTargeting( array $targeting ): void {
-		$this->targeting = $targeting;
+	public function setStyling( array $styling ): void {
+		$this->styling = $styling;
 		$this->touch();
 	}
 
@@ -247,7 +247,7 @@ class Survey extends Entity {
 			'description'    => $this->description,
 			'form_schema'    => $this->formSchema,
 			'settings'       => $this->settings,
-			'targeting'      => $this->targeting,
+			'styling'        => $this->styling,
 			'status'         => $this->status->value,
 			'response_count' => $this->responseCount,
 			'created_by'     => $this->createdBy,

@@ -37,7 +37,6 @@ export type DisplayFrequency  = 'once' | 'until_submit';
 export type DismissUnit       = 'hours' | 'days' | 'weeks';
 export type ProgressIndicator = 'dots' | 'numbers' | 'bar' | 'none';
 export type TriggerIcon       = 'message' | 'chat' | 'typing' | 'comment' | 'mail';
-export type WidgetPosition    = '' | 'bottom-right' | 'bottom-left' | 'side-tab';
 
 export interface FormSettings {
 
@@ -64,9 +63,6 @@ export interface FormSettings {
 	dismissWaitUnit:   DismissUnit;
 	progressIndicator: ProgressIndicator;
 	triggerIcon:       TriggerIcon;
-	widgetPosition:    WidgetPosition;
-	widgetColor:       string;
-	widgetLabel:       string;
 }
 
 export const DEFAULT_FORM_SETTINGS: FormSettings = {
@@ -92,9 +88,20 @@ export const DEFAULT_FORM_SETTINGS: FormSettings = {
 	dismissWaitUnit:     'days',
 	progressIndicator:   'dots',
 	triggerIcon:         'message',
-	widgetPosition:      '',
-	widgetColor:         '',
-	widgetLabel:         '',
+};
+
+export type WidgetPosition = 'bottom_right' | 'bottom_left' | 'top_right' | 'top_left';
+
+export interface FormStyling {
+	widgetIcon:     string;
+	widgetLabel:    string;
+	widgetPosition: WidgetPosition | '';
+}
+
+export const DEFAULT_FORM_STYLING: FormStyling = {
+	widgetIcon:     '',
+	widgetLabel:    '',
+	widgetPosition: '',
 };
 
 export type PreviewMode   = 'widget' | 'page' | 'success';

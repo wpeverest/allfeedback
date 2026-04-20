@@ -376,6 +376,18 @@ class SurveysController extends RestController {
 			$changed = true;
 		}
 
+		if ( array_key_exists( 'styling', $body ) ) {
+			$stylingRaw   = $request->get_param( 'styling' );
+			$stylingCheck = $this->validateStyling( $stylingRaw );
+			if ( is_wp_error( $stylingCheck ) ) {
+				return $stylingCheck;
+			}
+			$survey->setStyling( $this->normaliseJsonParam( $stylingRaw ) ?? [] );
+			$changed = true;
+		}
+
+		$transitioningToPublished = false;
+
 		if ( array_key_exists( 'status', $body ) ) {
 			$statusStr = sanitize_key( (string) $request->get_param( 'status' ) );
 			$status    = SurveyStatus::tryFrom( $statusStr );
@@ -389,6 +401,7 @@ class SurveysController extends RestController {
 					422
 				);
 			}
+			$transitioningToPublished = ( $status === SurveyStatus::Published );
 			match ( $status ) {
 				SurveyStatus::Published => $survey->publish(),
 				SurveyStatus::Archived  => $survey->archive(),
@@ -421,7 +434,32 @@ class SurveysController extends RestController {
 
 		$this->logger->info( 'Survey updated.', $logContext );
 
-		return $this->successResponse( $this->prepareSurvey( $survey ) );
+		$data = $this->prepareSurvey( $survey );
+
+		if ( $transitioningToPublished ) {
+			$conflicts = $this->detectPublishingConflicts( $survey );
+			if ( ! empty( $conflicts ) ) {
+				$data['warnings'] = [
+					[
+						'code'                => 'targeting_conflict',
+						'message'             => sprintf(
+							/* translators: %d: number of conflicting forms */
+							_n(
+								'%d published form targets the same pages. Visitors will only see the most recently published one.',
+								'%d published forms target the same pages. Visitors will only see the most recently published one.',
+								count( $conflicts ),
+								'all-feedback'
+							),
+							count( $conflicts )
+						),
+						'conflicting_surveys' => $conflicts,
+						'can_revert_to_draft' => true,
+					],
+				];
+			}
+		}
+
+		return $this->successResponse( $data );
 	}
 
 	/**
@@ -529,7 +567,6 @@ class SurveysController extends RestController {
 			description: $original->getDescription(),
 			formSchema:  $original->getFormSchema(),
 			settings:    $original->getSettings(),
-			targeting:   $original->getTargeting(),
 			createdBy:   get_current_user_id() ?: 0,
 		);
 
@@ -831,6 +868,10 @@ class SurveysController extends RestController {
 				'description' => __( 'Per-survey configuration object (trigger, frequency, targeting, submit labels).', 'all-feedback' ),
 				'type'        => [ 'object', 'array', 'string', 'null' ],
 			],
+			'styling'     => [
+				'description' => __( 'Per-survey visual appearance overrides (widget icon, label, position).', 'all-feedback' ),
+				'type'        => [ 'object', 'array', 'string', 'null' ],
+			],
 			'status'      => $this->argEnum(
 				description: __( 'Survey lifecycle status.', 'all-feedback' ),
 				values:      $statusValues,
@@ -875,12 +916,15 @@ class SurveysController extends RestController {
 		$formSchema = $survey->getFormSchema();
 		$settings   = $survey->getSettings();
 
+		$styling = $survey->getStyling();
+
 		$prepared = [
 			'id'             => $survey->getId(),
 			'title'          => $survey->getTitle(),
 			'description'    => $survey->getDescription(),
 			'form_schema'    => $formSchema !== [] ? $formSchema : null,
 			'settings'       => $settings !== [] ? $settings : null,
+			'styling'        => $styling !== [] ? $styling : null,
 			'status'         => $survey->getStatus()->value,
 			'response_count' => $survey->getResponseCount(),
 			'created_by'     => $survey->getCreatedBy() ?: null,
@@ -971,7 +1015,138 @@ class SurveysController extends RestController {
 			)
 		);
 
-		return $this->successResponse( $this->prepareSurvey( $survey ) );
+		$data = $this->prepareSurvey( $survey );
+
+		if ( $status === SurveyStatus::Published ) {
+			$conflicts = $this->detectPublishingConflicts( $survey );
+			if ( ! empty( $conflicts ) ) {
+				$data['warnings'] = [
+					[
+						'code'                => 'targeting_conflict',
+						'message'             => sprintf(
+							/* translators: %d: number of conflicting surveys */
+							_n(
+								'%d published survey targets the same pages. Visitors will only see the most recently published one.',
+								'%d published surveys target the same pages. Visitors will only see the most recently published one.',
+								count( $conflicts ),
+								'all-feedback'
+							),
+							count( $conflicts )
+						),
+						'conflicting_surveys' => $conflicts,
+						'can_revert_to_draft' => true,
+					],
+				];
+			}
+		}
+
+		return $this->successResponse( $data );
+	}
+
+	/**
+	 * Detect published surveys whose targeting overlaps with $published.
+	 *
+	 * Returns an array of conflict descriptors (id, title, targeting_scope).
+	 *
+	 * @param  Survey $published The survey that was just published.
+	 * @return array<int, array<string, mixed>>
+	 * @since  1.0.0
+	 */
+	private function detectPublishingConflicts( Survey $published ): array {
+		try {
+			$others = $this->surveyRepository->findAll(
+				new SurveyFilter( status: SurveyStatus::Published, perPage: 200 )
+			);
+		} catch ( \Throwable ) {
+			return [];
+		}
+
+		$publishedId      = $published->getId();
+		$publishedScope   = $this->targetingScope( $published );
+		$publishedPageIds = $this->targetingPageIds( $published );
+
+		$conflicts = [];
+
+		foreach ( $others as $other ) {
+			if ( $other->getId() === $publishedId ) {
+				continue;
+			}
+
+			$otherScope   = $this->targetingScope( $other );
+			$otherPageIds = $this->targetingPageIds( $other );
+
+			$overlaps = false;
+
+			if ( $publishedScope === 'all_pages' || $otherScope === 'all_pages' ) {
+				// One covers everything — guaranteed overlap.
+				$overlaps = true;
+			} elseif ( ! empty( array_intersect( $publishedPageIds, $otherPageIds ) ) ) {
+				// Both specific — check shared page IDs.
+				$overlaps = true;
+			}
+
+			if ( $overlaps ) {
+				$conflicts[] = [
+					'id'              => $other->getId(),
+					'title'           => $other->getTitle(),
+					'targeting_scope' => $otherScope,
+				];
+			}
+		}
+
+		return $conflicts;
+	}
+
+	/**
+	 * Return a human-readable targeting scope string for a survey.
+	 *
+	 * @since 1.0.0
+	 */
+	private function targetingScope( Survey $survey ): string {
+		$settings  = $survey->getSettings();
+		$targeting = (array) ( $settings['targeting'] ?? [] );
+
+		if ( ! empty( $targeting ) ) {
+			$mode = (string) ( $targeting['mode'] ?? 'all' );
+			return $mode === 'all' ? 'all_pages' : 'specific_pages';
+		}
+
+		$targetPages = (string) ( $settings['targetPages'] ?? $settings['target_pages'] ?? 'all' );
+		return $targetPages === 'all' ? 'all_pages' : 'specific_pages';
+	}
+
+	/**
+	 * Return the page/post IDs a survey explicitly targets (empty = all pages).
+	 *
+	 * @return int[]
+	 * @since 1.0.0
+	 */
+	private function targetingPageIds( Survey $survey ): array {
+		$settings  = $survey->getSettings();
+		$targeting = (array) ( $settings['targeting'] ?? [] );
+
+		if ( ! empty( $targeting ) ) {
+			if ( ( $targeting['mode'] ?? 'all' ) === 'all' ) {
+				return [];
+			}
+			$ids = [];
+			foreach ( (array) ( $targeting['rules'] ?? [] ) as $rule ) {
+				if ( isset( $rule['value'] ) && in_array( $rule['type'] ?? '', [ 'page_id', 'post_id' ], true ) ) {
+					$ids[] = (int) $rule['value'];
+				}
+			}
+			return $ids;
+		}
+
+		$targetPages = (string) ( $settings['targetPages'] ?? $settings['target_pages'] ?? 'all' );
+		if ( $targetPages === 'all' ) {
+			return [];
+		}
+
+		return array_values( array_filter(
+			array_map( 'intval', (array) ( $settings['target_page_ids'] ?? [] ) ),
+			fn( int $id ) => $id > 0
+		) );
 	}
 
 	/**
@@ -1131,6 +1306,63 @@ class SurveysController extends RestController {
 						422
 					);
 				}
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Validate the styling parameter before persisting it.
+	 *
+	 * Allowed keys and their constraints:
+	 *   widget_position — enum: bottom_right, bottom_left, top_right, top_left, or empty string
+	 *   widget_icon     — string (arbitrary icon identifier), max 64 chars
+	 *   widget_label    — string (launcher button text), max 80 chars
+	 *
+	 * @param mixed $styling Raw styling value from the request.
+	 * @return true|\WP_Error
+	 * @since 1.0.0
+	 */
+	private function validateStyling( mixed $styling ): true|\WP_Error {
+		if ( $styling === null || $styling === '' ) {
+			return true;
+		}
+
+		$styling = $this->normaliseJsonParam( $styling );
+
+		if ( $styling === null ) {
+			return $this->errorResponse( __( 'styling must be a valid JSON object.', 'all-feedback' ), 422 );
+		}
+
+		$allowedPositions = apply_filters(
+			'allfeedback_styling_allowed_widget_positions',
+			[ '', 'bottom_right', 'bottom_left', 'top_right', 'top_left' ]
+		);
+
+		if ( array_key_exists( 'widget_position', $styling ) ) {
+			if ( ! in_array( $styling['widget_position'], $allowedPositions, true ) ) {
+				return $this->errorResponse(
+					sprintf(
+						/* translators: %s: submitted value */
+						__( 'Invalid styling.widget_position "%s". Allowed: bottom_right, bottom_left, top_right, top_left, or empty string.', 'all-feedback' ),
+						sanitize_key( (string) $styling['widget_position'] )
+					),
+					422
+				);
+			}
+		}
+
+		foreach ( [ 'widget_icon', 'widget_label' ] as $key ) {
+			if ( array_key_exists( $key, $styling ) && ! is_string( $styling[ $key ] ) ) {
+				return $this->errorResponse(
+					sprintf(
+						/* translators: %s: styling key name */
+						__( 'styling.%s must be a string.', 'all-feedback' ),
+						$key
+					),
+					422
+				);
 			}
 		}
 

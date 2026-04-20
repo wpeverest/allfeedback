@@ -44,22 +44,30 @@ Create a new survey (always starts as `draft`).
 | `title` | string | Yes | Survey title |
 | `description` | string | No | Optional description |
 | `form_schema` | object/array | No | Field definitions |
-| `settings` | object | No | Display and targeting settings |
+| `settings` | object | No | Behavioural settings (trigger, frequency, audience, page targeting). Advanced targeting rules stored as `settings.targeting`. |
+| `styling` | object | No | Visual overrides: `widget_position`, `widget_icon`, `widget_label`. Empty string = inherit global default. |
 
 **Response — 201**
 ```json
-{ "id": 5, "title": "My Survey", "status": "draft", ... }
+{ "id": 5, "title": "My Survey", "status": "draft", "styling": null, ... }
 ```
 
 ---
 
 ### `GET /surveys/{id}`
-Return a single survey including full `form_schema`, `settings`, and `targeting`.  
+Return a single survey including full `form_schema`, `settings`, and `styling`.  
 Non-admins can only read `published` surveys (widget/shortcode use-case).
 
 **Response**
 ```json
-{ "id": 1, "title": "NPS Survey", "status": "published", "form_schema": [...], "settings": {...}, ... }
+{
+  "id": 1,
+  "title": "NPS Survey",
+  "status": "published",
+  "form_schema": { "version": "1.0", "sections": [...] },
+  "settings": { "trigger_type": "immediate", "targeting": { "mode": "all", "rules": [] }, ... },
+  "styling": { "widget_position": "bottom_right", "widget_icon": "", "widget_label": "Feedback" }
+}
 ```
 
 ---
@@ -69,7 +77,22 @@ Apply a full or partial update to an existing survey. Called by the builder auto
 
 **Body** — same fields as `POST /surveys` plus `status` (enum: `draft`, `published`, `archived`, `trashed`).
 
-**Response** — updated survey object.
+**Response** — updated survey object. When `status: "published"` is included and other published surveys target overlapping pages, a `warnings` array is appended:
+
+```json
+{
+  "id": 3, "title": "...", "status": "published",
+  "warnings": [{
+    "code": "targeting_conflict",
+    "message": "2 published forms target the same pages. Visitors will only see the most recently published one.",
+    "conflicting_surveys": [
+      { "id": 1, "title": "NPS Survey",  "targeting_scope": "all_pages" },
+      { "id": 2, "title": "Exit Survey", "targeting_scope": "specific_pages" }
+    ],
+    "can_revert_to_draft": true
+  }]
+}
+```
 
 ---
 
@@ -133,7 +156,7 @@ Create a copy of a survey with status reset to `draft`.
 ### `POST /surveys/{id}/publish`
 Transition a survey from any status to `published`.
 
-**Response** — updated survey object.
+**Response** — updated survey object. Same `warnings` shape as `PUT /surveys/{id}` applies when targeting conflicts are detected.
 
 ---
 

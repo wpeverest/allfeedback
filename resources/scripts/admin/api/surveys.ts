@@ -9,7 +9,7 @@ export type Survey = {
 	description:    string;
 	form_schema:    SurveyFormSchema | null;
 	settings:       Record<string, unknown> | null;
-	targeting:      unknown[] | null;
+	styling:        Record<string, unknown> | null;
 	status:         SurveyStatus;
 	response_count: number;
 	created_by:     number;
@@ -52,6 +52,7 @@ export type CreateSurveyData = {
 	description?: string;
 	form_schema?: SurveyFormSchema;
 	settings?:    Record<string, unknown>;
+	styling?:     Record<string, unknown>;
 	targeting?:   unknown[];
 };
 

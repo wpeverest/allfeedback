@@ -125,12 +125,13 @@ class TargetingEngine {
 	 * @since 1.0.0
 	 */
 	private function surveyMatchesCurrentPage( Survey $survey ): bool {
-		$targeting = $survey->getTargeting();
+		$settings  = $survey->getSettings();
+		$targeting = (array) ( $settings['targeting'] ?? [] );
 
-		// If the targeting column was never explicitly set, fall back to the
-		// form-level page targeting that lives in the settings column.
+		// If no advanced targeting is configured, fall back to the form builder's
+		// UI-level page targeting stored directly in settings.
 		if ( empty( $targeting ) ) {
-			return $this->matchesSettingsTargeting( $survey->getSettings() );
+			return $this->matchesSettingsTargeting( $settings );
 		}
 
 		$mode       = (string) ( $targeting['mode'] ?? 'all' );

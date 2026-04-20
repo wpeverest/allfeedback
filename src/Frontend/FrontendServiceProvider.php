@@ -180,7 +180,7 @@ class FrontendServiceProvider implements ServiceProvider {
 					continue;
 				}
 
-				$merged = $this->mergeFormDisplaySettings( $globalWidgetSettings, $survey->getSettings() );
+				$merged = $this->mergeFormDisplaySettings( $globalWidgetSettings, $survey->getSettings(), $survey->getStyling() );
 
 				// Build config — always include id and is_logged_in.
 				$config = [
@@ -192,6 +192,9 @@ class FrontendServiceProvider implements ServiceProvider {
 				if ( isset( $merged['display_frequency'] ) ) $config['display_frequency'] = (string) $merged['display_frequency'];
 				if ( isset( $merged['max_impressions'] ) )   $config['max_impressions']   = (int) $merged['max_impressions'];
 				if ( isset( $merged['reshow_after_days'] ) ) $config['reshow_after_days'] = (int) $merged['reshow_after_days'];
+				if ( isset( $merged['widget_position'] ) )   $config['widget_position']   = (string) $merged['widget_position'];
+				if ( isset( $merged['widget_icon'] ) )       $config['widget_icon']       = (string) $merged['widget_icon'];
+				if ( isset( $merged['widget_label'] ) )      $config['widget_label']      = (string) $merged['widget_label'];
 
 				// For logged-in users, embed their current display state so the JS
 				// gate check is correct on first load — no extra REST call needed.
@@ -275,7 +278,7 @@ class FrontendServiceProvider implements ServiceProvider {
 	 * @return array<string, mixed>         Merged settings.
 	 * @since 1.0.0
 	 */
-	private function mergeFormDisplaySettings( array $global, array $form ): array {
+	private function mergeFormDisplaySettings( array $global, array $form, array $styling = [] ): array {
 		// ── Trigger type → global trigger key ────────────────────────────────
 		$triggerTypeMap = [
 			'immediate'    => 'auto',
@@ -315,6 +318,11 @@ class FrontendServiceProvider implements ServiceProvider {
 			'display_frequency' => isset( $form['display_frequency'] ) ? (string) $form['display_frequency'] : null,
 			'max_impressions'   => isset( $form['max_impressions'] )   ? (int) $form['max_impressions']      : null,
 			'reshow_after_days' => $reshowAfterDays,
+
+			// Widget appearance — sourced from the styling column, not settings
+			'widget_position'   => ( isset( $styling['widget_position'] ) && $styling['widget_position'] !== '' ) ? (string) $styling['widget_position'] : null,
+			'widget_icon'       => ( isset( $styling['widget_icon'] )     && $styling['widget_icon']     !== '' ) ? (string) $styling['widget_icon']     : null,
+			'widget_label'      => ( isset( $styling['widget_label'] )    && $styling['widget_label']    !== '' ) ? (string) $styling['widget_label']    : null,
 		];
 
 		// Only apply overrides that are actually set on the form (filter nulls).

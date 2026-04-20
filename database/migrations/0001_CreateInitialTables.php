@@ -11,7 +11,7 @@ use AllFeedback\Infrastructure\Database\Migration;
  *
  * Creates the af_surveys and af_responses custom tables.
  *
- * af_surveys  — survey definitions (form schema, settings, targeting, status).
+ * af_surveys  — survey definitions (form schema, settings, styling, status).
  * af_responses — individual submissions linked to a survey.
  *
  * @since 1.0.0
@@ -33,7 +33,7 @@ class CreateInitialTables extends Migration {
 			description    text                          DEFAULT NULL,
 			form_schema    longtext                      DEFAULT NULL,
 			settings       longtext                      DEFAULT NULL,
-			targeting      longtext                      DEFAULT NULL,
+			styling        json                          DEFAULT NULL,
 			status         varchar(20)          NOT NULL DEFAULT 'draft',
 			response_count int unsigned         NOT NULL DEFAULT 0,
 			created_by     bigint(20) unsigned           DEFAULT NULL,

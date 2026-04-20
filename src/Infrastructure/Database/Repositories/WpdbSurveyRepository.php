@@ -161,6 +161,8 @@ class WpdbSurveyRepository implements SurveyRepository {
 	private function insert( Survey $survey ): Survey {
 		global $wpdb;
 
+		$styling = $survey->getStyling();
+
 		$result = $wpdb->insert(
 			$this->table,
 			[
@@ -168,7 +170,7 @@ class WpdbSurveyRepository implements SurveyRepository {
 				'description'    => $survey->getDescription(),
 				'form_schema'    => wp_json_encode( $survey->getFormSchema() ),
 				'settings'       => wp_json_encode( $survey->getSettings() ),
-				'targeting'      => wp_json_encode( $survey->getTargeting() ),
+				'styling'        => $styling !== [] ? wp_json_encode( $styling ) : null,
 				'status'         => $survey->getStatus()->value,
 				'response_count' => $survey->getResponseCount(),
 				'created_by'     => $survey->getCreatedBy() ?: null,
@@ -188,12 +190,12 @@ class WpdbSurveyRepository implements SurveyRepository {
 			description: $survey->getDescription(),
 			formSchema: $survey->getFormSchema(),
 			settings: $survey->getSettings(),
-			targeting: $survey->getTargeting(),
 			status: $survey->getStatus(),
 			responseCount: $survey->getResponseCount(),
 			createdBy: $survey->getCreatedBy(),
 			createdAt: $survey->getCreatedAt(),
 			updatedAt: $survey->getUpdatedAt(),
+			styling: $survey->getStyling(),
 		);
 	}
 
@@ -205,6 +207,8 @@ class WpdbSurveyRepository implements SurveyRepository {
 	private function update( Survey $survey ): Survey {
 		global $wpdb;
 
+		$styling = $survey->getStyling();
+
 		$result = $wpdb->update(
 			$this->table,
 			[
@@ -212,7 +216,7 @@ class WpdbSurveyRepository implements SurveyRepository {
 				'description'    => $survey->getDescription(),
 				'form_schema'    => wp_json_encode( $survey->getFormSchema() ),
 				'settings'       => wp_json_encode( $survey->getSettings() ),
-				'targeting'      => wp_json_encode( $survey->getTargeting() ),
+				'styling'        => $styling !== [] ? wp_json_encode( $styling ) : null,
 				'status'         => $survey->getStatus()->value,
 				'response_count' => $survey->getResponseCount(),
 				'updated_at'     => current_time( 'mysql' ),
@@ -242,12 +246,12 @@ class WpdbSurveyRepository implements SurveyRepository {
 			description: (string) ( $row['description'] ?? '' ),
 			formSchema: $this->decodeJson( (string) ( $row['form_schema'] ?? '' ) ),
 			settings: $this->decodeJson( (string) ( $row['settings'] ?? '' ) ),
-			targeting: $this->decodeJson( (string) ( $row['targeting'] ?? '' ) ),
 			status: SurveyStatus::from( $row['status'] ),
 			responseCount: (int) ( $row['response_count'] ?? 0 ),
 			createdBy: (int) ( $row['created_by'] ?? 0 ),
 			createdAt: new DateTimeImmutable( (string) $row['created_at'] ),
 			updatedAt: ! empty( $row['updated_at'] ) ? new DateTimeImmutable( (string) $row['updated_at'] ) : null,
+			styling: $this->decodeJson( (string) ( $row['styling'] ?? '' ) ),
 		);
 	}
 
