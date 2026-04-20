@@ -92,6 +92,7 @@ export type SurveyResponse = {
 	user_id:       number | null;
 	consent_given: boolean;
 	is_read:       boolean;
+	ip_address:    string | null;
 	created_at:    string;
 };
 

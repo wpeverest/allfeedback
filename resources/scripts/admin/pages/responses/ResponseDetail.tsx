@@ -33,6 +33,8 @@ import {
 	CheckSquare,
 	ChevronDown,
 	ChevronRight,
+	Eye,
+	EyeOff,
 	Globe,
 	Laptop,
 	Loader2,
@@ -42,6 +44,7 @@ import {
 	Monitor,
 	MoreHorizontal,
 	Pencil,
+	Shield,
 	Smartphone,
 	Star,
 	Tablet,
@@ -352,6 +355,7 @@ const ResponseDetail = () => {
 	const [showUnanswered,      setShowUnanswered]      = useState(false);
 	const [confirmDeleteOpen,   setConfirmDeleteOpen]   = useState(false);
 	const [isChangingSurvey,    setIsChangingSurvey]    = useState(false);
+	const [showIp,              setShowIp]              = useState(false);
 
 	const { data: survey } = useQuery({ ...surveyQuery(surveyId), enabled: surveyId > 0 });
 
@@ -596,7 +600,7 @@ const ResponseDetail = () => {
 					</Button>
 					<span className="h-5 w-px bg-border" />
 					<Select value={String(surveyId)} onValueChange={(id) => { void handleSurveyChange(id); }} disabled={isChangingSurvey}>
-						<SelectTrigger className="h-8 w-auto max-w-[140px] sm:max-w-[260px] border-transparent bg-transparent px-2 text-sm font-semibold shadow-none hover:border-border hover:bg-muted/50 focus:ring-0 disabled:opacity-60">
+						<SelectTrigger className="h-8 w-[140px] sm:w-[220px] border-transparent bg-transparent px-2 text-sm font-semibold shadow-none hover:border-border hover:bg-muted/50 focus:ring-0 disabled:opacity-60">
 							{isChangingSurvey
 								? <Loader2 className="size-3.5 animate-spin text-muted-foreground" />
 								: <SelectValue />
@@ -693,68 +697,13 @@ const ResponseDetail = () => {
 			>
 				<div className="p-4 space-y-5 sm:p-6 sm:space-y-6 md:flex-1 md:overflow-y-auto">
 
-					<div className="flex flex-col gap-4 rounded-xl border border-border bg-card px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-6 sm:py-6">
-						<div className="min-w-0">
-							{!response.is_read && (
-								<div className="mb-2 flex items-center gap-1.5">
-									<span className="size-1.5 rounded-full bg-orange-400" />
-									<span className="text-2xs font-semibold uppercase tracking-widest text-orange-500">
-										{__('Unread response', 'all-feedback')}
-									</span>
-								</div>
-							)}
-							<h1 className="text-xl font-semibold text-foreground truncate">
-								{respondentName ?? __('Anonymous respondent', 'all-feedback')}
-							</h1>
-							<p className="mt-1 flex flex-wrap items-center gap-1.5 text-sm font-normal text-muted-foreground">
-								<CalendarDays className="size-3.5 shrink-0" />
-								<span>{format(new Date(response.created_at), 'MMM d, yyyy · h:mm a')}</span>
-								{response.page_url && (
-									<>
-										<span className="text-muted-foreground/40">·</span>
-										<a
-											href={response.page_url}
-											target="_blank"
-											rel="noopener noreferrer"
-											className="truncate max-w-xs font-medium !text-primary underline underline-offset-2 hover:!opacity-80"
-										>
-											{response.page_url}
-										</a>
-									</>
-								)}
-							</p>
-						</div>
 
-						{schemaFields.length > 0 && (
-							<div className="flex items-center gap-6 sm:shrink-0">
-								<div className="text-center">
-									<p className="text-2xs font-medium uppercase tracking-widest text-muted-foreground/70">
-										{__('Fields answered', 'all-feedback')}
-									</p>
-									<p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
-										{completionPct}%
-									</p>
-								</div>
-								{response.score !== null && (
-									<>
-										<div className="h-10 w-px bg-border/60" />
-										<div className="text-center">
-											<p className="text-2xs font-medium uppercase tracking-widest text-muted-foreground/70">
-												{__('Score', 'all-feedback')}
-											</p>
-											<p className="mt-1 text-lg font-semibold tabular-nums text-foreground">
-												{response.score}
-											</p>
-										</div>
-									</>
-								)}
-							</div>
-						)}
-					</div>
 
 					<div className="rounded-xl border border-border bg-card overflow-hidden">
 						{schemaFields.filter((f) => f.required || isAnswered(responseData[f.id])).map((schField) => {
 							const rawValue = responseData[schField.id];
+							const typeConfig = FIELD_TYPES.find((t) => t.type === schField.type);
+							const FieldIcon = typeConfig?.Icon ?? MessageSquare;
 							return (
 								<form.Field key={schField.id} name="response_data">
 									{(field) => (
@@ -762,30 +711,21 @@ const ResponseDetail = () => {
 											'border-b border-border px-4 py-5 sm:px-6 sm:py-6 last:border-0 transition-colors',
 											isEditing && 'hover:bg-muted/30',
 										)}>
-											{(() => {
-												const typeConfig = FIELD_TYPES.find((t) => t.type === schField.type);
-												return (
-													<div className="mb-3 flex items-center gap-3">
-														<span
-															className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted"
-															title={typeConfig?.label}
-														>
-															{typeConfig ? (
-																<typeConfig.Icon className="size-4 text-muted-foreground" />
-															) : (
-																<MessageSquare className="size-4 text-muted-foreground" />
-															)}
-														</span>
-														<div className="flex items-baseline gap-1 text-base font-medium text-foreground/80">
-															<span
-																className="[&_p]:m-0 [&_p]:inline text-base"
-																dangerouslySetInnerHTML={{ __html: schField.label }}
-															/>
-															{schField.required && <span className="text-destructive">*</span>}
-														</div>
-													</div>
-												);
-											})()}
+											<div className="mb-3 flex items-center gap-3">
+												<span
+													className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted"
+													title={typeConfig?.label}
+												>
+													<FieldIcon className="size-4 text-muted-foreground" />
+												</span>
+												<div className="flex items-baseline gap-1 text-base font-medium text-foreground/80">
+													<span
+														className="[&_p]:m-0 [&_p]:inline text-base"
+														dangerouslySetInnerHTML={{ __html: schField.label }}
+													/>
+													{schField.required && <span className="text-destructive">*</span>}
+												</div>
+											</div>
 											<div className="pl-11">
 												{isEditing ? (
 													<EditField
@@ -895,8 +835,25 @@ const ResponseDetail = () => {
 							</p>
 						</div>
 						<div className="divide-y divide-border">
+							<SidebarRow icon={response.is_read ? MailOpen : Mail} label={__('Status', 'all-feedback')}>
+								{response.is_read ? (
+									<span className="text-muted-foreground">{__('Read', 'all-feedback')}</span>
+								) : (
+									<div className="flex items-center gap-1.5">
+										<span className="size-1.5 rounded-full bg-orange-400" />
+										<span className="font-bold text-orange-600 uppercase tracking-tight text-[10px]">
+											{__('Unread', 'all-feedback')}
+										</span>
+									</div>
+								)}
+							</SidebarRow>
+
 							<SidebarRow icon={CalendarDays} label={__('Submitted', 'all-feedback')}>
 								{format(new Date(response.created_at), 'MMM d, yyyy · h:mm a')}
+							</SidebarRow>
+
+							<SidebarRow icon={CheckSquare} label={__('Fields answered', 'all-feedback')}>
+								{completionPct}%
 							</SidebarRow>
 
 							<SidebarRow icon={getDeviceIcon(response.device_type)} label={__('Device', 'all-feedback')}>
@@ -905,6 +862,22 @@ const ResponseDetail = () => {
 								) : (
 									<span className="text-muted-foreground">—</span>
 								)}
+							</SidebarRow>
+
+							<SidebarRow icon={Shield} label={__('IP Address', 'all-feedback')}>
+								<div className="flex items-center gap-2">
+									<span className="font-mono text-sm">
+										{showIp ? (response.ip_address ?? '—') : '••••••••••••'}
+									</span>
+									<button
+										type="button"
+										onClick={() => setShowIp(!showIp)}
+										className="flex size-6 items-center justify-center rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+										title={showIp ? __('Hide IP', 'all-feedback') : __('Show IP', 'all-feedback')}
+									>
+										{showIp ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+									</button>
+								</div>
 							</SidebarRow>
 
 							<SidebarRow icon={Globe} label={__('Page URL', 'all-feedback')}>
