@@ -4,7 +4,14 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Input } from '@/components/ui/input';
 import { surveysApi } from '@/admin/api/surveys';
-import { surveyQuery, surveyResponseQuery, surveyResponsesQuery } from '@/admin/queries/surveys';
+import { surveyQuery, surveyResponseQuery, surveyResponsesQuery, surveysQuery } from '@/admin/queries/surveys';
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { useForm } from '@tanstack/react-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -345,8 +352,35 @@ const ResponseDetail = () => {
 	const [isDirty,             setIsDirty]             = useState(false);
 	const [showUnanswered,      setShowUnanswered]      = useState(false);
 	const [confirmDeleteOpen,   setConfirmDeleteOpen]   = useState(false);
+	const [isChangingSurvey,    setIsChangingSurvey]    = useState(false);
 
 	const { data: survey } = useQuery({ ...surveyQuery(surveyId), enabled: surveyId > 0 });
+
+	const { data: surveysData } = useQuery(surveysQuery({ per_page: 100 }));
+	const allSurveys = surveysData?.surveys ?? [];
+
+	const handleSurveyChange = async (id: string) => {
+		const newSurveyId = Number(id);
+		if (newSurveyId === surveyId) return;
+		setIsChangingSurvey(true);
+		try {
+			const result = await surveysApi.listResponses(newSurveyId, { per_page: 1, page: 1 });
+			const first  = result?.responses?.[0];
+			if (first) {
+				void navigate({
+					to:     '/responses/$responseId',
+					params: { responseId: String(first.id) },
+					search: { surveyId: newSurveyId },
+				});
+			} else {
+				toast.info(__('This form has no responses yet.', 'all-feedback'));
+			}
+		} catch {
+			toast.error(__('Failed to load responses for this form.', 'all-feedback'));
+		} finally {
+			setIsChangingSurvey(false);
+		}
+	};
 
 	const { data: responsesListData } = useQuery({
 		...surveyResponsesQuery(surveyId, { per_page: 100, page: 1 }),
@@ -562,7 +596,24 @@ const ResponseDetail = () => {
 						<ArrowLeft className="size-4" />
 					</Button>
 					<span className="h-5 w-px bg-border" />
-					<p className="truncate text-sm font-semibold text-foreground">{surveyTitle}</p>
+					<Select value={String(surveyId)} onValueChange={(id) => { void handleSurveyChange(id); }} disabled={isChangingSurvey}>
+						<SelectTrigger className="h-8 w-auto max-w-[260px] border-transparent bg-transparent px-2 text-sm font-semibold shadow-none hover:border-border hover:bg-muted/50 focus:ring-0 disabled:opacity-60">
+							{isChangingSurvey
+								? <Loader2 className="size-3.5 animate-spin text-muted-foreground" />
+								: <SelectValue />
+							}
+						</SelectTrigger>
+						<SelectContent>
+							{allSurveys.map((s) => (
+								<SelectItem key={s.id} value={String(s.id)}>
+									{s.title}
+								</SelectItem>
+							))}
+							{allSurveys.length === 0 && (
+								<SelectItem value={String(surveyId)}>{surveyTitle}</SelectItem>
+							)}
+						</SelectContent>
+					</Select>
 					<ChevronRight className="size-3.5 shrink-0 text-muted-foreground/40" />
 					<span className="text-sm text-muted-foreground">#{response.id}</span>
 				</div>

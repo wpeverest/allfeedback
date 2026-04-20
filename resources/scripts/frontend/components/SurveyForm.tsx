@@ -86,11 +86,24 @@ export const SurveyForm = ( { cfg, survey, submitNonce, onSuccess }: SurveyFormP
 			responseData[ f.id ] = fieldValues[ f.id ] ?? ( f.type === 'checkboxes' ? [] : '' );
 		} ) );
 
+		const allFields = sections.flatMap( ( s ) => s.fields );
+		const scoreField = allFields.find( ( f ) => f.type === 'nps' || f.type === 'star_rating' || f.type === 'scale' );
+		const rawScore   = scoreField ? fieldValues[ scoreField.id ] : undefined;
+		const score      = rawScore !== undefined && rawScore !== '' && ! Array.isArray( rawScore )
+			? Number( rawScore )
+			: undefined;
+
 		try {
 			const res = await fetch( `${ cfg.restUrl }surveys/${ survey.id }/submit`, {
 				method:  'POST',
 				headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': cfg.nonce },
-				body:    JSON.stringify( { nonce: submitNonce, response_data: responseData, page_url: window.location.href, visitor_token: getOrCreateVisitorId() } ),
+				body:    JSON.stringify( {
+					nonce:         submitNonce,
+					response_data: responseData,
+					page_url:      window.location.href,
+					visitor_token: getOrCreateVisitorId(),
+					...( score !== undefined && ! Number.isNaN( score ) ? { score } : {} ),
+				} ),
 			} );
 			if ( ! res.ok ) throw new Error( `HTTP ${ res.status }` );
 			onSuccess();
