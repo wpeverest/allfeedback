@@ -48,6 +48,27 @@ class CreateInitialTables extends Migration {
 		);
 
 		$this->dbDelta(
+			"CREATE TABLE IF NOT EXISTS {$this->table( 'af_survey_sessions' )} (
+			id             bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			survey_id      bigint(20) unsigned NOT NULL,
+			session_id     varchar(36)         NOT NULL,
+			user_id        bigint(20) unsigned          DEFAULT NULL,
+			guest_id       varchar(36)                  DEFAULT NULL,
+			status         varchar(20)         NOT NULL DEFAULT 'viewed',
+			started_at     datetime                     DEFAULT NULL,
+			submitted_at   datetime                     DEFAULT NULL,
+			abandoned_at   datetime                     DEFAULT NULL,
+			last_active_at datetime            NOT NULL,
+			created_at     datetime            NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY session_id   (session_id),
+			KEY survey_id           (survey_id),
+			KEY survey_status       (survey_id, status),
+			KEY created_at          (created_at)
+		) {$charset};"
+		);
+
+		$this->dbDelta(
 			"CREATE TABLE IF NOT EXISTS {$this->table( 'af_responses' )} (
 			id            bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			survey_id     bigint(20) unsigned NOT NULL,
@@ -80,6 +101,7 @@ class CreateInitialTables extends Migration {
 		global $wpdb;
 
 		$tables = [
+			$this->table( 'af_survey_sessions' ),
 			$this->table( 'af_responses' ),
 			$this->table( 'af_surveys' ),
 		];

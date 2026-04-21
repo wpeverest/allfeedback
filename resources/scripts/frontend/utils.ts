@@ -1,5 +1,20 @@
 import type { FormSection, NormalizedSettings, SurveyField, SurveySettings } from './types';
 
+export async function trackEvent(
+	restUrl:   string,
+	nonce:     string,
+	surveyId:  number,
+	event:     'viewed' | 'started' | 'abandoned' | 'heartbeat',
+	sessionId: string,
+	guestId?:  string,
+): Promise<void> {
+	await fetch( `${ restUrl }surveys/${ surveyId }/analytics/event`, {
+		method:  'POST',
+		headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': nonce },
+		body:    JSON.stringify( { event, session_id: sessionId, ...( guestId ? { guest_id: guestId } : {} ) } ),
+	} ).catch( () => {} ); // analytics must never break the widget
+}
+
 export function normalizeSettings( raw: SurveySettings | null | undefined ): NormalizedSettings {
 	const s = raw ?? {};
 	return {
