@@ -120,14 +120,11 @@ export const ProductIllustration = (props: IllustrationProps) => (
 
 export const WebsiteIllustration = (props: IllustrationProps) => (
 	<BaseIllustration {...props}>
-		<rect x={2} y={10} width={136} height={78} rx={6} className="fill-muted/20 stroke-border" strokeWidth={2} />
-		<path d="M2 28H138" className="stroke-border" strokeWidth={2} />
-		<circle cx={10} cy={19} r={3} className="fill-muted-foreground/40" />
-		<circle cx={20} cy={19} r={3} className="fill-muted-foreground/40" />
-		<rect x={20} y={36} width={100} height={46} rx={4} className="fill-white stroke-border shadow-sm" strokeWidth={2} />
-		<NPSScale y={42} />
-		<rect x={25} y={58} width={90} height={8} rx={2} className="fill-muted/5 stroke-border/40" strokeWidth={1} />
-		<rect x={25} y={72} width={24} height={6} rx={2} className="fill-primary" />
+		<FieldLabel y={8} width={100} />
+		<NPSScale y={18} />
+		<FieldLabel y={40} width={70} />
+		<InputField y={50} />
+		<SubmitButton y={72} />
 	</BaseIllustration>
 );
 
