@@ -1,5 +1,6 @@
 import { format } from 'date-fns';
 import { Tooltip as RadixTooltip } from 'radix-ui';
+import * as Dialog from '@radix-ui/react-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip } from '@/admin/components/Tooltip';
 import { BulkActionBar } from '@/components/ui/bulk-action-bar';
@@ -24,6 +25,9 @@ import {
 	SelectValue,
 } from '@/components/ui/select';
 import { surveysApi } from '@/admin/api/surveys';
+import type { CreateSurveyData } from '@/admin/api/surveys';
+import { FORM_TEMPLATES } from '@/admin/data/templates';
+import type { TemplateId } from '@/admin/data/templates';
 import { surveysQuery } from '@/admin/queries/surveys';
 import { cn } from '@/lib/utils';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -34,19 +38,23 @@ import {
 	AlertTriangle,
 	Archive,
 	ArrowDown,
+	ArrowLeft,
 	ArrowUp,
 	ArrowUpDown,
 	ArrowUpRight,
+	ChevronRight,
 	Copy,
 	Edit2,
 	Eye,
 	EyeOff,
 	FileText,
+	LayoutGrid,
 	Loader2,
 	MoreVertical,
 	Plus,
 	RotateCcw,
 	Trash2,
+	X,
 } from 'lucide-react';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useEffect, useState } from 'react';
@@ -78,6 +86,172 @@ const PER_PAGE_OPTIONS = [10, 25, 50];
 
 const cellCls = 'text-base font-normal leading-5 text-body-text';
 
+// ── new-form modal ─────────────────────────────────────────────────────────
+
+
+const NewFormModal = ({
+	open,
+	onOpenChange,
+	onSelect,
+	isPending,
+	pendingId,
+}: {
+	open:         boolean;
+	onOpenChange: (open: boolean) => void;
+	onSelect:     (id: TemplateId) => void;
+	isPending:    boolean;
+	pendingId:    TemplateId | null;
+}) => {
+	const [view, setView] = useState<'start' | 'templates'>('start');
+
+	useEffect(() => {
+		if (!open) setView('start');
+	}, [open]);
+
+	return (
+		<Dialog.Root open={open} onOpenChange={(v) => { if (!isPending) onOpenChange(v); }}>
+			<Dialog.Portal>
+				<Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 duration-200" />
+				<Dialog.Content
+					className={cn(
+						'fixed left-1/2 top-1/2 z-50 w-full -translate-x-1/2 -translate-y-1/2',
+						'max-w-[680px]',
+						'rounded-2xl border border-border bg-card shadow-[var(--shadow-dropdown)] focus:outline-none',
+						'data-[state=open]:animate-in data-[state=closed]:animate-out',
+						'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+						'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
+						'duration-200',
+					)}
+				>
+					{view === 'start' ? (
+						<div className="p-6">
+							<Dialog.Close
+								className="absolute right-4 top-4 flex size-7 cursor-pointer items-center justify-center rounded-lg text-muted-foreground/50 transition-colors hover:bg-muted/60 hover:text-foreground"
+								disabled={isPending}
+							>
+								<X className="size-4" />
+							</Dialog.Close>
+
+							<Dialog.Title className="text-base font-semibold text-foreground" style={{ margin: 0 }}>
+								{__('Create a new form', 'all-feedback')}
+							</Dialog.Title>
+							<Dialog.Description className="mt-1 text-sm text-muted-foreground/70" style={{ margin: 0, marginTop: '4px' }}>
+								{__('How would you like to get started?', 'all-feedback')}
+							</Dialog.Description>
+
+							<div className="mt-5 grid grid-cols-2 gap-3">
+								<button
+									type="button"
+									onClick={() => onSelect('scratch')}
+									disabled={isPending}
+									className={cn(
+										'group flex flex-col rounded-xl border p-5 text-left transition-all duration-150 outline-none cursor-pointer',
+										'focus-visible:ring-2 focus-visible:ring-primary/25',
+										'border-dashed border-border/70 hover:border-primary/40 hover:bg-muted/20',
+										isPending && pendingId === 'scratch' && 'border-primary/50 bg-primary/[0.03]',
+										isPending && pendingId !== 'scratch' && 'pointer-events-none opacity-40',
+									)}
+								>
+									<div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-muted/70">
+										{isPending && pendingId === 'scratch'
+											? <Loader2 className="size-[18px] animate-spin text-primary" />
+											: <FileText className="size-[18px] text-foreground/40" />
+										}
+									</div>
+									<p className="mt-4 text-sm font-semibold text-foreground">{__('Start from scratch', 'all-feedback')}</p>
+									<p className="mt-1 text-xs leading-relaxed text-muted-foreground/60">{__('Build your form field by field from a blank canvas.', 'all-feedback')}</p>
+								</button>
+
+								<button
+									type="button"
+									onClick={() => setView('templates')}
+									disabled={isPending}
+									className={cn(
+										'group flex flex-col rounded-xl border p-5 text-left transition-all duration-150 outline-none cursor-pointer',
+										'focus-visible:ring-2 focus-visible:ring-primary/25',
+										'border-border/60 hover:border-primary/40 hover:bg-muted/20',
+										isPending && 'pointer-events-none opacity-40 cursor-not-allowed',
+									)}
+								>
+									<div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+										<LayoutGrid className="size-[18px] text-primary" />
+									</div>
+									<p className="mt-4 text-sm font-semibold text-foreground">{__('Choose a template', 'all-feedback')}</p>
+									<p className="mt-1 text-xs leading-relaxed text-muted-foreground/60">{__('Pick a ready-made survey to get up and running fast.', 'all-feedback')}</p>
+									<div className="mt-4 flex items-center gap-1 text-xs font-medium text-primary/70">
+										<span>{__('Browse templates', 'all-feedback')}</span>
+										<ChevronRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+									</div>
+								</button>
+							</div>
+						</div>
+					) : (
+						<div>
+							<div className="flex items-center gap-3 border-b border-border/50 px-5 py-4">
+								<button
+									type="button"
+									onClick={() => setView('start')}
+									disabled={isPending}
+									className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-lg text-muted-foreground/60 transition-colors hover:bg-muted/60 hover:text-foreground"
+								>
+									<ArrowLeft className="size-4" />
+								</button>
+								<div className="min-w-0 flex-1">
+									<Dialog.Title className="text-sm font-semibold text-foreground" style={{ margin: 0 }}>
+										{__('Choose a template', 'all-feedback')}
+									</Dialog.Title>
+									<Dialog.Description className="text-xs text-muted-foreground/60" style={{ margin: 0 }}>
+										{__('Select a template to pre-fill your form.', 'all-feedback')}
+									</Dialog.Description>
+								</div>
+								<Dialog.Close
+									className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-lg text-muted-foreground/50 transition-colors hover:bg-muted/60 hover:text-foreground"
+									disabled={isPending}
+								>
+									<X className="size-4" />
+								</Dialog.Close>
+							</div>
+
+							<div className="grid grid-cols-3 gap-3 p-5">
+								{FORM_TEMPLATES.map((tpl) => {
+									const isActive = isPending && pendingId === tpl.id;
+									const isFaded  = isPending && pendingId !== tpl.id;
+									return (
+										<button
+											key={tpl.id}
+											type="button"
+											onClick={() => onSelect(tpl.id)}
+											disabled={isPending}
+											className={cn(
+												'group flex flex-col rounded-xl border p-4 text-left transition-all duration-150 outline-none cursor-pointer',
+												'focus-visible:ring-2 focus-visible:ring-primary/25',
+												'border-border/60 hover:border-primary/40 hover:bg-primary/[0.02] hover:shadow-sm',
+												isActive && 'border-primary/50 bg-primary/[0.03] shadow-sm',
+												isFaded  && 'pointer-events-none opacity-40 cursor-not-allowed',
+											)}
+										>
+											<div className={cn('flex size-9 items-center justify-center rounded-xl transition-colors', tpl.iconBg)}>
+												{isActive
+													? <Loader2 className="size-4 animate-spin text-primary" />
+													: <tpl.Icon className={cn('size-4', tpl.iconColor)} />
+												}
+											</div>
+											<p className="mt-3 text-sm font-semibold text-foreground leading-snug">{tpl.label}</p>
+											<p className="mt-1 text-xs leading-relaxed text-muted-foreground/60">{tpl.description}</p>
+											<span className={cn('mt-3 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold', tpl.badgeCls)}>
+												{tpl.badge}
+											</span>
+										</button>
+									);
+								})}
+							</div>
+						</div>
+					)}
+				</Dialog.Content>
+			</Dialog.Portal>
+		</Dialog.Root>
+	);
+};
 
 const SkeletonRow = () => (
 	<tr className="border-b border-border">
@@ -127,6 +301,8 @@ const AllForms = () => {
 	const [confirmDeleteId,   setConfirmDeleteId]   = useState<number | null>(null);
 	const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
 	const [confirmBulkTrash,  setConfirmBulkTrash]  = useState(false);
+	const [newFormOpen,       setNewFormOpen]       = useState(false);
+	const [pendingTemplateId, setPendingTemplateId] = useState<TemplateId | null>(null);
 
 	const queryParams = {
 		page,
@@ -193,12 +369,29 @@ const AllForms = () => {
 	const anySelectedNotTrashed = checkedSurveys.some((s) => s.status !== 'trashed');
 
 	const createMutation = useMutation({
-		mutationFn: () => surveysApi.create({ title: __('Untitled Form', 'all-feedback') }),
+		mutationFn: (data: CreateSurveyData) => surveysApi.create(data),
 		onSuccess: (survey) => {
 			void queryClient.invalidateQueries({ queryKey: ['surveys'] });
+			setNewFormOpen(false);
+			setPendingTemplateId(null);
 			void navigate({ to: '/builder/', search: { new: true, id: survey.id } });
 		},
+		onError: () => {
+			setPendingTemplateId(null);
+			toast.error(__('Failed to create form. Please try again.', 'all-feedback'));
+		},
 	});
+
+	const handleSelectTemplate = (templateId: TemplateId) => {
+		setPendingTemplateId(templateId);
+		if (templateId === 'scratch') {
+			createMutation.mutate({ title: __('Untitled Form', 'all-feedback') });
+			return;
+		}
+		const tpl = FORM_TEMPLATES.find((t) => t.id === templateId);
+		if (!tpl) return;
+		createMutation.mutate({ title: tpl.createTitle, form_schema: tpl.schema });
+	};
 
 	const deleteMutation = useMutation({
 		mutationFn: (id: number) => surveysApi.delete(id),
@@ -348,6 +541,14 @@ const AllForms = () => {
 				isPending={bulkTrashMutation.isPending}
 			/>
 
+			<NewFormModal
+				open={newFormOpen}
+				onOpenChange={setNewFormOpen}
+				onSelect={handleSelectTemplate}
+				isPending={createMutation.isPending}
+				pendingId={pendingTemplateId}
+			/>
+
 			<div className="mb-4 flex flex-wrap items-center gap-3 py-1">
 				<div className="relative w-full sm:w-[260px]">
 					<svg
@@ -377,11 +578,8 @@ const AllForms = () => {
 				</Select>
 
 				<div className="w-full sm:ml-auto sm:w-auto">
-					<Button className="w-full sm:w-auto" onClick={() => createMutation.mutate()} disabled={createMutation.isPending}>
-						{createMutation.isPending
-							? <Loader2 className="size-4 animate-spin" />
-							: <Plus className="size-4" />
-						}
+					<Button className="w-full sm:w-auto" onClick={() => setNewFormOpen(true)}>
+						<Plus className="size-4" />
 						{__('Add New Form', 'all-feedback')}
 					</Button>
 				</div>

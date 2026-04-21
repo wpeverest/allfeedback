@@ -1,0 +1,25 @@
+{
+  "version": "1",
+  "sections": [
+    {
+      "id": "nps-s1",
+      "title": "Page 1",
+      "fields": [
+        {
+          "id": "nps-f1",
+          "type": "nps",
+          "label": "<p>How likely are you to recommend us to a friend or colleague?</p>",
+          "required": true,
+          "settings": {}
+        },
+        {
+          "id": "nps-f2",
+          "type": "long_text",
+          "label": "<p>What is the main reason for your score?</p>",
+          "required": false,
+          "settings": { "placeholder": "Share your thoughts…" }
+        }
+      ]
+    }
+  ]
+}

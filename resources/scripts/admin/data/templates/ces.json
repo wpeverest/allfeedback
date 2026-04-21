@@ -1,0 +1,30 @@
+{
+  "version": "1",
+  "sections": [
+    {
+      "id": "ces-s1",
+      "title": "Page 1",
+      "fields": [
+        {
+          "id": "ces-f1",
+          "type": "scale",
+          "label": "<p>How easy was it to resolve your issue today?</p>",
+          "required": true,
+          "settings": {
+            "scaleMin": 1,
+            "scaleMax": 7,
+            "scaleLowLabel": "Very difficult",
+            "scaleHighLabel": "Very easy"
+          }
+        },
+        {
+          "id": "ces-f2",
+          "type": "long_text",
+          "label": "<p>What made it easy or difficult?</p>",
+          "required": false,
+          "settings": { "placeholder": "Optional feedback…" }
+        }
+      ]
+    }
+  ]
+}

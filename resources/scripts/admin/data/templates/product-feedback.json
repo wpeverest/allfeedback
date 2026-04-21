@@ -1,0 +1,32 @@
+{
+  "version": "1",
+  "sections": [
+    {
+      "id": "pf-s1",
+      "title": "Page 1",
+      "fields": [
+        {
+          "id": "pf-f1",
+          "type": "star_rating",
+          "label": "<p>How would you rate this feature overall?</p>",
+          "required": true,
+          "settings": { "starRange": 5 }
+        },
+        {
+          "id": "pf-f2",
+          "type": "long_text",
+          "label": "<p>What do you like most about it?</p>",
+          "required": false,
+          "settings": { "placeholder": "Tell us what is working well…" }
+        },
+        {
+          "id": "pf-f3",
+          "type": "long_text",
+          "label": "<p>What could be improved?</p>",
+          "required": false,
+          "settings": { "placeholder": "Share your suggestions…" }
+        }
+      ]
+    }
+  ]
+}

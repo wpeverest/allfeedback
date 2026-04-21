@@ -22,15 +22,6 @@ const Row = ({ label, children, top }: { label: string; children: React.ReactNod
 	</div>
 );
 
-const SectionLabel = ({ children }: { children: React.ReactNode }) => (
-	<div className="flex items-center gap-3">
-		<span className="text-2xs font-semibold uppercase tracking-widest text-muted-foreground/70">
-			{children}
-		</span>
-		<div className="flex-1 border-t border-border/50" />
-	</div>
-);
-
 const COLOR_PRESETS = [
 	'#6366F1', '#3B82F6', '#10B981', '#F59E0B', '#EF4444',
 ];
