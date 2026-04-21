@@ -26,7 +26,11 @@ const InputField = ({ y }: { y: number }) => (
 );
 
 const TextAreaField = ({ y, height = 22 }: { y: number; height?: number }) => (
-	<rect x={5} y={y} width={130} height={height} rx={3} className="fill-white stroke-border" strokeWidth={2} />
+	<g>
+		<rect x={5} y={y} width={130} height={height} rx={3} className="fill-white stroke-border" strokeWidth={2} />
+		<rect x={12} y={y + 6} width={40} height={2} rx={1} className="fill-muted-foreground/15" />
+		<rect x={12} y={y + 12} width={100} height={2} rx={1} className="fill-muted-foreground/10" />
+	</g>
 );
 
 const SubmitButton = ({ y }: { y: number }) => (
@@ -34,27 +38,27 @@ const SubmitButton = ({ y }: { y: number }) => (
 );
 
 const NPSScale = ({ y }: { y: number }) => (
-	<>
+	<g>
 		{[0, 1, 2, 3, 4, 5, 6].map((i) => (
-			<rect key={i} x={5 + i * 11} y={y} width="9" height="10" rx="2.5" className="fill-white stroke-border" strokeWidth={1.5} />
+			<rect key={i} x={5 + i * 11} y={y} width={9} height={10} rx={2.5} className="fill-white stroke-border" strokeWidth={1.5} />
 		))}
-		<rect x={82} y={y} width="9" height="10" rx="2.5" className="fill-primary/15 stroke-primary/50" strokeWidth={1.5} />
-		<rect x={93} y={y} width="9" height="10" rx="2.5" className="fill-primary/30 stroke-primary/70" strokeWidth={1.5} />
-		<rect x={104} y={y} width="9" height="10" rx="2.5" className="fill-primary/50 stroke-primary/90" strokeWidth={1.5} />
-		<rect x={115} y={y} width="20" height="10" rx="2.5" className="fill-primary stroke-primary" strokeWidth={1.5} />
-	</>
+		<rect x={82} y={y} width={9} height={10} rx={2.5} className="fill-primary/15 stroke-primary/50" strokeWidth={1.5} />
+		<rect x={93} y={y} width={9} height={10} rx={2.5} className="fill-primary/30 stroke-primary/70" strokeWidth={1.5} />
+		<rect x={104} y={y} width={9} height={10} rx={2.5} className="fill-primary/50 stroke-primary/90" strokeWidth={1.5} />
+		<rect x={115} y={y} width={20} height={10} rx={2.5} className="fill-primary stroke-primary" strokeWidth={1.5} />
+	</g>
 );
 
 const StarRating = ({ y, activeCount = 3 }: { y: number; activeCount?: number }) => {
 	const starPath = "M6 0L7.4 4.2H11.8L8.2 6.8L9.6 11L6 8.4L2.4 11L3.8 6.8L0.2 4.2H4.6L6 0Z";
 	return (
-		<>
+		<g>
 			{[0, 1, 2, 3, 4].map((i) => (
 				<g key={i} transform={`translate(${5 + i * 16}, ${y})`}>
 					<path d={starPath} className={i < activeCount ? "fill-primary" : "fill-muted-foreground/30"} />
 				</g>
 			))}
-		</>
+		</g>
 	);
 };
 
@@ -71,8 +75,8 @@ export const NPSIllustration = (props: IllustrationProps) => (
 		<FieldLabel y={6} width={90} />
 		<NPSScale y={15} />
 		<FieldLabel y={35} width={70} />
-		<InputField y={45} />
-		<SubmitButton y={65} />
+		<TextAreaField y={45} height={20} />
+		<SubmitButton y="72" />
 	</BaseIllustration>
 );
 
@@ -101,7 +105,7 @@ export const FeatureIllustration = (props: IllustrationProps) => (
 	<BaseIllustration {...props}>
 		<FieldLabel y={8} width={110} />
 		<InputField y={20} />
-		<FieldLabel y="42" width={90} />
+		<FieldLabel y={42} width={90} />
 		<TextAreaField y={54} height={24} />
 		<SubmitButton y={85} />
 	</BaseIllustration>
