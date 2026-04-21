@@ -126,7 +126,7 @@ const NewFormModal = ({
 					{view === 'start' ? (
 						<div className="p-6">
 							<Dialog.Close
-								className="absolute right-4 top-4 flex size-7 cursor-pointer items-center justify-center rounded-lg text-muted-foreground/50 transition-colors hover:bg-muted/60 hover:text-foreground"
+								className="absolute right-4 top-4 flex size-7 cursor-pointer items-center justify-center rounded-lg text-muted-foreground/50 transition-colors hover:bg-muted hover:text-foreground"
 								disabled={isPending}
 							>
 								<X className="size-4" />
@@ -192,7 +192,7 @@ const NewFormModal = ({
 									type="button"
 									onClick={() => setView('start')}
 									disabled={isPending}
-									className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-lg text-muted-foreground/60 transition-colors hover:bg-muted/60 hover:text-foreground"
+									className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-lg text-muted-foreground/50 transition-colors hover:bg-muted hover:text-foreground"
 								>
 									<ArrowLeft className="size-4" />
 								</button>
@@ -200,19 +200,19 @@ const NewFormModal = ({
 									<Dialog.Title className="text-sm font-semibold text-foreground" style={{ margin: 0 }}>
 										{__('Choose a template', 'all-feedback')}
 									</Dialog.Title>
-									<Dialog.Description className="text-xs text-muted-foreground/60" style={{ margin: 0 }}>
+									<Dialog.Description className="text-xs text-muted-foreground/70" style={{ margin: 0 }}>
 										{__('Select a template to pre-fill your form.', 'all-feedback')}
 									</Dialog.Description>
 								</div>
 								<Dialog.Close
-									className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-lg text-muted-foreground/50 transition-colors hover:bg-muted/60 hover:text-foreground"
+									className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-lg text-muted-foreground/50 transition-colors hover:bg-muted hover:text-foreground"
 									disabled={isPending}
 								>
 									<X className="size-4" />
 								</Dialog.Close>
 							</div>
 
-							<div className="grid grid-cols-3 gap-3 p-5">
+							<div className="grid grid-cols-2 gap-3 p-5">
 								{FORM_TEMPLATES.map((tpl) => {
 									const isActive = isPending && pendingId === tpl.id;
 									const isFaded  = isPending && pendingId !== tpl.id;
@@ -223,24 +223,29 @@ const NewFormModal = ({
 											onClick={() => onSelect(tpl.id)}
 											disabled={isPending}
 											className={cn(
-												'group flex flex-col rounded-xl border p-4 text-left transition-all duration-150 outline-none cursor-pointer',
-												'focus-visible:ring-2 focus-visible:ring-primary/25',
-												'border-border/60 hover:border-primary/40 hover:bg-primary/[0.02] hover:shadow-sm',
-												isActive && 'border-primary/50 bg-primary/[0.03] shadow-sm',
+												'group flex items-center gap-3.5 rounded-xl border p-4 text-left transition-all duration-150 outline-none cursor-pointer',
+												'focus-visible:ring-2 focus-visible:ring-primary/30',
+												'border-border/60 bg-card hover:border-primary/40 hover:bg-muted/40',
+												isActive && 'border-primary/40 bg-muted/40',
 												isFaded  && 'pointer-events-none opacity-40 cursor-not-allowed',
+												FORM_TEMPLATES.indexOf(tpl) === FORM_TEMPLATES.length - 1 && FORM_TEMPLATES.length % 2 !== 0 && 'col-span-2',
 											)}
 										>
-											<div className={cn('flex size-9 items-center justify-center rounded-xl transition-colors', tpl.iconBg)}>
+											<div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
 												{isActive
-													? <Loader2 className="size-4 animate-spin text-primary" />
-													: <tpl.Icon className={cn('size-4', tpl.iconColor)} />
+													? <Loader2 className="size-[17px] animate-spin text-primary" />
+													: <tpl.Icon className="size-[17px] text-muted-foreground/70" />
 												}
 											</div>
-											<p className="mt-3 text-sm font-semibold text-foreground leading-snug">{tpl.label}</p>
-											<p className="mt-1 text-xs leading-relaxed text-muted-foreground/60">{tpl.description}</p>
-											<span className={cn('mt-3 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold', tpl.badgeCls)}>
-												{tpl.badge}
-											</span>
+											<div className="min-w-0 flex-1">
+												<div className="flex items-center gap-2">
+													<p className="text-sm font-semibold text-foreground">{tpl.label}</p>
+													<span className="shrink-0 rounded-md border border-border/60 bg-muted/60 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground/70">
+														{tpl.badge}
+													</span>
+												</div>
+												<p className="mt-0.5 text-xs leading-relaxed text-muted-foreground/70">{tpl.description}</p>
+											</div>
 										</button>
 									);
 								})}
