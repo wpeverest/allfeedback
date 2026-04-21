@@ -1,12 +1,13 @@
 import type { CreateSurveyData } from '@/admin/api/surveys';
-import { FileText, Globe, Package, Star, TrendingUp, Zap } from 'lucide-react';
+import { Bug, FileText, Globe, Lightbulb, MessageSquare, Package, TrendingUp } from 'lucide-react';
 import npsSchema           from './nps.json';
-import csatSchema          from './csat.json';
-import cesSchema           from './ces.json';
 import productSchema       from './product-feedback.json';
 import websiteSchema       from './website-feedback.json';
+import bugReportSchema     from './bug-report.json';
+import featureRequestSchema from './feature-request.json';
+import generalFeedbackSchema from './general-feedback.json';
 
-export type TemplateId = 'scratch' | 'nps' | 'csat' | 'ces' | 'product' | 'website';
+export type TemplateId = 'scratch' | 'nps' | 'product' | 'website' | 'bug_report' | 'feature_request' | 'general_feedback';
 
 export interface FormTemplate {
 	id:          Exclude<TemplateId, 'scratch'>;
@@ -35,33 +36,45 @@ export const FORM_TEMPLATES: FormTemplate[] = [
 		schema:      npsSchema as CreateSurveyData['form_schema'],
 	},
 	{
-		id:          'csat',
-		label:       'CSAT Survey',
-		description: 'Gauge satisfaction after a support interaction or purchase.',
-		Icon:        Star,
+		id:          'general_feedback',
+		label:       'General Feedback',
+		description: 'Collect general thoughts and suggestions from your users.',
+		Icon:        MessageSquare,
 		iconBg:      'bg-amber-500/10',
 		iconColor:   'text-amber-500',
-		badge:       'CSAT',
+		badge:       'Feedback',
 		badgeCls:    'bg-amber-500/10 text-amber-600',
-		createTitle: 'CSAT Survey',
-		schema:      csatSchema as CreateSurveyData['form_schema'],
+		createTitle: 'General Feedback',
+		schema:      generalFeedbackSchema as CreateSurveyData['form_schema'],
 	},
 	{
-		id:          'ces',
-		label:       'CES Survey',
-		description: 'Measure effort customers expend to resolve an issue or complete a task.',
-		Icon:        Zap,
+		id:          'bug_report',
+		label:       'Bug Report',
+		description: 'Allow users to report technical issues and software bugs.',
+		Icon:        Bug,
+		iconBg:      'bg-red-500/10',
+		iconColor:   'text-red-500',
+		badge:       'Bug',
+		badgeCls:    'bg-red-500/10 text-red-600',
+		createTitle: 'Bug Report',
+		schema:      bugReportSchema as CreateSurveyData['form_schema'],
+	},
+	{
+		id:          'feature_request',
+		label:       'Feature Request',
+		description: 'Gather ideas for new features and product improvements.',
+		Icon:        Lightbulb,
 		iconBg:      'bg-violet-500/10',
 		iconColor:   'text-violet-500',
-		badge:       'CES',
+		badge:       'Feature',
 		badgeCls:    'bg-violet-500/10 text-violet-600',
-		createTitle: 'CES Survey',
-		schema:      cesSchema as CreateSurveyData['form_schema'],
+		createTitle: 'Feature Request',
+		schema:      featureRequestSchema as CreateSurveyData['form_schema'],
 	},
 	{
 		id:          'product',
 		label:       'Product Feedback',
-		description: 'Collect structured feedback on a specific product feature or release.',
+		description: 'Collect structured feedback on a specific product feature.',
 		Icon:        Package,
 		iconBg:      'bg-emerald-500/10',
 		iconColor:   'text-emerald-500',

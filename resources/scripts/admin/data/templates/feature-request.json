@@ -1,0 +1,25 @@
+{
+  "version": "1",
+  "sections": [
+    {
+      "id": "fr-s1",
+      "title": "Feature Request",
+      "fields": [
+        {
+          "id": "fr-f1",
+          "type": "short_text",
+          "label": "What feature would you like to see?",
+          "required": true,
+          "settings": { "placeholder": "Name of the feature" }
+        },
+        {
+          "id": "fr-f2",
+          "type": "long_text",
+          "label": "How would this feature help you?",
+          "required": true,
+          "settings": { "placeholder": "Describe the use case or benefit" }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "version": "1",
+  "sections": [
+    {
+      "id": "br-s1",
+      "title": "Bug Report",
+      "fields": [
+        {
+          "id": "br-f1",
+          "type": "short_text",
+          "label": "What issue are you experiencing?",
+          "required": true,
+          "settings": { "placeholder": "Brief description of the bug" }
+        },
+        {
+          "id": "br-f2",
+          "type": "long_text",
+          "label": "Steps to reproduce the bug",
+          "required": true,
+          "settings": { "placeholder": "1. Go to...\n2. Click on...\n3. See error..." }
+        },
+        {
+          "id": "br-f3",
+          "type": "long_text",
+          "label": "What did you expect to happen?",
+          "required": false,
+          "settings": { "placeholder": "Describe what should have happened" }
+        }
+      ]
+    }
+  ]
+}

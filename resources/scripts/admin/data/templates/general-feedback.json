@@ -1,0 +1,25 @@
+{
+  "version": "1",
+  "sections": [
+    {
+      "id": "gf-s1",
+      "title": "General Feedback",
+      "fields": [
+        {
+          "id": "gf-f1",
+          "type": "star_rating",
+          "label": "How would you rate your overall experience?",
+          "required": true,
+          "settings": { "starScale": "star", "starRange": 5 }
+        },
+        {
+          "id": "gf-f2",
+          "type": "long_text",
+          "label": "Anything else you'd like to share with us?",
+          "required": false,
+          "settings": { "placeholder": "Your thoughts, suggestions, or concerns..." }
+        }
+      ]
+    }
+  ]
+}
