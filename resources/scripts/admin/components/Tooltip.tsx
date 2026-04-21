@@ -18,10 +18,10 @@ export function Tooltip({ content, children, side = 'top', sideOffset = 6 }: Pro
 				<RadixTooltip.Content
 					side={side}
 					sideOffset={sideOffset}
-					className="z-50 max-w-[280px] rounded-lg border border-border/60 bg-popover px-3 py-2 text-xs leading-relaxed text-popover-foreground shadow-lg"
+					className="z-50 max-w-[280px] rounded-lg bg-foreground px-3 py-2 text-xs leading-relaxed text-background shadow-lg"
 				>
 					{content}
-					<RadixTooltip.Arrow className="fill-border/60" />
+					<RadixTooltip.Arrow className="fill-foreground" />
 				</RadixTooltip.Content>
 			</RadixTooltip.Portal>
 		</RadixTooltip.Root>

@@ -104,7 +104,7 @@ const SystemInfo = () => {
 						{__('System Info', 'all-feedback')}
 					</h3>
 				</div>
-				<Button variant="secondary" size="sm" onClick={handleCopy}>
+				<Button variant="outline" size="sm" className="text-primary" onClick={handleCopy}>
 					{copied ? (
 						<>
 							<Check className="size-3.5" strokeWidth={2.5} />
