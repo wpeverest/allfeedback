@@ -147,18 +147,18 @@ const NewFormModal = ({
 									className={cn(
 										'group flex flex-col rounded-xl border p-5 text-left transition-all duration-150 outline-none cursor-pointer',
 										'focus-visible:ring-2 focus-visible:ring-primary/25',
-										'border-dashed border-border/70 hover:border-primary/40 hover:bg-muted/20',
+										'border border-border/60 hover:border-primary/40 hover:bg-muted/20',
 										isPending && pendingId === 'scratch' && 'border-primary/50 bg-primary/[0.03]',
 										isPending && pendingId !== 'scratch' && 'pointer-events-none opacity-40',
 									)}
 								>
-									<div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-muted/70">
+									<div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-border/40 bg-white transition-colors group-hover:border-primary/20 group-hover:bg-primary/10">
 										{isPending && pendingId === 'scratch'
-											? <Loader2 className="size-[18px] animate-spin text-primary" />
-											: <FileText className="size-[18px] text-foreground/40" />
+											? <Loader2 className="size-[17px] animate-spin text-primary" />
+											: <FileText className="size-[17px] text-muted-foreground/60 transition-colors group-hover:text-primary" />
 										}
 									</div>
-									<p className="mt-4 !mb-0 !text-[16px] font-semibold text-foreground/80 leading-snug">{__('Start from scratch', 'all-feedback')}</p>
+									<p className="!mt-2 !mb-0 !text-[16px] font-semibold text-foreground/80 leading-snug">{__('Start from scratch', 'all-feedback')}</p>
 									<p className="!mt-[4px] text-base leading-relaxed text-muted-foreground/80">{__('Build your form field by field from a blank canvas.', 'all-feedback')}</p>
 								</button>
 
@@ -169,14 +169,14 @@ const NewFormModal = ({
 									className={cn(
 										'group flex flex-col rounded-xl border p-5 text-left transition-all duration-150 outline-none cursor-pointer',
 										'focus-visible:ring-2 focus-visible:ring-primary/25',
-										'border-border/60 hover:border-primary/40 hover:bg-muted/20',
+										'border border-border/60 hover:border-primary/40 hover:bg-muted/20',
 										isPending && 'pointer-events-none opacity-40 cursor-not-allowed',
 									)}
 								>
-									<div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-										<LayoutGrid className="size-[18px] text-primary" />
+									<div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 transition-colors">
+										<LayoutGrid className="size-[17px] text-primary" />
 									</div>
-									<p className="mt-4 !mb-0 !text-[16px] font-semibold text-foreground/80 leading-snug">{__('Choose a template', 'all-feedback')}</p>
+									<p className="!mt-2 !mb-0 !text-[16px] font-semibold text-foreground/80 leading-snug">{__('Choose a template', 'all-feedback')}</p>
 									<p className="!mt-[4px] text-base leading-relaxed text-muted-foreground/80">{__('Pick a ready-made survey to get up and running fast.', 'all-feedback')}</p>
 									<div className="mt-3 flex items-center gap-0.5 text-base font-semibold text-primary">
 										<span>{__('Browse templates', 'all-feedback')}</span>
@@ -206,9 +206,6 @@ const NewFormModal = ({
 									<Dialog.Title className="text-md font-semibold text-foreground" style={{ margin: 0 }}>
 										{__('Choose a template', 'all-feedback')}
 									</Dialog.Title>
-									<Dialog.Description className="text-base text-muted-foreground/75" style={{ margin: 0 }}>
-										{__('Select a template to pre-fill your form.', 'all-feedback')}
-									</Dialog.Description>
 								</div>
 								<Dialog.Close
 									className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-lg text-muted-foreground/50 transition-colors hover:bg-muted hover:text-foreground"
@@ -236,10 +233,10 @@ const NewFormModal = ({
 												isFaded  && 'pointer-events-none opacity-40 cursor-not-allowed',
 											)}
 										>
-											<div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
+											<div className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border/40 bg-white transition-colors group-hover:border-primary/20 group-hover:bg-primary/10">
 												{isActive
 													? <Loader2 className="size-[17px] animate-spin text-primary" />
-													: <tpl.Icon className="size-[17px] text-muted-foreground/70" />
+													: <tpl.Icon className="size-[17px] text-muted-foreground/60 transition-colors group-hover:text-primary" />
 												}
 											</div>
 											<div className="min-w-0 flex-1">
