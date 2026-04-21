@@ -415,6 +415,10 @@ class SurveysController extends RestController {
 			return $this->successResponse( $this->prepareSurvey( $survey ) );
 		}
 
+		if ( $transitioningToPublished ) {
+			$survey->setConflictReason( null );
+		}
+
 		try {
 			$survey = $this->surveyRepository->save( $survey );
 		} catch ( \RuntimeException $e ) {
@@ -919,17 +923,18 @@ class SurveysController extends RestController {
 		$styling = $survey->getStyling();
 
 		$prepared = [
-			'id'             => $survey->getId(),
-			'title'          => $survey->getTitle(),
-			'description'    => $survey->getDescription(),
-			'form_schema'    => $formSchema !== [] ? $formSchema : null,
-			'settings'       => $settings !== [] ? $settings : null,
-			'styling'        => $styling !== [] ? $styling : null,
-			'status'         => $survey->getStatus()->value,
-			'response_count' => $survey->getResponseCount(),
-			'created_by'     => $survey->getCreatedBy() ?: null,
-			'created_at'     => $survey->getCreatedAt()->format( 'Y-m-d H:i:s' ),
-			'updated_at'     => $survey->getUpdatedAt()?->format( 'Y-m-d H:i:s' ),
+			'id'              => $survey->getId(),
+			'title'           => $survey->getTitle(),
+			'description'     => $survey->getDescription(),
+			'form_schema'     => $formSchema !== [] ? $formSchema : null,
+			'settings'        => $settings !== [] ? $settings : null,
+			'styling'         => $styling !== [] ? $styling : null,
+			'status'          => $survey->getStatus()->value,
+			'conflict_reason' => $survey->getConflictReason(),
+			'response_count'  => $survey->getResponseCount(),
+			'created_by'      => $survey->getCreatedBy() ?: null,
+			'created_at'      => $survey->getCreatedAt()->format( 'Y-m-d H:i:s' ),
+			'updated_at'      => $survey->getUpdatedAt()?->format( 'Y-m-d H:i:s' ),
 		];
 
 		/**
@@ -973,6 +978,32 @@ class SurveysController extends RestController {
 			SurveyStatus::Draft     => $survey->restore(),
 		};
 
+		if ( $status === SurveyStatus::Published ) {
+			$conflicts = $this->detectPublishingConflicts( $survey );
+			if ( ! empty( $conflicts ) ) {
+				$survey->restore();
+				$conflictTitles = implode( ', ', array_map(
+					static fn( array $c ) => '"' . $c['title'] . '"',
+					$conflicts
+				) );
+				$survey->setConflictReason(
+					sprintf(
+						/* translators: 1: number of conflicting forms  2: comma-separated conflicting form titles */
+						_n(
+							'%1$d published form targets the same pages. This form has been saved as a draft. Conflicting with: %2$s.',
+							'%1$d published forms target the same pages. This form has been saved as a draft. Conflicting with: %2$s.',
+							count( $conflicts ),
+							'all-feedback'
+						),
+						count( $conflicts ),
+						$conflictTitles
+					)
+				);
+			} else {
+				$survey->setConflictReason( null );
+			}
+		}
+
 		try {
 			$survey = $this->surveyRepository->save( $survey );
 		} catch ( \RuntimeException $e ) {
@@ -990,10 +1021,11 @@ class SurveysController extends RestController {
 			);
 		}
 
-		$formSchema = $survey->getFormSchema();
-		$hasSchema  = $formSchema !== [];
+		$formSchema   = $survey->getFormSchema();
+		$hasSchema    = $formSchema !== [];
+		$actualStatus = $survey->getStatus();
 
-		if ( $status === SurveyStatus::Published && ! $hasSchema ) {
+		if ( $status === SurveyStatus::Published && ! $hasSchema && $survey->getConflictReason() === null ) {
 			$this->logger->warning(
 				'Survey published without a form schema.',
 				[ 'survey_id' => $id, 'title' => $survey->getTitle(), 'user_id' => get_current_user_id() ]
@@ -1001,13 +1033,13 @@ class SurveysController extends RestController {
 		}
 
 		$this->logger->info(
-			"Survey status changed to {$status->value}.",
+			"Survey status changed to {$actualStatus->value}.",
 			array_merge(
 				[
 					'survey_id'       => $id,
 					'title'           => $survey->getTitle(),
 					'previous_status' => $previousStatus->value,
-					'new_status'      => $status->value,
+					'new_status'      => $actualStatus->value,
 					'has_schema'      => $hasSchema,
 					'user_id'         => get_current_user_id(),
 				],
@@ -1015,32 +1047,7 @@ class SurveysController extends RestController {
 			)
 		);
 
-		$data = $this->prepareSurvey( $survey );
-
-		if ( $status === SurveyStatus::Published ) {
-			$conflicts = $this->detectPublishingConflicts( $survey );
-			if ( ! empty( $conflicts ) ) {
-				$data['warnings'] = [
-					[
-						'code'                => 'targeting_conflict',
-						'message'             => sprintf(
-							/* translators: %d: number of conflicting surveys */
-							_n(
-								'%d published survey targets the same pages. Visitors will only see the most recently published one.',
-								'%d published surveys target the same pages. Visitors will only see the most recently published one.',
-								count( $conflicts ),
-								'all-feedback'
-							),
-							count( $conflicts )
-						),
-						'conflicting_surveys' => $conflicts,
-						'can_revert_to_draft' => true,
-					],
-				];
-			}
-		}
-
-		return $this->successResponse( $data );
+		return $this->successResponse( $this->prepareSurvey( $survey ) );
 	}
 
 	/**

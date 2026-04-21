@@ -4,17 +4,18 @@ import type { PaginatedMeta, PaginationParams } from './client';
 export type SurveyStatus = 'draft' | 'published' | 'paused' | 'archived' | 'trashed';
 
 export type Survey = {
-	id:             number;
-	title:          string;
-	description:    string;
-	form_schema:    SurveyFormSchema | null;
-	settings:       Record<string, unknown> | null;
-	styling:        Record<string, unknown> | null;
-	status:         SurveyStatus;
-	response_count: number;
-	created_by:     number;
-	created_at:     string;
-	updated_at:     string | null;
+	id:              number;
+	title:           string;
+	description:     string;
+	form_schema:     SurveyFormSchema | null;
+	settings:        Record<string, unknown> | null;
+	styling:         Record<string, unknown> | null;
+	status:          SurveyStatus;
+	conflict_reason: string | null;
+	response_count:  number;
+	created_by:      number;
+	created_at:      string;
+	updated_at:      string | null;
 };
 
 export type SurveyFormSchemaField = {

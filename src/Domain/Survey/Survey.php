@@ -24,6 +24,9 @@ class Survey extends Entity {
 	private SurveyStatus $status;
 
 	/** @since 1.0.0 */
+	private ?string $conflictReason = null;
+
+	/** @since 1.0.0 */
 	private int $responseCount;
 
 	/** @since 1.0.0 */
@@ -67,11 +70,13 @@ class Survey extends Entity {
 		DateTimeImmutable $createdAt,
 		?DateTimeImmutable $updatedAt = null,
 		array $styling = [],
+		?string $conflictReason = null,
 	): self {
-		$survey                = new self( $title, $description, $formSchema, $settings, $styling, $createdBy, $status, $responseCount );
-		$survey->id            = $id;
-		$survey->createdAt     = $createdAt;
-		$survey->updatedAt     = $updatedAt;
+		$survey                 = new self( $title, $description, $formSchema, $settings, $styling, $createdBy, $status, $responseCount );
+		$survey->id             = $id;
+		$survey->createdAt      = $createdAt;
+		$survey->updatedAt      = $updatedAt;
+		$survey->conflictReason = $conflictReason;
 		return $survey;
 	}
 
@@ -155,6 +160,14 @@ class Survey extends Entity {
 	 */
 	public function getStatus(): SurveyStatus {
 		return $this->status;
+	}
+
+	public function getConflictReason(): ?string {
+		return $this->conflictReason;
+	}
+
+	public function setConflictReason( ?string $reason ): void {
+		$this->conflictReason = $reason;
 	}
 
 	/**

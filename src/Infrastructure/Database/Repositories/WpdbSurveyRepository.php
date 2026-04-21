@@ -166,18 +166,19 @@ class WpdbSurveyRepository implements SurveyRepository {
 		$result = $wpdb->insert(
 			$this->table,
 			[
-				'title'          => $survey->getTitle(),
-				'description'    => $survey->getDescription(),
-				'form_schema'    => wp_json_encode( $survey->getFormSchema() ),
-				'settings'       => wp_json_encode( $survey->getSettings() ),
-				'styling'        => $styling !== [] ? wp_json_encode( $styling ) : null,
-				'status'         => $survey->getStatus()->value,
-				'response_count' => $survey->getResponseCount(),
-				'created_by'     => $survey->getCreatedBy() ?: null,
-				'created_at'     => $survey->getCreatedAt()->format( 'Y-m-d H:i:s' ),
-				'updated_at'     => $survey->getUpdatedAt()?->format( 'Y-m-d H:i:s' ),
+				'title'           => $survey->getTitle(),
+				'description'     => $survey->getDescription(),
+				'form_schema'     => wp_json_encode( $survey->getFormSchema() ),
+				'settings'        => wp_json_encode( $survey->getSettings() ),
+				'styling'         => $styling !== [] ? wp_json_encode( $styling ) : null,
+				'status'          => $survey->getStatus()->value,
+				'conflict_reason' => $survey->getConflictReason(),
+				'response_count'  => $survey->getResponseCount(),
+				'created_by'      => $survey->getCreatedBy() ?: null,
+				'created_at'      => $survey->getCreatedAt()->format( 'Y-m-d H:i:s' ),
+				'updated_at'      => $survey->getUpdatedAt()?->format( 'Y-m-d H:i:s' ),
 			],
-			[ '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%s', '%s' ]
+			[ '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%s', '%s' ]
 		);
 
 		if ( false === $result ) {
@@ -196,6 +197,7 @@ class WpdbSurveyRepository implements SurveyRepository {
 			createdAt: $survey->getCreatedAt(),
 			updatedAt: $survey->getUpdatedAt(),
 			styling: $survey->getStyling(),
+			conflictReason: $survey->getConflictReason(),
 		);
 	}
 
@@ -212,17 +214,18 @@ class WpdbSurveyRepository implements SurveyRepository {
 		$result = $wpdb->update(
 			$this->table,
 			[
-				'title'          => $survey->getTitle(),
-				'description'    => $survey->getDescription(),
-				'form_schema'    => wp_json_encode( $survey->getFormSchema() ),
-				'settings'       => wp_json_encode( $survey->getSettings() ),
-				'styling'        => $styling !== [] ? wp_json_encode( $styling ) : null,
-				'status'         => $survey->getStatus()->value,
-				'response_count' => $survey->getResponseCount(),
-				'updated_at'     => current_time( 'mysql' ),
+				'title'           => $survey->getTitle(),
+				'description'     => $survey->getDescription(),
+				'form_schema'     => wp_json_encode( $survey->getFormSchema() ),
+				'settings'        => wp_json_encode( $survey->getSettings() ),
+				'styling'         => $styling !== [] ? wp_json_encode( $styling ) : null,
+				'status'          => $survey->getStatus()->value,
+				'conflict_reason' => $survey->getConflictReason(),
+				'response_count'  => $survey->getResponseCount(),
+				'updated_at'      => current_time( 'mysql' ),
 			],
 			[ 'id' => $survey->getId() ],
-			[ '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s' ],
+			[ '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s' ],
 			[ '%d' ]
 		);
 
@@ -252,6 +255,7 @@ class WpdbSurveyRepository implements SurveyRepository {
 			createdAt: new DateTimeImmutable( (string) $row['created_at'] ),
 			updatedAt: ! empty( $row['updated_at'] ) ? new DateTimeImmutable( (string) $row['updated_at'] ) : null,
 			styling: $this->decodeJson( (string) ( $row['styling'] ?? '' ) ),
+			conflictReason: isset( $row['conflict_reason'] ) && $row['conflict_reason'] !== '' ? (string) $row['conflict_reason'] : null,
 		);
 	}
 

@@ -7,7 +7,7 @@ import { useRouter } from '@tanstack/react-router';
 import { Route } from '@/admin/routes/builder.index';
 import { surveyQuery } from '@/admin/queries/surveys';
 import { __ } from '@wordpress/i18n';
-import { ArrowLeft, Check, ChevronDown, Info, LayoutGrid, Loader2, Palette, Pencil, Redo2, Settings2, Undo2, X } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Check, ChevronDown, Info, LayoutGrid, Loader2, Palette, Pencil, Redo2, Settings2, Undo2, X } from 'lucide-react';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import ShortcodeChip from '@/components/ui/shortcode-chip';
@@ -170,7 +170,8 @@ const FormBuilder = () => {
 		staleTime: Infinity,
 	});
 
-	const [surveyStatus, setSurveyStatus] = useState<SurveyStatus>('draft');
+	const [surveyStatus,    setSurveyStatus]    = useState<SurveyStatus>('draft');
+	const [conflictWarning, setConflictWarning] = useState<string | null>(null);
 
 	const submitActionRef = useRef<'publish' | 'draft' | 'trashed'>('draft');
 
@@ -183,24 +184,43 @@ const FormBuilder = () => {
 		onSubmit: async ({ value }) => {
 			if (!formId) return;
 			const action = submitActionRef.current;
-			const data: Parameters<typeof surveysApi.update>[1] = {
+
+			const saveData: Parameters<typeof surveysApi.update>[1] = {
 				title:       value.title,
 				form_schema: serializeFormSchema(value.sections),
 				settings:    serializeSettings(value.settings),
 			};
-			data.status = action === 'publish' ? 'published' : action === 'trashed' ? 'trashed' : 'draft';
-			const updated = await surveysApi.update(formId, data);
-			setSurveyStatus(updated.status);
-			setIsDirty(false);
 
+			if (action !== 'publish') {
+				saveData.status = action === 'trashed' ? 'trashed' : 'draft';
+			}
+
+			const updated = await surveysApi.update(formId, saveData);
+			setIsDirty(false);
 			queryClient.setQueryData(surveyQuery(formId).queryKey, updated);
+
+			if (action === 'publish') {
+				const published = await surveysApi.publish(formId);
+				setSurveyStatus(published.status);
+				setConflictWarning(published.conflict_reason ?? null);
+				queryClient.setQueryData(surveyQuery(formId).queryKey, published);
+				void queryClient.invalidateQueries({ queryKey: ['surveys'] });
+
+				if (published.conflict_reason) {
+					return;
+				}
+
+				toast.success(__('Form published successfully.', 'all-feedback'));
+				return;
+			}
+
+			setSurveyStatus(updated.status);
+			setConflictWarning(updated.conflict_reason ?? null);
 			void queryClient.invalidateQueries({ queryKey: ['surveys'] });
 			toast.success(
-				action === 'publish'
-					? __('Form published successfully.', 'all-feedback')
-					: action === 'trashed'
-						? __('Trashed form saved successfully.', 'all-feedback')
-						: __('Draft saved successfully.', 'all-feedback'),
+				action === 'trashed'
+					? __('Trashed form saved successfully.', 'all-feedback')
+					: __('Draft saved successfully.', 'all-feedback'),
 			);
 		},
 	});
@@ -262,6 +282,7 @@ const FormBuilder = () => {
 			? { ...DEFAULT_FORM_SETTINGS, ...deserializeSettings(surveyData.settings as Record<string, unknown>) }
 			: DEFAULT_FORM_SETTINGS;
 		setSurveyStatus(surveyData.status);
+		setConflictWarning(surveyData.conflict_reason ?? null);
 		historyRef.current = [loadedSections];
 		setHistoryIdx(0);
 
@@ -627,6 +648,17 @@ const FormBuilder = () => {
 				</div>
 			</div>
 			</header>
+
+			{conflictWarning && (
+				<div className="flex shrink-0 items-center gap-3 border-b border-warning/20 bg-warning-subtle px-6 py-3">
+					<AlertTriangle className="size-4 shrink-0 text-warning-foreground/70" />
+					<p className="flex-1 text-sm text-warning-foreground">
+						<span className="font-medium">{__('Publishing conflict:', 'all-feedback')}</span>
+						{' '}
+						{conflictWarning}
+					</p>
+				</div>
+			)}
 
  			<div className="flex flex-1 overflow-hidden">
  				<div className="flex flex-1 flex-col overflow-hidden">

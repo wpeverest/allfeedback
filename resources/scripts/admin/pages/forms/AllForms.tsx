@@ -1,5 +1,7 @@
 import { format } from 'date-fns';
+import { Tooltip as RadixTooltip } from 'radix-ui';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip } from '@/admin/components/Tooltip';
 import { BulkActionBar } from '@/components/ui/bulk-action-bar';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -29,12 +31,12 @@ import { useNavigate } from '@tanstack/react-router';
 import { __, sprintf } from '@wordpress/i18n';
 import {
 	AlertCircle,
+	AlertTriangle,
 	Archive,
 	ArrowDown,
 	ArrowUp,
 	ArrowUpDown,
 	ArrowUpRight,
-
 	Copy,
 	Edit2,
 	Eye,
@@ -306,6 +308,7 @@ const AllForms = () => {
 	});
 
 	return (
+		<RadixTooltip.Provider delayDuration={200}>
 		<div className="p-5 md:p-6">
 
 			<ConfirmDialog
@@ -508,10 +511,20 @@ const AllForms = () => {
 										</td>
 
 										<td className="w-24 px-4 py-5">
-											<Badge variant={statusCfg.variant}>
-												<span className={cn('size-1.5 rounded-full', statusCfg.dot)} />
-												{statusCfg.label}
-											</Badge>
+											{survey.status === 'draft' && survey.conflict_reason ? (
+												<Tooltip content={survey.conflict_reason}>
+													<span className="inline-flex cursor-default items-center gap-1 rounded-full border border-destructive/20 bg-destructive/10 px-2.5 py-0.5 text-xs font-medium text-destructive">
+														<span className="size-1.5 rounded-full bg-destructive" />
+														{statusCfg.label}
+														<AlertTriangle className="size-3 shrink-0" />
+													</span>
+												</Tooltip>
+											) : (
+												<Badge variant={statusCfg.variant}>
+													<span className={cn('size-1.5 rounded-full', statusCfg.dot)} />
+													{statusCfg.label}
+												</Badge>
+											)}
 										</td>
 
 										<td className="w-28 px-4 py-5">
@@ -667,6 +680,7 @@ const AllForms = () => {
 				onClear={() => setChecked([])}
 			/>
 		</div>
+		</RadixTooltip.Provider>
 	);
 };
 
