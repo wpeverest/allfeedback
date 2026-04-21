@@ -84,6 +84,7 @@ use AllFeedback\API\Controllers\V1\SettingsController;
 use AllFeedback\API\Controllers\V1\SubmitController;
 use AllFeedback\API\Controllers\V1\SurveyStateController;
 use AllFeedback\API\Controllers\V1\SurveysController;
+use AllFeedback\API\Controllers\V1\WizardController;
 use AllFeedback\Frontend\FrontendServiceProvider;
 use AllFeedback\Frontend\TargetingEngine;
 
@@ -208,6 +209,7 @@ return [
 	SubmitController::class          => autowire(),
 	SurveyStateController::class     => autowire(),
 	SettingsController::class        => autowire(),
+	WizardController::class          => autowire(),
 	ContentSearchController::class   => autowire(),
 	LogsController::class            => autowire(),
 

@@ -12,6 +12,7 @@ use AllFeedback\API\Controllers\V1\SettingsController;
 use AllFeedback\API\Controllers\V1\SubmitController;
 use AllFeedback\API\Controllers\V1\SurveyStateController;
 use AllFeedback\API\Controllers\V1\SurveysController;
+use AllFeedback\API\Controllers\V1\WizardController;
 use AllFeedback\Core\Container;
 use AllFeedback\Core\ServiceProvider;
 use AllFeedback\Traits\Hooks;
@@ -75,6 +76,7 @@ class ApiServiceProvider implements ServiceProvider {
 			ResponsesController::class,     // /surveys/{id}/responses         — admin, must come before SurveysController
 			SurveysController::class,       // /surveys
 			SettingsController::class,      // /settings
+			WizardController::class,        // /wizard
 			ContentSearchController::class, // /content-search
 			LogsController::class,          // /logs
 		];

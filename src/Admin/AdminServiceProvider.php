@@ -264,6 +264,7 @@ class AdminServiceProvider implements ServiceProvider {
 			'allfeedback:admin:script_data',
 			[
 				'adminUrl'       => admin_url( 'admin.php' ),
+				'adminEmail'     => (string) get_option( 'admin_email', '' ),
 				'widgetColor'    => $widget['color']    ?? '#6366f1',
 				'widgetPosition' => $widget['position'] ?? 'bottom-right',
 				'pluginUrl'     => Constants::url(),
