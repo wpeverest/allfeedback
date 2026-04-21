@@ -33,6 +33,17 @@ const TextAreaField = ({ y, height = 22 }: { y: number; height?: number }) => (
 	</g>
 );
 
+const RadioField = ({ y }: { y: number }) => (
+	<g>
+		<circle cx={10} cy={y + 5} r={5} className="fill-white stroke-border" strokeWidth={1.5} />
+		<circle cx={10} cy={y + 5} r={2.5} className="fill-primary" />
+		<rect x={22} y={y + 3} width={60} height={4} rx={1} className="fill-muted-foreground/20" />
+
+		<circle cx={10} cy={y + 18} r={5} className="fill-white stroke-border" strokeWidth={1.5} />
+		<rect x={22} y={y + 16} width={40} height={4} rx={1} className="fill-muted-foreground/10" />
+	</g>
+);
+
 const SubmitButton = ({ y }: { y: number }) => (
 	<rect x={5} y={y} width={50} height={10} rx={3} className="fill-primary" />
 );
@@ -76,7 +87,7 @@ export const NPSIllustration = (props: IllustrationProps) => (
 		<NPSScale y={15} />
 		<FieldLabel y={35} width={70} />
 		<TextAreaField y={45} height={20} />
-		<SubmitButton y="72" />
+		<SubmitButton y={72} />
 	</BaseIllustration>
 );
 
@@ -122,13 +133,13 @@ export const ProductIllustration = (props: IllustrationProps) => (
 	</BaseIllustration>
 );
 
-export const WebsiteIllustration = (props: IllustrationProps) => (
+export const ResearchIllustration = (props: IllustrationProps) => (
 	<BaseIllustration {...props}>
-		<FieldLabel y={8} width={100} />
-		<NPSScale y={18} />
-		<FieldLabel y={40} width={70} />
-		<InputField y={50} />
-		<SubmitButton y={72} />
+		<FieldLabel y={5} width={100} />
+		<RadioField y={12} />
+		<FieldLabel y={45} width={80} />
+		<RadioField y={52} />
+		<SubmitButton y={82} />
 	</BaseIllustration>
 );
 
@@ -157,7 +168,7 @@ export const TemplateIllustration = ({ type, className }: { type: string; classN
 		case 'bug_report': return <BugIllustration className={className} />;
 		case 'feature_request': return <FeatureIllustration className={className} />;
 		case 'product': return <ProductIllustration className={className} />;
-		case 'website': return <WebsiteIllustration className={className} />;
+		case 'customer_research': return <ResearchIllustration className={className} />;
 		default: return null;
 	}
 };

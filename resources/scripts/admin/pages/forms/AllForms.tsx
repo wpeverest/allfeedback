@@ -48,8 +48,7 @@ import {
 	Eye,
 	EyeOff,
 	FileText,
-	LayoutGrid,
-	Loader2,
+ 	Loader2,
 	MoreVertical,
 	Plus,
 	RotateCcw,
@@ -73,22 +72,9 @@ const STATUS_CONFIG: Record<SurveyStatus, {
 	archived:  { variant: 'danger',  label: __('Archived',  'all-feedback'), dot: 'bg-muted-foreground/30' },
 	trashed:   { variant: 'danger',  label: __('Trash',     'all-feedback'), dot: 'bg-destructive' },
 };
-
-const STATUS_FILTER_OPTIONS = [
-	{ value: 'all',       label: __('All Status',  'all-feedback'), dot: null },
-	{ value: 'published', label: __('Published',   'all-feedback'), dot: 'bg-success' },
-	{ value: 'draft',     label: __('Draft',       'all-feedback'), dot: 'bg-muted-foreground/40' },
-	{ value: 'paused',    label: __('Paused',      'all-feedback'), dot: 'bg-warning' },
-	{ value: 'archived',  label: __('Archived',    'all-feedback'), dot: 'bg-muted-foreground/30' },
-	{ value: 'trashed',   label: __('Trash',       'all-feedback'), dot: 'bg-destructive' },
-];
-
 const PER_PAGE_OPTIONS = [10, 25, 50];
 
 const cellCls = 'text-base font-normal leading-5 text-body-text';
-
-// ── new-form modal ─────────────────────────────────────────────────────────
-
 
 const NewFormModal = ({
 	open,

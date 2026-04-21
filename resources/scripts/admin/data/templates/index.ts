@@ -1,13 +1,13 @@
 import type { CreateSurveyData } from '@/admin/api/surveys';
-import { Bug, FileText, Globe, Lightbulb, MessageSquare, Package, TrendingUp } from 'lucide-react';
+import { Bug, FileText, Lightbulb, MessageSquare, Package, TrendingUp, Users } from 'lucide-react';
 import npsSchema           from './nps.json';
 import productSchema       from './product-feedback.json';
-import websiteSchema       from './website-feedback.json';
 import bugReportSchema     from './bug-report.json';
 import featureRequestSchema from './feature-request.json';
 import generalFeedbackSchema from './general-feedback.json';
+import customerResearchSchema from './customer-research.json';
 
-export type TemplateId = 'scratch' | 'nps' | 'product' | 'website' | 'bug_report' | 'feature_request' | 'general_feedback';
+export type TemplateId = 'scratch' | 'nps' | 'product' | 'bug_report' | 'feature_request' | 'general_feedback' | 'customer_research';
 
 export interface FormTemplate {
 	id:          Exclude<TemplateId, 'scratch'>;
@@ -84,15 +84,15 @@ export const FORM_TEMPLATES: FormTemplate[] = [
 		schema:      productSchema as CreateSurveyData['form_schema'],
 	},
 	{
-		id:          'website',
-		label:       'Website Feedback',
-		description: 'Understand visitor experience and surface issues on your site.',
-		Icon:        Globe,
-		iconBg:      'bg-sky-500/10',
-		iconColor:   'text-sky-500',
-		badge:       'Website',
-		badgeCls:    'bg-sky-500/10 text-sky-600',
-		createTitle: 'Website Feedback',
-		schema:      websiteSchema as CreateSurveyData['form_schema'],
+		id:          'customer_research',
+		label:       'Customer Research',
+		description: 'Learn more about your audience and how they discovered you.',
+		Icon:        Users,
+		iconBg:      'bg-indigo-500/10',
+		iconColor:   'text-indigo-500',
+		badge:       'Research',
+		badgeCls:    'bg-indigo-500/10 text-indigo-600',
+		createTitle: 'Customer Research',
+		schema:      customerResearchSchema as CreateSurveyData['form_schema'],
 	},
 ];

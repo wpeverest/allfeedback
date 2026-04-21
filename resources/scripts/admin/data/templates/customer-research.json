@@ -1,0 +1,40 @@
+{
+  "version": "1",
+  "sections": [
+    {
+      "id": "cr-s1",
+      "title": "Page 1",
+      "fields": [
+        {
+          "id": "cr-f1",
+          "type": "radio",
+          "label": "How did you hear about us?",
+          "required": true,
+          "settings": {
+            "options": ["Search Engine", "Social Media", "Word of Mouth", "Other"],
+            "placeholder": ""
+          }
+        },
+        {
+          "id": "cr-f2",
+          "type": "radio",
+          "label": "What is your primary goal today?",
+          "required": true,
+          "settings": {
+            "options": ["Learn about us", "Get support", "Pricing information", "Other"],
+            "placeholder": ""
+          }
+        },
+        {
+          "id": "cr-f3",
+          "type": "long_text",
+          "label": "Is there anything else you'd like to share?",
+          "required": false,
+          "settings": { 
+            "placeholder": "Your message…" 
+          }
+        }
+      ]
+    }
+  ]
+}
