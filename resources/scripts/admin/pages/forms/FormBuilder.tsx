@@ -650,10 +650,10 @@ const FormBuilder = () => {
 			</header>
 
 			{conflictWarning && (
-				<div className="flex shrink-0 items-center gap-3 border-b border-warning/20 bg-warning-subtle px-6 py-3">
-					<AlertTriangle className="size-4 shrink-0 text-warning-foreground/70" />
-					<p className="flex-1 text-sm text-warning-foreground">
-						<span className="font-medium">{__('Publishing conflict:', 'all-feedback')}</span>
+				<div className="flex shrink-0 items-center gap-2 border-b border-warning/20 bg-warning-subtle px-6 py-1.5">
+					<AlertTriangle className="size-3.5 shrink-0 text-warning-foreground/60" />
+					<p className="flex-1 text-xs text-warning-foreground/90">
+						<span className="font-semibold">{__('Conflict:', 'all-feedback')}</span>
 						{' '}
 						{conflictWarning}
 					</p>

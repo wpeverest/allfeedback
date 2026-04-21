@@ -988,14 +988,8 @@ class SurveysController extends RestController {
 				) );
 				$survey->setConflictReason(
 					sprintf(
-						/* translators: 1: number of conflicting forms  2: comma-separated conflicting form titles */
-						_n(
-							'%1$d published form targets the same pages. This form has been saved as a draft. Conflicting with: %2$s.',
-							'%1$d published forms target the same pages. This form has been saved as a draft. Conflicting with: %2$s.',
-							count( $conflicts ),
-							'all-feedback'
-						),
-						count( $conflicts ),
+						/* translators: %s: comma-separated conflicting form titles */
+						\__( 'Saved as draft — same pages already targeted by %s.', 'all-feedback' ),
 						$conflictTitles
 					)
 				);
