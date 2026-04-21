@@ -792,7 +792,7 @@ const ResponseDetail = () => {
 					)}
 
 					{showUnanswered && !isEditing && unansweredOptional.length > 0 && (
-						<div className="rounded-xl border border-border bg-card overflow-hidden">
+						<div className="mt-4 rounded-xl border border-border bg-card overflow-hidden">
 							{unansweredOptional.map((schField) => {
 								const typeConfig = FIELD_TYPES.find((t) => t.type === schField.type);
 								return (
@@ -813,7 +813,7 @@ const ResponseDetail = () => {
 												dangerouslySetInnerHTML={{ __html: schField.label }}
 											/>
 										</div>
-										<div className="pl-11 opacity-50">
+										<div className="mt-3 pl-11 opacity-50">
 											<span className="text-base italic text-muted-foreground/40">
 												{__('No answer provided', 'all-feedback')}
 											</span>
