@@ -9,21 +9,24 @@ type Props = {
 };
 
 export function Tooltip({ content, children, side = 'top', sideOffset = 6 }: Props) {
+	if (!content) return <>{children}</>;
 	return (
-		<RadixTooltip.Root>
-			<RadixTooltip.Trigger asChild>
-				{children}
-			</RadixTooltip.Trigger>
-			<RadixTooltip.Portal>
-				<RadixTooltip.Content
-					side={side}
-					sideOffset={sideOffset}
-					className="z-50 max-w-[280px] rounded-lg bg-foreground px-3 py-2 text-xs leading-relaxed text-background shadow-lg"
-				>
-					{content}
-					<RadixTooltip.Arrow className="fill-foreground" />
-				</RadixTooltip.Content>
-			</RadixTooltip.Portal>
-		</RadixTooltip.Root>
+		<RadixTooltip.Provider delayDuration={300}>
+			<RadixTooltip.Root>
+				<RadixTooltip.Trigger asChild>
+					{children}
+				</RadixTooltip.Trigger>
+				<RadixTooltip.Portal>
+					<RadixTooltip.Content
+						side={side}
+						sideOffset={sideOffset}
+						className="z-[100000] max-w-[280px] rounded-lg bg-foreground px-3 py-2 text-xs leading-relaxed text-background shadow-lg"
+					>
+						{content}
+						<RadixTooltip.Arrow className="fill-foreground" />
+					</RadixTooltip.Content>
+				</RadixTooltip.Portal>
+			</RadixTooltip.Root>
+		</RadixTooltip.Provider>
 	);
 }

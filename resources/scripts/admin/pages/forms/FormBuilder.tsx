@@ -12,6 +12,7 @@ import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import ShortcodeChip from '@/components/ui/shortcode-chip';
 import UnsavedChangesBadge from '@/components/ui/unsaved-changes-badge';
+import { Tooltip } from '@/admin/components/Tooltip';
 import BuilderCanvas from './builder/BuilderCanvas';
 import PreviewPanel from './builder/PreviewPanel';
 import SettingsPanel from './builder/SettingsPanel';
@@ -488,14 +489,16 @@ const FormBuilder = () => {
 		<div className="allfb-builder fixed inset-0 z-[99999] flex flex-col bg-background">
  			<header className="flex h-[68px] shrink-0 items-center justify-between border-b border-border bg-white px-6">
 				<div className="flex min-w-0 flex-1 items-center gap-2">
-					<Button
-						variant="ghost"
-						size="icon-sm"
-						onClick={handleBack}
-						aria-label={__('Back', 'all-feedback')}
-					>
-						<ArrowLeft className="size-4" />
-					</Button>
+					<Tooltip content={__('Back to forms', 'all-feedback')}>
+						<Button
+							variant="ghost"
+							size="icon-sm"
+							onClick={handleBack}
+							aria-label={__('Back', 'all-feedback')}
+						>
+							<ArrowLeft className="size-4" />
+						</Button>
+					</Tooltip>
 
 					<span className="h-5 w-px bg-border" />
 
@@ -538,18 +541,19 @@ const FormBuilder = () => {
 							</Button>
 						</div>
 					) : (
-						<button
-							type="button"
-							className="builder-title group flex w-[520px] items-center gap-2 rounded-lg text-foreground transition-colors hover:bg-muted/50"
-							onClick={startEditingTitle}
-							title={__('Click to edit', 'all-feedback')}
-						>
-							<span className="min-w-0 flex-1 truncate px-[2px] py-[4.5px]">{title}</span>
-							<Pencil
-								className="size-3.5 shrink-0 text-muted-foreground/50 opacity-0 transition-opacity group-hover:opacity-100"
-								onClick={(e) => { e.stopPropagation(); startEditingTitle(); }}
-							/>
-						</button>
+						<Tooltip content={__('Click to edit', 'all-feedback')}>
+							<button
+								type="button"
+								className="builder-title group flex w-[520px] items-center gap-2 rounded-lg text-foreground transition-colors hover:bg-muted/50"
+								onClick={startEditingTitle}
+							>
+								<span className="min-w-0 flex-1 truncate px-[2px] py-[4.5px]">{title}</span>
+								<Pencil
+									className="size-3.5 shrink-0 text-muted-foreground/50 opacity-0 transition-opacity group-hover:opacity-100"
+									onClick={(e) => { e.stopPropagation(); startEditingTitle(); }}
+								/>
+							</button>
+						</Tooltip>
 					)}
 				</div>
 
@@ -568,24 +572,26 @@ const FormBuilder = () => {
 				)}
 
 				<div className="flex items-center gap-0.5">
-					<button
-						type="button"
-						onClick={undo}
-						disabled={!canUndo}
-						title={isMac ? '⌘Z' : 'Ctrl+Z'}
-						className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground disabled:pointer-events-none disabled:opacity-35"
-					>
-						<Undo2 className="size-4" />
-					</button>
-					<button
-						type="button"
-						onClick={redo}
-						disabled={!canRedo}
-						title={isMac ? '⌘⇧Z' : 'Ctrl+Y'}
-						className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground disabled:pointer-events-none disabled:opacity-35"
-					>
-						<Redo2 className="size-4" />
-					</button>
+					<Tooltip content={isMac ? '⌘Z' : 'Ctrl+Z'}>
+						<button
+							type="button"
+							onClick={undo}
+							disabled={!canUndo}
+							className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground disabled:pointer-events-none disabled:opacity-35"
+						>
+							<Undo2 className="size-4" />
+						</button>
+					</Tooltip>
+					<Tooltip content={isMac ? '⌘⇧Z' : 'Ctrl+Y'}>
+						<button
+							type="button"
+							onClick={redo}
+							disabled={!canRedo}
+							className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground disabled:pointer-events-none disabled:opacity-35"
+						>
+							<Redo2 className="size-4" />
+						</button>
+					</Tooltip>
 				</div>
 
 				<div ref={shortcutsRef} className="relative">
@@ -626,7 +632,8 @@ const FormBuilder = () => {
 				</div>
 
 				<div ref={publishMenuRef} className="relative">
-					<div className="publish-split flex items-stretch overflow-hidden rounded-lg shadow-sm" title={isMac ? '⌘S' : 'Ctrl+S'}>
+					<Tooltip content={isMac ? '⌘S' : 'Ctrl+S'}>
+					<div className="publish-split flex items-stretch overflow-hidden rounded-lg shadow-sm">
 						<button
 							type="button"
 							onClick={handlePublish}
@@ -645,6 +652,7 @@ const FormBuilder = () => {
 							<ChevronDown className="size-4" />
 						</button>
 					</div>
+					</Tooltip>
 
 					{publishMenuOpen && (
 						<div className="absolute right-0 top-full z-10 mt-1.5 w-44 overflow-hidden rounded-xl border border-border bg-white py-1 shadow-dropdown">

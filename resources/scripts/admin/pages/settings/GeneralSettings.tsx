@@ -9,6 +9,7 @@ import { __ } from '@wordpress/i18n';
 import UnsavedChangesBadge from '@/components/ui/unsaved-changes-badge';
 import { Globe, Lock, MessageSquare, Pipette, Settings2 } from 'lucide-react';
 import { useEffect, useRef } from 'react';
+import { Tooltip } from '@/admin/components/Tooltip';
 
 const DEFAULT_WIDGET_COLOR = '#6366F1';
 
@@ -55,8 +56,8 @@ const ColorPicker = ({ value, onChange }: { value: string; onChange: (v: string)
 					/>
 				))}
 
+				<Tooltip content={__('Custom color', 'all-feedback')}>
 				<label
-					title={__('Custom color', 'all-feedback')}
 					className={cn(
 						'relative flex size-7 cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 transition-all duration-150',
 						!isPreset
@@ -78,6 +79,7 @@ const ColorPicker = ({ value, onChange }: { value: string; onChange: (v: string)
 						className="absolute inset-0 cursor-pointer opacity-0"
 					/>
 				</label>
+				</Tooltip>
 			</div>
 
 			<div className="flex items-center gap-2">

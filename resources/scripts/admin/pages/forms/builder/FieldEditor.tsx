@@ -4,6 +4,7 @@ import HighlightExtension from '@tiptap/extension-highlight';
 import UnderlineExtension from '@tiptap/extension-underline';
 import PlaceholderExtension from '@tiptap/extension-placeholder';
 import { Button } from '@/components/ui/button';
+import { Tooltip } from '@/admin/components/Tooltip';
 import { cn, htmlToText } from '@/lib/utils';
 import { __ } from '@wordpress/i18n';
 import {
@@ -33,7 +34,6 @@ const RequiredSwitch = ({ value, onChange }: { value: boolean; onChange: (v: boo
 		type="button"
 		role="switch"
 		aria-checked={value}
-		title={__('Required', 'all-feedback')}
 		onClick={() => onChange(!value)}
 		className="flex items-center gap-1.5 rounded-md px-1.5 py-1 transition-colors hover:bg-black/[0.04]"
 	>
@@ -234,39 +234,39 @@ const QuestionEditor = ({ value, onChange, autoFocus, focusTrigger }: QuestionEd
 						{group.map(({ fmt, Icon, title }) => {
 							const active = editor?.isActive(fmt) ?? false;
 							return (
-								<button
-									key={fmt}
-									type="button"
-									title={title}
-									onMouseDown={(e) => { e.preventDefault(); toggleFormat(fmt); }}
-									className={cn(
-										'flex size-[22px] items-center justify-center rounded transition-colors',
-										active
-											? 'bg-primary/10 text-primary'
-											: 'text-muted-foreground/50 hover:bg-muted hover:text-foreground',
-									)}
-								>
-									<Icon className="size-3.5" />
-								</button>
+								<Tooltip key={fmt} content={title}>
+									<button
+										type="button"
+										onMouseDown={(e) => { e.preventDefault(); toggleFormat(fmt); }}
+										className={cn(
+											'flex size-[22px] items-center justify-center rounded transition-colors',
+											active
+												? 'bg-primary/10 text-primary'
+												: 'text-muted-foreground/50 hover:bg-muted hover:text-foreground',
+										)}
+									>
+										<Icon className="size-3.5" />
+									</button>
+								</Tooltip>
 							);
 						})}
 					</>
 				))}
 
 				<span className="mx-1 h-3.5 w-px bg-border/70" />
-				<button
-					type="button"
-					title={__('Clear formatting', 'all-feedback')}
-					onMouseDown={(e) => { e.preventDefault(); clearAllMarks(); }}
-					className="flex size-[22px] items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-muted hover:text-foreground"
-				>
-					<span className="text-2xs font-bold leading-none">T<span className="text-2xs">✕</span></span>
-				</button>
+				<Tooltip content={__('Clear formatting', 'all-feedback')}>
+					<button
+						type="button"
+						onMouseDown={(e) => { e.preventDefault(); clearAllMarks(); }}
+						className="flex size-[22px] items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-muted hover:text-foreground"
+					>
+						<span className="text-2xs font-bold leading-none">T<span className="text-2xs">✕</span></span>
+					</button>
+				</Tooltip>
 
 				<span className="mx-1 h-3.5 w-px bg-border/70" />
 				<button
 					type="button"
-					title={__('Close editor', 'all-feedback')}
 					onMouseDown={(e) => { e.preventDefault(); editor?.commands.blur(); setIsOpen(false); }}
 					className="flex h-[22px] items-center justify-center rounded px-1.5 text-2xs font-medium text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
 				>
@@ -678,19 +678,22 @@ const FieldEditor = ({
 				className="flex cursor-pointer items-center gap-2 rounded-t-xl border-b border-border/50 bg-muted/25 px-4 py-2.5 transition-colors hover:bg-muted/40"
 				onClick={() => setIsCollapsed((v) => !v)}
 			>
-				<span
-					title={__('Drag to reorder', 'all-feedback')}
-					className="cursor-grab text-muted-foreground/40 transition-colors hover:text-muted-foreground/70 active:cursor-grabbing"
-					onClick={(e) => e.stopPropagation()}
-					onMouseDown={(e) => e.stopPropagation()}
-				>
-					<GripVertical className="size-4" />
-				</span>
+				<Tooltip content={__('Drag to reorder', 'all-feedback')}>
+					<span
+						className="cursor-grab text-muted-foreground/40 transition-colors hover:text-muted-foreground/70 active:cursor-grabbing"
+						onClick={(e) => e.stopPropagation()}
+						onMouseDown={(e) => e.stopPropagation()}
+					>
+						<GripVertical className="size-4" />
+					</span>
+				</Tooltip>
 
 				{typeConfig && (
-					<span title={typeConfig.label} className="flex shrink-0 items-center" onClick={(e) => e.stopPropagation()}>
-						<typeConfig.Icon className="size-4 text-muted-foreground/60" />
-					</span>
+					<Tooltip content={typeConfig.label}>
+						<span className="flex shrink-0 items-center" onClick={(e) => e.stopPropagation()}>
+							<typeConfig.Icon className="size-4 text-muted-foreground/60" />
+						</span>
+					</Tooltip>
 				)}
 
 				<button
@@ -728,25 +731,27 @@ const FieldEditor = ({
 						className="flex items-center gap-0.5"
 						onClick={(e) => e.stopPropagation()}
 					>
-						<Button
-							variant="ghost"
-							size="icon-xs"
-							onClick={onDuplicate}
-							title={__('Duplicate field', 'all-feedback')}
-							aria-label={__('Duplicate field', 'all-feedback')}
-						>
-							<Copy className="size-3" />
-						</Button>
-						<Button
-							variant="ghost"
-							size="icon-xs"
-							onClick={onDelete}
-							className="hover:bg-destructive/10 hover:text-destructive active:bg-destructive/15"
-							title={__('Delete field', 'all-feedback')}
-							aria-label={__('Delete field', 'all-feedback')}
-						>
-							<Trash2 className="size-3" />
-						</Button>
+						<Tooltip content={__('Duplicate field', 'all-feedback')}>
+							<Button
+								variant="ghost"
+								size="icon-xs"
+								onClick={onDuplicate}
+								aria-label={__('Duplicate field', 'all-feedback')}
+							>
+								<Copy className="size-3" />
+							</Button>
+						</Tooltip>
+						<Tooltip content={__('Delete field', 'all-feedback')}>
+							<Button
+								variant="ghost"
+								size="icon-xs"
+								onClick={onDelete}
+								className="hover:bg-destructive/10 hover:text-destructive active:bg-destructive/15"
+								aria-label={__('Delete field', 'all-feedback')}
+							>
+								<Trash2 className="size-3" />
+							</Button>
+						</Tooltip>
 					</div>
 				</div>
 			</div>

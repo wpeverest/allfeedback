@@ -1,4 +1,5 @@
 ﻿import { Button } from '@/components/ui/button';
+import { Tooltip } from '@/admin/components/Tooltip';
 import { cn } from '@/lib/utils';
 import { __ } from '@wordpress/i18n';
 import { Check, ChevronDown, Copy, GripVertical, Pencil, Plus, Trash2, X } from 'lucide-react';
@@ -187,9 +188,11 @@ const SectionCard = ({
 				className="flex cursor-pointer items-center border-b border-border/50 bg-white px-5 py-3.5 transition-colors hover:bg-muted/20"
 			>
 				<div className="flex flex-1 items-center gap-2">
-					<span title={__('Drag to reorder', 'all-feedback')} className="cursor-grab text-muted-foreground/40 transition-colors hover:text-muted-foreground/70 active:cursor-grabbing">
-						<GripVertical className="size-4 shrink-0" />
-					</span>
+					<Tooltip content={__('Drag to reorder', 'all-feedback')}>
+						<span className="cursor-grab text-muted-foreground/40 transition-colors hover:text-muted-foreground/70 active:cursor-grabbing">
+							<GripVertical className="size-4 shrink-0" />
+						</span>
+					</Tooltip>
 
 					{isEditingTitle ? (
 						<div
@@ -231,50 +234,54 @@ const SectionCard = ({
 							</Button>
 						</div>
 					) : (
-						<button
-							type="button"
-							className="section-title-btn group flex w-[260px] items-center gap-2 rounded-md border border-transparent px-2 py-1 text-left text-md font-semibold text-foreground transition-colors hover:border-border/50 hover:bg-black/[0.04]"
-							onClick={(e) => { e.stopPropagation(); startEditingTitle(); }}
-							title={__('Click to edit', 'all-feedback')}
-							onMouseDown={(e) => e.stopPropagation()}
-						>
-							<span className="min-w-0 flex-1 truncate px-[2px] py-[4.5px]">{section.title}</span>
-							<Pencil
-								className="size-3 shrink-0 text-muted-foreground/40 opacity-0 transition-opacity group-hover:opacity-100"
-							/>
-						</button>
+						<Tooltip content={__('Click to edit', 'all-feedback')}>
+							<button
+								type="button"
+								className="section-title-btn group flex w-[260px] items-center gap-2 rounded-md border border-transparent px-2 py-1 text-left text-md font-semibold text-foreground transition-colors hover:border-border/50 hover:bg-black/[0.04]"
+								onClick={(e) => { e.stopPropagation(); startEditingTitle(); }}
+								onMouseDown={(e) => e.stopPropagation()}
+							>
+								<span className="min-w-0 flex-1 truncate px-[2px] py-[4.5px]">{section.title}</span>
+								<Pencil
+									className="size-3 shrink-0 text-muted-foreground/40 opacity-0 transition-opacity group-hover:opacity-100"
+								/>
+							</button>
+						</Tooltip>
 					)}
 				</div>
 
 				<div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
-					<Button
-						variant="ghost"
-						size="icon-xs"
-						onClick={() => setIsCollapsed((v) => !v)}
-						title={isCollapsed ? __('Expand section', 'all-feedback') : __('Collapse section', 'all-feedback')}
-						aria-label={isCollapsed ? __('Expand section', 'all-feedback') : __('Collapse section', 'all-feedback')}
-					>
-						<ChevronDown className={cn('size-3.5 transition-transform duration-200', isCollapsed && '-rotate-90')} />
-					</Button>
-					<Button
-						variant="ghost"
-						size="icon-xs"
-						onClick={onSectionDuplicate}
-						title={__('Duplicate section', 'all-feedback')}
-						aria-label={__('Duplicate section', 'all-feedback')}
-					>
-						<Copy className="size-3.5" />
-					</Button>
-					<Button
-						variant="ghost"
-						size="icon-xs"
-						onClick={onSectionDelete}
-						className="shrink-0 hover:bg-destructive/10 hover:text-destructive active:bg-destructive/15"
-						title={__('Delete section', 'all-feedback')}
-						aria-label={__('Delete section', 'all-feedback')}
-					>
-						<Trash2 className="size-3.5" />
-					</Button>
+					<Tooltip content={isCollapsed ? __('Expand section', 'all-feedback') : __('Collapse section', 'all-feedback')}>
+						<Button
+							variant="ghost"
+							size="icon-xs"
+							onClick={() => setIsCollapsed((v) => !v)}
+							aria-label={isCollapsed ? __('Expand section', 'all-feedback') : __('Collapse section', 'all-feedback')}
+						>
+							<ChevronDown className={cn('size-3.5 transition-transform duration-200', isCollapsed && '-rotate-90')} />
+						</Button>
+					</Tooltip>
+					<Tooltip content={__('Duplicate section', 'all-feedback')}>
+						<Button
+							variant="ghost"
+							size="icon-xs"
+							onClick={onSectionDuplicate}
+							aria-label={__('Duplicate section', 'all-feedback')}
+						>
+							<Copy className="size-3.5" />
+						</Button>
+					</Tooltip>
+					<Tooltip content={__('Delete section', 'all-feedback')}>
+						<Button
+							variant="ghost"
+							size="icon-xs"
+							onClick={onSectionDelete}
+							className="shrink-0 hover:bg-destructive/10 hover:text-destructive active:bg-destructive/15"
+							aria-label={__('Delete section', 'all-feedback')}
+						>
+							<Trash2 className="size-3.5" />
+						</Button>
+					</Tooltip>
 				</div>
 			</div>
 

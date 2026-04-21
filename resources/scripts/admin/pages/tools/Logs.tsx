@@ -2,6 +2,7 @@ import { logsApi } from '@/admin/api/logs';
 import type { LogFile, LogFileDetail } from '@/admin/api/logs';
 import { logQuery, logsQuery } from '@/admin/queries/logs';
 import { Button } from '@/components/ui/button';
+import { Tooltip } from '@/admin/components/Tooltip';
 import { cn } from '@/lib/utils';
 import { __ } from '@wordpress/i18n';
 import { ChevronDown, Download, RefreshCw, ScrollText, Trash2 } from 'lucide-react';
@@ -264,23 +265,25 @@ const LogFileSection = ({
 				</span>
 
 				<div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-					<button
-						type="button"
-						title={__('Download', 'all-feedback')}
-						onClick={handleDownload}
-						className="flex size-7 items-center justify-center rounded-md text-muted-foreground/50 transition-colors hover:bg-muted hover:text-foreground"
-					>
-						<Download className="size-3.5" />
-					</button>
-					<button
-						type="button"
-						title={__('Delete', 'all-feedback')}
-						disabled={isDeleting}
-						onClick={onDelete}
-						className="flex size-7 items-center justify-center rounded-md text-muted-foreground/50 transition-colors hover:bg-destructive/10 hover:text-destructive"
-					>
-						<Trash2 className="size-3.5" />
-					</button>
+					<Tooltip content={__('Download', 'all-feedback')}>
+						<button
+							type="button"
+							onClick={handleDownload}
+							className="flex size-7 items-center justify-center rounded-md text-muted-foreground/50 transition-colors hover:bg-muted hover:text-foreground"
+						>
+							<Download className="size-3.5" />
+						</button>
+					</Tooltip>
+					<Tooltip content={__('Delete', 'all-feedback')}>
+						<button
+							type="button"
+							disabled={isDeleting}
+							onClick={onDelete}
+							className="flex size-7 items-center justify-center rounded-md text-muted-foreground/50 transition-colors hover:bg-destructive/10 hover:text-destructive"
+						>
+							<Trash2 className="size-3.5" />
+						</button>
+					</Tooltip>
 				</div>
 			</div>
 

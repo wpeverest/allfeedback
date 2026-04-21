@@ -23,6 +23,7 @@ const CommentBubbleIcon = ( props: React.SVGProps<SVGSVGElement> ) => (
 	</svg>
 );
 import { useEffect, useState } from 'react';
+import { Tooltip } from '@/admin/components/Tooltip';
 
 import { toast } from 'sonner';
 import { settingsQuery } from '@/admin/queries/settings';
@@ -716,47 +717,49 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 				<div className="flex flex-1" />
 				<div className="flex items-center gap-1">
 					{DEVICES.map(({ value, Icon, label }) => (
-						<button
-							key={value}
-							type="button"
-							onClick={() => onDeviceChange(value)}
-							title={label}
-							disabled={viewMode === 'widget'}
-							className={cn(
-								'flex size-8 items-center justify-center rounded-lg transition-colors',
-								device === value
-									? 'bg-primary/10 text-primary'
-									: 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
-							)}
-						>
-							<Icon className="size-4" />
-						</button>
+						<Tooltip key={value} content={label}>
+							<button
+								type="button"
+								onClick={() => onDeviceChange(value)}
+								disabled={viewMode === 'widget'}
+								className={cn(
+									'flex size-8 items-center justify-center rounded-lg transition-colors',
+									device === value
+										? 'bg-primary/10 text-primary'
+										: 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
+								)}
+							>
+								<Icon className="size-4" />
+							</button>
+						</Tooltip>
 					))}
 				</div>
 				<div className="flex flex-1 items-center justify-end">
 					{hasSteps && (
 						<div className="flex items-center gap-0.5">
-							<button
-								type="button"
-								onClick={adminPrev}
-								disabled={!adminCanPrev}
-								title={__('Previous page', 'all-feedback')}
-								className="flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
-							>
-								<ChevronLeft className="size-5" />
-							</button>
+							<Tooltip content={__('Previous page', 'all-feedback')}>
+								<button
+									type="button"
+									onClick={adminPrev}
+									disabled={!adminCanPrev}
+									className="flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+								>
+									<ChevronLeft className="size-5" />
+								</button>
+							</Tooltip>
 							<span className="min-w-[52px] text-center text-sm font-medium text-muted-foreground">
 								{isSubmitted ? __('Thanks', 'all-feedback') : `${stepIndex + 1} / ${adminTotalPages}`}
 							</span>
-							<button
-								type="button"
-								onClick={adminNext}
-								disabled={!adminCanNext}
-								title={__('Next page', 'all-feedback')}
-								className="flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
-							>
-								<ChevronRight className="size-5" />
-							</button>
+							<Tooltip content={__('Next page', 'all-feedback')}>
+								<button
+									type="button"
+									onClick={adminNext}
+									disabled={!adminCanNext}
+									className="flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+								>
+									<ChevronRight className="size-5" />
+								</button>
+							</Tooltip>
 						</div>
 					)}
 				</div>

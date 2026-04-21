@@ -17,6 +17,7 @@ import { useForm } from '@tanstack/react-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useBlocker, useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import UnsavedChangesBadge from '@/components/ui/unsaved-changes-badge';
+import { Tooltip } from '@/admin/components/Tooltip';
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -589,15 +590,16 @@ const ResponseDetail = () => {
 
 			<div className="flex h-[60px] shrink-0 items-center justify-between border-b border-border bg-card px-3 sm:px-6">
 				<div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
-					<Button
-						variant="ghost"
-						size="icon-sm"
-						onClick={handleBack}
-						aria-label={__('Back', 'all-feedback')}
-						title={__('Back to responses', 'all-feedback')}
-					>
-						<ArrowLeft className="size-4" />
-					</Button>
+					<Tooltip content={__('Back to responses', 'all-feedback')}>
+						<Button
+							variant="ghost"
+							size="icon-sm"
+							onClick={handleBack}
+							aria-label={__('Back', 'all-feedback')}
+						>
+							<ArrowLeft className="size-4" />
+						</Button>
+					</Tooltip>
 					<span className="h-5 w-px bg-border" />
 					<Select value={String(surveyId)} onValueChange={(id) => { void handleSurveyChange(id); }} disabled={isChangingSurvey}>
 						<SelectTrigger className="h-8 w-[140px] sm:w-[220px] border-transparent bg-transparent px-2 text-sm font-semibold shadow-none hover:border-border hover:bg-muted/50 focus:ring-0 disabled:opacity-60">
@@ -677,15 +679,18 @@ const ResponseDetail = () => {
 								<X className="size-3.5" />
 								{__('Cancel', 'all-feedback')}
 							</Button>
-							<Button
-								size="sm"
-								onClick={() => void form.handleSubmit()}
-								disabled={saveMutation.isPending || !isDirty}
-								title={!isDirty ? __('No changes to save', 'all-feedback') : undefined}
-							>
-								{saveMutation.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
-								{__('Save changes', 'all-feedback')}
-							</Button>
+							<Tooltip content={!isDirty ? __('No changes to save', 'all-feedback') : undefined}>
+								<span className="inline-flex">
+									<Button
+										size="sm"
+										onClick={() => void form.handleSubmit()}
+										disabled={saveMutation.isPending || !isDirty}
+									>
+										{saveMutation.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
+										{__('Save changes', 'all-feedback')}
+									</Button>
+								</span>
+							</Tooltip>
 						</>
 					)}
 				</div>
@@ -712,12 +717,11 @@ const ResponseDetail = () => {
 											isEditing && 'hover:bg-muted/30',
 										)}>
 											<div className="mb-3 flex items-center gap-3">
-												<span
-													className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted"
-													title={typeConfig?.label}
-												>
-													<FieldIcon className="size-4 text-muted-foreground" />
-												</span>
+												<Tooltip content={typeConfig?.label}>
+													<span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted">
+														<FieldIcon className="size-4 text-muted-foreground" />
+													</span>
+												</Tooltip>
 												<div className="flex items-baseline gap-1 text-base font-medium text-foreground/80">
 													<span
 														className="[&_p]:m-0 [&_p]:inline text-base"
@@ -798,16 +802,15 @@ const ResponseDetail = () => {
 								return (
 									<div key={schField.id} className="border-b border-border px-6 py-5 last:border-0">
 										<div className="mb-1.5 flex items-center gap-3">
-											<span
-												className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted"
-												title={typeConfig?.label}
-											>
-												{typeConfig ? (
-													<typeConfig.Icon className="size-4 text-muted-foreground" />
-												) : (
-													<MessageSquare className="size-4 text-muted-foreground" />
-												)}
-											</span>
+											<Tooltip content={typeConfig?.label}>
+												<span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted">
+													{typeConfig ? (
+														<typeConfig.Icon className="size-4 text-muted-foreground" />
+													) : (
+														<MessageSquare className="size-4 text-muted-foreground" />
+													)}
+												</span>
+											</Tooltip>
 											<div
 												className="text-base font-medium text-foreground/70 [&_p]:m-0 [&_p]:inline"
 												dangerouslySetInnerHTML={{ __html: schField.label }}
@@ -869,28 +872,30 @@ const ResponseDetail = () => {
 									<span className="font-mono text-sm">
 										{showIp ? (response.ip_address ?? '—') : '••••••••••••'}
 									</span>
-									<button
-										type="button"
-										onClick={() => setShowIp(!showIp)}
-										className="flex size-6 items-center justify-center rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-										title={showIp ? __('Hide IP', 'all-feedback') : __('Show IP', 'all-feedback')}
-									>
-										{showIp ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
-									</button>
+									<Tooltip content={showIp ? __('Hide IP', 'all-feedback') : __('Show IP', 'all-feedback')}>
+										<button
+											type="button"
+											onClick={() => setShowIp(!showIp)}
+											className="flex size-6 items-center justify-center rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+										>
+											{showIp ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+										</button>
+									</Tooltip>
 								</div>
 							</SidebarRow>
 
 							<SidebarRow icon={Globe} label={__('Page URL', 'all-feedback')}>
 								{response.page_url ? (
-									<a
-										href={response.page_url}
-										target="_blank"
-										rel="noopener noreferrer"
-										title={response.page_url}
-										className="block truncate font-medium !text-primary underline underline-offset-2 hover:!opacity-80"
-									>
-										{response.page_url}
-									</a>
+									<Tooltip content={response.page_url}>
+										<a
+											href={response.page_url}
+											target="_blank"
+											rel="noopener noreferrer"
+											className="block truncate font-medium !text-primary underline underline-offset-2 hover:!opacity-80"
+										>
+											{response.page_url}
+										</a>
+									</Tooltip>
 								) : (
 									<span className="text-muted-foreground/60">—</span>
 								)}
