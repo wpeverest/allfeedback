@@ -132,10 +132,10 @@ const NewFormModal = ({
 								<X className="size-4" />
 							</Dialog.Close>
 
-							<Dialog.Title className="text-base font-semibold text-foreground" style={{ margin: 0 }}>
+							<Dialog.Title className="text-md font-semibold text-foreground" style={{ margin: 0 }}>
 								{__('Create a new form', 'all-feedback')}
 							</Dialog.Title>
-							<Dialog.Description className="mt-1 text-sm text-muted-foreground/70" style={{ margin: 0, marginTop: '4px' }}>
+							<Dialog.Description className="mt-1 text-base text-muted-foreground/75" style={{ margin: 0, marginTop: '4px' }}>
 								{__('How would you like to get started?', 'all-feedback')}
 							</Dialog.Description>
 
@@ -158,8 +158,8 @@ const NewFormModal = ({
 											: <FileText className="size-[18px] text-foreground/40" />
 										}
 									</div>
-									<p className="mt-4 text-sm font-semibold text-foreground">{__('Start from scratch', 'all-feedback')}</p>
-									<p className="mt-1 text-xs leading-relaxed text-muted-foreground/60">{__('Build your form field by field from a blank canvas.', 'all-feedback')}</p>
+									<p className="mt-4 !mb-0 !text-[16px] font-semibold text-foreground/80 leading-snug">{__('Start from scratch', 'all-feedback')}</p>
+									<p className="!mt-[4px] text-base leading-relaxed text-muted-foreground/80">{__('Build your form field by field from a blank canvas.', 'all-feedback')}</p>
 								</button>
 
 								<button
@@ -176,31 +176,37 @@ const NewFormModal = ({
 									<div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10">
 										<LayoutGrid className="size-[18px] text-primary" />
 									</div>
-									<p className="mt-4 text-sm font-semibold text-foreground">{__('Choose a template', 'all-feedback')}</p>
-									<p className="mt-1 text-xs leading-relaxed text-muted-foreground/60">{__('Pick a ready-made survey to get up and running fast.', 'all-feedback')}</p>
-									<div className="mt-4 flex items-center gap-1 text-xs font-medium text-primary/70">
+									<p className="mt-4 !mb-0 !text-[16px] font-semibold text-foreground/80 leading-snug">{__('Choose a template', 'all-feedback')}</p>
+									<p className="!mt-[4px] text-base leading-relaxed text-muted-foreground/80">{__('Pick a ready-made survey to get up and running fast.', 'all-feedback')}</p>
+									<div className="mt-3 flex items-center gap-0.5 text-base font-semibold text-primary">
 										<span>{__('Browse templates', 'all-feedback')}</span>
-										<ChevronRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+										<ChevronRight className="size-4 transition-transform group-hover:translate-x-0.5" />
 									</div>
 								</button>
 							</div>
 						</div>
 					) : (
 						<div>
-							<div className="flex items-center gap-3 border-b border-border/50 px-5 py-4">
-								<button
-									type="button"
-									onClick={() => setView('start')}
-									disabled={isPending}
-									className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-lg text-muted-foreground/50 transition-colors hover:bg-muted hover:text-foreground"
-								>
-									<ArrowLeft className="size-4" />
-								</button>
+							<div className="flex items-center gap-2 border-b border-border/50 px-5 py-4">
+								<Tooltip content={__('Back', 'all-feedback')}>
+									<Button
+										variant="ghost"
+										size="icon-sm"
+										onClick={() => setView('start')}
+										disabled={isPending}
+										className="shrink-0"
+									>
+										<ArrowLeft className="size-4" />
+									</Button>
+								</Tooltip>
+
+								<span className="h-5 w-px bg-border" />
+
 								<div className="min-w-0 flex-1">
-									<Dialog.Title className="text-sm font-semibold text-foreground" style={{ margin: 0 }}>
+									<Dialog.Title className="text-md font-semibold text-foreground" style={{ margin: 0 }}>
 										{__('Choose a template', 'all-feedback')}
 									</Dialog.Title>
-									<Dialog.Description className="text-xs text-muted-foreground/70" style={{ margin: 0 }}>
+									<Dialog.Description className="text-base text-muted-foreground/75" style={{ margin: 0 }}>
 										{__('Select a template to pre-fill your form.', 'all-feedback')}
 									</Dialog.Description>
 								</div>
@@ -223,12 +229,11 @@ const NewFormModal = ({
 											onClick={() => onSelect(tpl.id)}
 											disabled={isPending}
 											className={cn(
-												'group flex items-center gap-3.5 rounded-xl border p-4 text-left transition-all duration-150 outline-none cursor-pointer',
+												'group flex items-start gap-3.5 rounded-xl border p-4 text-left transition-all duration-150 outline-none cursor-pointer',
 												'focus-visible:ring-2 focus-visible:ring-primary/30',
 												'border-border/60 bg-card hover:border-primary/40 hover:bg-muted/40',
 												isActive && 'border-primary/40 bg-muted/40',
 												isFaded  && 'pointer-events-none opacity-40 cursor-not-allowed',
-												FORM_TEMPLATES.indexOf(tpl) === FORM_TEMPLATES.length - 1 && FORM_TEMPLATES.length % 2 !== 0 && 'col-span-2',
 											)}
 										>
 											<div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
@@ -238,17 +243,13 @@ const NewFormModal = ({
 												}
 											</div>
 											<div className="min-w-0 flex-1">
-												<div className="flex items-center gap-2">
-													<p className="text-sm font-semibold text-foreground">{tpl.label}</p>
-													<span className="shrink-0 rounded-md border border-border/60 bg-muted/60 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground/70">
-														{tpl.badge}
-													</span>
-												</div>
-												<p className="mt-0.5 text-xs leading-relaxed text-muted-foreground/70">{tpl.description}</p>
+												<p className="!mt-0 !mb-[4px] text-[15px] font-semibold text-foreground/90">{tpl.label}</p>
+												<p className="!mt-0 text-base leading-relaxed text-muted-foreground/80">{tpl.description}</p>
 											</div>
 										</button>
 									);
 								})}
+								{FORM_TEMPLATES.length % 2 !== 0 && <div aria-hidden="true" />}
 							</div>
 						</div>
 					)}
