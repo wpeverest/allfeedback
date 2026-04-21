@@ -227,10 +227,14 @@ const AllForms = () => {
 
 	const statusMutation = useMutation({
 		mutationFn: ({ id, status }: { id: number; status: SurveyStatus }) => surveysApi.update(id, { status }),
-		onSuccess: (_, variables) => {
+		onSuccess: (survey, variables) => {
 			void queryClient.invalidateQueries({ queryKey: ['surveys'] });
-			const label = variables.status === 'published' ? __('published', 'all-feedback') : __('draft', 'all-feedback');
-			toast.success(sprintf(__('Form marked as %s.', 'all-feedback'), label));
+			if (survey.conflict_reason) {
+				toast.warning(survey.conflict_reason);
+			} else {
+				const label = variables.status === 'published' ? __('published', 'all-feedback') : __('draft', 'all-feedback');
+				toast.success(sprintf(__('Form marked as %s.', 'all-feedback'), label));
+			}
 		},
 		onError: () => {
 			toast.error(__('Failed to update form status. Please try again.', 'all-feedback'));

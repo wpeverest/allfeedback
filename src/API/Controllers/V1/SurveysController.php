@@ -387,6 +387,7 @@ class SurveysController extends RestController {
 		}
 
 		$transitioningToPublished = false;
+		$transitioningToDraft     = false;
 
 		if ( array_key_exists( 'status', $body ) ) {
 			$statusStr = sanitize_key( (string) $request->get_param( 'status' ) );
@@ -402,6 +403,7 @@ class SurveysController extends RestController {
 				);
 			}
 			$transitioningToPublished = ( $status === SurveyStatus::Published );
+			$transitioningToDraft     = ( $status === SurveyStatus::Draft && $survey->getStatus() === SurveyStatus::Published );
 			match ( $status ) {
 				SurveyStatus::Published => $survey->publish(),
 				SurveyStatus::Archived  => $survey->archive(),
@@ -415,8 +417,26 @@ class SurveysController extends RestController {
 			return $this->successResponse( $this->prepareSurvey( $survey ) );
 		}
 
-		if ( $transitioningToPublished ) {
-			$survey->setConflictReason( null );
+		if ( $transitioningToPublished || $transitioningToDraft ) {
+			$conflicts = $this->detectPublishingConflicts( $survey );
+			if ( ! empty( $conflicts ) ) {
+				if ( $transitioningToPublished ) {
+					$survey->restore();
+				}
+				$conflictTitles = implode( ', ', array_map(
+					static fn( array $c ) => '"' . $c['title'] . '"',
+					$conflicts
+				) );
+				$survey->setConflictReason(
+					sprintf(
+						/* translators: %s: comma-separated conflicting form titles */
+						__( 'Saved as draft — same pages already targeted by %s.', 'all-feedback' ),
+						$conflictTitles
+					)
+				);
+			} else {
+				$survey->setConflictReason( null );
+			}
 		}
 
 		try {
@@ -438,32 +458,7 @@ class SurveysController extends RestController {
 
 		$this->logger->info( 'Survey updated.', $logContext );
 
-		$data = $this->prepareSurvey( $survey );
-
-		if ( $transitioningToPublished ) {
-			$conflicts = $this->detectPublishingConflicts( $survey );
-			if ( ! empty( $conflicts ) ) {
-				$data['warnings'] = [
-					[
-						'code'                => 'targeting_conflict',
-						'message'             => sprintf(
-							/* translators: %d: number of conflicting forms */
-							_n(
-								'%d published form targets the same pages. Visitors will only see the most recently published one.',
-								'%d published forms target the same pages. Visitors will only see the most recently published one.',
-								count( $conflicts ),
-								'all-feedback'
-							),
-							count( $conflicts )
-						),
-						'conflicting_surveys' => $conflicts,
-						'can_revert_to_draft' => true,
-					],
-				];
-			}
-		}
-
-		return $this->successResponse( $data );
+		return $this->successResponse( $this->prepareSurvey( $survey ) );
 	}
 
 	/**
