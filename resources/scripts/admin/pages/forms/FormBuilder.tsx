@@ -83,11 +83,13 @@ const serializeSettings = (s: FormSettings): Record<string, unknown> => ({
 	targetPageIds:       s.targetPageIds,
 	targetPostIds:       s.targetPostIds,
 
-	progressIndicator:   s.progressIndicator,
-	triggerIcon:         s.triggerIcon,
-	widgetPosition:      s.widgetPosition,
-	widgetColor:         s.widgetColor,
-	widgetLabel:         s.widgetLabel,
+	widget_label: s.widgetLabel,
+});
+
+const serializeStyling = (s: FormSettings): Record<string, unknown> => ({
+	widget_position:    s.widgetPosition,
+	widget_icon:        s.triggerIcon,
+	progress_indicator: s.progressIndicator,
 });
 
 const deserializeSettings = (raw: Record<string, unknown>): Partial<FormSettings> => ({
@@ -125,12 +127,19 @@ const deserializeSettings = (raw: Record<string, unknown>): Partial<FormSettings
 	...(raw.thankYouTitle       !== undefined && { thankYouTitle:       raw.thankYouTitle       as string }),
 	...(raw.thankYouDescription !== undefined && { thankYouDescription: raw.thankYouDescription as string }),
 	...(raw.targetDevice        !== undefined && { targetDevice:        raw.targetDevice        as FormSettings['targetDevice'] }),
-	...(raw.targetUrls          !== undefined && { targetUrls:          raw.targetUrls          as string }),
-	...(raw.progressIndicator   !== undefined && { progressIndicator:   raw.progressIndicator   as FormSettings['progressIndicator'] }),
-	...(raw.triggerIcon         !== undefined && { triggerIcon:         raw.triggerIcon         as FormSettings['triggerIcon'] }),
-	...(raw.widgetPosition      !== undefined && { widgetPosition:      raw.widgetPosition      as FormSettings['widgetPosition'] }),
-	...(raw.widgetColor         !== undefined && { widgetColor:         raw.widgetColor         as string }),
-	...(raw.widgetLabel         !== undefined && { widgetLabel:         raw.widgetLabel         as string }),
+	...(raw.targetUrls !== undefined && { targetUrls: raw.targetUrls as string }),
+	// widget_label lives in settings; support both new snake_case and legacy camelCase
+	...(raw.widget_label !== undefined && { widgetLabel: raw.widget_label as string }),
+	...(raw.widgetLabel  !== undefined && { widgetLabel: raw.widgetLabel  as string }),
+});
+
+const deserializeStyling = (raw: Record<string, unknown>): Partial<FormSettings> => ({
+	...(raw.widget_position    !== undefined && { widgetPosition:    raw.widget_position    as FormSettings['widgetPosition'] }),
+	...(raw.widget_icon        !== undefined && { triggerIcon:       raw.widget_icon        as FormSettings['triggerIcon'] }),
+	...(raw.progress_indicator !== undefined && { progressIndicator: raw.progress_indicator as FormSettings['progressIndicator'] }),
+	// backward-compat: old data stored these in settings as camelCase
+	...(raw.widgetPosition    !== undefined && { widgetPosition:    raw.widgetPosition    as FormSettings['widgetPosition'] }),
+	...(raw.progressIndicator !== undefined && { progressIndicator: raw.progressIndicator as FormSettings['progressIndicator'] }),
 });
 
 const serializeFormSchema = (sections: FormSection[]): SurveyFormSchema => ({
@@ -189,6 +198,7 @@ const FormBuilder = () => {
 				title:       value.title,
 				form_schema: serializeFormSchema(value.sections),
 				settings:    serializeSettings(value.settings),
+				styling:     serializeStyling(value.settings),
 			};
 
 			if (action !== 'publish') {
@@ -278,9 +288,11 @@ const FormBuilder = () => {
 		if (!surveyData || surveyData.id === initializedFormIdRef.current) return;
 		initializedFormIdRef.current = surveyData.id;
 		const loadedSections = deserializeFormSchema(surveyData.form_schema);
-		const loadedSettings = surveyData.settings
-			? { ...DEFAULT_FORM_SETTINGS, ...deserializeSettings(surveyData.settings as Record<string, unknown>) }
-			: DEFAULT_FORM_SETTINGS;
+		const loadedSettings = {
+			...DEFAULT_FORM_SETTINGS,
+			...(surveyData.settings ? deserializeSettings(surveyData.settings as Record<string, unknown>) : {}),
+			...(surveyData.styling  ? deserializeStyling(surveyData.styling   as Record<string, unknown>) : {}),
+		};
 		setSurveyStatus(surveyData.status);
 		setConflictWarning(surveyData.conflict_reason ?? null);
 		historyRef.current = [loadedSections];

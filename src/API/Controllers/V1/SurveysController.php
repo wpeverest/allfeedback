@@ -1355,17 +1355,29 @@ class SurveysController extends RestController {
 			}
 		}
 
-		foreach ( [ 'widget_icon', 'widget_label', 'widget_color' ] as $key ) {
-			if ( array_key_exists( $key, $styling ) && ! is_string( $styling[ $key ] ) ) {
+		$allowedProgressIndicators = apply_filters(
+			'allfeedback_styling_allowed_progress_indicators',
+			[ 'dots', 'numbers', 'bar', 'none' ]
+		);
+
+		if ( array_key_exists( 'progress_indicator', $styling ) ) {
+			if ( ! in_array( $styling['progress_indicator'], $allowedProgressIndicators, true ) ) {
 				return $this->errorResponse(
 					sprintf(
-						/* translators: %s: styling key name */
-						__( 'styling.%s must be a string.', 'all-feedback' ),
-						$key
+						/* translators: %s: submitted value */
+						\__( 'Invalid styling.progress_indicator "%s". Allowed: dots, numbers, bar, none.', 'all-feedback' ),
+						sanitize_key( (string) $styling['progress_indicator'] )
 					),
 					422
 				);
 			}
+		}
+
+		if ( array_key_exists( 'widget_icon', $styling ) && ! is_string( $styling['widget_icon'] ) ) {
+			return $this->errorResponse(
+				\__( 'styling.widget_icon must be a string.', 'all-feedback' ),
+				422
+			);
 		}
 
 		return true;

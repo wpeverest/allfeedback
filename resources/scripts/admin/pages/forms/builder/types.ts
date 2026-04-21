@@ -64,7 +64,6 @@ export interface FormSettings {
 	progressIndicator: ProgressIndicator;
 	triggerIcon: TriggerIcon;
 	widgetPosition: WidgetPosition;
-	widgetColor: string;
 	widgetLabel: string;
 }
 
@@ -92,7 +91,6 @@ export const DEFAULT_FORM_SETTINGS: FormSettings = {
 	progressIndicator: 'dots',
 	triggerIcon: 'message',
 	widgetPosition: '',
-	widgetColor: '',
 	widgetLabel: '',
 };
 
