@@ -178,7 +178,7 @@ const NewFormModal = ({
 									</div>
 									<p className="!mt-2 !mb-0 !text-[16px] font-semibold text-foreground/80 leading-snug">{__('Choose a template', 'all-feedback')}</p>
 									<p className="!mt-[4px] text-base leading-relaxed text-muted-foreground/80">{__('Pick a ready-made survey to get up and running fast.', 'all-feedback')}</p>
-									<div className="mt-3 flex items-center gap-0.5 text-base font-semibold text-primary/85">
+									<div className="mt-1 flex items-center gap-0.5 text-base font-semibold text-primary/85">
 										<span>{__('Browse templates', 'all-feedback')}</span>
 										<ChevronRight className="size-4 transition-transform group-hover:translate-x-0.5" />
 									</div>
