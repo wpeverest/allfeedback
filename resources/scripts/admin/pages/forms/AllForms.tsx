@@ -106,8 +106,22 @@ const NewFormModal = ({
 	const [view, setView] = useState<'start' | 'templates'>('start');
 
 	useEffect(() => {
-		if (!open) setView('start');
-	}, [open]);
+		if (!open) {
+			setView('start');
+			return;
+		}
+
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === 'Escape' && view === 'templates' && !isPending) {
+				e.preventDefault();
+				e.stopPropagation();
+				setView('start');
+			}
+		};
+
+		window.addEventListener('keydown', handleKeyDown, true);
+		return () => window.removeEventListener('keydown', handleKeyDown, true);
+	}, [open, view, isPending]);
 
 	return (
 		<Dialog.Root open={open} onOpenChange={(v) => { if (!isPending) onOpenChange(v); }}>
@@ -115,7 +129,7 @@ const NewFormModal = ({
 				<Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 duration-200" />
 				<Dialog.Content
 					className={cn(
-						'fixed left-1/2 top-1/2 z-50 w-full -translate-x-1/2 -translate-y-1/2',
+						'group/modal fixed left-1/2 top-1/2 z-50 w-full -translate-x-1/2 -translate-y-1/2',
 						'max-w-4xl',
 						'rounded-2xl border border-border bg-card shadow-[var(--shadow-dropdown)] focus:outline-none',
 						'data-[state=open]:animate-in data-[state=closed]:animate-out',
@@ -207,10 +221,17 @@ const NewFormModal = ({
 
 								<span className="h-5 w-px bg-border" />
 
-								<div className="min-w-0 flex-1">
+								<div className="flex min-w-0 flex-1 items-center gap-3">
 									<Dialog.Title className="text-md font-semibold text-foreground" style={{ margin: 0 }}>
 										{__('Choose a template', 'all-feedback')}
 									</Dialog.Title>
+									<div className="flex items-center gap-1.5 opacity-0 transition-opacity duration-300 group-hover/modal:opacity-100">
+										<span className="text-[11px] text-muted-foreground/50">{__('Press', 'all-feedback')}</span>
+										<kbd className="pointer-events-none inline-flex h-4 select-none items-center gap-1 rounded border border-border/40 bg-muted/50 px-1 font-mono text-[9px] font-medium text-muted-foreground/70 opacity-100">
+											{__('Esc', 'all-feedback')}
+										</kbd>
+										<span className="text-[11px] text-muted-foreground/50">{__('to go back', 'all-feedback')}</span>
+									</div>
 								</div>
 								<Dialog.Close
 									className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-lg text-muted-foreground/50 transition-colors hover:bg-muted hover:text-foreground"
