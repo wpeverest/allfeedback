@@ -58,6 +58,7 @@ import {
 } from 'lucide-react';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useEffect, useState } from 'react';
+import { TemplateIllustration } from '@/admin/components/TemplateIllustrations';
 import { toast } from 'sonner';
 import type { SurveyStatus } from '@/admin/api/surveys';
 
@@ -115,7 +116,7 @@ const NewFormModal = ({
 				<Dialog.Content
 					className={cn(
 						'fixed left-1/2 top-1/2 z-50 w-full -translate-x-1/2 -translate-y-1/2',
-						'max-w-[680px]',
+						'max-w-4xl',
 						'rounded-2xl border border-border bg-card shadow-[var(--shadow-dropdown)] focus:outline-none',
 						'data-[state=open]:animate-in data-[state=closed]:animate-out',
 						'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
@@ -145,21 +146,23 @@ const NewFormModal = ({
 									onClick={() => onSelect('scratch')}
 									disabled={isPending}
 									className={cn(
-										'group flex flex-col rounded-xl border p-5 text-left transition-all duration-150 outline-none cursor-pointer',
+										'group flex flex-col rounded-xl border p-0 text-left transition-all duration-150 outline-none cursor-pointer overflow-hidden',
 										'focus-visible:ring-2 focus-visible:ring-primary/25',
-										'border border-border/60 hover:border-primary/40 hover:bg-muted/20',
+										'border border-border/60 hover:border-primary/40 hover:bg-muted/10',
 										isPending && pendingId === 'scratch' && 'border-primary/50 bg-primary/[0.03]',
 										isPending && pendingId !== 'scratch' && 'pointer-events-none opacity-40',
 									)}
 								>
-									<div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-border/40 bg-white transition-colors group-hover:border-primary/20 group-hover:bg-primary/10">
+									<div className="flex h-44 w-full items-center justify-center border-b border-border/40 bg-muted/20 transition-colors group-hover:bg-primary/[0.03]">
 										{isPending && pendingId === 'scratch'
-											? <Loader2 className="size-[17px] animate-spin text-primary" />
-											: <FileText className="size-[17px] text-muted-foreground/60 transition-colors group-hover:text-primary" />
+											? <Loader2 className="size-8 animate-spin text-primary" />
+											: <TemplateIllustration type="scratch" className="h-full w-full max-w-[200px] opacity-70 transition-all group-hover:scale-105 group-hover:opacity-100" />
 										}
 									</div>
-									<p className="!mt-2 !mb-0 !text-[16px] font-semibold text-foreground/80 leading-snug">{__('Start from scratch', 'all-feedback')}</p>
-									<p className="!mt-[4px] text-base leading-relaxed text-muted-foreground/80">{__('Build your form field by field from a blank canvas.', 'all-feedback')}</p>
+									<div className="p-6">
+										<p className="!m-0 !text-[17px] font-semibold text-foreground/80 leading-snug">{__('Start from scratch', 'all-feedback')}</p>
+										<p className="!mt-1.5 text-[14px] leading-relaxed text-muted-foreground/80">{__('Build your form field by field from a blank canvas.', 'all-feedback')}</p>
+									</div>
 								</button>
 
 								<button
@@ -167,20 +170,22 @@ const NewFormModal = ({
 									onClick={() => setView('templates')}
 									disabled={isPending}
 									className={cn(
-										'group flex flex-col rounded-xl border p-5 text-left transition-all duration-150 outline-none cursor-pointer',
+										'group flex flex-col rounded-xl border p-0 text-left transition-all duration-150 outline-none cursor-pointer overflow-hidden',
 										'focus-visible:ring-2 focus-visible:ring-primary/25',
-										'border border-border/60 hover:border-primary/40 hover:bg-muted/20',
+										'border border-border/60 hover:border-primary/40 hover:bg-muted/10',
 										isPending && 'pointer-events-none opacity-40 cursor-not-allowed',
 									)}
 								>
-									<div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 transition-colors">
-										<LayoutGrid className="size-[17px] text-primary" />
+									<div className="flex h-44 w-full items-center justify-center border-b border-border/40 bg-muted/5 transition-colors group-hover:bg-muted/10">
+										<TemplateIllustration type="overview" className="h-full w-full max-w-[180px] opacity-80 transition-all group-hover:scale-105 group-hover:opacity-100" />
 									</div>
-									<p className="!mt-2 !mb-0 !text-[16px] font-semibold text-foreground/80 leading-snug">{__('Choose a template', 'all-feedback')}</p>
-									<p className="!mt-[4px] text-base leading-relaxed text-muted-foreground/80">{__('Pick a ready-made survey to get up and running fast.', 'all-feedback')}</p>
-									<div className="mt-1 flex items-center gap-0.5 text-base font-semibold text-primary/85">
-										<span>{__('Browse templates', 'all-feedback')}</span>
-										<ChevronRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+									<div className="p-6">
+										<p className="!m-0 !text-[17px] font-semibold text-foreground/80 leading-snug">{__('Choose a template', 'all-feedback')}</p>
+										<p className="!mt-1.5 text-[14px] leading-relaxed text-muted-foreground/80">{__('Pick a ready-made survey to get up and running fast.', 'all-feedback')}</p>
+										<div className="mt-2.5 flex items-center gap-0.5 text-[14px] font-semibold text-primary/85">
+											<span>{__('Browse templates', 'all-feedback')}</span>
+											<ChevronRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+										</div>
 									</div>
 								</button>
 							</div>
@@ -215,7 +220,7 @@ const NewFormModal = ({
 								</Dialog.Close>
 							</div>
 
-							<div className="grid grid-cols-2 gap-3 p-5">
+							<div className="grid grid-cols-3 gap-4 p-6">
 								{FORM_TEMPLATES.map((tpl) => {
 									const isActive = isPending && pendingId === tpl.id;
 									const isFaded  = isPending && pendingId !== tpl.id;
@@ -226,22 +231,22 @@ const NewFormModal = ({
 											onClick={() => onSelect(tpl.id)}
 											disabled={isPending}
 											className={cn(
-												'group flex items-start gap-3.5 rounded-xl border p-4 text-left transition-all duration-150 outline-none cursor-pointer',
+												'group flex flex-col rounded-xl border p-0 text-left transition-all duration-150 outline-none cursor-pointer overflow-hidden',
 												'focus-visible:ring-2 focus-visible:ring-primary/30',
 												'border-border/60 bg-card hover:border-primary/40 hover:bg-muted/40',
 												isActive && 'border-primary/40 bg-muted/40',
 												isFaded  && 'pointer-events-none opacity-40 cursor-not-allowed',
 											)}
 										>
-											<div className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border/40 bg-white transition-colors group-hover:border-primary/20 group-hover:bg-primary/10">
+											<div className="flex h-36 w-full items-center justify-center border-b border-border/40 bg-muted/10 transition-colors group-hover:bg-primary/[0.02]">
 												{isActive
-													? <Loader2 className="size-[17px] animate-spin text-primary" />
-													: <tpl.Icon className="size-[17px] text-muted-foreground/60 transition-colors group-hover:text-primary" />
+													? <Loader2 className="size-6 animate-spin text-primary" />
+													: <TemplateIllustration type={tpl.id} className="h-full w-full py-6 transition-all group-hover:scale-105" />
 												}
 											</div>
-											<div className="min-w-0 flex-1">
-												<p className="!mt-0 !mb-[4px] text-[15px] font-semibold text-foreground/90">{tpl.label}</p>
-												<p className="!mt-0 text-base leading-relaxed text-muted-foreground/80">{tpl.description}</p>
+											<div className="p-4">
+												<p className="!m-0 text-[14px] font-semibold text-foreground/90 leading-tight">{tpl.label}</p>
+												<p className="!mt-1 text-[12px] leading-relaxed text-muted-foreground/80 line-clamp-2">{tpl.description}</p>
 											</div>
 										</button>
 									);
