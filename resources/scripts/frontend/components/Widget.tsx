@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AllfbConfig, SurveyConfig } from '../types';
 import type { StateManager } from '../state';
+import { trackEvent } from '../utils';
 import { SurveyPanel } from './SurveyPanel';
 
 interface WidgetProps {
@@ -78,6 +79,17 @@ export const Widget = ( { cfg, surveyConfig, stateManager }: WidgetProps ) => {
 	const [ panelReady, setPanelReady ] = useState( false );
 
 	const impressionRecordedRef = useRef( false );
+	const sessionIdRef          = useRef( '' );
+	const hasSubmittedRef       = useRef( false );
+
+	const getGuestId = () => localStorage.getItem( 'allfb_visitor_id' ) ?? undefined;
+
+	const initSession = useCallback( () => {
+		if ( sessionIdRef.current !== '' ) return;
+		const sid = crypto.randomUUID();
+		sessionIdRef.current = sid;
+		void trackEvent( cfg.restUrl, cfg.nonce, surveyConfig.id, 'viewed', sid, getGuestId() );
+	}, [ cfg, surveyConfig.id ] );
 
 	const reveal = useCallback( () => setIsRevealed( true ), [] );
 
@@ -88,7 +100,8 @@ export const Widget = ( { cfg, surveyConfig, stateManager }: WidgetProps ) => {
 			impressionRecordedRef.current = true;
 			stateManager.recordImpression();
 		}
-	}, [ stateManager ] );
+		initSession();
+	}, [ stateManager, initSession ] );
 
 	const close = useCallback( () => setIsOpen( false ), [] );
 
@@ -100,12 +113,35 @@ export const Widget = ( { cfg, surveyConfig, stateManager }: WidgetProps ) => {
 					impressionRecordedRef.current = true;
 					stateManager.recordImpression();
 				}
+				initSession();
 			}
 			return ! prev;
 		} );
+	}, [ stateManager, initSession ] );
+
+	// Heartbeat every 15 s while widget is open.
+	useEffect( () => {
+		if ( ! isOpen || sessionIdRef.current === '' ) return;
+		const sid = sessionIdRef.current;
+		const id  = setInterval( () => {
+			void trackEvent( cfg.restUrl, cfg.nonce, surveyConfig.id, 'heartbeat', sid, getGuestId() );
+		}, 15_000 );
+		return () => clearInterval( id );
+	}, [ isOpen, cfg, surveyConfig.id ] );
+
+	const handleSubmit = useCallback( () => {
+		hasSubmittedRef.current = true;
+		stateManager.recordSubmit();
 	}, [ stateManager ] );
 
-	const handleClose    = useCallback( () => { stateManager.recordDismissal(); close(); }, [ stateManager, close ] );
+	const handleClose = useCallback( () => {
+		if ( sessionIdRef.current !== '' && ! hasSubmittedRef.current ) {
+			void trackEvent( cfg.restUrl, cfg.nonce, surveyConfig.id, 'abandoned', sessionIdRef.current, getGuestId() );
+		}
+		stateManager.recordDismissal();
+		close();
+	}, [ stateManager, close, cfg, surveyConfig.id ] );
+
 	const handleMinimize = useCallback( () => close(), [ close ] );
 
 	useEffect( () => {
@@ -199,7 +235,8 @@ export const Widget = ( { cfg, surveyConfig, stateManager }: WidgetProps ) => {
 							cfg={ cfg }
 							surveyId={ surveyConfig.id }
 							submitNonce={ cfg.submitNonce }
-							onSubmit={ () => stateManager.recordSubmit() }
+							sessionId={ sessionIdRef.current }
+							onSubmit={ handleSubmit }
 						/>
 					) }
 				</div>

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { activeSections, normalizeSettings, parseSections } from '../utils';
+import { useRef, useState } from 'react';
+import { activeSections, normalizeSettings, parseSections, trackEvent } from '../utils';
 import type { AllfbConfig, Survey } from '../types';
 import { FieldPreview } from './FieldPreview';
 
@@ -17,10 +17,11 @@ interface SurveyFormProps {
 	cfg:         AllfbConfig;
 	survey:      Survey;
 	submitNonce: string;
+	sessionId?:  string;
 	onSuccess:   () => void;
 }
 
-export const SurveyForm = ( { cfg, survey, submitNonce, onSuccess }: SurveyFormProps ) => {
+export const SurveyForm = ( { cfg, survey, submitNonce, sessionId, onSuccess }: SurveyFormProps ) => {
 	const sections    = activeSections( parseSections( survey.form_schema ) );
 	const ss          = normalizeSettings( survey.settings );
 	const totalSteps  = sections.length;
@@ -30,6 +31,8 @@ export const SurveyForm = ( { cfg, survey, submitNonce, onSuccess }: SurveyFormP
 	const [ fieldErrors,  setFieldErrors  ] = useState<Record<string, string>>( {} );
 	const [ isSubmitting, setIsSubmitting ] = useState( false );
 	const [ submitError,  setSubmitError  ] = useState( '' );
+
+	const hasStartedRef = useRef( false );
 
 	if ( sections.length === 0 ) {
 		return <p className="allfb-panel__placeholder">This survey has no questions yet.</p>;
@@ -41,6 +44,10 @@ export const SurveyForm = ( { cfg, survey, submitNonce, onSuccess }: SurveyFormP
 	const handleChange = ( fieldId: string, value: string | string[] ) => {
 		setFieldValues( ( prev ) => ( { ...prev, [ fieldId ]: value } ) );
 		setFieldErrors( ( prev ) => ( { ...prev, [ fieldId ]: '' } ) );
+		if ( ! hasStartedRef.current && sessionId ) {
+			hasStartedRef.current = true;
+			void trackEvent( cfg.restUrl, cfg.nonce, survey.id, 'started', sessionId );
+		}
 	};
 
 	const validateStep = (): Record<string, string> => {
@@ -103,6 +110,7 @@ export const SurveyForm = ( { cfg, survey, submitNonce, onSuccess }: SurveyFormP
 					page_url:      window.location.href,
 					visitor_token: getOrCreateVisitorId(),
 					...( score !== undefined && ! Number.isNaN( score ) ? { score } : {} ),
+					...( sessionId ? { session_id: sessionId } : {} ),
 				} ),
 			} );
 			if ( ! res.ok ) throw new Error( `HTTP ${ res.status }` );

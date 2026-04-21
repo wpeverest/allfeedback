@@ -34,6 +34,9 @@ use AllFeedback\Core\Settings\SettingsManager;
 // ── Domain — Survey ───────────────────────────────────────────────────────────
 use AllFeedback\Domain\Survey\SurveyRepository;
 
+// ── Domain — Analytics ────────────────────────────────────────────────────────
+use AllFeedback\Domain\Analytics\SurveySessionRepository;
+
 // ── Domain — Response ─────────────────────────────────────────────────────────
 use AllFeedback\Domain\Response\ResponseRepository;
 
@@ -45,6 +48,9 @@ use AllFeedback\Application\Survey\SurveyQueryService;
 use AllFeedback\Application\Survey\SurveyStateService;
 use AllFeedback\Application\Survey\UpdateSurveyService;
 
+// ── Application — Analytics ───────────────────────────────────────────────────
+use AllFeedback\Application\Analytics\TrackSessionEventService;
+
 // ── Application — Response ────────────────────────────────────────────────────
 use AllFeedback\Application\Response\ResponseQueryService;
 use AllFeedback\Application\Response\SubmitResponseService;
@@ -53,6 +59,7 @@ use AllFeedback\Application\Response\SubmitResponseService;
 use AllFeedback\Infrastructure\Database\Migrator;
 use AllFeedback\Infrastructure\Database\Repositories\WpdbResponseRepository;
 use AllFeedback\Infrastructure\Database\Repositories\WpdbSurveyRepository;
+use AllFeedback\Infrastructure\Database\Repositories\WpdbSurveySessionRepository;
 
 // ── Infrastructure — Jobs ─────────────────────────────────────────────────────
 use AllFeedback\Infrastructure\Jobs\ActionSchedulerDispatcher;
@@ -67,6 +74,7 @@ use AllFeedback\Infrastructure\Mail\SendNotificationJob;
 // ── API ───────────────────────────────────────────────────────────────────────
 use AllFeedback\Admin\AdminServiceProvider;
 use AllFeedback\API\ApiServiceProvider;
+use AllFeedback\API\Controllers\V1\AnalyticsController;
 use AllFeedback\API\Controllers\V1\ContentSearchController;
 use AllFeedback\Frontend\Blocks\BlockRegistry;
 use AllFeedback\Frontend\Blocks\SurveyBlock;
@@ -152,10 +160,12 @@ return [
 	// ------------------------------------------------------------------
 	// Domain → Infrastructure repository bindings
 	// ------------------------------------------------------------------
-	SurveyRepository::class          => autowire( WpdbSurveyRepository::class ),
-	ResponseRepository::class        => autowire( WpdbResponseRepository::class ),
-	WpdbSurveyRepository::class      => autowire(),
-	WpdbResponseRepository::class    => autowire(),
+	SurveyRepository::class             => autowire( WpdbSurveyRepository::class ),
+	ResponseRepository::class           => autowire( WpdbResponseRepository::class ),
+	SurveySessionRepository::class      => autowire( WpdbSurveySessionRepository::class ),
+	WpdbSurveyRepository::class         => autowire(),
+	WpdbResponseRepository::class       => autowire(),
+	WpdbSurveySessionRepository::class  => autowire(),
 
 	// ------------------------------------------------------------------
 	// Application services — Survey
@@ -166,6 +176,11 @@ return [
 	SurveyQueryService::class        => autowire(),
 	SurveyAnalyticsService::class    => autowire(),
 	SurveyStateService::class        => create( SurveyStateService::class ),
+
+	// ------------------------------------------------------------------
+	// Application services — Analytics
+	// ------------------------------------------------------------------
+	TrackSessionEventService::class     => autowire(),
 
 	// ------------------------------------------------------------------
 	// Application services — Response
@@ -187,6 +202,7 @@ return [
 	// ------------------------------------------------------------------
 	// REST API controllers
 	// ------------------------------------------------------------------
+	AnalyticsController::class       => autowire(),
 	SurveysController::class         => autowire(),
 	ResponsesController::class       => autowire(),
 	SubmitController::class          => autowire(),

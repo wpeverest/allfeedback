@@ -9,6 +9,7 @@ interface SurveyPanelProps {
 	cfg:         AllfbConfig;
 	surveyId:    number;
 	submitNonce: string;
+	sessionId?:  string;
 	onSubmit?:   () => void;
 }
 
@@ -24,7 +25,7 @@ const ThankYou = ( { title, description }: { title: string; description: string 
 	</div>
 );
 
-export const SurveyPanel = ( { cfg, surveyId, submitNonce, onSubmit }: SurveyPanelProps ) => {
+export const SurveyPanel = ( { cfg, surveyId, submitNonce, sessionId, onSubmit }: SurveyPanelProps ) => {
 	const [ status, setStatus ] = useState<PanelStatus>( 'loading' );
 	const [ survey, setSurvey ] = useState<Survey | null>( null );
 
@@ -80,6 +81,7 @@ export const SurveyPanel = ( { cfg, surveyId, submitNonce, onSubmit }: SurveyPan
 				cfg={ cfg }
 				survey={ survey }
 				submitNonce={ submitNonce }
+				sessionId={ sessionId }
 				onSuccess={ handleSuccess }
 			/>
 		);

@@ -12,6 +12,7 @@ use AllFeedback\Application\Response\SubmitResponseService;
 use AllFeedback\Core\Exceptions\NotFoundException;
 use AllFeedback\Core\Exceptions\ValidationException;
 use AllFeedback\Core\Settings\SettingsManager;
+use AllFeedback\Domain\Analytics\SurveySessionRepository;
 use AllFeedback\Domain\Response\ResponseRepository;
 use AllFeedback\Domain\Survey\SurveyRepository;
 use AllFeedback\Support\Logger;
@@ -57,11 +58,12 @@ class SubmitController extends RestController {
 	public const NONCE_ACTION = 'allfeedback_submit';
 
 	/**
-	 * @param SurveyRepository      $surveyRepository  Survey repository for existence and status checks.
-	 * @param ResponseRepository    $responseRepository Response repository for duplicate detection.
-	 * @param SubmitResponseService  $submitService     Use-case service for response submission.
-	 * @param SettingsManager       $settingsManager   Settings for privacy flags.
-	 * @param Logger                $logger            Structured logger.
+	 * @param SurveyRepository       $surveyRepository   Survey repository for existence and status checks.
+	 * @param ResponseRepository     $responseRepository Response repository for duplicate detection.
+	 * @param SubmitResponseService  $submitService      Use-case service for response submission.
+	 * @param SettingsManager        $settingsManager    Settings for privacy flags.
+	 * @param Logger                 $logger             Structured logger.
+	 * @param SurveySessionRepository $sessionRepository Session repository for analytics.
 	 * @since 1.0.0
 	 */
 	public function __construct(
@@ -70,6 +72,7 @@ class SubmitController extends RestController {
 		private readonly SubmitResponseService $submitService,
 		private readonly SettingsManager $settingsManager,
 		private readonly Logger $logger,
+		private readonly SurveySessionRepository $sessionRepository,
 	) {}
 
 	/**
@@ -228,6 +231,15 @@ class SubmitController extends RestController {
 
 		$responseId = (int) $domainResponse->getId();
 
+		$sessionId = sanitize_text_field( (string) ( $request->get_param( 'session_id' ) ?? '' ) );
+		if ( $sessionId !== '' ) {
+			$session = $this->sessionRepository->findBySessionId( $sessionId );
+			if ( $session !== null && ! $session->isSubmitted() ) {
+				$session->markSubmitted( new \DateTimeImmutable() );
+				$this->sessionRepository->save( $session );
+			}
+		}
+
 		/**
 		 * Fires after a survey response has been successfully saved.
 		 *
@@ -316,6 +328,10 @@ class SubmitController extends RestController {
 			),
 			'visitor_token' => $this->argString(
 				description: __( 'Persistent guest visitor UUID (v4) for duplicate detection.', 'all-feedback' ),
+				maxLength:   36,
+			),
+			'session_id'    => $this->argString(
+				description: __( 'Analytics session UUID (v4) generated on widget open.', 'all-feedback' ),
 				maxLength:   36,
 			),
 		];
