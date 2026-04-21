@@ -35,6 +35,7 @@ class CreateInitialTables extends Migration {
 			settings       longtext                      DEFAULT NULL,
 			styling        json                          DEFAULT NULL,
 			status         varchar(20)          NOT NULL DEFAULT 'draft',
+			conflict_reason text                          DEFAULT NULL,
 			response_count int unsigned         NOT NULL DEFAULT 0,
 			created_by     bigint(20) unsigned           DEFAULT NULL,
 			created_at     datetime             NOT NULL,
