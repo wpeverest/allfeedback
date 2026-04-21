@@ -153,7 +153,7 @@ const NewFormModal = ({
 										isPending && pendingId !== 'scratch' && 'pointer-events-none opacity-40',
 									)}
 								>
-									<div className="flex h-44 w-full items-center justify-center border-b border-border/40 bg-muted/20 transition-colors group-hover:bg-primary/[0.03]">
+									<div className="flex h-44 w-full items-center justify-center border-b border-border/40 bg-muted/5 transition-colors group-hover:bg-primary/[0.03]">
 										{isPending && pendingId === 'scratch'
 											? <Loader2 className="size-8 animate-spin text-primary" />
 											: <TemplateIllustration type="scratch" className="h-full w-full max-w-[200px] opacity-70 transition-all group-hover:scale-105 group-hover:opacity-100" />
@@ -176,7 +176,7 @@ const NewFormModal = ({
 										isPending && 'pointer-events-none opacity-40 cursor-not-allowed',
 									)}
 								>
-									<div className="flex h-44 w-full items-center justify-center border-b border-border/40 bg-muted/5 transition-colors group-hover:bg-muted/10">
+									<div className="flex h-44 w-full items-center justify-center border-b border-border/40 bg-muted/5 transition-colors group-hover:bg-primary/[0.03]">
 										<TemplateIllustration type="overview" className="h-full w-full max-w-[180px] opacity-80 transition-all group-hover:scale-105 group-hover:opacity-100" />
 									</div>
 									<div className="p-6">
@@ -233,12 +233,12 @@ const NewFormModal = ({
 											className={cn(
 												'group flex flex-col rounded-xl border p-0 text-left transition-all duration-150 outline-none cursor-pointer overflow-hidden',
 												'focus-visible:ring-2 focus-visible:ring-primary/30',
-												'border-border/60 bg-card hover:border-primary/40 hover:bg-muted/40',
-												isActive && 'border-primary/40 bg-muted/40',
+												'border-border/60 bg-card hover:border-primary/40 hover:bg-muted/10',
+												isActive && 'border-primary/40 bg-muted/10',
 												isFaded  && 'pointer-events-none opacity-40 cursor-not-allowed',
 											)}
 										>
-											<div className="flex h-36 w-full items-center justify-center border-b border-border/40 bg-muted/10 transition-colors group-hover:bg-primary/[0.02]">
+											<div className="flex h-36 w-full items-center justify-center border-b border-border/40 bg-muted/5 transition-colors group-hover:bg-primary/[0.03]">
 												{isActive
 													? <Loader2 className="size-6 animate-spin text-primary" />
 													: <TemplateIllustration type={tpl.id} className="h-full w-full py-6 transition-all group-hover:scale-105" />
