@@ -6,6 +6,7 @@ import { wizardApi, WIZARD_STATUS_QUERY_KEY, type WizardCompletePayload } from '
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { __ } from '@wordpress/i18n';
 import {
 	MessageSquare, Check, ArrowLeft, ArrowRight, AlertCircle,
 	Gauge, Box, Bug, Lightbulb, Users,
@@ -15,26 +16,26 @@ import {
 } from 'lucide-react';
 
 const STEPS = [
-	{ id: 'template', label: 'Welcome',  Icon: Wand2   },
-	{ id: 'style',    label: 'Style',    Icon: Palette  },
-	{ id: 'settings', label: 'Settings', Icon: Bell     },
-	{ id: 'final',    label: 'Launch',   Icon: Rocket   },
-] as const;
+	{ id: 'template' as const, label: __( 'Welcome',  'all-feedback' ), Icon: Wand2   },
+	{ id: 'style'    as const, label: __( 'Style',    'all-feedback' ), Icon: Palette },
+	{ id: 'settings' as const, label: __( 'Settings', 'all-feedback' ), Icon: Bell    },
+	{ id: 'final'    as const, label: __( 'Launch',   'all-feedback' ), Icon: Rocket  },
+];
 
 type StepId = typeof STEPS[number]['id'];
 
 const STEP_HEADERS: Record<StepId, { title: string; desc: string }> = {
 	template: {
-		title: '👋 Welcome to AllFeedback',
-		desc:  'Pick a template to get started — every field, label, and setting can be changed in the builder.',
+		title: __( '👋 Welcome to AllFeedback', 'all-feedback' ),
+		desc:  __( 'Pick a template to get started — every field, label, and setting can be changed in the builder.', 'all-feedback' ),
 	},
 	style: {
-		title: 'Make it yours',
-		desc:  'Pick a brand color and choose where the widget appears on your site.',
+		title: __( 'Make it yours', 'all-feedback' ),
+		desc:  __( 'Pick a brand color and choose where the widget appears on your site.', 'all-feedback' ),
 	},
 	settings: {
-		title: 'Stay in the loop',
-		desc:  "Configure where you'd like to receive new response notifications.",
+		title: __( 'Stay in the loop', 'all-feedback' ),
+		desc:  __( "Configure where you'd like to receive new response notifications.", 'all-feedback' ),
 	},
 	final: { title: '', desc: '' },
 };
@@ -61,42 +62,42 @@ function canAdvance( state: WizardCompletePayload, step: number ): boolean {
 
 const TEMPLATES = [
 	{
-		id:    'nps',
-		title: 'NPS Survey',
-		desc:  'Measure how likely customers are to recommend you to others.',
+		id:    'nps' as const,
+		title: __( 'NPS Survey', 'all-feedback' ),
+		desc:  __( 'Measure how likely customers are to recommend you to others.', 'all-feedback' ),
 		Icon:  Gauge,
 	},
 	{
-		id:    'general-feedback',
-		title: 'General Feedback',
-		desc:  'Collect open-ended thoughts, ratings, and suggestions from your audience.',
+		id:    'general-feedback' as const,
+		title: __( 'General Feedback', 'all-feedback' ),
+		desc:  __( 'Collect open-ended thoughts, ratings, and suggestions from your audience.', 'all-feedback' ),
 		Icon:  MessageSquare,
 	},
 	{
-		id:    'bug-report',
-		title: 'Bug Report',
-		desc:  'Let users flag technical issues quickly with structured, actionable reports.',
+		id:    'bug-report' as const,
+		title: __( 'Bug Report', 'all-feedback' ),
+		desc:  __( 'Let users flag technical issues quickly with structured, actionable reports.', 'all-feedback' ),
 		Icon:  Bug,
 	},
 	{
-		id:    'feature-request',
-		title: 'Feature Request',
-		desc:  'Capture ideas for new features and improvements directly from your users.',
+		id:    'feature-request' as const,
+		title: __( 'Feature Request', 'all-feedback' ),
+		desc:  __( 'Capture ideas for new features and improvements directly from your users.', 'all-feedback' ),
 		Icon:  Lightbulb,
 	},
 	{
-		id:    'product-feedback',
-		title: 'Product Feedback',
-		desc:  'Uncover what users love and what to build next with targeted product questions.',
+		id:    'product-feedback' as const,
+		title: __( 'Product Feedback', 'all-feedback' ),
+		desc:  __( 'Uncover what users love and what to build next with targeted product questions.', 'all-feedback' ),
 		Icon:  Box,
 	},
 	{
-		id:    'customer-research',
-		title: 'Customer Research',
-		desc:  'Learn more about your audience, their goals, and how they discovered you.',
+		id:    'customer-research' as const,
+		title: __( 'Customer Research', 'all-feedback' ),
+		desc:  __( 'Learn more about your audience, their goals, and how they discovered you.', 'all-feedback' ),
 		Icon:  Users,
 	},
-] as const;
+];
 
 function StepTemplate( { state, set }: { state: WizardCompletePayload; set: ( u: Partial<WizardCompletePayload> ) => void } ) {
 	return (
@@ -109,10 +110,10 @@ function StepTemplate( { state, set }: { state: WizardCompletePayload; set: ( u:
 						type="button"
 						onClick={ () => set( { template: t.id } ) }
 						className={ cn(
-							'group relative flex flex-col gap-5 rounded-2xl border p-6 text-left transition-all duration-300 bg-card',
+							'group relative flex flex-col gap-5 rounded-2xl border-2 p-6 text-left transition-all duration-300 bg-card',
 							isSelected
-								? 'border-primary shadow-card'
-								: 'border-border/50 hover:border-border/80',
+								? '!border-primary shadow-card'
+								: 'border-transparent shadow-sm hover:border-border/60 hover:shadow-card',
 						) }
 					>
 						<div className={ cn(
@@ -156,9 +157,9 @@ const COLOR_PRESETS = [
 type PositionValue = WizardCompletePayload['position'];
 
 const ALL_POSITIONS: { value: PositionValue; label: string }[] = [
-	{ value: 'bottom-left',  label: 'Bottom left'  },
-	{ value: 'bottom-right', label: 'Bottom right' },
-	{ value: 'side-tab',     label: 'Side tab'     },
+	{ value: 'bottom-left',  label: __( 'Bottom left',  'all-feedback' ) },
+	{ value: 'bottom-right', label: __( 'Bottom right', 'all-feedback' ) },
+	{ value: 'side-tab',     label: __( 'Side tab',     'all-feedback' ) },
 ];
 
 const BOTTOM_POSITIONS = ALL_POSITIONS.filter( ( p ) => p.value !== 'side-tab' );
@@ -275,7 +276,7 @@ function BrowserPreview( { color, position }: { color: string; position: Positio
 						className="select-none text-[8px] font-semibold tracking-widest"
 						style={ { writingMode: 'vertical-rl', transform: 'rotate(180deg)' } }
 					>
-						Feedback
+						{ __( 'Feedback', 'all-feedback' ) }
 					</span>
 				</div>
 			</div>
@@ -290,12 +291,12 @@ function StepStyle( { state, set }: { state: WizardCompletePayload; set: ( u: Pa
 				<div className="flex h-full flex-col rounded-2xl border border-border/50 bg-card p-6 md:p-8 shadow-card">
 					<div className="space-y-6">
 						<div className="space-y-3">
-							<label className="block text-sm font-semibold text-foreground">Brand color</label>
+							<label className="block text-sm font-semibold text-foreground">{ __( 'Brand color', 'all-feedback' ) }</label>
 							<ColorPicker value={ state.brand_color } onChange={ ( v ) => set( { brand_color: v } ) } />
 						</div>
 						<div className="h-px bg-border/50" />
 						<div className="space-y-4">
-							<label className="block text-sm font-semibold text-foreground">Widget position</label>
+							<label className="block text-sm font-semibold text-foreground">{ __( 'Widget position', 'all-feedback' ) }</label>
 							<div className="flex flex-col gap-2">
 								{ ALL_POSITIONS.map( ( pos ) => (
 									<button
@@ -327,7 +328,7 @@ function StepStyle( { state, set }: { state: WizardCompletePayload; set: ( u: Pa
 							<span className="size-2.5 rounded-full bg-amber-400/20" />
 							<span className="size-2.5 rounded-full bg-green-500/20" />
 						</div>
-						<span className="text-xs font-bold uppercase tracking-widest text-muted-foreground/40 ml-2">Live Preview</span>
+						<span className="text-xs font-bold uppercase tracking-widest text-muted-foreground/40 ml-2">{ __( 'Live Preview', 'all-feedback' ) }</span>
 					</div>
 					<div className="h-2 w-24 rounded-full bg-muted/40" />
 				</div>
@@ -340,9 +341,9 @@ function StepStyle( { state, set }: { state: WizardCompletePayload; set: ( u: Pa
 }
 
 const NOTIF_OPTIONS = [
-	{ id: 'instant' as const, label: 'Instant', Icon: Zap      },
-	{ id: 'daily'   as const, label: 'Daily',   Icon: Clock    },
-	{ id: 'weekly'  as const, label: 'Weekly',  Icon: Calendar },
+	{ id: 'instant' as const, label: __( 'Instant', 'all-feedback' ), Icon: Zap      },
+	{ id: 'daily'   as const, label: __( 'Daily',   'all-feedback' ), Icon: Clock    },
+	{ id: 'weekly'  as const, label: __( 'Weekly',  'all-feedback' ), Icon: Calendar },
 ];
 
 function StepSettings( { state, set }: { state: WizardCompletePayload; set: ( u: Partial<WizardCompletePayload> ) => void } ) {
@@ -354,13 +355,13 @@ function StepSettings( { state, set }: { state: WizardCompletePayload; set: ( u:
 				<div className="p-6 md:p-10 space-y-8 md:space-y-10">
 					<div className="space-y-4">
 						<div className="space-y-1.5">
-							<label className="text-sm font-semibold text-foreground">Where to send new response notifications</label>
-							<p className="text-sm leading-relaxed text-muted-foreground">This email will receive an alert whenever a new feedback is submitted.</p>
+							<label className="text-sm font-semibold text-foreground">{ __( 'Where to send new response notifications', 'all-feedback' ) }</label>
+							<p className="text-sm leading-relaxed text-muted-foreground">{ __( 'This email will receive an alert whenever a new feedback is submitted.', 'all-feedback' ) }</p>
 						</div>
 						<div className="space-y-2">
 							<Input
 								type="email"
-								placeholder="you@company.com"
+								placeholder={ __( 'you@company.com', 'all-feedback' ) }
 								value={ state.admin_email }
 								onChange={ ( e ) => set( { admin_email: e.target.value } ) }
 								className={ cn(
@@ -371,7 +372,7 @@ function StepSettings( { state, set }: { state: WizardCompletePayload; set: ( u:
 							{ ! emailOk && (
 								<div className="flex items-center gap-2 text-[12px] font-medium text-destructive">
 									<AlertCircle className="size-4" />
-									<span>Enter a valid email address.</span>
+									<span>{ __( 'Enter a valid email address.', 'all-feedback' ) }</span>
 								</div>
 							) }
 						</div>
@@ -379,8 +380,8 @@ function StepSettings( { state, set }: { state: WizardCompletePayload; set: ( u:
 
 					<div className="space-y-4">
 						<div className="space-y-1.5">
-							<label className="text-sm font-semibold text-foreground">Delivery frequency</label>
-							<p className="text-sm leading-relaxed text-muted-foreground">Choose how often you want to receive notification digests.</p>
+							<label className="text-sm font-semibold text-foreground">{ __( 'Delivery frequency', 'all-feedback' ) }</label>
+							<p className="text-sm leading-relaxed text-muted-foreground">{ __( 'Choose how often you want to receive notification digests.', 'all-feedback' ) }</p>
 						</div>
 						<div className="inline-flex flex-col sm:flex-row sm:items-center rounded-xl border border-border/50 bg-muted/30 p-1">
 							{ NOTIF_OPTIONS.map( ( opt ) => (
@@ -405,11 +406,10 @@ function StepSettings( { state, set }: { state: WizardCompletePayload; set: ( u:
 			</div>
 
 			<div className="flex items-start gap-3 rounded-xl border border-info/20 bg-info-subtle/50 px-5 py-4">
-				<Info className="mt-0.5 size-4 shrink-0 text-info" />
-				<p className="text-sm leading-relaxed text-foreground/70">
-					All feedback is stored on your server only — no data is shared with third parties.
-					Consent banners and IP anonymization can be configured in{' '}
-					<strong className="font-semibold text-foreground">Settings → Advanced</strong>.
+				<Info className="size-4 shrink-0 text-info" />
+				<p className="!m-0 text-sm leading-relaxed text-foreground/70">
+					{ __( 'All feedback is stored on your server only — no data is shared with third parties. Consent banners and IP anonymization can be configured in', 'all-feedback' ) }{ ' ' }
+					<strong className="font-semibold text-foreground">{ __( 'Settings → Advanced', 'all-feedback' ) }</strong>{ '.' }
 				</p>
 			</div>
 		</div>
@@ -419,23 +419,23 @@ function StepSettings( { state, set }: { state: WizardCompletePayload; set: ( u:
 const LAUNCH_HIGHLIGHTS = [
 	{
 		Icon:  Check,
-		title: 'Survey ready',
-		desc:  'A starter form is waiting in the builder — customize questions, copy, and logic.',
+		title: __( 'Survey ready', 'all-feedback' ),
+		desc:  __( 'A starter form is waiting in the builder — customize questions, copy, and logic.', 'all-feedback' ),
 		color: 'bg-success-subtle text-success',
 	},
 	{
 		Icon:  Zap,
-		title: 'Go live instantly',
-		desc:  'Publish with one click whenever you\'re satisfied. Your widget appears on your site immediately.',
+		title: __( 'Go live instantly', 'all-feedback' ),
+		desc:  __( "Publish with one click whenever you're satisfied. Your widget appears on your site immediately.", 'all-feedback' ),
 		color: 'bg-accent text-accent-foreground',
 	},
 	{
 		Icon:  Bell,
-		title: 'Stay notified',
-		desc:  'Get alerted each time a new response arrives, so you never miss a piece of feedback.',
+		title: __( 'Stay notified', 'all-feedback' ),
+		desc:  __( 'Get alerted each time a new response arrives, so you never miss a piece of feedback.', 'all-feedback' ),
 		color: 'bg-warning-subtle text-warning-foreground',
 	},
-] as const;
+];
 
 function StepFinal( { onFinish, submitting }: { onFinish: ( target: 'editor' | 'dashboard' ) => void; submitting: boolean } ) {
 	const canvasRef = useRef<HTMLCanvasElement>( null );
@@ -479,17 +479,17 @@ function StepFinal( { onFinish, submitting }: { onFinish: ( target: 'editor' | '
 					</div>
 					<div>
 						<h2 className="text-2xl font-bold tracking-tight text-foreground" style={ { margin: 0 } }>
-							You're ready to launch
+							{ __( "You're ready to launch", 'all-feedback' ) }
 						</h2>
 						<p className="mt-1.5 text-sm text-muted-foreground" style={ { margin: 0 } }>
-							Your widget is configured. Open the builder to fine-tune your survey, then publish when ready.
+							{ __( 'Your widget is configured. Open the builder to fine-tune your survey, then publish when ready.', 'all-feedback' ) }
 						</p>
 					</div>
 				</div>
 
 				<div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-3">
 					{ LAUNCH_HIGHLIGHTS.map( ( item ) => (
-						<div key={ item.title } className="flex flex-col gap-3 rounded-xl border border-border/50 bg-card p-5 shadow-card">
+						<div key={ item.title } className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5 shadow-sm">
 							<div className={ cn( 'flex size-9 items-center justify-center rounded-xl', item.color ) }>
 								<item.Icon className="size-4" />
 							</div>
@@ -509,7 +509,7 @@ function StepFinal( { onFinish, submitting }: { onFinish: ( target: 'editor' | '
 						disabled={ submitting }
 					>
 						<LayoutDashboard className="size-4" />
-						Go to Dashboard
+						{ __( 'Go to Dashboard', 'all-feedback' ) }
 					</Button>
 					<Button
 						size="lg"
@@ -518,7 +518,7 @@ function StepFinal( { onFinish, submitting }: { onFinish: ( target: 'editor' | '
 						disabled={ submitting }
 					>
 						{ submitting ? <Loader2 className="size-5 animate-spin" /> : <Edit2 className="size-5" /> }
-						Go to Editor
+						{ __( 'Go to Editor', 'all-feedback' ) }
 						<ArrowRight className="size-5" />
 					</Button>
 				</div>
@@ -552,7 +552,7 @@ export default function SetupWizard() {
 		setSubmitting( true );
 		try {
 			const res = await wizardApi.complete( state );
-			
+
 			queryClient.setQueryData( WIZARD_STATUS_QUERY_KEY, { status: 'completed' } );
 
 			if ( target === 'editor' && res.id ) {
@@ -610,7 +610,7 @@ export default function SetupWizard() {
 							onClick={ () => finish( 'dashboard' ) }
 							className="group flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-all hover:text-primary hover:underline hover:underline-offset-4"
 						>
-							Skip setup
+							{ __( 'Skip setup', 'all-feedback' ) }
 							<ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
 						</button>
 					) }
@@ -686,12 +686,11 @@ export default function SetupWizard() {
 
 			{ ! isDone && step < STEPS.length - 1 && (
 				<footer className="flex h-[76px] shrink-0 items-center justify-end border-t border-border/50 bg-card px-4 md:px-10">
-
 					<div className="flex gap-3">
 						{ step > 0 && (
 							<Button variant="secondary" className="h-11 px-6" onClick={ () => goto( step - 1 ) }>
 								<ArrowLeft className="mr-2 size-4" />
-								Back
+								{ __( 'Back', 'all-feedback' ) }
 							</Button>
 						) }
 						<Button
@@ -700,7 +699,7 @@ export default function SetupWizard() {
 							disabled={ ! canAdvance( state, step ) }
 							onClick={ () => goto( step + 1 ) }
 						>
-							Continue
+							{ __( 'Continue', 'all-feedback' ) }
 							<ArrowRight className="ml-2 size-4" />
 						</Button>
 					</div>
