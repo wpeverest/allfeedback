@@ -596,12 +596,13 @@ export default function SetupWizard() {
 		<div className="flex h-screen flex-col bg-background">
 			{ ! isDone && (
 				<header className="flex h-[72px] shrink-0 items-center justify-between border-b border-border/50 bg-card px-4 md:px-10">
-					<div className="flex items-center gap-3">
-						<div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-							<MessageSquare className="size-5" />
+					<div className="flex shrink-0 items-center gap-2">
+						<div className="flex size-[30px] items-center justify-center rounded-md bg-primary">
+							<MessageSquare className="size-[15px] text-white" />
 						</div>
-						<span className="text-[16px] font-bold tracking-tight text-foreground">
-							All<span className="font-normal text-muted-foreground/60">Feedback</span>
+						<span className="text-md tracking-tight text-foreground">
+							<strong className="font-bold">All</strong>
+							<span className="font-normal">Feedback</span>
 						</span>
 					</div>
 					{ step < STEPS.length - 1 && (
