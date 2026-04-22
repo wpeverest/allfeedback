@@ -22,6 +22,7 @@ class ResponseManager {
 	/**
 	 * Bare table name (without the WordPress prefix).
 	 *
+	 * @var string
 	 * @since 1.0.0
 	 */
 	private const TABLE = 'af_responses';
@@ -29,20 +30,17 @@ class ResponseManager {
 	/**
 	 * Nonce action used to authenticate public widget submissions.
 	 *
+	 * @var string
 	 * @since 1.0.0
 	 */
 	public const NONCE_ACTION = 'allfeedback_submit';
 
-	// ------------------------------------------------------------------
-	// Read
-	// ------------------------------------------------------------------
-
 	/**
 	 * Retrieve a single response by its primary key.
 	 *
-	 * @param int $id Response primary key.
+	 * @param  int $id Response primary key.
 	 * @return object|null
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function find( int $id ): ?object {
 		global $wpdb;
@@ -60,13 +58,13 @@ class ResponseManager {
 	/**
 	 * Return a paginated list of responses for a survey with optional date filters.
 	 *
-	 * @param int    $surveyId Survey primary key.
-	 * @param int    $perPage  Maximum rows to return.
-	 * @param int    $offset   Number of rows to skip.
-	 * @param string $dateFrom Optional lower-bound date (Y-m-d). Empty string = no bound.
-	 * @param string $dateTo   Optional upper-bound date (Y-m-d). Empty string = no bound.
+	 * @param  int    $surveyId Survey primary key.
+	 * @param  int    $perPage  Maximum rows to return.
+	 * @param  int    $offset   Number of rows to skip.
+	 * @param  string $dateFrom Optional lower-bound date (Y-m-d). Empty string = no bound.
+	 * @param  string $dateTo   Optional upper-bound date (Y-m-d). Empty string = no bound.
 	 * @return object[]
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function findBySurvey(
 		int $surveyId,
@@ -97,11 +95,11 @@ class ResponseManager {
 	/**
 	 * Count responses for a survey matching the optional date filters.
 	 *
-	 * @param int    $surveyId Survey primary key.
-	 * @param string $dateFrom Optional lower-bound date (Y-m-d).
-	 * @param string $dateTo   Optional upper-bound date (Y-m-d).
+	 * @param  int    $surveyId Survey primary key.
+	 * @param  string $dateFrom Optional lower-bound date (Y-m-d).
+	 * @param  string $dateTo   Optional upper-bound date (Y-m-d).
 	 * @return int
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function countBySurvey( int $surveyId, string $dateFrom = '', string $dateTo = '' ): int {
 		global $wpdb;
@@ -122,12 +120,12 @@ class ResponseManager {
 	/**
 	 * Return a paginated list of all responses across every survey.
 	 *
-	 * @param int    $perPage  Maximum rows to return.
-	 * @param int    $offset   Number of rows to skip.
-	 * @param string $dateFrom Optional lower-bound date (Y-m-d). Empty string = no bound.
-	 * @param string $dateTo   Optional upper-bound date (Y-m-d). Empty string = no bound.
+	 * @param  int    $perPage  Maximum rows to return.
+	 * @param  int    $offset   Number of rows to skip.
+	 * @param  string $dateFrom Optional lower-bound date (Y-m-d). Empty string = no bound.
+	 * @param  string $dateTo   Optional upper-bound date (Y-m-d). Empty string = no bound.
 	 * @return object[]
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function findAll(
 		int $perPage    = 20,
@@ -157,10 +155,10 @@ class ResponseManager {
 	/**
 	 * Count all responses across every survey.
 	 *
-	 * @param string $dateFrom Optional lower-bound date (Y-m-d).
-	 * @param string $dateTo   Optional upper-bound date (Y-m-d).
+	 * @param  string $dateFrom Optional lower-bound date (Y-m-d).
+	 * @param  string $dateTo   Optional upper-bound date (Y-m-d).
 	 * @return int
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function countAll( string $dateFrom = '', string $dateTo = '' ): int {
 		global $wpdb;
@@ -183,17 +181,13 @@ class ResponseManager {
 		);
 	}
 
-	// ------------------------------------------------------------------
-	// Write
-	// ------------------------------------------------------------------
-
 	/**
 	 * Insert a new response row and return the generated ID.
 	 * Returns false when the insert fails.
 	 *
-	 * @param array<string, mixed> $data Column-value map. JSON columns must be pre-encoded strings.
+	 * @param  array<string, mixed> $data Column-value map. JSON columns must be pre-encoded strings.
 	 * @return int|false
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function insert( array $data ): int|false {
 		global $wpdb;
@@ -221,10 +215,10 @@ class ResponseManager {
 	 * Only the columns present in $data are touched; everything else is left
 	 * unchanged. Caller must pre-encode JSON columns as strings.
 	 *
-	 * @param int                  $id   Response primary key.
-	 * @param array<string, mixed> $data Column-value map to update.
+	 * @param  int                  $id   Response primary key.
+	 * @param  array<string, mixed> $data Column-value map to update.
 	 * @return bool True when at least one row was updated; false on DB error.
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function update( int $id, array $data ): bool {
 		global $wpdb;
@@ -245,9 +239,9 @@ class ResponseManager {
 	/**
 	 * Permanently delete a single response by its primary key.
 	 *
-	 * @param int $id Response primary key.
+	 * @param  int $id Response primary key.
 	 * @return bool
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function delete( int $id ): bool {
 		global $wpdb;
@@ -261,9 +255,9 @@ class ResponseManager {
 	/**
 	 * Permanently delete all responses belonging to a survey.
 	 *
-	 * @param int $surveyId Survey primary key.
+	 * @param  int $surveyId Survey primary key.
 	 * @return bool
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function deleteBySurvey( int $surveyId ): bool {
 		global $wpdb;
@@ -274,18 +268,14 @@ class ResponseManager {
 		return $result !== false;
 	}
 
-	// ------------------------------------------------------------------
-	// Validation helpers
-	// ------------------------------------------------------------------
-
 	/**
 	 * Check whether a response from the same IP already exists for this survey.
 	 *
-	 * @param int $surveyId        Survey primary key.
-	 * @param string $ipHash       Anonymized HMAC-SHA256 IP hash.
-	 * @param int $windowHours     Look-back window in hours. 0 = all time (no window).
+	 * @param  int    $surveyId    Survey primary key.
+	 * @param  string $ipHash      Anonymized HMAC-SHA256 IP hash.
+	 * @param  int    $windowHours Look-back window in hours. 0 = all time (no window).
 	 * @return bool
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function isDuplicate( int $surveyId, string $ipHash, int $windowHours = 0 ): bool {
 		global $wpdb;
@@ -337,15 +327,11 @@ class ResponseManager {
 		return hash_hmac( 'sha256', $ip, $secret );
 	}
 
-	// ------------------------------------------------------------------
-	// Internal helpers
-	// ------------------------------------------------------------------
-
 	/**
 	 * Return the fully-qualified table name including the WordPress prefix.
 	 *
 	 * @return string e.g. 'wp_af_responses'
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function table(): string {
 		global $wpdb;
@@ -357,10 +343,10 @@ class ResponseManager {
 	 *
 	 * Always excludes responses belonging to trashed surveys via a subquery.
 	 *
-	 * @param string $dateFrom
-	 * @param string $dateTo
+	 * @param  string $dateFrom Optional lower-bound date (Y-m-d).
+	 * @param  string $dateTo   Optional upper-bound date (Y-m-d).
 	 * @return array{0: string, 1: array<int, mixed>}
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function buildWhereAll( string $dateFrom, string $dateTo ): array {
 		global $wpdb;
@@ -389,11 +375,11 @@ class ResponseManager {
 	/**
 	 * Build a WHERE clause for survey_id + optional date bounds.
 	 *
-	 * @param int    $surveyId
-	 * @param string $dateFrom
-	 * @param string $dateTo
+	 * @param  int    $surveyId Survey primary key.
+	 * @param  string $dateFrom Optional lower-bound date (Y-m-d).
+	 * @param  string $dateTo   Optional upper-bound date (Y-m-d).
 	 * @return array{0: string, 1: array<int, mixed>}
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function buildWhere( int $surveyId, string $dateFrom, string $dateTo ): array {
 		$conditions = [ 'survey_id = %d' ];

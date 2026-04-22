@@ -50,10 +50,6 @@ abstract class RestController {
 	 */
 	abstract public function registerRoutes(): void;
 
-	// ------------------------------------------------------------------
-	// Response helpers
-	// ------------------------------------------------------------------
-
 	/**
 	 * Build a successful JSON response envelope.
 	 *
@@ -147,10 +143,6 @@ abstract class RestController {
 		return $this->errorResponse( __( 'An unexpected error occurred.', 'all-feedback' ), 500 );
 	}
 
-	// ------------------------------------------------------------------
-	// Permission helpers
-	// ------------------------------------------------------------------
-
 	/**
 	 * Allow all requests including unauthenticated ones.
 	 * Use for read-only, non-sensitive public endpoints.
@@ -199,10 +191,6 @@ abstract class RestController {
 	public function authenticatedPermission(): bool {
 		return is_user_logged_in();
 	}
-
-	// ------------------------------------------------------------------
-	// Argument schema builders
-	// ------------------------------------------------------------------
 
 	/**
 	 * Build a REST integer argument descriptor.

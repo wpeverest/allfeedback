@@ -58,13 +58,13 @@ class SubmitController extends RestController {
 	public const NONCE_ACTION = 'allfeedback_submit';
 
 	/**
-	 * @param SurveyRepository       $surveyRepository   Survey repository for existence and status checks.
-	 * @param ResponseRepository     $responseRepository Response repository for duplicate detection.
-	 * @param SubmitResponseService  $submitService      Use-case service for response submission.
-	 * @param SettingsManager        $settingsManager    Settings for privacy flags.
-	 * @param Logger                 $logger             Structured logger.
-	 * @param SurveySessionRepository $sessionRepository Session repository for analytics.
-	 * @since 1.0.0
+	 * @param  SurveyRepository        $surveyRepository   Survey repository for existence and status checks.
+	 * @param  ResponseRepository      $responseRepository Response repository for duplicate detection.
+	 * @param  SubmitResponseService   $submitService      Use-case service for response submission.
+	 * @param  SettingsManager         $settingsManager    Settings for privacy flags.
+	 * @param  Logger                  $logger             Structured logger.
+	 * @param  SurveySessionRepository $sessionRepository  Session repository for analytics.
+	 * @since  1.0.0
 	 */
 	public function __construct(
 		private readonly SurveyRepository $surveyRepository,
@@ -78,7 +78,8 @@ class SubmitController extends RestController {
 	/**
 	 * Register all routes for this controller.
 	 *
-	 * @since 1.0.0
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function registerRoutes(): void {
 		register_rest_route(
@@ -93,18 +94,14 @@ class SubmitController extends RestController {
 		);
 	}
 
-	// ------------------------------------------------------------------
-	// Route handler
-	// ------------------------------------------------------------------
-
 	/**
 	 * POST /all-feedback/v1/surveys/{id}/submit
 	 *
 	 * Accept and persist a public widget submission.
 	 *
-	 * @param \WP_REST_Request $request Full request data.
+	 * @param  \WP_REST_Request $request Full request data.
 	 * @return \WP_REST_Response|\WP_Error
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function handle( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$nonce = sanitize_text_field( (string) ( $request->get_param( 'nonce' ) ?? '' ) );
@@ -137,51 +134,23 @@ class SubmitController extends RestController {
 
 		[ $ipHash, $rawIp ] = $this->resolveIp();
 
-		/**
-		 * Filters whether a response submission should be allowed to proceed.
-		 *
-		 * Evaluated first so pro-tier hooks (reCAPTCHA, rate limiting, geo-fencing)
-		 * can block a submission before any further processing. Returning false
-		 * here also short-circuits the duplicate check below.
-		 *
-		 * @param bool             $allowed  True by default.
-		 * @param int              $surveyId Target survey ID.
-		 * @param object           $survey   Raw survey row from the database.
-		 * @param \WP_REST_Request $request  Full request object.
-		 * @since 1.0.0
-		 */
 		if ( ! (bool) apply_filters( 'allfeedback_allow_response_submission', true, $surveyId, $survey, $request ) ) {
 			$this->logger->warning( 'Submission blocked by filter.', [ 'survey_id' => $surveyId ] );
 			return $this->errorResponse( __( 'Response submission is not allowed.', 'all-feedback' ), 403 );
 		}
 
-		// Skip duplicate detection when IP/User-Agent storage is disabled by privacy settings,
-		// or when an admin is submitting (e.g. previewing a survey in the builder).
 		$disableUserDetails = (bool) $this->settingsManager->get( 'advanced.privacy.disable_user_details' );
 
 		if ( ! $disableUserDetails && ! current_user_can( 'manage_options' ) ) {
-			/**
-			 * Filter: allfeedback_duplicate_window_hours
-			 *
-			 * Controls how far back the duplicate check looks. Use 0 (default)
-			 * for a permanent all-time block, or a positive integer for a
-			 * rolling window (e.g. 720 = allow re-submission after 30 days).
-			 *
-			 * @param int $hours    Look-back window in hours. 0 = all-time.
-			 * @param int $surveyId The survey being submitted to.
-			 * @since 1.0.0
-			 */
 			$duplicateWindowHours = max( 0, (int) apply_filters( 'allfeedback_duplicate_window_hours', 0, $surveyId ) );
 			$userId               = get_current_user_id();
 
 			if ( $userId > 0 ) {
-				// Logged-in: authoritative identity is the WordPress user ID.
 				if ( $this->responseRepository->existsByUserId( $surveyId, $userId, $duplicateWindowHours ) ) {
 					$this->logger->debug( 'Duplicate submission blocked (user_id).', [ 'survey_id' => $surveyId, 'user_id' => $userId ] );
 					return $this->errorResponse( __( 'A response from this user has already been recorded.', 'all-feedback' ), 409 );
 				}
 			} else {
-				// Guest: prefer the persistent UUID; fall back to IP hash if no token was sent.
 				$visitorToken = sanitize_text_field( (string) ( $request->get_param( 'visitor_token' ) ?? '' ) );
 
 				if ( $visitorToken !== '' ) {
@@ -198,17 +167,6 @@ class SubmitController extends RestController {
 			}
 		}
 
-		/**
-		 * Filters the response_data payload before validation and persistence.
-		 *
-		 * Use to sanitise values, strip disallowed HTML, normalise field answers,
-		 * or inject server-side computed fields before the data is saved.
-		 *
-		 * @param array  $responseData Raw key/value field answers.
-		 * @param int    $surveyId     Target survey ID.
-		 * @param object $survey       Raw survey row from the database.
-		 * @since 1.0.0
-		 */
 		$responseData = (array) apply_filters(
 			'allfeedback_response_data_before_save',
 			(array) ( $request->get_param( 'response_data' ) ?? [] ),
@@ -240,18 +198,6 @@ class SubmitController extends RestController {
 			}
 		}
 
-		/**
-		 * Fires after a survey response has been successfully saved.
-		 *
-		 * Use for custom side-effects: CRM syncs, webhooks, analytics, loyalty
-		 * point awards, etc. Email notifications are dispatched automatically by
-		 * the notification pipeline — no need to re-implement them here.
-		 *
-		 * @param int    $responseId Newly created response ID.
-		 * @param int    $surveyId   Parent survey ID.
-		 * @param object $survey     Raw survey row from the database.
-		 * @since 1.0.0
-		 */
 		do_action( 'allfeedback_response_submitted', $responseId, $surveyId, $survey );
 
 		$this->logger->info(
@@ -267,16 +213,6 @@ class SubmitController extends RestController {
 		return $this->successResponse( [ 'id' => $responseId ], 201 );
 	}
 
-	// ------------------------------------------------------------------
-	// Argument schema
-	// ------------------------------------------------------------------
-
-	/**
-	 * Body arguments for the public submission endpoint.
-	 *
-	 * @return array<string, array<string, mixed>>
-	 * @since 1.0.0
-	 */
 	/**
 	 * Resolve the visitor's IP address and return both the HMAC-SHA256 hash
 	 * and the raw sanitised IP string.
@@ -285,7 +221,7 @@ class SubmitController extends RestController {
 	 * the privacy "disable user details" setting is off.
 	 *
 	 * @return array{0: string, 1: string} [ $hash, $rawIp ]
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function resolveIp(): array {
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
@@ -296,6 +232,12 @@ class SubmitController extends RestController {
 		return [ hash_hmac( 'sha256', $ip, $secret ), $ip ];
 	}
 
+	/**
+	 * Body arguments for the public submission endpoint.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 * @since  1.0.0
+	 */
 	private function submitArgs(): array {
 		return [
 			'nonce'         => $this->argString(

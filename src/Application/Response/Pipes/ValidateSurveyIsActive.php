@@ -20,11 +20,11 @@ class ValidateSurveyIsActive {
 	/**
 	 * Reject the submission when the survey status is not Published.
 	 *
-	 * @param ResponseContext $context Shared pipeline context.
-	 * @param \Closure        $next    Next stage in the pipeline.
+	 * @param  ResponseContext $context Shared pipeline context.
+	 * @param  \Closure        $next    Next stage in the pipeline.
 	 * @return mixed
 	 * @throws ValidationException When the survey is not published.
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function execute( ResponseContext $context, \Closure $next ): mixed {
 		if ( ! $context->survey->getStatus()->isPublished() && ! current_user_can( 'manage_options' ) ) {

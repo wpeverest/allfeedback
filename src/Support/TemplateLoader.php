@@ -19,7 +19,8 @@ use AllFeedback\Traits\Hooks;
  *   2. Parent theme: theme/all-feedback/{template-name}
  *   3. Plugin:       plugin/templates/{template-name}
  *
- * @since 1.0.0
+ * @package AllFeedback\Support
+ * @since   1.0.0
  */
 class TemplateLoader {
 
@@ -28,6 +29,7 @@ class TemplateLoader {
 	/**
 	 * Absolute path to the plugin's templates directory.
 	 *
+	 * @var string
 	 * @since 1.0.0
 	 */
 	private string $pluginPath;
@@ -35,6 +37,7 @@ class TemplateLoader {
 	/**
 	 * Sub-directory name used when searching active themes.
 	 *
+	 * @var string
 	 * @since 1.0.0
 	 */
 	private string $templatePath = 'all-feedback';
@@ -76,9 +79,10 @@ class TemplateLoader {
 	/**
 	 * Locate and include a template file, extracting $args into the local scope.
 	 *
-	 * @param string               $templateName Template file name relative to the template root.
-	 * @param array<string, mixed> $args         Variables to extract into the template scope.
-	 * @since 1.0.0
+	 * @param  string               $templateName Template file name relative to the template root.
+	 * @param  array<string, mixed> $args         Variables to extract into the template scope.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function loadTemplate( string $templateName, array $args = [] ): void {
 		$template = $this->locateTemplate( $templateName );
@@ -103,10 +107,11 @@ class TemplateLoader {
 	 *
 	 * Tries "{$slug}-{$name}.php" first, then falls back to "{$slug}.php".
 	 *
-	 * @param string               $slug Base slug, e.g. 'survey'.
-	 * @param string               $name Optional variant name, e.g. 'nps'.
-	 * @param array<string, mixed> $args Variables to extract into the template scope.
-	 * @since 1.0.0
+	 * @param  string               $slug Base slug, e.g. 'survey'.
+	 * @param  string               $name Optional variant name, e.g. 'nps'.
+	 * @param  array<string, mixed> $args Variables to extract into the template scope.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function getTemplatePart( string $slug, string $name = '', array $args = [] ): void {
 		$templates = [];
@@ -145,8 +150,9 @@ class TemplateLoader {
 	/**
 	 * Override the theme sub-directory used during template location.
 	 *
-	 * @param string $path Sub-directory name, e.g. 'my-child-dir'.
-	 * @since 1.0.0
+	 * @param  string $path Sub-directory name, e.g. 'my-child-dir'.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function setTemplatePath( string $path ): void {
 		$this->templatePath = $path;
@@ -165,9 +171,10 @@ class TemplateLoader {
 	/**
 	 * Iterate over a list of template names and include the first one found.
 	 *
-	 * @param string[]             $templates    Ordered list of template file names.
-	 * @param array<string, mixed> $args         Variables to extract into the template scope.
-	 * @since 1.0.0
+	 * @param  string[]             $templates Ordered list of template file names.
+	 * @param  array<string, mixed> $args      Variables to extract into the template scope.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	private function loadFirstTemplate( array $templates, array $args = [] ): void {
 		foreach ( $templates as $templateName ) {
@@ -186,9 +193,10 @@ class TemplateLoader {
 	 * The closure isolates the extraction so that variables from this class do
 	 * not leak into template scope.
 	 *
-	 * @param string               $template Absolute path to the template file.
-	 * @param array<string, mixed> $args     Variables to extract.
-	 * @since 1.0.0
+	 * @param  string               $template Absolute path to the template file.
+	 * @param  array<string, mixed> $args     Variables to extract.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	private function includeTemplate( string $template, array $args = [] ): void {
 		$render = static function ( string $template, array $args ): void {

@@ -12,7 +12,8 @@ defined( 'ABSPATH' ) || exit;
  * Implemented by classes that wish to subscribe to multiple domain events in
  * a single registration call via EventDispatcher::subscribe().
  *
- * @since 1.0.0
+ * @package AllFeedback\Core\Events
+ * @since   1.0.0
  */
 interface EventSubscriber {
 
@@ -23,7 +24,7 @@ interface EventSubscriber {
 	 * array of [methodName, priority].
 	 *
 	 * @return array<string, string|array> Event class => method name or [method name, priority]
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function getSubscribedEvents(): array;
 }

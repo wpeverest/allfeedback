@@ -12,12 +12,14 @@ use AllFeedback\Domain\Survey\Survey;
 /**
  * Raised after a Survey has been successfully created and persisted.
  *
- * @since 1.0.0
+ * @package AllFeedback\Domain\Survey\Events
+ * @since   1.0.0
  */
 class SurveyCreated extends Event {
 
 	/**
-	 * @since 1.0.0
+	 * @param  Survey $survey The newly created survey aggregate.
+	 * @since  1.0.0
 	 */
 	public function __construct(
 		public readonly Survey $survey,

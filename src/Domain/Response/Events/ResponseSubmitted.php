@@ -12,12 +12,14 @@ use AllFeedback\Domain\Response\Response;
 /**
  * Raised after a Response has been successfully submitted and persisted.
  *
- * @since 1.0.0
+ * @package AllFeedback\Domain\Response\Events
+ * @since   1.0.0
  */
 class ResponseSubmitted extends Event {
 
 	/**
-	 * @since 1.0.0
+	 * @param  Response $response The persisted response aggregate.
+	 * @since  1.0.0
 	 */
 	public function __construct(
 		public readonly Response $response,

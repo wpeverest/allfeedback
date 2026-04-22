@@ -11,12 +11,14 @@ use AllFeedback\Core\Events\Event;
 /**
  * Raised after a Survey has been permanently deleted.
  *
- * @since 1.0.0
+ * @package AllFeedback\Domain\Survey\Events
+ * @since   1.0.0
  */
 class SurveyDeleted extends Event {
 
 	/**
-	 * @since 1.0.0
+	 * @param  int $surveyId Primary key of the deleted survey.
+	 * @since  1.0.0
 	 */
 	public function __construct(
 		public readonly int $surveyId,

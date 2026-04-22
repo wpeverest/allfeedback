@@ -14,13 +14,15 @@ defined( 'ABSPATH' ) || exit;
  * Thin wrapper around WordPress transients that adds tag-based invalidation
  * and a remember() convenience helper for the AllFeedback plugin.
  *
- * @since 1.0.0
+ * @package AllFeedback\Core\Cache
+ * @since   1.0.0
  */
 class CacheManager {
 
 	/**
 	 * Key prefix prepended to every transient name.
 	 *
+	 * @var string
 	 * @since 1.0.0
 	 */
 	private string $prefix;
@@ -28,14 +30,15 @@ class CacheManager {
 	/**
 	 * Default TTL in seconds when none is supplied by the caller.
 	 *
+	 * @var int
 	 * @since 1.0.0
 	 */
 	private int $defaultTtl;
 
 	/**
-	 * @param string $prefix     Prefix for all transient keys. Default 'allfeedback_'.
-	 * @param int    $defaultTtl Default time-to-live in seconds. Default 3600.
-	 * @since 1.0.0
+	 * @param  string $prefix     Prefix for all transient keys. Default 'allfeedback_'.
+	 * @param  int    $defaultTtl Default time-to-live in seconds. Default 3600.
+	 * @since  1.0.0
 	 */
 	public function __construct( string $prefix = 'allfeedback_', int $defaultTtl = 3600 ) {
 		$this->prefix     = $prefix;
@@ -46,10 +49,10 @@ class CacheManager {
 	 * Retrieve a cached value by key, returning $default when the entry
 	 * does not exist or has expired.
 	 *
-	 * @param string $key     Cache key (without prefix).
-	 * @param mixed  $default Value to return on cache miss.
+	 * @param  string $key     Cache key (without prefix).
+	 * @param  mixed  $default Value to return on cache miss.
 	 * @return mixed
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function get( string $key, mixed $default = null ): mixed {
 		$value = get_transient( $this->prefix . $key );
@@ -59,11 +62,11 @@ class CacheManager {
 	/**
 	 * Store a value in the cache.
 	 *
-	 * @param string   $key   Cache key (without prefix).
-	 * @param mixed    $value Value to store.
-	 * @param int|null $ttl   Time-to-live in seconds. Null uses the default.
+	 * @param  string   $key   Cache key (without prefix).
+	 * @param  mixed    $value Value to store.
+	 * @param  int|null $ttl   Time-to-live in seconds. Null uses the default.
 	 * @return bool True on success.
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function set( string $key, mixed $value, ?int $ttl = null ): bool {
 		$ttl = $ttl ?? $this->defaultTtl;
@@ -73,9 +76,9 @@ class CacheManager {
 	/**
 	 * Determine whether a non-expired entry exists for the given key.
 	 *
-	 * @param string $key Cache key (without prefix).
+	 * @param  string $key Cache key (without prefix).
 	 * @return bool
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function has( string $key ): bool {
 		return false !== get_transient( $this->prefix . $key );
@@ -84,9 +87,9 @@ class CacheManager {
 	/**
 	 * Remove a cached entry.
 	 *
-	 * @param string $key Cache key (without prefix).
+	 * @param  string $key Cache key (without prefix).
 	 * @return bool True on success.
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function delete( string $key ): bool {
 		return delete_transient( $this->prefix . $key );
@@ -95,11 +98,11 @@ class CacheManager {
 	/**
 	 * Retrieve a cached value or compute and store it if absent.
 	 *
-	 * @param string   $key      Cache key (without prefix).
-	 * @param callable $callback Produces the value when the cache misses.
-	 * @param int|null $ttl      Time-to-live in seconds. Null uses the default.
+	 * @param  string   $key      Cache key (without prefix).
+	 * @param  callable $callback Produces the value when the cache misses.
+	 * @param  int|null $ttl      Time-to-live in seconds. Null uses the default.
 	 * @return mixed
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function remember( string $key, callable $callback, ?int $ttl = null ): mixed {
 		if ( $this->has( $key ) ) {
@@ -115,8 +118,9 @@ class CacheManager {
 	/**
 	 * Delete all cache entries associated with a named tag.
 	 *
-	 * @param string $tag The tag name.
-	 * @since 1.0.0
+	 * @param  string $tag The tag name.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function flushTag( string $tag ): void {
 		$tagKey = $this->prefix . 'tag_' . $tag;
@@ -134,9 +138,10 @@ class CacheManager {
 	/**
 	 * Associate a cache key with one or more tags for group invalidation.
 	 *
-	 * @param string   $key  Cache key (without prefix).
-	 * @param string[] $tags Tag names to associate the key with.
-	 * @since 1.0.0
+	 * @param  string   $key  Cache key (without prefix).
+	 * @param  string[] $tags Tag names to associate the key with.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function tag( string $key, array $tags ): void {
 		foreach ( $tags as $tag ) {
@@ -156,7 +161,8 @@ class CacheManager {
 	 * Performs a direct database DELETE so it is not subject to the object
 	 * cache and clears both the value and timeout rows atomically.
 	 *
-	 * @since 1.0.0
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function flush(): void {
 		global $wpdb;

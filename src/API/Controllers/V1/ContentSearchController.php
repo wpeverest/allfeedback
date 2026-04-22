@@ -25,6 +25,9 @@ use AllFeedback\API\RestController;
 class ContentSearchController extends RestController {
 
 	/**
+	 * REST resource slug.
+	 *
+	 * @var string
 	 * @since 1.0.0
 	 */
 	protected string $restBase = 'content-search';
@@ -32,7 +35,8 @@ class ContentSearchController extends RestController {
 	/**
 	 * Register routes.
 	 *
-	 * @since 1.0.0
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function registerRoutes(): void {
 		register_rest_route(
@@ -48,10 +52,6 @@ class ContentSearchController extends RestController {
 		);
 	}
 
-	// ------------------------------------------------------------------
-	// Route handler
-	// ------------------------------------------------------------------
-
 	/**
 	 * GET /all-feedback/v1/content-search
 	 *
@@ -59,9 +59,9 @@ class ContentSearchController extends RestController {
 	 * Runs a paginated WP_Query across the resolved post types, ordered
 	 * alphabetically by title. Works for both empty and keyword searches.
 	 *
-	 * @param \WP_REST_Request $request Full request data.
+	 * @param  \WP_REST_Request $request Full request data.
 	 * @return \WP_REST_Response
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function search( \WP_REST_Request $request ): \WP_REST_Response {
 		$search    = sanitize_text_field( (string) ( $request->get_param( 'search' ) ?? '' ) );
@@ -70,16 +70,6 @@ class ContentSearchController extends RestController {
 		$offset    = ( $page - 1 ) * $perPage;
 		$postTypes = $this->resolvePostTypes( (string) ( $request->get_param( 'post_type' ) ?? '' ) );
 
-		/**
-		 * Filter the WP_Query arguments used for the content search.
-		 *
-		 * Use to add meta_query / tax_query constraints, exclude IDs,
-		 * change sort order, or any other WP_Query customisation.
-		 *
-		 * @param array<string, mixed> $queryArgs WP_Query arguments.
-		 * @param \WP_REST_Request     $request   Original REST request.
-		 * @since 1.0.0
-		 */
 		$queryArgs = apply_filters(
 			'allfeedback_content_search_query_args',
 			[
@@ -115,15 +105,11 @@ class ContentSearchController extends RestController {
 		);
 	}
 
-	// ------------------------------------------------------------------
-	// Schema
-	// ------------------------------------------------------------------
-
 	/**
 	 * JSON schema for a single content-search item.
 	 *
 	 * @return array<string, mixed>
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function getPublicItemSchema(): array {
 		return [
@@ -159,10 +145,6 @@ class ContentSearchController extends RestController {
 		];
 	}
 
-	// ------------------------------------------------------------------
-	// Internal helpers
-	// ------------------------------------------------------------------
-
 	/**
 	 * Resolve the post types to search.
 	 *
@@ -170,20 +152,11 @@ class ContentSearchController extends RestController {
 	 * the list of allowed post types, and falls back to all allowed types when
 	 * the intersection is empty.
 	 *
-	 * @param string $rawParam Raw post_type query param value.
+	 * @param  string $rawParam Raw post_type query param value.
 	 * @return string[]
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function resolvePostTypes( string $rawParam ): array {
-		/**
-		 * Filter the post types that are searchable via the content-search endpoint.
-		 *
-		 * Pro add-ons can append custom post types (e.g. 'product', 'landing_page')
-		 * so they appear in the targeting page picker.
-		 *
-		 * @param string[] $postTypes Allowed post type slugs. Default: ['page', 'post'].
-		 * @since 1.0.0
-		 */
 		$allowed = (array) apply_filters( 'allfeedback_content_search_post_types', [ 'page', 'post' ] );
 
 		if ( $rawParam === '' ) {
@@ -202,9 +175,9 @@ class ContentSearchController extends RestController {
 	/**
 	 * Serialize a WP_Post into the response item shape.
 	 *
-	 * @param \WP_Post $post The post object to serialize.
+	 * @param  \WP_Post $post The post object to serialize.
 	 * @return array{id: int, title: string, type: string, url: string}
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function prepareItem( \WP_Post $post ): array {
 		return [
@@ -215,15 +188,11 @@ class ContentSearchController extends RestController {
 		];
 	}
 
-	// ------------------------------------------------------------------
-	// Argument schema
-	// ------------------------------------------------------------------
-
 	/**
 	 * Query-string arguments for GET /content-search.
 	 *
 	 * @return array<string, array<string, mixed>>
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function searchArgs(): array {
 		return array_merge(

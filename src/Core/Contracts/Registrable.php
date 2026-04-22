@@ -12,14 +12,16 @@ defined( 'ABSPATH' ) || exit;
  * Implemented by any class that registers itself with WordPress hooks,
  * REST routes, or other extension points.
  *
- * @since 1.0.0
+ * @package AllFeedback\Core\Contracts
+ * @since   1.0.0
  */
 interface Registrable {
 
 	/**
 	 * Register the class with its relevant WordPress extension points.
 	 *
-	 * @since 1.0.0
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function register(): void;
 }

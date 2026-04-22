@@ -52,9 +52,9 @@ class SettingsController extends RestController {
 	protected string $restBase = 'settings';
 
 	/**
-	 * @param SettingsManager $settingsManager Plugin-wide settings store.
-	 * @param Logger          $logger          Structured logger.
-	 * @since 1.0.0
+	 * @param  SettingsManager $settingsManager Plugin-wide settings store.
+	 * @param  Logger          $logger          Structured logger.
+	 * @since  1.0.0
 	 */
 	public function __construct(
 		private readonly SettingsManager $settingsManager,
@@ -64,7 +64,8 @@ class SettingsController extends RestController {
 	/**
 	 * Register all routes for this controller.
 	 *
-	 * @since 1.0.0
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function registerRoutes(): void {
 		register_rest_route(
@@ -77,7 +78,7 @@ class SettingsController extends RestController {
 					'permission_callback' => [ $this, 'adminPermission' ],
 				],
 				[
-					'methods'             => \WP_REST_Server::EDITABLE, // PUT + PATCH
+					'methods'             => \WP_REST_Server::EDITABLE,
 					'callback'            => [ $this, 'update' ],
 					'permission_callback' => [ $this, 'adminPermission' ],
 					'args'                => $this->settingsArgs(),
@@ -87,10 +88,6 @@ class SettingsController extends RestController {
 		);
 	}
 
-	// ------------------------------------------------------------------
-	// Route handlers
-	// ------------------------------------------------------------------
-
 	/**
 	 * GET /all-feedback/v1/settings
 	 *
@@ -98,9 +95,9 @@ class SettingsController extends RestController {
 	 * Every page, section, and field is always present so the client never
 	 * needs to handle undefined keys.
 	 *
-	 * @param \WP_REST_Request $request Full request data.
+	 * @param  \WP_REST_Request $request Full request data.
 	 * @return \WP_REST_Response
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function index( \WP_REST_Request $request ): \WP_REST_Response {
 		return $this->successResponse( $this->settingsManager->all() );
@@ -115,9 +112,9 @@ class SettingsController extends RestController {
 	 *
 	 * The response is the complete settings object after the update.
 	 *
-	 * @param \WP_REST_Request $request Full request data.
+	 * @param  \WP_REST_Request $request Full request data.
 	 * @return \WP_REST_Response|\WP_Error
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function update( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$body = $request->get_json_params() ?? [];
@@ -139,10 +136,6 @@ class SettingsController extends RestController {
 		return $this->successResponse( $this->settingsManager->all() );
 	}
 
-	// ------------------------------------------------------------------
-	// JSON Schema
-	// ------------------------------------------------------------------
-
 	/**
 	 * JSON Schema for the settings resource (three-level nesting).
 	 *
@@ -150,7 +143,7 @@ class SettingsController extends RestController {
 	 * Each section → type:object with properties for each field.
 	 *
 	 * @return array<string, mixed>
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function getPublicItemSchema(): array {
 		$pageProperties = [];
@@ -192,10 +185,6 @@ class SettingsController extends RestController {
 		];
 	}
 
-	// ------------------------------------------------------------------
-	// Argument schema builders
-	// ------------------------------------------------------------------
-
 	/**
 	 * Build WP REST arg descriptors for PUT|PATCH /settings.
 	 *
@@ -207,7 +196,7 @@ class SettingsController extends RestController {
 	 * automatically exposes it here — no manual registration needed.
 	 *
 	 * @return array<string, array<string, mixed>>
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function settingsArgs(): array {
 		$schema = $this->settingsManager->getSchema();
@@ -253,9 +242,9 @@ class SettingsController extends RestController {
 	 *   type: string + enum    → sanitize_key + enum list
 	 *   type: string (no enum) → sanitize_text_field
 	 *
-	 * @param array<string, mixed> $propDef Schema property definition.
+	 * @param  array<string, mixed> $propDef Schema property definition.
 	 * @return array<string, mixed> WP REST arg descriptor.
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function buildFieldArg( array $propDef ): array {
 		$type = $propDef['type'] ?? 'string';

@@ -24,7 +24,9 @@ use AllFeedback\Domain\Survey\SurveyRepository;
 class SubmitResponseService {
 
 	/**
-	 * @since 1.0.0
+	 * @param  SurveyRepository   $surveyRepository   Reads survey aggregates.
+	 * @param  ResponseRepository $responseRepository Persists response aggregates.
+	 * @since  1.0.0
 	 */
 	public function __construct(
 		private readonly SurveyRepository $surveyRepository,
@@ -34,12 +36,12 @@ class SubmitResponseService {
 	/**
 	 * Run the validation pipeline, create a Response aggregate, and persist it.
 	 *
-	 * @param ResponseDTO $dto       Validated response payload.
-	 * @param string      $ipHash   HMAC-SHA256 hash of the visitor's IP (computed by the controller).
-	 * @param string|null $ipAddress Raw IP address, or null when privacy mode is active.
+	 * @param  ResponseDTO $dto       Validated response payload.
+	 * @param  string      $ipHash    HMAC-SHA256 hash of the visitor's IP (computed by the controller).
+	 * @param  string|null $ipAddress Raw IP address, or null when privacy mode is active.
 	 * @return Response
-	 * @throws NotFoundException   When the referenced survey does not exist.
-	 * @since 1.0.0
+	 * @throws NotFoundException When the referenced survey does not exist.
+	 * @since  1.0.0
 	 */
 	public function execute( ResponseDTO $dto, string $ipHash, ?string $ipAddress = null ): Response {
 		$survey = $this->surveyRepository->findById( $dto->surveyId );
@@ -67,7 +69,7 @@ class SubmitResponseService {
 			ipHash: $ipHash,
 			ipAddress: $ipAddress,
 			userId: $dto->userId > 0 ? $dto->userId : null,
-			guestToken: $dto->guestToken, // stored for all users — enables cross-session block after logout
+			guestToken: $dto->guestToken,
 			consentGiven: $dto->consentGiven,
 		);
 
@@ -83,10 +85,10 @@ class SubmitResponseService {
 	/**
 	 * Execute a sequential pipeline of pipe objects against a shared context.
 	 *
-	 * @param array           $pipes   Ordered list of pipe objects exposing execute().
-	 * @param ResponseContext $context Mutable context passed through the pipeline.
+	 * @param  array           $pipes   Ordered list of pipe objects exposing execute().
+	 * @param  ResponseContext $context Mutable context passed through the pipeline.
 	 * @return void
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function runPipeline( array $pipes, ResponseContext $context ): void {
 		$stack = static fn() => null;

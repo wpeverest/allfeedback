@@ -38,6 +38,9 @@ use AllFeedback\Support\Logger;
 class ResponsesController extends RestController {
 
 	/**
+	 * Route base for survey resources.
+	 *
+	 * @var string
 	 * @since 1.0.0
 	 */
 	protected string $restBase = 'surveys';
@@ -60,7 +63,6 @@ class ResponsesController extends RestController {
 	 * @since 1.0.0
 	 */
 	public function registerRoutes(): void {
-		// Global responses — all surveys.
 		register_rest_route(
 			$this->namespace,
 			'/responses',
@@ -234,10 +236,6 @@ class ResponsesController extends RestController {
 			]
 		);
 	}
-
-	// ------------------------------------------------------------------
-	// Route handlers
-	// ------------------------------------------------------------------
 
 	/**
 	 * GET /all-feedback/v1/responses
@@ -463,7 +461,6 @@ class ResponsesController extends RestController {
 
 		$updatePayload = [];
 
-		// Handle response_data if provided.
 		$rawData = $request->get_param( 'response_data' );
 		if ( $rawData !== null ) {
 			if ( $rawData instanceof \stdClass ) {
@@ -479,13 +476,11 @@ class ResponsesController extends RestController {
 			$updatePayload['response_data'] = $responseDataJson;
 		}
 
-		// Handle is_read if provided.
 		$isRead = $request->get_param( 'is_read' );
 		if ( $isRead !== null ) {
 			$updatePayload['is_read'] = $isRead ? 1 : 0;
 		}
 
-		// Nothing to update — return current state.
 		if ( empty( $updatePayload ) ) {
 			return $this->successResponse( $this->prepareResponse( $response ) );
 		}
@@ -609,10 +604,6 @@ class ResponsesController extends RestController {
 		return $this->successResponse( [ 'deleted' => true, 'id' => $responseId ] );
 	}
 
-	// ------------------------------------------------------------------
-	// Schema
-	// ------------------------------------------------------------------
-
 	/**
 	 * JSON schema for a single response item.
 	 *
@@ -678,10 +669,6 @@ class ResponsesController extends RestController {
 		];
 	}
 
-	// ------------------------------------------------------------------
-	// Serialisation
-	// ------------------------------------------------------------------
-
 	/**
 	 * Serialise a Response aggregate into the REST response shape.
 	 *
@@ -705,10 +692,6 @@ class ResponsesController extends RestController {
 			'created_at'    => $response->getCreatedAt()->format( 'Y-m-d H:i:s' ),
 		];
 	}
-
-	// ------------------------------------------------------------------
-	// Argument helpers
-	// ------------------------------------------------------------------
 
 	/**
 	 * Shared `rid` (response ID) argument definition.

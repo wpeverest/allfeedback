@@ -23,14 +23,16 @@ use AllFeedback\Traits\Hooks;
  * All emails are dispatched asynchronously via Action Scheduler so that the
  * critical path (e.g. public widget submission) is never delayed by SMTP.
  *
- * @since 1.0.0
+ * @package AllFeedback\Infrastructure\Mail
+ * @since   1.0.0
  */
 class NotificationServiceProvider implements ServiceProviderInterface {
 
 	use Hooks;
 
 	/**
-	 * @since 1.0.0
+	 * @param  JobDispatcher $dispatcher Background job dispatcher for async email delivery.
+	 * @since  1.0.0
 	 */
 	public function __construct(
 		private readonly JobDispatcher $dispatcher,
@@ -39,7 +41,8 @@ class NotificationServiceProvider implements ServiceProviderInterface {
 	/**
 	 * Wire up WordPress hooks for notification triggers.
 	 *
-	 * @since 1.0.0
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function boot(): void {
 		$this->addAction( 'allfeedback:response:submitted', [ $this, 'onResponseSubmitted' ] );
@@ -49,7 +52,9 @@ class NotificationServiceProvider implements ServiceProviderInterface {
 	/**
 	 * Queue admin alert and optional respondent thank-you on a new response.
 	 *
-	 * @since 1.0.0
+	 * @param  Response $response The newly submitted response.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function onResponseSubmitted( Response $response ): void {
 		$surveyId   = $response->getSurveyId();
@@ -77,7 +82,9 @@ class NotificationServiceProvider implements ServiceProviderInterface {
 	/**
 	 * Queue a survey-published notification when a survey is activated.
 	 *
-	 * @since 1.0.0
+	 * @param  Survey $survey The survey that was activated.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function onSurveyActivated( Survey $survey ): void {
 		$surveyId = (int) $survey->getId();

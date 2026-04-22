@@ -49,8 +49,8 @@ class LogsController extends RestController {
 	protected string $restBase = 'logs';
 
 	/**
-	 * @param Logger $logger Plugin logger (provides logDir() and entry count helpers).
-	 * @since 1.0.0
+	 * @param  Logger $logger Plugin logger (provides logDir() and entry count helpers).
+	 * @since  1.0.0
 	 */
 	public function __construct(
 		private readonly Logger $logger,
@@ -59,10 +59,10 @@ class LogsController extends RestController {
 	/**
 	 * Register all routes for this controller.
 	 *
-	 * @since 1.0.0
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function registerRoutes(): void {
-		// GET /logs — list all log files.
 		register_rest_route(
 			$this->namespace,
 			'/' . $this->restBase,
@@ -94,9 +94,6 @@ class LogsController extends RestController {
 			]
 		);
 
-		// DELETE /logs/delete — bulk-delete multiple log files.
-		// Must be registered before /logs/{id} to prevent "delete" being
-		// treated as an id parameter.
 		register_rest_route(
 			$this->namespace,
 			'/' . $this->restBase . '/delete',
@@ -119,7 +116,6 @@ class LogsController extends RestController {
 			]
 		);
 
-		// GET /logs/{id}, DELETE /logs/{id} — single log file operations.
 		register_rest_route(
 			$this->namespace,
 			'/' . $this->restBase . '/(?P<id>[a-z0-9_-]+)',
@@ -147,19 +143,15 @@ class LogsController extends RestController {
 		);
 	}
 
-	// ------------------------------------------------------------------
-	// Route handlers
-	// ------------------------------------------------------------------
-
 	/**
 	 * GET /all-feedback/v1/logs
 	 *
 	 * Return a paginated, filterable list of log files.
 	 * Each item includes metadata but not the raw log content.
 	 *
-	 * @param \WP_REST_Request $request Full request data.
+	 * @param  \WP_REST_Request $request Full request data.
 	 * @return \WP_REST_Response
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function index( \WP_REST_Request $request ): \WP_REST_Response {
 		$page    = (int) $request->get_param( 'page' );
@@ -170,7 +162,6 @@ class LogsController extends RestController {
 
 		$files = $this->getLogFiles();
 
-		// Filter by search keyword (matches against the filename).
 		if ( $search !== '' ) {
 			$files = array_filter(
 				$files,
@@ -178,7 +169,6 @@ class LogsController extends RestController {
 			);
 		}
 
-		// Sort.
 		usort(
 			$files,
 			static function ( string $a, string $b ) use ( $orderby, $order ): int {
@@ -194,8 +184,6 @@ class LogsController extends RestController {
 		$files = array_values( $files );
 		$total = count( $files );
 		$pages = (int) ceil( $total / $perPage );
-
-		// Paginate.
 		$files = array_slice( $files, ( $page - 1 ) * $perPage, $perPage );
 
 		return $this->successResponse( [
@@ -211,9 +199,9 @@ class LogsController extends RestController {
 	 *
 	 * Return metadata and the full content of a single log file.
 	 *
-	 * @param \WP_REST_Request $request Full request data.
+	 * @param  \WP_REST_Request $request Full request data.
 	 * @return \WP_REST_Response|\WP_Error
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function show( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$file = $this->resolveFile( (string) $request->get_param( 'id' ) );
@@ -234,9 +222,9 @@ class LogsController extends RestController {
 	 *
 	 * Permanently delete a single log file.
 	 *
-	 * @param \WP_REST_Request $request Full request data.
+	 * @param  \WP_REST_Request $request Full request data.
 	 * @return \WP_REST_Response|\WP_Error
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function destroy( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$id   = (string) $request->get_param( 'id' );
@@ -262,9 +250,9 @@ class LogsController extends RestController {
 	 * Always returns 200 — inspect `deleted`, `skipped`, and `failed`
 	 * in the response body to detect partial failures.
 	 *
-	 * @param \WP_REST_Request $request Full request data.
+	 * @param  \WP_REST_Request $request Full request data.
 	 * @return \WP_REST_Response|\WP_Error
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function bulkDelete( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		/** @var string[] $ids */
@@ -302,16 +290,12 @@ class LogsController extends RestController {
 		] );
 	}
 
-	// ------------------------------------------------------------------
-	// Helpers
-	// ------------------------------------------------------------------
-
 	/**
 	 * Return all .log files in the log directory, sorted by modification time
 	 * descending by default (most recent first).
 	 *
 	 * @return string[] Absolute file paths.
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function getLogFiles(): array {
 		$files = glob( $this->logger->logDir() . '/allfeedback-*.log' );
@@ -324,9 +308,9 @@ class LogsController extends RestController {
 	 * Security: path is validated to be inside the log directory so that a
 	 * crafted ID (e.g. "../../wp-config") cannot escape the directory.
 	 *
-	 * @param string $id Log file stem (filename without .log extension).
+	 * @param  string $id Log file stem (filename without .log extension).
 	 * @return string|null Absolute path, or null if not found / outside log dir.
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function resolveFile( string $id ): ?string {
 		$logDir = realpath( $this->logger->logDir() );
@@ -347,9 +331,9 @@ class LogsController extends RestController {
 	/**
 	 * Build the metadata array for a single log file.
 	 *
-	 * @param string $file Absolute path to the log file.
+	 * @param  string $file Absolute path to the log file.
 	 * @return array<string, mixed>
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function prepareItem( string $file ): array {
 		$bytes   = (int) filesize( $file );
@@ -372,9 +356,9 @@ class LogsController extends RestController {
 	 * Each entry is exactly one line, so line count = entry count.
 	 * Uses a memory-efficient line counter rather than loading the file.
 	 *
-	 * @param string $file Absolute path to the log file.
+	 * @param  string $file Absolute path to the log file.
 	 * @return int
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function countEntries( string $file ): int {
 		$count  = 0;

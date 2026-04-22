@@ -15,7 +15,8 @@ use AllFeedback\Core\Jobs\Contracts\Job;
  * Concrete jobs must implement the handle() and payloadFromArray() methods
  * declared by the Job contract.
  *
- * @since 1.0.0
+ * @package AllFeedback\Core\Jobs
+ * @since   1.0.0
  */
 abstract class AbstractJob implements Job {
 }

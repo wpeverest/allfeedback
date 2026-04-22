@@ -5,48 +5,53 @@ declare(strict_types=1);
 namespace AllFeedback\Infrastructure\Database;
 
 /**
- * Abstract class Migration
+ * Abstract base class for all database migrations.
  *
- * All database migrations extend this class.
  * Concrete migrations must implement:
+ *   - `up()`   — Apply the migration (CREATE TABLE, ALTER TABLE, etc.).
+ *   - `down()` — Roll back the migration (DROP TABLE, etc.).
  *
- *   up()   — Apply the migration (CREATE TABLE, ALTER TABLE, …).
- *   down() — Roll back the migration (DROP TABLE, …).
- *
- * Helper methods (table(), charsetCollate(), dbDelta()) keep the concrete
+ * Helper methods (`table()`, `charsetCollate()`, `dbDelta()`) keep concrete
  * classes short and avoid repeating boilerplate.
  *
  * Naming convention for migration files:
- *   database/migrations/0001_CreateInitialTables.php
- *   database/migrations/0002_AddIndexToSomething.php
+ *   `database/migrations/0001_CreateInitialTables.php`
+ *   `database/migrations/0002_AddIndexToSomething.php`
  *
- * The Migrator resolves the PHP class name by stripping the numeric prefix:
- *   0001_CreateInitialTables → CreateInitialTables
- *   Fully-qualified: AllFeedback\Database\Migrations\CreateInitialTables
+ * The `Migrator` resolves the PHP class name by stripping the numeric prefix:
+ *   `0001_CreateInitialTables` → `AllFeedback\Database\Migrations\CreateInitialTables`
+ *
+ * @package AllFeedback\Infrastructure\Database
+ * @since   1.0.0
  */
 abstract class Migration {
 
 	/**
 	 * Apply the migration.
-	 * Called by Migrator::run() for pending migrations.
+	 *
+	 * Called by `Migrator::run()` for pending migrations.
+	 *
+	 * @return void
+	 * @since  1.0.0
 	 */
 	abstract public function up(): void;
 
 	/**
 	 * Roll back the migration.
-	 * Called by Migrator::rollback() in reverse order.
+	 *
+	 * Called by `Migrator::rollback()` in reverse batch order.
+	 *
+	 * @return void
+	 * @since  1.0.0
 	 */
 	abstract public function down(): void;
-
-	// ------------------------------------------------------------------
-	// Helpers available to concrete migrations
-	// ------------------------------------------------------------------
 
 	/**
 	 * Return the fully-qualified table name with the WordPress prefix.
 	 *
-	 * @param  string $name Raw table name, e.g. 'allfb_items'.
-	 * @return string       Prefixed table name, e.g. 'wp_allfb_items'.
+	 * @param  string $name Raw table name, e.g. `'af_surveys'`.
+	 * @return string       Prefixed table name, e.g. `'wp_af_surveys'`.
+	 * @since  1.0.0
 	 */
 	protected function table( string $name ): string {
 		global $wpdb;
@@ -54,8 +59,12 @@ abstract class Migration {
 	}
 
 	/**
-	 * Return the DB charset + collation clause, e.g.
-	 * "DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci".
+	 * Return the DB charset and collation clause.
+	 *
+	 * Example result: `"DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"`.
+	 *
+	 * @return string
+	 * @since  1.0.0
 	 */
 	protected function charsetCollate(): string {
 		global $wpdb;
@@ -63,12 +72,14 @@ abstract class Migration {
 	}
 
 	/**
-	 * Run a CREATE / ALTER TABLE statement through WordPress's dbDelta().
+	 * Run a CREATE/ALTER TABLE statement through WordPress's `dbDelta()`.
 	 *
-	 * dbDelta() is smart enough to only apply changes that are not yet in the
-	 * database, so it is safe to call it multiple times with the same schema.
+	 * `dbDelta()` is smart enough to only apply changes that are not yet in
+	 * the database, so it is safe to call multiple times with the same schema.
 	 *
-	 * @param string $sql The SQL statement(s) to execute.
+	 * @param  string $sql The SQL statement(s) to execute.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	protected function dbDelta( string $sql ): void {
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';

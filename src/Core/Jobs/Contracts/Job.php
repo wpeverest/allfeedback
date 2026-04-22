@@ -15,7 +15,8 @@ use AllFeedback\Core\Jobs\AbstractJobPayload;
  * Service dependencies are injected via the constructor (autowired by the DI
  * container). Payload data is supplied at execution time via handle().
  *
- * @since 1.0.0
+ * @package AllFeedback\Core\Jobs\Contracts
+ * @since   1.0.0
  */
 interface Job {
 
@@ -25,17 +26,18 @@ interface Job {
 	 * Constructor receives only service dependencies (autowired by DI).
 	 * Payload data is passed here at execution time.
 	 *
-	 * @param AbstractJobPayload $payload The typed payload for this job run.
-	 * @since 1.0.0
+	 * @param  AbstractJobPayload $payload The typed payload for this job run.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function handle( AbstractJobPayload $payload ): void;
 
 	/**
 	 * Reconstruct a typed payload from a serialised array.
 	 *
-	 * @param array<string, mixed> $data Serialised payload data.
+	 * @param  array<string, mixed> $data Serialised payload data.
 	 * @return AbstractJobPayload
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public static function payloadFromArray( array $data ): AbstractJobPayload;
 }

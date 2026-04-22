@@ -19,7 +19,8 @@ use AllFeedback\Domain\Survey\SurveyRepository;
 class CreateSurveyService {
 
 	/**
-	 * @since 1.0.0
+	 * @param  SurveyRepository $repository Persistence layer for survey aggregates.
+	 * @since  1.0.0
 	 */
 	public function __construct(
 		private readonly SurveyRepository $repository,
@@ -28,11 +29,11 @@ class CreateSurveyService {
 	/**
 	 * Validate, create, and persist a new Survey.
 	 *
-	 * @param SurveyDTO $dto    Validated survey payload.
-	 * @param int       $userId WordPress user ID of the creator.
+	 * @param  SurveyDTO $dto    Validated survey payload.
+	 * @param  int       $userId WordPress user ID of the creator.
 	 * @return Survey
 	 * @throws ValidationException When required fields are missing.
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function execute( SurveyDTO $dto, int $userId ): Survey {
 		if ( trim( $dto->title ) === '' ) {

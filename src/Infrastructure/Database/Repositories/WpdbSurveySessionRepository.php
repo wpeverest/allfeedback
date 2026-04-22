@@ -14,16 +14,30 @@ use AllFeedback\Domain\Analytics\SurveySessionRepository;
 /**
  * wpdb-backed implementation of SurveySessionRepository.
  *
- * @since 1.0.0
+ * @package AllFeedback\Infrastructure\Database\Repositories
+ * @since   1.0.0
  */
 class WpdbSurveySessionRepository implements SurveySessionRepository {
 
+	/**
+	 * Fully-qualified table name including the wpdb prefix.
+	 *
+	 * @var string
+	 * @since 1.0.0
+	 */
 	private string $table;
 
-	/** Timeout in minutes after which a started-but-silent session is treated as abandoned. */
+	/**
+	 * Inactivity threshold in minutes after which a started session is treated as abandoned.
+	 *
+	 * @var int
+	 * @since 1.0.0
+	 */
 	private const ABANDON_TIMEOUT_MINUTES = 30;
 
-	/** @since 1.0.0 */
+	/**
+	 * @since 1.0.0
+	 */
 	public function __construct() {
 		global $wpdb;
 		$this->table = $wpdb->prefix . 'af_survey_sessions';
@@ -32,7 +46,10 @@ class WpdbSurveySessionRepository implements SurveySessionRepository {
 	/**
 	 * Insert or update a SurveySession.
 	 *
-	 * @since 1.0.0
+	 * @param  SurveySession $session The aggregate to persist.
+	 * @return SurveySession The saved instance with its persistence ID assigned.
+	 * @throws \RuntimeException When the wpdb insert or update fails.
+	 * @since  1.0.0
 	 */
 	public function save( SurveySession $session ): SurveySession {
 		global $wpdb;
@@ -87,7 +104,11 @@ class WpdbSurveySessionRepository implements SurveySessionRepository {
 	}
 
 	/**
-	 * @since 1.0.0
+	 * Find a session by its client-generated UUID, or null when absent.
+	 *
+	 * @param  string $sessionId Client-generated session UUID.
+	 * @return SurveySession|null
+	 * @since  1.0.0
 	 */
 	public function findBySessionId( string $sessionId ): ?SurveySession {
 		global $wpdb;
@@ -107,8 +128,9 @@ class WpdbSurveySessionRepository implements SurveySessionRepository {
 	 * Return aggregate analytics for a survey using timestamps as source of truth.
 	 * Abandonment includes explicit closes AND timed-out started sessions.
 	 *
+	 * @param  int $surveyId Survey primary key.
 	 * @return array<string, int|float|null>
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function getAnalytics( int $surveyId ): array {
 		global $wpdb;

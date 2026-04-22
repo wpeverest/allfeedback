@@ -13,24 +13,39 @@ use AllFeedback\Domain\Analytics\SurveySessionRepository;
 /**
  * REST controller for survey session analytics.
  *
- * Routes (under all-feedback/v1):
- *   POST /surveys/{id}/analytics/event   — public; track a single session event
- *   GET  /surveys/{id}/analytics         — admin; return aggregate metrics
+ * Routes (under `all-feedback/v1`):
+ *   `POST /surveys/{id}/analytics/event` — public; track a single session event.
+ *   `GET  /surveys/{id}/analytics`       — admin; return aggregate metrics.
  *
- * @since 1.0.0
+ * @package AllFeedback\API\Controllers\V1
+ * @since   1.0.0
  */
 class AnalyticsController extends RestController {
 
-	/** @since 1.0.0 */
+	/**
+	 * Route base for survey resources.
+	 *
+	 * @var string
+	 * @since 1.0.0
+	 */
 	protected string $restBase = 'surveys';
 
-	/** @since 1.0.0 */
+	/**
+	 * @param  TrackSessionEventService  $trackService       Use-case service for recording events.
+	 * @param  SurveySessionRepository   $sessionRepository  Session repository for aggregate queries.
+	 * @since  1.0.0
+	 */
 	public function __construct(
 		private readonly TrackSessionEventService $trackService,
 		private readonly SurveySessionRepository $sessionRepository,
 	) {}
 
-	/** @since 1.0.0 */
+	/**
+	 * Register all REST routes for this controller.
+	 *
+	 * @return void
+	 * @since  1.0.0
+	 */
 	public function registerRoutes(): void {
 		register_rest_route(
 			$this->namespace,
@@ -55,14 +70,12 @@ class AnalyticsController extends RestController {
 		);
 	}
 
-	// ------------------------------------------------------------------
-	// Handlers
-	// ------------------------------------------------------------------
-
 	/**
-	 * POST /surveys/{id}/analytics/event
+	 * Handle `POST /surveys/{id}/analytics/event`.
 	 *
-	 * @since 1.0.0
+	 * @param  \WP_REST_Request $request Full request data.
+	 * @return \WP_REST_Response|\WP_Error
+	 * @since  1.0.0
 	 */
 	public function trackEvent( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$surveyId  = (int) $request->get_param( 'id' );
@@ -81,9 +94,11 @@ class AnalyticsController extends RestController {
 	}
 
 	/**
-	 * GET /surveys/{id}/analytics
+	 * Handle `GET /surveys/{id}/analytics`.
 	 *
-	 * @since 1.0.0
+	 * @param  \WP_REST_Request $request Full request data.
+	 * @return \WP_REST_Response|\WP_Error
+	 * @since  1.0.0
 	 */
 	public function getAnalytics( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$surveyId = (int) $request->get_param( 'id' );
@@ -92,11 +107,12 @@ class AnalyticsController extends RestController {
 		return $this->successResponse( $metrics );
 	}
 
-	// ------------------------------------------------------------------
-	// Argument schema
-	// ------------------------------------------------------------------
-
-	/** @return array<string, array<string, mixed>> */
+	/**
+	 * Build the argument schema for the event-tracking endpoint.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 * @since  1.0.0
+	 */
 	private function eventArgs(): array {
 		return [
 			'event'      => $this->argEnum(

@@ -53,6 +53,9 @@ class SurveysController extends RestController {
 	];
 
 	/**
+	 * Route base for survey resources.
+	 *
+	 * @var string
 	 * @since 1.0.0
 	 */
 	protected string $restBase = 'surveys';
@@ -181,10 +184,6 @@ class SurveysController extends RestController {
 			]
 		);
 	}
-
-	// ------------------------------------------------------------------
-	// Route handlers
-	// ------------------------------------------------------------------
 
 	/**
 	 * GET /all-feedback/v1/surveys
@@ -315,7 +314,6 @@ class SurveysController extends RestController {
 			return $this->notFoundResponse( __( 'Survey', 'all-feedback' ) );
 		}
 
-		// Non-admins may only read published surveys (widget / shortcode use-case).
 		if ( ! current_user_can( 'manage_options' ) && ! $survey->getStatus()->isPublished() ) {
 			return $this->notFoundResponse( __( 'Survey', 'all-feedback' ) );
 		}
@@ -533,7 +531,6 @@ class SurveysController extends RestController {
 			return $this->errorResponse( __( 'Failed to permanently delete survey.', 'all-feedback' ), 500 );
 		}
 
-		// Delete all responses belonging to this survey.
 		$this->responseRepository->deleteBySurveyId( $id );
 
 		$this->logger->info(
@@ -693,7 +690,6 @@ class SurveysController extends RestController {
 
 			if ( $this->surveyRepository->delete( $id ) ) {
 				++$deleted;
-				// Delete all responses belonging to this survey.
 				$this->responseRepository->deleteBySurveyId( $id );
 			} else {
 				$failed[] = $id;
@@ -719,10 +715,6 @@ class SurveysController extends RestController {
 			]
 		);
 	}
-
-	// ------------------------------------------------------------------
-	// Schema
-	// ------------------------------------------------------------------
 
 	/**
 	 * JSON schema for a single survey item.
@@ -798,10 +790,6 @@ class SurveysController extends RestController {
 			],
 		];
 	}
-
-	// ------------------------------------------------------------------
-	// Argument schemas
-	// ------------------------------------------------------------------
 
 	/**
 	 * Query-string arguments for GET /surveys.
@@ -900,10 +888,6 @@ class SurveysController extends RestController {
 		];
 	}
 
-	// ------------------------------------------------------------------
-	// Serialisation
-	// ------------------------------------------------------------------
-
 	/**
 	 * Serialise a Survey aggregate into the REST response shape.
 	 *
@@ -944,10 +928,6 @@ class SurveysController extends RestController {
 		 */
 		return apply_filters( 'allfeedback_prepare_survey', $prepared, $survey );
 	}
-
-	// ------------------------------------------------------------------
-	// Internal helpers
-	// ------------------------------------------------------------------
 
 	/**
 	 * Retrieve a survey, change its status, persist, and return the updated representation.
@@ -1074,10 +1054,8 @@ class SurveysController extends RestController {
 			$overlaps = false;
 
 			if ( $publishedScope === 'all_pages' || $otherScope === 'all_pages' ) {
-				// One covers everything — guaranteed overlap.
 				$overlaps = true;
 			} elseif ( ! empty( array_intersect( $publishedPageIds, $otherPageIds ) ) ) {
-				// Both specific — check shared page IDs.
 				$overlaps = true;
 			}
 
@@ -1270,7 +1248,6 @@ class SurveysController extends RestController {
 			}
 		}
 
-		// Non-negative integer fields.
 		foreach ( [ 'delay_value', 'scroll_depth', 'max_impressions', 'dismiss_wait_value' ] as $key ) {
 			if ( ! array_key_exists( $key, $settings ) ) {
 				continue;
@@ -1287,7 +1264,6 @@ class SurveysController extends RestController {
 			}
 		}
 
-		// target_page_ids must be an array of positive integers.
 		if ( array_key_exists( 'target_page_ids', $settings ) ) {
 			if ( ! is_array( $settings['target_page_ids'] ) ) {
 				return $this->errorResponse(

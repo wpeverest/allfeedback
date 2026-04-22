@@ -25,7 +25,8 @@ use AllFeedback\Infrastructure\Database\Migrator;
 class MigrateCommand {
 
 	/**
-	 * @since 1.0.0
+	 * @param  Migrator $migrator Database migrator for running and rolling back migrations.
+	 * @since  1.0.0
 	 */
 	public function __construct(
 		private readonly Migrator $migrator,
@@ -38,8 +39,9 @@ class MigrateCommand {
 	 *
 	 *   wp allfeedback migrate
 	 *
-	 * @when after_wp_load
-	 * @since 1.0.0
+	 * @return void
+	 * @when   after_wp_load
+	 * @since  1.0.0
 	 */
 	public function __invoke(): void {
 		$this->migrate();
@@ -52,9 +54,10 @@ class MigrateCommand {
 	 *
 	 *   wp allfeedback migrate run
 	 *
+	 * @return     void
 	 * @subcommand run
-	 * @when after_wp_load
-	 * @since 1.0.0
+	 * @when       after_wp_load
+	 * @since      1.0.0
 	 */
 	public function migrate(): void {
 		$ran = $this->migrator->run();
@@ -81,9 +84,10 @@ class MigrateCommand {
 	 *
 	 *   wp allfeedback migrate status
 	 *
+	 * @return     void
 	 * @subcommand status
-	 * @when after_wp_load
-	 * @since 1.0.0
+	 * @when       after_wp_load
+	 * @since      1.0.0
 	 */
 	public function status(): void {
 		$rows = $this->migrator->status();
@@ -121,9 +125,12 @@ class MigrateCommand {
 	 *   wp allfeedback migrate rollback
 	 *   wp allfeedback migrate rollback --step=2
 	 *
+	 * @param      array<int, string>    $args      Positional arguments (unused).
+	 * @param      array<string, mixed> $assocArgs Associative arguments; accepts `step`.
+	 * @return     void
 	 * @subcommand rollback
-	 * @when after_wp_load
-	 * @since 1.0.0
+	 * @when       after_wp_load
+	 * @since      1.0.0
 	 */
 	public function rollback( array $args, array $assocArgs ): void {
 		$step = max( 1, (int) ( $assocArgs['step'] ?? 1 ) );
@@ -153,9 +160,10 @@ class MigrateCommand {
 	 *
 	 *   wp allfeedback migrate reset
 	 *
+	 * @return     void
 	 * @subcommand reset
-	 * @when after_wp_load
-	 * @since 1.0.0
+	 * @when       after_wp_load
+	 * @since      1.0.0
 	 */
 	public function reset(): void {
 		\WP_CLI::confirm( 'This will roll back ALL migrations and drop all plugin tables. Are you sure?' );
@@ -181,9 +189,10 @@ class MigrateCommand {
 	 *
 	 *   wp allfeedback migrate refresh
 	 *
+	 * @return     void
 	 * @subcommand refresh
-	 * @when after_wp_load
-	 * @since 1.0.0
+	 * @when       after_wp_load
+	 * @since      1.0.0
 	 */
 	public function refresh(): void {
 		\WP_CLI::confirm( 'This will drop and recreate all plugin tables. Are you sure?' );

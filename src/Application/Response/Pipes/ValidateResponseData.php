@@ -19,11 +19,11 @@ class ValidateResponseData {
 	/**
 	 * Reject the submission when response_data is empty.
 	 *
-	 * @param ResponseContext $context Shared pipeline context.
-	 * @param \Closure        $next    Next stage in the pipeline.
+	 * @param  ResponseContext $context Shared pipeline context.
+	 * @param  \Closure        $next    Next stage in the pipeline.
 	 * @return mixed
 	 * @throws ValidationException When response_data is empty.
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function execute( ResponseContext $context, \Closure $next ): mixed {
 		if ( empty( $context->dto->responseData ) ) {

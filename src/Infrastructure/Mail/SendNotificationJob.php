@@ -23,11 +23,17 @@ use AllFeedback\Support\Logger;
  *   - `survey_published`        → admin email when a survey is activated
  *   - `thank_you_respondent`    → respondent email after survey submission
  *
- * @since 1.0.0
+ * @package AllFeedback\Infrastructure\Mail
+ * @since   1.0.0
  */
 class SendNotificationJob extends AbstractJob {
 
-	/** @since 1.0.0 */
+	/**
+	 * Notification type identifiers handled by this job.
+	 *
+	 * @var string[]
+	 * @since 1.0.0
+	 */
 	private const VALID_TYPES = [
 		'new_response_alert',
 		'survey_published',
@@ -35,7 +41,13 @@ class SendNotificationJob extends AbstractJob {
 	];
 
 	/**
-	 * @since 1.0.0
+	 * @param  SurveyRepository                $surveyRepository   Repository for loading survey aggregates.
+	 * @param  ResponseRepository              $responseRepository Repository for loading response aggregates.
+	 * @param  NewResponseAdminNotification    $newResponseAdmin   Admin alert notification handler.
+	 * @param  SurveyPublishedNotification     $surveyPublished    Survey-published notification handler.
+	 * @param  ThankYouRespondentNotification  $thankYouRespondent Respondent thank-you notification handler.
+	 * @param  Logger                          $logger             Logger for recording errors and info.
+	 * @since  1.0.0
 	 */
 	public function __construct(
 		private readonly SurveyRepository $surveyRepository,
@@ -49,7 +61,9 @@ class SendNotificationJob extends AbstractJob {
 	/**
 	 * Execute the notification job for the given payload.
 	 *
-	 * @since 1.0.0
+	 * @param  AbstractJobPayload $payload Typed payload containing the notification type and entity IDs.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function handle( AbstractJobPayload $payload ): void {
 		assert( $payload instanceof SendNotificationJobPayload );
@@ -72,8 +86,9 @@ class SendNotificationJob extends AbstractJob {
 	/**
 	 * Reconstruct a typed payload from a serialised array.
 	 *
-	 * @param array<string, mixed> $data Serialised payload data.
-	 * @since 1.0.0
+	 * @param  array<string, mixed> $data Serialised payload data.
+	 * @return SendNotificationJobPayload
+	 * @since  1.0.0
 	 */
 	public static function payloadFromArray( array $data ): SendNotificationJobPayload {
 		return SendNotificationJobPayload::fromArray( $data );
@@ -82,7 +97,9 @@ class SendNotificationJob extends AbstractJob {
 	/**
 	 * Handle the survey_published notification type.
 	 *
-	 * @since 1.0.0
+	 * @param  int $surveyId Survey primary key.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	private function handleSurveyPublished( int $surveyId ): void {
 		$survey = $this->surveyRepository->findById( $surveyId );
@@ -100,7 +117,11 @@ class SendNotificationJob extends AbstractJob {
 	/**
 	 * Handle response-scoped notification types (new_response_alert, thank_you_respondent).
 	 *
-	 * @since 1.0.0
+	 * @param  string $type       Notification type identifier.
+	 * @param  int    $surveyId   Survey primary key.
+	 * @param  int    $responseId Response primary key.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	private function handleResponseNotification( string $type, int $surveyId, int $responseId ): void {
 		$survey = $this->surveyRepository->findById( $surveyId );

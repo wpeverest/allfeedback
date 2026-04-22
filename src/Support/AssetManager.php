@@ -24,27 +24,64 @@ use AllFeedback\Core\Constants;
  *
  * If the asset file is missing (e.g. before the first build), the manager
  * logs a warning and falls back to sane defaults so the site doesn't crash.
+ *
+ * @package AllFeedback\Support
+ * @since   1.0.0
  */
 class AssetManager {
 
-	/** All handles registered by this manager are prefixed with this string. */
+	/**
+	 * All handles registered by this manager are prefixed with this string.
+	 *
+	 * @var string
+	 * @since 1.0.0
+	 */
 	private const HANDLE_PREFIX = 'allfb-';
 
-	/** Local dev server URL — used when RMB_ENV === 'development'. */
+	/**
+	 * Local dev server URL — used when RMB_ENV === 'development'.
+	 *
+	 * @var string
+	 * @since 1.0.0
+	 */
 	private const DEV_SERVER = 'http://localhost:5173/';
 
-	/** Absolute path to the build directory. */
+	/**
+	 * Absolute path to the build directory.
+	 *
+	 * @var string
+	 * @since 1.0.0
+	 */
 	private string $buildPath;
 
-	/** Public URL to the build directory. */
+	/**
+	 * Public URL to the build directory.
+	 *
+	 * @var string
+	 * @since 1.0.0
+	 */
 	private string $buildUrl;
 
-	/** Simple in-memory cache to avoid reading asset files more than once. */
+	/**
+	 * Simple in-memory cache to avoid reading asset files more than once.
+	 *
+	 * @var array<string, array{dependencies: string[], version: string}>
+	 * @since 1.0.0
+	 */
 	private array $assetCache = [];
 
-	/** True when running against a Vite/webpack dev-server. */
+	/**
+	 * True when running against a Vite/webpack dev-server.
+	 *
+	 * @var bool
+	 * @since 1.0.0
+	 */
 	private bool $isDevServer;
 
+	/**
+	 * @param  Logger $logger Logger for missing-asset warnings.
+	 * @since  1.0.0
+	 */
 	public function __construct(
 		private readonly Logger $logger,
 	) {
@@ -53,19 +90,17 @@ class AssetManager {
 		$this->buildUrl    = $this->isDevServer ? self::DEV_SERVER : Constants::url( 'resources/build/' );
 	}
 
-	// ------------------------------------------------------------------
-	// Scripts
-	// ------------------------------------------------------------------
-
 	/**
 	 * Enqueue a JS file from the build directory.
 	 *
-	 * @param string               $handle   Short handle (without prefix).
-	 * @param string               $src      File name relative to resources/build/, e.g. 'admin.js'.
-	 * @param string[]             $deps     Extra WordPress script handles to depend on.
-	 * @param bool                 $inFooter Load in footer?
-	 * @param array<string, mixed> $localize Optional. Inline-script data:
-	 *                                       [ 'object_name' => '__ALLFB_ADMIN__', 'data' => [...] ]
+	 * @param  string               $handle   Short handle (without prefix).
+	 * @param  string               $src      File name relative to resources/build/, e.g. 'admin.js'.
+	 * @param  string[]             $deps     Extra WordPress script handles to depend on.
+	 * @param  bool                 $inFooter Load in footer?
+	 * @param  array<string, mixed> $localize Optional inline-script data:
+	 *                                        [ 'object_name' => '__ALLFB_ADMIN__', 'data' => [...] ]
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function enqueueScript(
 		string $handle,
@@ -76,7 +111,6 @@ class AssetManager {
 	): void {
 		$fullHandle = self::HANDLE_PREFIX . $handle;
 
-		// If already registered (e.g. by a prior enqueue call), just activate it.
 		if ( wp_script_is( $fullHandle, 'registered' ) ) {
 			wp_enqueue_script( $fullHandle );
 		} else {
@@ -91,7 +125,6 @@ class AssetManager {
 			);
 		}
 
-		// Inject inline JS data before the script tag if requested.
 		if ( ! empty( $localize ) ) {
 			$this->localizeScript( $handle, $localize );
 		}
@@ -100,31 +133,29 @@ class AssetManager {
 	/**
 	 * Inject a JS variable before the enqueued script.
 	 *
-	 * @param string               $handle  Short handle (without prefix).
-	 * @param array<string, mixed> $localize [ 'object_name' => 'VAR', 'data' => [...] ]
+	 * @param  string               $handle  Short handle (without prefix).
+	 * @param  array<string, mixed> $localize [ 'object_name' => 'VAR', 'data' => [...] ]
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function localizeScript( string $handle, array $localize ): void {
 		$fullHandle = self::HANDLE_PREFIX . $handle;
 		$objectName = $localize['object_name'] ?? '__RMB__';
 		$data       = $localize['data']        ?? [];
 
-		// wp_add_inline_script is safer than wp_localize_script for nested arrays
-		// because it avoids double-encoding issues with special characters.
 		$json = wp_json_encode( $data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
 		wp_add_inline_script( $fullHandle, "var {$objectName} = {$json};", 'before' );
 	}
 
-	// ------------------------------------------------------------------
-	// Styles
-	// ------------------------------------------------------------------
-
 	/**
 	 * Enqueue a CSS file from the build directory.
 	 *
-	 * @param string   $handle Short handle (without prefix).
-	 * @param string   $src    File name relative to resources/build/, e.g. 'admin.css'.
-	 * @param string[] $deps   Extra style handles to depend on.
-	 * @param string   $media  CSS media attribute.
+	 * @param  string   $handle Short handle (without prefix).
+	 * @param  string   $src    File name relative to resources/build/, e.g. 'admin.css'.
+	 * @param  string[] $deps   Extra style handles to depend on.
+	 * @param  string   $media  CSS media attribute.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function enqueueStyle(
 		string $handle,
@@ -134,7 +165,6 @@ class AssetManager {
 	): void {
 		$fullHandle = self::HANDLE_PREFIX . $handle;
 
-		// If already registered, activate without re-reading the file.
 		if ( wp_style_is( $fullHandle, 'registered' ) ) {
 			wp_enqueue_style( $fullHandle );
 			return;
@@ -149,29 +179,34 @@ class AssetManager {
 		);
 	}
 
-	// ------------------------------------------------------------------
-	// URL helpers
-	// ------------------------------------------------------------------
-
-	/** Full public URL to a JS file in resources/build/. */
+	/**
+	 * Full public URL to a JS file in resources/build/.
+	 *
+	 * @param  string $src JS file name relative to the build directory.
+	 * @return string
+	 * @since  1.0.0
+	 */
 	public function scriptUrl( string $src ): string {
 		return rtrim( $this->buildUrl, '/' ) . '/' . ltrim( $src, '/' );
 	}
 
-	/** Full public URL to a CSS file in resources/build/. */
+	/**
+	 * Full public URL to a CSS file in resources/build/.
+	 *
+	 * @param  string $src CSS file name relative to the build directory.
+	 * @return string
+	 * @since  1.0.0
+	 */
 	public function styleUrl( string $src ): string {
 		return rtrim( $this->buildUrl, '/' ) . '/' . ltrim( $src, '/' );
 	}
-
-	// ------------------------------------------------------------------
-	// Asset file loader
-	// ------------------------------------------------------------------
 
 	/**
 	 * Load the .asset.php companion file generated by the bundler.
 	 *
 	 * @param  string $src JS file name, e.g. 'admin.js'.
-	 * @return array{ dependencies: string[], version: string }
+	 * @return array{dependencies: string[], version: string}
+	 * @since  1.0.0
 	 */
 	public function loadAssetFile( string $src ): array {
 		$stem     = pathinfo( ltrim( $src, '/' ), PATHINFO_FILENAME );
@@ -205,15 +240,15 @@ class AssetManager {
 		];
 	}
 
-	// ------------------------------------------------------------------
-	// Internal helpers
-	// ------------------------------------------------------------------
-
 	/**
 	 * Derive a cache-busting version for a CSS file.
 	 *
 	 * Prefers the hash from the companion .asset.php; falls back to mtime
 	 * of the CSS file itself, and finally to the plugin version constant.
+	 *
+	 * @param  string $cssSrc CSS file name relative to the build directory.
+	 * @return string
+	 * @since  1.0.0
 	 */
 	private function versionForCss( string $cssSrc ): string {
 		$stem      = pathinfo( ltrim( $cssSrc, '/' ), PATHINFO_FILENAME );
@@ -237,7 +272,8 @@ class AssetManager {
 	/**
 	 * Returns safe defaults when the .asset.php file is missing or invalid.
 	 *
-	 * @return array{ dependencies: string[], version: string }
+	 * @return array{dependencies: string[], version: string}
+	 * @since  1.0.0
 	 */
 	private function fallbackAsset(): array {
 		return [

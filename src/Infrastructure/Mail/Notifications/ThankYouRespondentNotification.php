@@ -21,12 +21,15 @@ use AllFeedback\Infrastructure\Mail\NotificationContext;
  * If no email address can be extracted from the response data this notification
  * is silently skipped.
  *
- * @since 1.0.0
+ * @package AllFeedback\Infrastructure\Mail\Notifications
+ * @since   1.0.0
  */
 class ThankYouRespondentNotification {
 
 	/**
-	 * @since 1.0.0
+	 * @param  Mailer          $mailer   Mailer for dispatching the email.
+	 * @param  SettingsManager $settings Plugin settings for toggling notifications.
+	 * @since  1.0.0
 	 */
 	public function __construct(
 		private readonly Mailer $mailer,
@@ -36,7 +39,9 @@ class ThankYouRespondentNotification {
 	/**
 	 * Compose and dispatch the thank-you email to the respondent.
 	 *
-	 * @since 1.0.0
+	 * @param  NotificationContext $context Context containing the survey and response aggregates.
+	 * @return bool True when the email was dispatched successfully, false when skipped.
+	 * @since  1.0.0
 	 */
 	public function send( NotificationContext $context ): bool {
 		if ( ! $this->settings->get( 'email_notifications' ) ) {
@@ -70,7 +75,9 @@ class ThankYouRespondentNotification {
 	/**
 	 * Attempt to resolve the respondent email from the response_data payload.
 	 *
-	 * @since 1.0.0
+	 * @param  NotificationContext $context Context containing the response aggregate.
+	 * @return string|null The first valid email found in response_data, or null.
+	 * @since  1.0.0
 	 */
 	private function resolveRespondentEmail( NotificationContext $context ): ?string {
 		$response = $context->getResponse();
@@ -92,8 +99,9 @@ class ThankYouRespondentNotification {
 	/**
 	 * Build the template variable map from the notification context.
 	 *
+	 * @param  NotificationContext $context Context containing the survey aggregate.
 	 * @return array<string, string>
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function buildVars( NotificationContext $context ): array {
 		$survey = $context->getSurvey();

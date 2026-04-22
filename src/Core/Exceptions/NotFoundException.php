@@ -21,10 +21,10 @@ class NotFoundException extends AllFeedbackException {
 	/**
 	 * Factory: build a NotFoundException for a named resource.
 	 *
-	 * @param string $resource Human-readable resource name, e.g. "Form".
-	 * @param int    $id       The ID that was not found.
+	 * @param  string $resource Human-readable resource name, e.g. "Form".
+	 * @param  int    $id       The ID that was not found.
 	 * @return static
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public static function forResource( string $resource, int $id ): static {
 		return new static(

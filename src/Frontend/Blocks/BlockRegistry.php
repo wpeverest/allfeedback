@@ -13,24 +13,32 @@ defined( 'ABSPATH' ) || exit;
  * 'block.classes' array.  To add a new block, add its class to that
  * array — this class and FrontendServiceProvider never need to change.
  *
- * @since 1.0.0
+ * @package AllFeedback\Frontend\Blocks
+ * @since   1.0.0
  */
 final class BlockRegistry {
 
-	/** @var AbstractBlock[] */
+	/**
+	 * All registered block instances.
+	 *
+	 * @var AbstractBlock[]
+	 * @since 1.0.0
+	 */
 	private array $blocks;
 
 	/**
-	 * @param AbstractBlock ...$blocks All block instances to register.
-	 * @since 1.0.0
+	 * @param  AbstractBlock ...$blocks All block instances to register.
+	 * @since  1.0.0
 	 */
 	public function __construct( AbstractBlock ...$blocks ) {
 		$this->blocks = $blocks;
 	}
 
 	/**
+	 * Return all registered block instances.
+	 *
 	 * @return AbstractBlock[]
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function all(): array {
 		return $this->blocks;

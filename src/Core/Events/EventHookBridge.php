@@ -15,7 +15,8 @@ use AllFeedback\Traits\Hooks;
  * external plugins and themes can react to AllFeedback events without
  * coupling directly to the domain event classes.
  *
- * @since 1.0.0
+ * @package AllFeedback\Core\Events
+ * @since   1.0.0
  */
 class EventHookBridge implements EventSubscriber {
 
@@ -28,8 +29,8 @@ class EventHookBridge implements EventSubscriber {
 	 * domain. Each entry maps an event class to the handler method on this
 	 * class that fires the corresponding WordPress action.
 	 *
-	 * @return array<string, string|array>
-	 * @since 1.0.0
+	 * @return array<string, string|array{string, int}>
+	 * @since  1.0.0
 	 */
 	public function getSubscribedEvents(): array {
 		return [];

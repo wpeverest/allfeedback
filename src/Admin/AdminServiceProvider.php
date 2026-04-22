@@ -14,31 +14,45 @@ use AllFeedback\Traits\Hooks;
 use DI\ContainerBuilder;
 
 /**
- * Class AdminServiceProvider
+ * Boots all WP-admin functionality for the All Feedback plugin.
  *
- * Boots all WP-admin functionality:
- *  - Top-level admin menu + hash-routed sub-menu pages
- *  - Admin script / style enqueueing
- *  - Inline JS that keeps the WP sidebar highlight in sync with the hash route
+ * Responsibilities:
+ *  - Top-level admin menu and hash-routed sub-menu pages.
+ *  - Admin script/style enqueueing.
+ *  - Inline JS that keeps the WP sidebar highlight in sync with the hash route.
  *
- * All page content is rendered by the React SPA mounted on #ALLFB-Admin-Root.
- * PHP callbacks output only the mount-point <div>; no server-side UI here.
+ * All page content is rendered by the React SPA mounted on `#ALLFB-Admin-Root`.
+ * PHP callbacks output only the mount-point `<div>`; no server-side UI is
+ * generated here.
  *
- * To add a new admin page:
- *  1. Add a new add_submenu_page() entry with slug 'all-feedback#/your-route'.
- *  2. Add a matching route file under resources/scripts/admin/routes/_app/.
- *  3. Add a nav item in GlobalHeader.tsx.
+ * @package AllFeedback\Admin
+ * @since   1.0.0
  */
 class AdminServiceProvider implements ServiceProvider {
 
 	use Hooks;
 
-	/** The mount-point ID React attaches to. */
+	/**
+	 * The mount-point element ID that React attaches to.
+	 *
+	 * @since 1.0.0
+	 */
 	private const MOUNT_ID = 'ALLFB-Admin-Root';
 
-	/** WP menu slug for the top-level page. */
+	/**
+	 * WordPress menu slug for the top-level admin page.
+	 *
+	 * @since 1.0.0
+	 */
 	private const MENU_SLUG = 'all-feedback';
 
+	/**
+	 * @param  Container          $container          DI container.
+	 * @param  AssetManager       $assetManager       Asset enqueueing helper.
+	 * @param  ResponseRepository $responseRepository Response repository for unread count badge.
+	 * @param  SettingsManager    $settingsManager    Plugin settings.
+	 * @since  1.0.0
+	 */
 	public function __construct(
 		private readonly Container $container,
 		private readonly AssetManager $assetManager,
@@ -46,11 +60,20 @@ class AdminServiceProvider implements ServiceProvider {
 		private readonly SettingsManager $settingsManager,
 	) {}
 
-	// ServiceProvider::register() — nothing to add to the DI container here.
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @param  ContainerBuilder $builder PHP-DI builder instance.
+	 * @return void
+	 * @since  1.0.0
+	 */
 	public function register( ContainerBuilder $builder ): void {}
 
 	/**
 	 * Wire up WordPress hooks for the admin context.
+	 *
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function boot(): void {
 		$this->addAction( 'admin_menu',                           [ $this, 'registerMenus'         ] );
@@ -59,17 +82,16 @@ class AdminServiceProvider implements ServiceProvider {
 		$this->addAction( 'in_admin_header',                      [ $this, 'suppressAdminNotices'  ] );
 	}
 
-	// ------------------------------------------------------------------
-	// Menus
-	// ------------------------------------------------------------------
-
 	/**
 	 * Register the top-level menu and hash-routed sub-menu pages.
 	 *
 	 * Each sub-menu slug contains the hash fragment for its React route
-	 * (e.g. 'all-feedback#/settings').  WordPress puts the fragment
-	 * in the sidebar link href so clicking it navigates the SPA directly.
-	 * All callbacks output only the React mount point.
+	 * (e.g. `'all-feedback#/settings'`). WordPress puts the fragment in the
+	 * sidebar link `href` so clicking it navigates the SPA directly. All
+	 * callbacks output only the React mount point.
+	 *
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function registerMenus(): void {
 		$mountPoint = static function (): void {
@@ -119,8 +141,8 @@ class AdminServiceProvider implements ServiceProvider {
 			callback:    $mountPoint,
 		);
 
-		$unreadCount      = $this->responseRepository->countUnread();
-		$responsesTitle   = __( 'Responses', 'all-feedback' );
+		$unreadCount    = $this->responseRepository->countUnread();
+		$responsesTitle = __( 'Responses', 'all-feedback' );
 
 		if ( $unreadCount > 0 ) {
 			$responsesTitle .= sprintf(
@@ -156,22 +178,18 @@ class AdminServiceProvider implements ServiceProvider {
 			callback:    $mountPoint,
 		);
 
-		// Remove the auto-generated duplicate of the top-level entry.
 		remove_submenu_page( self::MENU_SLUG, self::MENU_SLUG );
 	}
-
-	// ------------------------------------------------------------------
-	// Admin notice suppression
-	// ------------------------------------------------------------------
 
 	/**
 	 * Remove all third-party and WP core admin notices on AllFeedback pages.
 	 *
-	 * Fires on 'in_admin_header' — after other plugins register their notices
-	 * but before WordPress renders them — so we can cleanly strip them without
+	 * Fires on `'in_admin_header'` — after other plugins register their notices
+	 * but before WordPress renders them — so notices can be stripped without
 	 * affecting the rest of the admin.
 	 *
-	 * @since 1.0.0
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function suppressAdminNotices(): void {
 		$screen = get_current_screen();
@@ -183,18 +201,17 @@ class AdminServiceProvider implements ServiceProvider {
 		remove_all_actions( 'all_admin_notices' );
 	}
 
-	// ------------------------------------------------------------------
-	// Sidebar highlight sync
-	// ------------------------------------------------------------------
-
 	/**
 	 * Output a small inline script that keeps the WP admin sidebar active
 	 * class in sync with the current hash route.
 	 *
 	 * WordPress sets the active class on page load based on the query-string
-	 * slug, but since all SPA pages share the same ?page= slug the sidebar
-	 * would always highlight the same item.  This script reads the hash and
-	 * compares it against each submenu link's href.
+	 * slug, but since all SPA pages share the same `?page=` slug the sidebar
+	 * would always highlight the same item. This script reads the hash and
+	 * compares it against each submenu link's `href`.
+	 *
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function inlineMenuHighlight(): void {
 		$screen = get_current_screen();
@@ -236,17 +253,14 @@ class AdminServiceProvider implements ServiceProvider {
 		<?php
 	}
 
-	// ------------------------------------------------------------------
-	// Assets
-	// ------------------------------------------------------------------
-
 	/**
 	 * Enqueue admin-only scripts and styles.
 	 *
-	 * @param string $hook Current admin page hook suffix.
+	 * @param  string $hook Current admin page hook suffix.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function enqueueAssets( string $hook ): void {
-		// Guard: only load on plugin pages.
 		if ( ! str_contains( $hook, 'all-feedback' ) ) {
 			return;
 		}
@@ -263,39 +277,36 @@ class AdminServiceProvider implements ServiceProvider {
 		$adminData = $this->applyFilters(
 			'allfeedback:admin:script_data',
 			[
-				'adminUrl'       => admin_url( 'admin.php' ),
-				'widgetColor'    => $widget['color']    ?? '#6366f1',
-				'widgetPosition' => $widget['position'] ?? 'bottom-right',
-				'pluginUrl'     => Constants::url(),
-				'buildUrl'      => Constants::url( 'resources/build/' ),
-				'currentUserId' => get_current_user_id(),
-				'isAdmin'       => current_user_can( 'manage_options' ),
-				'nonce'         => wp_create_nonce( 'wp_rest' ),
-				'submitNonce'   => wp_create_nonce( 'allfeedback_submit' ),
-				// Plugin
-				'version'       => Constants::VERSION,
-				// WordPress Environment
-				'homeUrl'       => get_home_url(),
-				'siteUrl'       => get_site_url(),
-				'wpVersion'     => get_bloginfo( 'version' ),
-				'isMultisite'   => is_multisite(),
-				'wpMemoryLimit' => defined( 'WP_MEMORY_LIMIT' ) ? WP_MEMORY_LIMIT : 'N/A',
-				'debug'         => defined( 'WP_DEBUG' ) && WP_DEBUG,
-				'wpCron'        => ! ( defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON ),
-				'language'      => get_locale(),
-				'extObjectCache' => wp_using_ext_object_cache(),
-				// Server Environment
-				'serverInfo'    => isset( $_SERVER['SERVER_SOFTWARE'] ) ? sanitize_text_field( wp_unslash( $_SERVER['SERVER_SOFTWARE'] ) ) : 'N/A',
-				'mysqlVersion'  => $wpdb->db_version(),
-				'phpVersion'    => PHP_VERSION,
+				'adminUrl'        => admin_url( 'admin.php' ),
+				'widgetColor'     => $widget['color']    ?? '#6366f1',
+				'widgetPosition'  => $widget['position'] ?? 'bottom-right',
+				'pluginUrl'       => Constants::url(),
+				'buildUrl'        => Constants::url( 'resources/build/' ),
+				'currentUserId'   => get_current_user_id(),
+				'isAdmin'         => current_user_can( 'manage_options' ),
+				'nonce'           => wp_create_nonce( 'wp_rest' ),
+				'submitNonce'     => wp_create_nonce( 'allfeedback_submit' ),
+				'version'         => Constants::VERSION,
+				'homeUrl'         => get_home_url(),
+				'siteUrl'         => get_site_url(),
+				'wpVersion'       => get_bloginfo( 'version' ),
+				'isMultisite'     => is_multisite(),
+				'wpMemoryLimit'   => defined( 'WP_MEMORY_LIMIT' ) ? WP_MEMORY_LIMIT : 'N/A',
+				'debug'           => defined( 'WP_DEBUG' ) && WP_DEBUG,
+				'wpCron'          => ! ( defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON ),
+				'language'        => get_locale(),
+				'extObjectCache'  => wp_using_ext_object_cache(),
+				'serverInfo'      => isset( $_SERVER['SERVER_SOFTWARE'] ) ? sanitize_text_field( wp_unslash( $_SERVER['SERVER_SOFTWARE'] ) ) : 'N/A',
+				'mysqlVersion'    => $wpdb->db_version(),
+				'phpVersion'      => PHP_VERSION,
 				'defaultTimezone' => date_default_timezone_get(),
 				'phpPostMaxSize'  => ini_get( 'post_max_size' ) ?: 'N/A',
 				'phpTimeLimit'    => ini_get( 'max_execution_time' ) ?: 'N/A',
-				'curlVersion'    => $curlStr,
-				'hasFsockopen'   => function_exists( 'fsockopen' ) || function_exists( 'curl_init' ),
-				'hasGzip'        => function_exists( 'gzopen' ),
-				'hasDomDocument' => class_exists( 'DOMDocument' ),
-				'hasMultibyte'   => function_exists( 'mb_strtolower' ),
+				'curlVersion'     => $curlStr,
+				'hasFsockopen'    => function_exists( 'fsockopen' ) || function_exists( 'curl_init' ),
+				'hasGzip'         => function_exists( 'gzopen' ),
+				'hasDomDocument'  => class_exists( 'DOMDocument' ),
+				'hasMultibyte'    => function_exists( 'mb_strtolower' ),
 			]
 		);
 

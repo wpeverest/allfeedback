@@ -35,9 +35,9 @@ class SurveyStateController extends RestController {
 	protected string $restBase = 'surveys';
 
 	/**
-	 * @param SurveyStateService $stateService     Reads/writes user_meta survey state.
-	 * @param SurveyRepository   $surveyRepository Used to verify the survey exists.
-	 * @since 1.0.0
+	 * @param  SurveyStateService $stateService     Reads/writes user_meta survey state.
+	 * @param  SurveyRepository   $surveyRepository Used to verify the survey exists.
+	 * @since  1.0.0
 	 */
 	public function __construct(
 		private readonly SurveyStateService $stateService,
@@ -47,7 +47,8 @@ class SurveyStateController extends RestController {
 	/**
 	 * Register the /surveys/{id}/state route.
 	 *
-	 * @since 1.0.0
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function registerRoutes(): void {
 		register_rest_route(
@@ -56,7 +57,7 @@ class SurveyStateController extends RestController {
 			[
 				'methods'             => \WP_REST_Server::CREATABLE,
 				'callback'            => [ $this, 'handle' ],
-				'permission_callback' => 'is_user_logged_in', // guests use localStorage
+				'permission_callback' => 'is_user_logged_in',
 				'args'                => array_merge(
 					$this->idArg(),
 					[
@@ -73,18 +74,14 @@ class SurveyStateController extends RestController {
 		);
 	}
 
-	// ------------------------------------------------------------------
-	// Route handler
-	// ------------------------------------------------------------------
-
 	/**
 	 * POST /all-feedback/v1/surveys/{id}/state
 	 *
 	 * Record an impression, dismissal, or submission for the current user.
 	 *
-	 * @param \WP_REST_Request $request Full request data.
+	 * @param  \WP_REST_Request $request Full request data.
 	 * @return \WP_REST_Response|\WP_Error
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function handle( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$surveyId = (int) $request->get_param( 'id' );

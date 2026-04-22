@@ -29,6 +29,7 @@ class SurveyStateService {
 	/**
 	 * User meta key prefix.
 	 *
+	 * @var string
 	 * @since 1.0.0
 	 */
 	private const META_PREFIX = '_allfb_survey_state_';
@@ -36,8 +37,10 @@ class SurveyStateService {
 	/**
 	 * Return the display state for a given user + survey combination.
 	 *
+	 * @param  int $userId   WordPress user ID.
+	 * @param  int $surveyId Survey primary key.
 	 * @return array{impressions: int, submitted: bool, dismissed_at: int|null}
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function getState( int $userId, int $surveyId ): array {
 		$raw     = get_user_meta( $userId, self::META_PREFIX . $surveyId, true );
@@ -53,7 +56,10 @@ class SurveyStateService {
 	/**
 	 * Increment the impression counter by one.
 	 *
-	 * @since 1.0.0
+	 * @param  int $userId   WordPress user ID.
+	 * @param  int $surveyId Survey primary key.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function recordImpression( int $userId, int $surveyId ): void {
 		$state = $this->getState( $userId, $surveyId );
@@ -64,11 +70,14 @@ class SurveyStateService {
 	/**
 	 * Record the timestamp of an explicit panel dismissal (X button click).
 	 *
-	 * @since 1.0.0
+	 * @param  int $userId   WordPress user ID.
+	 * @param  int $surveyId Survey primary key.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function recordDismissal( int $userId, int $surveyId ): void {
 		$state = $this->getState( $userId, $surveyId );
-		$state['dismissed_at'] = (int) round( microtime( true ) * 1000 ); // ms
+		$state['dismissed_at'] = (int) round( microtime( true ) * 1000 );
 		$this->saveState( $userId, $surveyId, $state );
 	}
 
@@ -78,7 +87,10 @@ class SurveyStateService {
 	 * Once submitted, the widget will never show again for this user
 	 * regardless of frequency settings.
 	 *
-	 * @since 1.0.0
+	 * @param  int $userId   WordPress user ID.
+	 * @param  int $surveyId Survey primary key.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function recordSubmit( int $userId, int $surveyId ): void {
 		$state = $this->getState( $userId, $surveyId );
@@ -89,8 +101,11 @@ class SurveyStateService {
 	/**
 	 * Persist the state array to user_meta as JSON.
 	 *
-	 * @param array{impressions: int, submitted: bool, dismissed_at: int|null} $state
-	 * @since 1.0.0
+	 * @param  int                                                              $userId   WordPress user ID.
+	 * @param  int                                                              $surveyId Survey primary key.
+	 * @param  array{impressions: int, submitted: bool, dismissed_at: int|null} $state    State to persist.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	private function saveState( int $userId, int $surveyId, array $state ): void {
 		update_user_meta( $userId, self::META_PREFIX . $surveyId, wp_json_encode( $state ) );

@@ -68,6 +68,7 @@ class SettingsManager {
 	/**
 	 * WordPress option key. All pages → sections → fields live here.
 	 *
+	 * @var string
 	 * @since 1.0.0
 	 */
 	private const OPTION_KEY = '_allfb_settings';
@@ -84,32 +85,28 @@ class SettingsManager {
 	 * @since 1.0.0
 	 */
 	private const DEFAULTS = [
-
-		// ── General page ──────────────────────────────────────────────────
 		'general'  => [
 			'widget' => [
-				'color'            => '#6366F1',       // Hex accent colour
-				'position'         => 'bottom-right',  // Trigger button placement on page
-				'trigger'          => 'auto',          // How the widget surfaces to visitors
-				'delay'            => 0,               // Seconds before auto-show (trigger = auto)
-				'scroll_threshold' => 50,              // % scrolled before show (trigger = scroll)
-				'show_on_mobile'   => true,            // Render on mobile viewports
+				'color'            => '#6366F1',
+				'position'         => 'bottom-right',
+				'trigger'          => 'auto',
+				'delay'            => 0,
+				'scroll_threshold' => 50,
+				'show_on_mobile'   => true,
 			],
 		],
-
-		// ── Advanced page ─────────────────────────────────────────────────
 		'advanced' => [
 			'privacy' => [
-				'disable_user_details' => false,       // Skip storing IP / User-Agent
+				'disable_user_details' => false,
 			],
 			'logging' => [
-				'enabled'        => false,             // Master switch
-				'level'          => 'debug',           // Minimum severity to record (debug = capture everything)
-				'retention_days' => 30,                // Days before auto-prune
+				'enabled'        => false,
+				'level'          => 'debug',
+				'retention_days' => 30,
 			],
 			'plugin'  => [
-				'delete_on_uninstall'  => false,       // Wipe all data on deletion
-				'allow_usage_tracking' => true,        // Share anonymised stats
+				'delete_on_uninstall'  => false,
+				'allow_usage_tracking' => true,
 			],
 		],
 	];
@@ -156,10 +153,6 @@ class SettingsManager {
 	 */
 	private ?array $effectiveDefaults = null;
 
-	// ------------------------------------------------------------------
-	// Reads
-	// ------------------------------------------------------------------
-
 	/**
 	 * Return all settings merged with defaults.
 	 *
@@ -167,7 +160,7 @@ class SettingsManager {
 	 * stale keys from older schema versions are automatically excluded.
 	 *
 	 * @return array<string, array<string, array<string, mixed>>>
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function all(): array {
 		if ( $this->loaded === null ) {
@@ -188,9 +181,9 @@ class SettingsManager {
 	 *   get('general.widget.color')      → '#6366F1'
 	 *   get('advanced.logging.enabled')  → false
 	 *
-	 * @param string|null $key Null, a page, a "page.section", or "page.section.field".
+	 * @param  string|null $key Null, a page, a "page.section", or "page.section.field".
 	 * @return mixed
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function get( ?string $key = null ): mixed {
 		$all = $this->all();
@@ -234,42 +227,27 @@ class SettingsManager {
 	 * make it fully functional: stored, merged, sanitised, and validated.
 	 *
 	 * @return array<string, array<string, array<string, mixed>>>
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function getDefaults(): array {
 		if ( $this->effectiveDefaults !== null ) {
 			return $this->effectiveDefaults;
 		}
 
-		/**
-		 * Filter: allfeedback_settings_defaults
-		 *
-		 * Allows pro add-ons to register new pages, sections, or fields so
-		 * they are included in storage, retrieval, and sanitisation — not just
-		 * REST validation. Must follow the page → section → field structure.
-		 *
-		 * @param array<string, array<string, array<string, mixed>>> $defaults Core defaults.
-		 * @return array<string, array<string, array<string, mixed>>>
-		 * @since 1.0.0
-		 */
 		$this->effectiveDefaults = (array) apply_filters( 'allfeedback_settings_defaults', self::DEFAULTS );
 
 		return $this->effectiveDefaults;
 	}
-
-	// ------------------------------------------------------------------
-	// Writes
-	// ------------------------------------------------------------------
 
 	/**
 	 * Persist a single field using dot notation ("page.section.field").
 	 *
 	 * Silently ignores unknown pages, sections, or fields.
 	 *
-	 * @param string $key   Dot path with exactly three parts: "page.section.field".
-	 * @param mixed  $value Raw unsanitised value.
+	 * @param  string $key   Dot path with exactly three parts: "page.section.field".
+	 * @param  mixed  $value Raw unsanitised value.
 	 * @return void
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function set( string $key, mixed $value ): void {
 		$parts = explode( '.', $key, 3 );
@@ -297,11 +275,11 @@ class SettingsManager {
 	 *
 	 * Unknown pages, sections, or fields are silently ignored.
 	 *
-	 * @param string               $page    Page name (e.g. "advanced").
-	 * @param string               $section Section name (e.g. "logging").
-	 * @param array<string, mixed> $values  Map of field → raw value.
+	 * @param  string               $page    Page name (e.g. "advanced").
+	 * @param  string               $section Section name (e.g. "logging").
+	 * @param  array<string, mixed> $values  Map of field → raw value.
 	 * @return void
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function setSection( string $page, string $section, array $values ): void {
 		$defaults = $this->getDefaults();
@@ -333,9 +311,9 @@ class SettingsManager {
 	 *
 	 * Unknown pages, sections, and fields are silently ignored.
 	 *
-	 * @param array<string, array<string, array<string, mixed>>> $settings Nested input.
+	 * @param  array<string, array<string, array<string, mixed>>> $settings Nested input.
 	 * @return void
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function setMultiple( array $settings ): void {
 		$defaults = $this->getDefaults();
@@ -366,26 +344,15 @@ class SettingsManager {
 	 * Reset all settings to defaults by removing the option row.
 	 *
 	 * @return void
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function reset(): void {
 		delete_option( self::OPTION_KEY );
-		$this->loaded           = null;
+		$this->loaded            = null;
 		$this->effectiveDefaults = null;
 
-		/**
-		 * Action: allfeedback:settings:reset
-		 *
-		 * Fires after all plugin-wide settings are reset to defaults.
-		 *
-		 * @since 1.0.0
-		 */
 		$this->doAction( 'allfeedback:settings:reset' );
 	}
-
-	// ------------------------------------------------------------------
-	// Schema
-	// ------------------------------------------------------------------
 
 	/**
 	 * Return a REST-API-compatible schema with three levels: page → section → field.
@@ -428,12 +395,10 @@ class SettingsManager {
 	 * ```
 	 *
 	 * @return array<string, mixed>
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function getSchema(): array {
 		$schema = [
-
-			// ── General ───────────────────────────────────────────────────
 			'general'  => [
 				'description' => __( 'General settings (widget appearance and behaviour).', 'all-feedback' ),
 				'sections'    => [
@@ -480,8 +445,6 @@ class SettingsManager {
 					],
 				],
 			],
-
-			// ── Advanced ──────────────────────────────────────────────────
 			'advanced' => [
 				'description' => __( 'Advanced settings (privacy, logging, and plugin management).', 'all-feedback' ),
 				'sections'    => [
@@ -537,29 +500,15 @@ class SettingsManager {
 			],
 		];
 
-		/**
-		 * Filter: allfeedback_settings_schema
-		 *
-		 * Allows pro add-ons to extend the settings schema without modifying
-		 * this class. Entries must follow the page → sections → properties shape.
-		 *
-		 * @param array<string, mixed> $schema Existing schema.
-		 * @return array<string, mixed>
-		 * @since 1.0.0
-		 */
 		return (array) apply_filters( 'allfeedback_settings_schema', $schema );
 	}
-
-	// ------------------------------------------------------------------
-	// Internal helpers
-	// ------------------------------------------------------------------
 
 	/**
 	 * Deep-merge stored values with DEFAULTS at all three levels.
 	 *
-	 * @param array<string, mixed> $stored Raw value from get_option().
+	 * @param  array<string, mixed> $stored Raw value from get_option().
 	 * @return array<string, array<string, array<string, mixed>>>
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function mergeWithDefaults( array $stored ): array {
 		$merged = [];
@@ -591,12 +540,12 @@ class SettingsManager {
 	 *   int    → (int) cast
 	 *   string → sanitize_text_field() + optional enum guard
 	 *
-	 * @param string $page    Page name.
-	 * @param string $section Section name.
-	 * @param string $field   Field name.
-	 * @param mixed  $value   Raw unsanitised value.
+	 * @param  string $page    Page name.
+	 * @param  string $section Section name.
+	 * @param  string $field   Field name.
+	 * @param  mixed  $value   Raw unsanitised value.
 	 * @return mixed Sanitised, correctly-typed value.
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function sanitize( string $page, string $section, string $field, mixed $value ): mixed {
 		$default = $this->getDefaults()[ $page ][ $section ][ $field ] ?? null;
@@ -614,7 +563,6 @@ class SettingsManager {
 				? sanitize_text_field( $value )
 				: (string) $value;
 
-			// Reject invalid enum values — fall back to field default.
 			if (
 				isset( self::ENUMS[ $page ][ $section ][ $field ] ) &&
 				! in_array( $sanitised, self::ENUMS[ $page ][ $section ][ $field ], true )
@@ -622,7 +570,6 @@ class SettingsManager {
 				return $this->getDefaults()[ $page ][ $section ][ $field ];
 			}
 
-			// Validate hex color fields (must be #rrggbb or #rgb).
 			if ( $field === 'color' && ! preg_match( '/^#([0-9a-fA-F]{3}){1,2}$/', $sanitised ) ) {
 				return $this->getDefaults()[ $page ][ $section ][ $field ];
 			}
@@ -636,29 +583,19 @@ class SettingsManager {
 	/**
 	 * Atomically write the merged settings array and bust the in-memory cache.
 	 *
-	 * autoload is false — settings are admin-only; no reason to load on every
-	 * frontend page request.
+	 * The option is stored with `autoload = false` because settings are
+	 * admin-only and do not need to be loaded on every frontend page request.
 	 *
-	 * @param array<string, array<string, array<string, mixed>>> $settings Merged, sanitised array.
+	 * @param  array<string, array<string, array<string, mixed>>> $settings Merged, sanitised array.
 	 * @return void
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function persist( array $settings ): void {
-		// Strip any pages not in effective defaults to keep the option row clean.
 		$toStore = array_intersect_key( $settings, $this->getDefaults() );
 
-		update_option( self::OPTION_KEY, $toStore, false ); // autoload = false
+		update_option( self::OPTION_KEY, $toStore, false );
 		$this->loaded = $toStore;
 
-		/**
-		 * Action: allfeedback:settings:updated
-		 *
-		 * Fires after settings are persisted. Use to flush caches, sync to
-		 * external services, or react to specific setting changes.
-		 *
-		 * @param array<string, array<string, array<string, mixed>>> $toStore Saved settings.
-		 * @since 1.0.0
-		 */
 		$this->doAction( 'allfeedback:settings:updated', $toStore );
 	}
 }

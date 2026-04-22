@@ -14,12 +14,20 @@ use AllFeedback\Domain\Shared\QueryFilter;
  * Extends the base pagination / ordering parameters with Survey-specific
  * constraints for status and authorship.
  *
- * @since 1.0.0
+ * @package AllFeedback\Domain\Survey
+ * @since   1.0.0
  */
 final class SurveyFilter extends QueryFilter {
 
 	/**
-	 * @since 1.0.0
+	 * @param  SurveyStatus|null $status    Restrict results to this lifecycle status.
+	 * @param  int|null          $createdBy Restrict results to surveys by this user ID.
+	 * @param  int               $page      1-based page number.
+	 * @param  int               $perPage   Results per page.
+	 * @param  string|null       $search    Optional full-text search string.
+	 * @param  string            $orderBy   Column to order by. Default 'date'.
+	 * @param  string            $order     Sort direction: ASC | DESC.
+	 * @since  1.0.0
 	 */
 	public function __construct(
 		public readonly ?SurveyStatus $status = null,

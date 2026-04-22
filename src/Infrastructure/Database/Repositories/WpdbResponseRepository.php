@@ -20,17 +20,33 @@ use DateTimeImmutable;
  * The response_data JSON column is encoded on write and decoded on read so that
  * the domain layer always works with PHP arrays.
  *
- * @since 1.0.0
+ * @package AllFeedback\Infrastructure\Database\Repositories
+ * @since   1.0.0
  */
 class WpdbResponseRepository implements ResponseRepository {
 
-	/** @since 1.0.0 */
+	/**
+	 * Fully-qualified table name including the wpdb prefix.
+	 *
+	 * @var string
+	 * @since 1.0.0
+	 */
 	private string $table;
 
-	/** Transient key for the cached unread count. @since 1.0.0 */
+	/**
+	 * Transient key used to cache the unread response count.
+	 *
+	 * @var string
+	 * @since 1.0.0
+	 */
 	private const UNREAD_CACHE_KEY = 'allfeedback_unread_count';
 
-	/** @since 1.0.0 */
+	/**
+	 * Column names permitted as ORDER BY targets to prevent SQL injection.
+	 *
+	 * @var string[]
+	 * @since 1.0.0
+	 */
 	private const ALLOWED_ORDERBY = [
 		'id',
 		'survey_id',
@@ -39,7 +55,7 @@ class WpdbResponseRepository implements ResponseRepository {
 	];
 
 	/**
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function __construct() {
 		global $wpdb;
@@ -49,7 +65,10 @@ class WpdbResponseRepository implements ResponseRepository {
 	/**
 	 * Persist a new Response and return the saved instance.
 	 *
-	 * @since 1.0.0
+	 * @param  Response $response The aggregate to persist.
+	 * @return Response The saved instance with its persistence ID assigned.
+	 * @throws \RuntimeException When the wpdb insert fails.
+	 * @since  1.0.0
 	 */
 	public function save( Response $response ): Response {
 		global $wpdb;
@@ -97,7 +116,9 @@ class WpdbResponseRepository implements ResponseRepository {
 	/**
 	 * Retrieve a single Response by its primary key, or null if not found.
 	 *
-	 * @since 1.0.0
+	 * @param  int $id Response primary key.
+	 * @return Response|null
+	 * @since  1.0.0
 	 */
 	public function findById( int $id ): ?Response {
 		global $wpdb;
@@ -143,7 +164,10 @@ class WpdbResponseRepository implements ResponseRepository {
 	/**
 	 * Count all Responses for a given Survey, applying the filter.
 	 *
-	 * @since 1.0.0
+	 * @param  int            $surveyId Survey primary key.
+	 * @param  ResponseFilter $filter   Query constraints.
+	 * @return int
+	 * @since  1.0.0
 	 */
 	public function countBySurveyId( int $surveyId, ResponseFilter $filter ): int {
 		global $wpdb;
@@ -190,7 +214,9 @@ class WpdbResponseRepository implements ResponseRepository {
 	/**
 	 * Count all Responses across every survey, applying the filter.
 	 *
-	 * @since 1.0.0
+	 * @param  ResponseFilter $filter Query constraints.
+	 * @return int
+	 * @since  1.0.0
 	 */
 	public function countAll( ResponseFilter $filter ): int {
 		global $wpdb;
@@ -214,7 +240,8 @@ class WpdbResponseRepository implements ResponseRepository {
 	 *
 	 * @param  int                  $id   Response primary key.
 	 * @param  array<string, mixed> $data Column → value pairs to update.
-	 * @since 1.0.0
+	 * @return bool True on success.
+	 * @since  1.0.0
 	 */
 	public function update( int $id, array $data ): bool {
 		global $wpdb;
@@ -223,7 +250,7 @@ class WpdbResponseRepository implements ResponseRepository {
 		$payload = array_intersect_key( $data, array_flip( $allowed ) );
 
 		if ( empty( $payload ) ) {
-			return true; // nothing to do
+			return true;
 		}
 
 		$formats = array_map(
@@ -243,7 +270,9 @@ class WpdbResponseRepository implements ResponseRepository {
 	/**
 	 * Permanently remove a single Response by its primary key.
 	 *
-	 * @since 1.0.0
+	 * @param  int $id Response primary key.
+	 * @return bool True on success.
+	 * @since  1.0.0
 	 */
 	public function delete( int $id ): bool {
 		global $wpdb;
@@ -259,7 +288,9 @@ class WpdbResponseRepository implements ResponseRepository {
 	/**
 	 * Permanently remove all Responses belonging to a given Survey.
 	 *
-	 * @since 1.0.0
+	 * @param  int $surveyId Survey primary key.
+	 * @return bool True on success.
+	 * @since  1.0.0
 	 */
 	public function deleteBySurveyId( int $surveyId ): bool {
 		global $wpdb;
@@ -279,7 +310,8 @@ class WpdbResponseRepository implements ResponseRepository {
 	 * database on every admin page load. The cache is invalidated whenever
 	 * a response is saved, updated, or deleted via this repository.
 	 *
-	 * @since 1.0.0
+	 * @return int
+	 * @since  1.0.0
 	 */
 	public function countUnread(): int {
 		$cached = get_transient( self::UNREAD_CACHE_KEY );
@@ -307,10 +339,11 @@ class WpdbResponseRepository implements ResponseRepository {
 	 * Return true if a response from the given IP hash already exists for
 	 * the survey within the look-back window.
 	 *
-	 * @param int    $surveyId    Survey to check against.
-	 * @param string $ipHash      HMAC hash of the visitor IP.
-	 * @param int    $windowHours Look-back window in hours (0 = all-time).
-	 * @since 1.0.0
+	 * @param  int    $surveyId    Survey to check against.
+	 * @param  string $ipHash      HMAC hash of the visitor IP.
+	 * @param  int    $windowHours Look-back window in hours (0 = all-time).
+	 * @return bool
+	 * @since  1.0.0
 	 */
 	public function existsByIpHash( int $surveyId, string $ipHash, int $windowHours = 0 ): bool {
 		global $wpdb;
@@ -358,7 +391,6 @@ class WpdbResponseRepository implements ResponseRepository {
 
 		$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
 
-		// 1. Find which of the requested IDs actually exist.
 		$existingIds = $wpdb->get_col( // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 			$wpdb->prepare(
 				"SELECT id FROM {$this->table} WHERE id IN ({$placeholders})", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
@@ -370,7 +402,6 @@ class WpdbResponseRepository implements ResponseRepository {
 		$missingIds  = array_values( array_diff( $ids, $existingIds ) );
 
 		if ( ! empty( $existingIds ) ) {
-			// 2. Single UPDATE for all found IDs.
 			$updatePlaceholders = implode( ',', array_fill( 0, count( $existingIds ), '%d' ) );
 			$wpdb->query( // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 				$wpdb->prepare(
@@ -389,10 +420,11 @@ class WpdbResponseRepository implements ResponseRepository {
 	/**
 	 * Return true if a logged-in user has already submitted a response for this survey.
 	 *
-	 * @param int $surveyId    Survey to check against.
-	 * @param int $userId      WordPress user ID.
-	 * @param int $windowHours Look-back window in hours (0 = all-time).
-	 * @since 1.0.0
+	 * @param  int $surveyId    Survey to check against.
+	 * @param  int $userId      WordPress user ID.
+	 * @param  int $windowHours Look-back window in hours (0 = all-time).
+	 * @return bool
+	 * @since  1.0.0
 	 */
 	public function existsByUserId( int $surveyId, int $userId, int $windowHours = 0 ): bool {
 		global $wpdb;
@@ -426,10 +458,11 @@ class WpdbResponseRepository implements ResponseRepository {
 	/**
 	 * Return true if a guest visitor UUID has already submitted a response for this survey.
 	 *
-	 * @param int    $surveyId    Survey to check against.
-	 * @param string $guestToken  UUID stored in the visitor's localStorage.
-	 * @param int    $windowHours Look-back window in hours (0 = all-time).
-	 * @since 1.0.0
+	 * @param  int    $surveyId    Survey to check against.
+	 * @param  string $guestToken  UUID stored in the visitor's localStorage.
+	 * @param  int    $windowHours Look-back window in hours (0 = all-time).
+	 * @return bool
+	 * @since  1.0.0
 	 */
 	public function existsByGuestToken( int $surveyId, string $guestToken, int $windowHours = 0 ): bool {
 		global $wpdb;
@@ -463,8 +496,9 @@ class WpdbResponseRepository implements ResponseRepository {
 	/**
 	 * Aggregate score statistics for a survey using SQL.
 	 *
+	 * @param  int $surveyId Survey primary key.
 	 * @return array{total: int, score_count: int, score_sum: float, promoters: int, passives: int, detractors: int}
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function aggregateScoreStats( int $surveyId ): array {
 		global $wpdb;
@@ -498,8 +532,9 @@ class WpdbResponseRepository implements ResponseRepository {
 	/**
 	 * Count responses grouped by device_type for a survey using SQL.
 	 *
+	 * @param  int $surveyId Survey primary key.
 	 * @return array<string, int>
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function countByDevice( int $surveyId ): array {
 		global $wpdb;
@@ -526,8 +561,9 @@ class WpdbResponseRepository implements ResponseRepository {
 	/**
 	 * Count responses grouped by date (Y-m-d) for a survey using SQL.
 	 *
+	 * @param  int $surveyId Survey primary key.
 	 * @return array<string, int>
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function countByDate( int $surveyId ): array {
 		global $wpdb;
@@ -555,8 +591,9 @@ class WpdbResponseRepository implements ResponseRepository {
 	/**
 	 * Hydrate a Response aggregate from a raw database row.
 	 *
-	 * @param array<string, mixed> $row Raw associative array from wpdb.
-	 * @since 1.0.0
+	 * @param  array<string, mixed> $row Raw associative array from wpdb.
+	 * @return Response
+	 * @since  1.0.0
 	 */
 	private function hydrate( array $row ): Response {
 		return Response::reconstitute(
@@ -579,8 +616,10 @@ class WpdbResponseRepository implements ResponseRepository {
 	/**
 	 * Build the WHERE conditions and parameter list for a response query.
 	 *
+	 * @param  int            $surveyId Survey primary key constraint.
+	 * @param  ResponseFilter $filter   Additional query constraints.
 	 * @return array{0: string[], 1: mixed[]}
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function buildFilterQuery( int $surveyId, ResponseFilter $filter ): array {
 		$where  = [ 'survey_id = %d' ];
@@ -607,8 +646,9 @@ class WpdbResponseRepository implements ResponseRepository {
 	/**
 	 * Build WHERE conditions for global response queries (no survey_id constraint).
 	 *
+	 * @param  ResponseFilter $filter Query constraints.
 	 * @return array{0: string[], 1: mixed[]}
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function buildGlobalFilterQuery( ResponseFilter $filter ): array {
 		$where  = [];
@@ -630,7 +670,9 @@ class WpdbResponseRepository implements ResponseRepository {
 	/**
 	 * Decode a JSON string to an array, returning an empty array on failure.
 	 *
-	 * @since 1.0.0
+	 * @param  string $json JSON-encoded string.
+	 * @return array<mixed>
+	 * @since  1.0.0
 	 */
 	private function decodeJson( string $json ): array {
 		if ( $json === '' ) {

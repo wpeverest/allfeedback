@@ -18,15 +18,16 @@ use AllFeedback\Traits\Hooks;
  * registers the job runner hook. Also triggers any post-activation migration
  * required by Action Scheduler.
  *
- * @since 1.0.0
+ * @package AllFeedback\Core\Jobs
+ * @since   1.0.0
  */
 class JobServiceProvider implements ServiceProviderInterface {
 
 	use Hooks;
 
 	/**
-	 * @param ActionSchedulerRunner $runner The job runner that listens for the run hook.
-	 * @since 1.0.0
+	 * @param  ActionSchedulerRunner $runner The job runner that listens for the run hook.
+	 * @since  1.0.0
 	 */
 	public function __construct(
 		private readonly ActionSchedulerRunner $runner,
@@ -36,7 +37,8 @@ class JobServiceProvider implements ServiceProviderInterface {
 	 * Boot the job infrastructure: load Action Scheduler, register the runner,
 	 * and hook into the plugin activation event.
 	 *
-	 * @since 1.0.0
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function boot(): void {
 		$this->initActionScheduler();
@@ -48,7 +50,8 @@ class JobServiceProvider implements ServiceProviderInterface {
 	 * Require the bundled Action Scheduler bootstrap file when the library is
 	 * not already loaded by another plugin.
 	 *
-	 * @since 1.0.0
+	 * @return void
+	 * @since  1.0.0
 	 */
 	private function initActionScheduler(): void {
 		$bootstrap = dirname( __DIR__, 3 ) . '/vendor/woocommerce/action-scheduler/action-scheduler.php';
@@ -61,11 +64,9 @@ class JobServiceProvider implements ServiceProviderInterface {
 	/**
 	 * Run any pending Action Scheduler database migrations after plugin activation.
 	 *
-	 * @since 1.0.0
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function onActivation(): void {
-		if ( class_exists( \ActionScheduler_DBStoreMigrator::class ) ) {
-			// \ActionScheduler_DBStoreMigrator::migrate();
-		}
 	}
 }
