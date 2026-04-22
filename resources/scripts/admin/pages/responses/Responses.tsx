@@ -418,17 +418,17 @@ const Responses = () => {
 										<td className="w-[220px] px-4 py-5">
 											<button
 												type="button"
-												className="group/resp flex min-w-0 items-center gap-1.5 text-left"
+												className="group/resp flex min-w-0 items-start gap-1.5 text-left"
 												onClick={() => openDetail(response)}
 											>
 												<span className={cn(
 													cellCls,
-													'line-clamp-1 font-semibold underline-offset-2 transition-colors',
+													'line-clamp-2 break-words font-semibold underline-offset-2 transition-colors',
 													'group-hover/resp:text-primary group-hover/resp:underline',
 													)}>
 													{summary}
 												</span>
-												<Edit2 className="size-3 shrink-0 opacity-0 transition-all group-hover/resp:text-primary group-hover/resp:opacity-60" />
+												<Edit2 className="mt-0.5 size-3 shrink-0 opacity-0 transition-all group-hover/resp:text-primary group-hover/resp:opacity-60" />
 											</button>
 										</td>
 
@@ -437,7 +437,7 @@ const Responses = () => {
 											<td className="w-[180px] px-4 py-5">
 												<button
 													type="button"
-													className="group/form flex min-w-0 items-center gap-1 text-left"
+													className="group/form flex min-w-0 items-start gap-1 text-left"
 													onClick={() => {
 														setSelectedSurveyId(response.survey_id);
 														setPage(1);
@@ -446,7 +446,7 @@ const Responses = () => {
 												>
 													<span className={cn(
 														cellCls,
-														'truncate underline-offset-2 transition-colors group-hover/form:text-primary group-hover/form:underline',
+														'line-clamp-2 break-words underline-offset-2 transition-colors group-hover/form:text-primary group-hover/form:underline',
 													)}>
 														{surveyTitleMap[response.survey_id] ?? `#${response.survey_id}`}
 													</span>

@@ -469,12 +469,9 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 	return (
 		<div className="flex h-full flex-col bg-white">
 			<div className="flex h-[72px] shrink-0 items-center px-6">
-				{/* Left — label */}
-				<span className="flex-1 text-base font-normal text-foreground">
+				<span className="flex-1 text-base font-medium text-muted-foreground">
 					{__('Preview changes', 'all-feedback')}
 				</span>
-
-{/* Right — reset + view toggle */}
 				<div className="flex flex-1 items-center justify-end gap-2">
 					{needsReset && (
 						<button

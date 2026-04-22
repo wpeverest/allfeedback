@@ -693,15 +693,15 @@ const AllForms = () => {
 										<td className="w-[220px] px-4 py-5">
 											<button
 												type="button"
-												className="group/name flex min-w-0 items-center gap-1.5 text-left"
+												className="group/name flex min-w-0 items-start gap-1.5 text-left"
 												onClick={() => void navigate({
 													to: '/builder/', search: { new: false, id: survey.id },
 												})}
 											>
-												<span className={cn(cellCls, 'truncate font-semibold underline-offset-2 transition-all group-hover/name:text-primary group-hover/name:underline')}>
+												<span className={cn(cellCls, 'line-clamp-2 break-words font-semibold underline-offset-2 transition-all group-hover/name:text-primary group-hover/name:underline')}>
 													{survey.title}
 												</span>
-												<Edit2 className="size-3 shrink-0 opacity-0 transition-all group-hover/name:text-primary group-hover/name:opacity-60" />
+												<Edit2 className="mt-0.5 size-3 shrink-0 opacity-0 transition-all group-hover/name:text-primary group-hover/name:opacity-60" />
 											</button>
 										</td>
 
