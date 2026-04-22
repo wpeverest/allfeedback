@@ -503,13 +503,12 @@ function StepFinal( { onFinish, submitting }: { onFinish: ( target: 'editor' | '
 
 				<div className="flex w-full items-center justify-end gap-3">
 					<Button
-						variant="outline"
-						size="lg"
-						className="h-11 font-semibold"
+						variant="secondary"
+						className="h-11 px-6 bg-transparent"
 						onClick={ () => onFinish( 'dashboard' ) }
 						disabled={ submitting }
 					>
-						<LayoutDashboard className="size-5" />
+						<LayoutDashboard className="size-4" />
 						Go to Dashboard
 					</Button>
 					<Button
