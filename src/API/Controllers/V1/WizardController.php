@@ -177,15 +177,26 @@ class WizardController extends RestController {
 		// Create the first survey from the chosen template.
 		$formSchema = $this->loadTemplate( $templateId );
 
+		$templateTitles = [
+			'nps'               => 'NPS Survey',
+			'general-feedback'  => 'General Feedback',
+			'bug-report'        => 'Bug Report',
+			'feature-request'   => 'Feature Request',
+			'product-feedback'  => 'Product Feedback',
+			'customer-research' => 'Customer Research',
+		];
+
 		/**
 		 * Filter the default title of the first survey created by the wizard.
 		 *
-		 * @param string $title Default survey title.
+		 * @param string $title      Default survey title derived from the chosen template.
+		 * @param string $templateId The template identifier chosen in the wizard.
 		 * @since 1.0.0
 		 */
 		$surveyTitle = (string) apply_filters(
 			'allfeedback_wizard_default_survey_title',
-			__( 'My First Feedback Form', 'all-feedback' )
+			$templateTitles[ $templateId ] ?? 'Untitled',
+			$templateId
 		);
 
 		$survey = new Survey(
