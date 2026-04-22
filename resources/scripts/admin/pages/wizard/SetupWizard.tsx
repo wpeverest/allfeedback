@@ -469,23 +469,14 @@ function StepFinal( { onFinish, submitting }: { onFinish: ( target: 'editor' | '
 		<div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden">
 			<canvas ref={ canvasRef } className="pointer-events-none absolute inset-0 size-full" />
 
-			<div
-				className="pointer-events-none absolute inset-0 select-none"
-				style={ { background: 'radial-gradient(ellipse 75% 50% at 50% 35%, oklch(0.580 0.238 277 / 0.09), transparent)' } }
-				aria-hidden
-			/>
-
 			<div className="relative z-10 flex w-full flex-col items-center gap-10">
 
 				<div className="flex flex-col items-center gap-5 text-center">
-					<div className="relative">
-						<div className="absolute -inset-4 rounded-3xl bg-primary/10 blur-lg" />
-						<div
-							className="relative flex size-[72px] items-center justify-center rounded-[22px] bg-primary text-white"
-							style={ { boxShadow: '0 8px 32px oklch(0.580 0.238 277 / 0.40), 0 0 0 1px oklch(0.580 0.238 277 / 0.15)' } }
-						>
-							<Rocket className="size-8" />
-						</div>
+					<div
+						className="flex size-[68px] items-center justify-center rounded-2xl bg-primary text-white"
+						style={ { boxShadow: '0 6px 24px oklch(0.580 0.238 277 / 0.35)' } }
+					>
+						<Rocket className="size-7" />
 					</div>
 					<div className="space-y-2">
 						<h2 className="text-2xl font-bold tracking-tight text-foreground" style={ { margin: 0 } }>
