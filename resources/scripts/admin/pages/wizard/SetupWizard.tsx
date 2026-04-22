@@ -39,8 +39,6 @@ const STEP_HEADERS: Record<StepId, { title: string; desc: string }> = {
 	final: { title: '', desc: '' },
 };
 
-const STORAGE_KEY = 'allfb-wizard-v1';
-
 function getInitialState(): WizardCompletePayload {
 	return {
 		template:        'nps',
@@ -52,28 +50,6 @@ function getInitialState(): WizardCompletePayload {
 		anonymize_ip:    true,
 		retention:       '12m',
 	};
-}
-
-function loadState(): WizardCompletePayload {
-	const base = getInitialState();
-	try {
-		const raw = localStorage.getItem( STORAGE_KEY );
-		if ( ! raw ) return base;
-		const parsed = JSON.parse( raw );
-		// If storage has empty email but we have a default, use the default
-		if ( ! parsed.admin_email && base.admin_email ) {
-			parsed.admin_email = base.admin_email;
-		}
-		return { ...base, ...parsed };
-	} catch {
-		return base;
-	}
-}
-
-function loadStep(): number {
-	const n = parseInt( localStorage.getItem( STORAGE_KEY + '-step' ) ?? '0', 10 );
-	const val = isNaN( n ) ? 0 : n;
-	return ( val >= STEPS.length ) ? 0 : Math.max( val, 0 );
 }
 
 function canAdvance( state: WizardCompletePayload, step: number ): boolean {
@@ -556,8 +532,8 @@ function StepFinal( { onFinish, submitting }: { onFinish: ( target: 'editor' | '
 export default function SetupWizard() {
 	const navigate    = useNavigate();
 	const queryClient = useQueryClient();
-	const [ state, setStateRaw ] = useState<WizardCompletePayload>( loadState );
-	const [ step, setStepRaw ]   = useState<number>( loadStep );
+	const [ state, setStateRaw ] = useState<WizardCompletePayload>( getInitialState );
+	const [ step, setStepRaw ]   = useState<number>( 0 );
 	const [ submitting, setSubmitting ] = useState( false );
 
 	useEffect( () => {
@@ -566,17 +542,11 @@ export default function SetupWizard() {
 	}, [] );
 
 	const set = useCallback( ( updates: Partial<WizardCompletePayload> ) => {
-		setStateRaw( ( prev ) => {
-			const next = { ...prev, ...updates };
-			localStorage.setItem( STORAGE_KEY, JSON.stringify( next ) );
-			return next;
-		} );
+		setStateRaw( ( prev ) => ( { ...prev, ...updates } ) );
 	}, [] );
 
 	const goto = useCallback( ( n: number ) => {
-		const clamped = Math.min( Math.max( n, 0 ), STEPS.length );
-		setStepRaw( clamped );
-		localStorage.setItem( STORAGE_KEY + '-step', String( clamped ) );
+		setStepRaw( Math.min( Math.max( n, 0 ), STEPS.length ) );
 	}, [] );
 
 	const finish = useCallback( async ( target: 'editor' | 'dashboard' = 'dashboard' ) => {
@@ -584,10 +554,7 @@ export default function SetupWizard() {
 		try {
 			const res = await wizardApi.complete( state );
 			
-			// Always mark as completed locally even if API fails/slow
 			queryClient.setQueryData( WIZARD_STATUS_QUERY_KEY, { status: 'completed' } );
-			localStorage.removeItem( STORAGE_KEY );
-			localStorage.removeItem( STORAGE_KEY + '-step' );
 
 			if ( target === 'editor' && res.id ) {
 				navigate( { to: '/builder', search: { id: res.id, new: true } } );
@@ -637,14 +604,16 @@ export default function SetupWizard() {
 							All<span className="font-normal text-muted-foreground/60">Feedback</span>
 						</span>
 					</div>
-					<button
-						type="button"
-						onClick={ () => finish( 'dashboard' ) }
-						className="group flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-all hover:text-primary hover:underline hover:underline-offset-4"
-					>
-						Skip setup
-						<ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
-					</button>
+					{ step < STEPS.length - 1 && (
+						<button
+							type="button"
+							onClick={ () => finish( 'dashboard' ) }
+							className="group flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-all hover:text-primary hover:underline hover:underline-offset-4"
+						>
+							Skip setup
+							<ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
+						</button>
+					) }
 				</header>
 			) }
 
