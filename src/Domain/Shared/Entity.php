@@ -11,17 +11,24 @@ defined( 'ABSPATH' ) || exit;
  *
  * Provides identity (nullable int $id) and equality comparison by type + id.
  *
- * @since 1.0.0
+ * @package AllFeedback\Domain\Shared
+ * @since   1.0.0
  */
 abstract class Entity {
 
-	/** @since 1.0.0 */
+	/**
+	 * Persistence identifier, or null when the entity has not yet been saved.
+	 *
+	 * @var int|null
+	 * @since 1.0.0
+	 */
 	protected ?int $id = null;
 
 	/**
 	 * Return the entity's persistence identifier, or null when the entity is new.
 	 *
-	 * @since 1.0.0
+	 * @return int|null
+	 * @since  1.0.0
 	 */
 	public function getId(): ?int {
 		return $this->id;
@@ -30,7 +37,9 @@ abstract class Entity {
 	/**
 	 * Set the persistence identifier.
 	 *
-	 * @since 1.0.0
+	 * @param  int $id The primary key assigned by the database.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	protected function setId( int $id ): void {
 		$this->id = $id;
@@ -39,7 +48,8 @@ abstract class Entity {
 	/**
 	 * Return true when the entity has not yet been persisted.
 	 *
-	 * @since 1.0.0
+	 * @return bool
+	 * @since  1.0.0
 	 */
 	public function isNew(): bool {
 		return null === $this->id;
@@ -48,7 +58,9 @@ abstract class Entity {
 	/**
 	 * Return true when both entities are of the same type and share the same id.
 	 *
-	 * @since 1.0.0
+	 * @param  Entity $other The entity to compare against.
+	 * @return bool
+	 * @since  1.0.0
 	 */
 	public function equals( Entity $other ): bool {
 		return get_class( $this ) === get_class( $other ) && $this->id === $other->getId();

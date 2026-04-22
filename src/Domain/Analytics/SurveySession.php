@@ -15,15 +15,39 @@ use DateTimeImmutable;
  * Timestamps are the authoritative source of truth; `status` is a derived
  * materialised value kept for indexed queries.
  *
- * @since 1.0.0
+ * @package AllFeedback\Domain\Analytics
+ * @since   1.0.0
  */
 class SurveySession extends Entity {
 
+	/**
+	 * Timestamp of the most recent activity in this session.
+	 *
+	 * @var DateTimeImmutable
+	 * @since 1.0.0
+	 */
 	private DateTimeImmutable $lastActiveAt;
+
+	/**
+	 * Timestamp of when the session record was first created.
+	 *
+	 * @var DateTimeImmutable
+	 * @since 1.0.0
+	 */
 	private DateTimeImmutable $createdAt;
 
 	/**
-	 * @since 1.0.0
+	 * @param  int                    $surveyId     Parent survey primary key.
+	 * @param  string                 $sessionId    Client-generated session UUID.
+	 * @param  int|null               $userId       WordPress user ID, or null for guests.
+	 * @param  string|null            $guestId      Persistent guest token, or null.
+	 * @param  string                 $status       Materialised status: viewed | started | submitted | abandoned.
+	 * @param  DateTimeImmutable|null $startedAt    When the first field interaction occurred.
+	 * @param  DateTimeImmutable|null $submittedAt  When a completed submission was recorded.
+	 * @param  DateTimeImmutable|null $abandonedAt  When the session was abandoned.
+	 * @param  DateTimeImmutable|null $lastActiveAt Last-activity timestamp; defaults to now.
+	 * @param  DateTimeImmutable|null $createdAt    Creation timestamp; defaults to now.
+	 * @since  1.0.0
 	 */
 	public function __construct(
 		private int $surveyId,
@@ -42,44 +66,117 @@ class SurveySession extends Entity {
 		$this->createdAt    = $createdAt    ?? $now;
 	}
 
-	// ------------------------------------------------------------------
-	// Getters
-	// ------------------------------------------------------------------
-
+	/**
+	 * Return the parent survey ID.
+	 *
+	 * @return int
+	 * @since  1.0.0
+	 */
 	public function getSurveyId(): int { return $this->surveyId; }
+
+	/**
+	 * Return the client-generated session UUID.
+	 *
+	 * @return string
+	 * @since  1.0.0
+	 */
 	public function getSessionId(): string { return $this->sessionId; }
+
+	/**
+	 * Return the WordPress user ID, or null for guests.
+	 *
+	 * @return int|null
+	 * @since  1.0.0
+	 */
 	public function getUserId(): ?int { return $this->userId; }
+
+	/**
+	 * Return the persistent guest token, or null when absent.
+	 *
+	 * @return string|null
+	 * @since  1.0.0
+	 */
 	public function getGuestId(): ?string { return $this->guestId; }
+
+	/**
+	 * Return the materialised session status string.
+	 *
+	 * @return string
+	 * @since  1.0.0
+	 */
 	public function getStatus(): string { return $this->status; }
+
+	/**
+	 * Return the timestamp of the first field interaction, or null.
+	 *
+	 * @return DateTimeImmutable|null
+	 * @since  1.0.0
+	 */
 	public function getStartedAt(): ?DateTimeImmutable { return $this->startedAt; }
+
+	/**
+	 * Return the timestamp of a completed submission, or null.
+	 *
+	 * @return DateTimeImmutable|null
+	 * @since  1.0.0
+	 */
 	public function getSubmittedAt(): ?DateTimeImmutable { return $this->submittedAt; }
+
+	/**
+	 * Return the timestamp when the session was abandoned, or null.
+	 *
+	 * @return DateTimeImmutable|null
+	 * @since  1.0.0
+	 */
 	public function getAbandonedAt(): ?DateTimeImmutable { return $this->abandonedAt; }
+
+	/**
+	 * Return the last-active timestamp.
+	 *
+	 * @return DateTimeImmutable
+	 * @since  1.0.0
+	 */
 	public function getLastActiveAt(): DateTimeImmutable { return $this->lastActiveAt; }
+
+	/**
+	 * Return the session creation timestamp.
+	 *
+	 * @return DateTimeImmutable
+	 * @since  1.0.0
+	 */
 	public function getCreatedAt(): DateTimeImmutable { return $this->createdAt; }
 
+	/**
+	 * Return true when a submission timestamp has been recorded.
+	 *
+	 * @return bool
+	 * @since  1.0.0
+	 */
 	public function isSubmitted(): bool {
 		return $this->submittedAt !== null;
 	}
 
 	/**
 	 * Assign the persistence ID after the first INSERT.
+	 *
 	 * Called only by the repository layer.
 	 *
-	 * @since 1.0.0
+	 * @param  int $id The primary key assigned by the database.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function assignId( int $id ): void {
 		$this->id = $id;
 	}
 
-	// ------------------------------------------------------------------
-	// State transitions (all idempotent)
-	// ------------------------------------------------------------------
-
 	/**
 	 * Record that the user interacted with the first field.
-	 * No-op if already started.
 	 *
-	 * @since 1.0.0
+	 * No-op if the session was already started.
+	 *
+	 * @param  DateTimeImmutable $at Timestamp of the first field interaction.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function markStarted( DateTimeImmutable $at ): void {
 		if ( $this->startedAt !== null ) {
@@ -92,9 +189,12 @@ class SurveySession extends Entity {
 
 	/**
 	 * Record a completed submission.
-	 * No-op if already submitted.
 	 *
-	 * @since 1.0.0
+	 * No-op if the session was already submitted.
+	 *
+	 * @param  DateTimeImmutable $at Timestamp of the submission.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function markSubmitted( DateTimeImmutable $at ): void {
 		if ( $this->submittedAt !== null ) {
@@ -107,9 +207,12 @@ class SurveySession extends Entity {
 
 	/**
 	 * Record that the user closed the widget without submitting.
-	 * No-op if already submitted.
 	 *
-	 * @since 1.0.0
+	 * No-op if the session has already been submitted.
+	 *
+	 * @param  DateTimeImmutable $at Timestamp of the abandonment.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function markAbandoned( DateTimeImmutable $at ): void {
 		if ( $this->submittedAt !== null ) {
@@ -121,23 +224,22 @@ class SurveySession extends Entity {
 	}
 
 	/**
-	 * Update last_active_at to now (heartbeat).
+	 * Update last_active_at to the given timestamp (heartbeat).
 	 *
-	 * @since 1.0.0
+	 * @param  DateTimeImmutable $at Current timestamp.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function touchActive( DateTimeImmutable $at ): void {
 		$this->lastActiveAt = $at;
 	}
 
-	// ------------------------------------------------------------------
-	// Reconstitution
-	// ------------------------------------------------------------------
-
 	/**
 	 * Rehydrate a SurveySession aggregate from a raw DB row.
 	 *
-	 * @param array<string, mixed> $row
-	 * @since 1.0.0
+	 * @param  array<string, mixed> $row Raw database row.
+	 * @return self
+	 * @since  1.0.0
 	 */
 	public static function reconstitute( array $row ): self {
 		$toDate = static fn( ?string $v ): ?DateTimeImmutable =>

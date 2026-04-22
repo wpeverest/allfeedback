@@ -12,7 +12,8 @@ defined( 'ABSPATH' ) || exit;
  * Values match the `status` column in the `af_surveys` database table and
  * the `Manager::STATUSES` constant used by the REST API layer.
  *
- * @since 1.0.0
+ * @package AllFeedback\Domain\Survey
+ * @since   1.0.0
  */
 enum SurveyStatus: string {
 
@@ -24,7 +25,8 @@ enum SurveyStatus: string {
 	/**
 	 * Return true when this status is Published (visible to respondents).
 	 *
-	 * @since 1.0.0
+	 * @return bool
+	 * @since  1.0.0
 	 */
 	public function isPublished(): bool {
 		return $this === self::Published;
@@ -33,7 +35,8 @@ enum SurveyStatus: string {
 	/**
 	 * Return true when this status is Trashed.
 	 *
-	 * @since 1.0.0
+	 * @return bool
+	 * @since  1.0.0
 	 */
 	public function isTrashed(): bool {
 		return $this === self::Trashed;

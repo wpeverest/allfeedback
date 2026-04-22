@@ -19,58 +19,59 @@ use AllFeedback\Traits\Hooks;
 use DI\ContainerBuilder;
 
 /**
- * Class ApiServiceProvider
+ * Boots the REST API layer by registering all V1 controllers on `rest_api_init`.
  *
- * Boots the REST API layer.
- * Registers all V1 controllers on the 'rest_api_init' action.
+ * To add a new REST controller:
+ *  1. Create the controller in `src/API/Controllers/V1/YourController.php`.
+ *  2. Add it to the `$controllers` array in `registerRoutes()`.
+ *  3. Bind it in `config/services.php` so the DI container can resolve it.
  *
- * How to add a new REST controller:
- *  1. Create the controller in src/API/Controllers/V1/YourController.php.
- *  2. Add it to the $controllers array in registerRoutes() below.
- *  3. Bind it in config/services.php so the DI container can resolve it.
- *
- * @since 1.0.0
+ * @package AllFeedback\API
+ * @since   1.0.0
  */
 class ApiServiceProvider implements ServiceProvider {
 
 	use Hooks;
 
 	/**
-	 * @param Container $container DI container used to resolve controller instances.
-	 * @since 1.0.0
+	 * @param  Container $container DI container used to resolve controller instances.
+	 * @since  1.0.0
 	 */
 	public function __construct(
 		private readonly Container $container,
 	) {}
 
 	/**
-	 * ServiceProvider::register() — no additional DI definitions required here.
+	 * {@inheritDoc}
 	 *
-	 * @param ContainerBuilder $builder PHP-DI builder instance.
-	 * @since 1.0.0
+	 * @param  ContainerBuilder $builder PHP-DI builder instance.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function register( ContainerBuilder $builder ): void {}
 
 	/**
 	 * Wire up the REST route registration hook.
 	 *
-	 * @since 1.0.0
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function boot(): void {
 		$this->addAction( 'rest_api_init', [ $this, 'registerRoutes' ] );
 	}
 
 	/**
-	 * Resolve each controller from the DI container and call registerRoutes().
+	 * Resolve each controller from the DI container and call `registerRoutes()`.
 	 *
 	 * Order matters when two URL patterns overlap — list more-specific
 	 * (nested) routes before their parent resource.
 	 *
-	 * @since 1.0.0
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function registerRoutes(): void {
 		$controllers = [
-			SubmitController::class,        // /surveys/{id}/submit           — public, nonce-gated
+			SubmitController::class,        // /surveys/{id}/submit            — public, nonce-gated
 			AnalyticsController::class,     // /surveys/{id}/analytics[/event] — public POST, admin GET
 			SurveyStateController::class,   // /surveys/{id}/state             — logged-in users only
 			ResponsesController::class,     // /surveys/{id}/responses         — admin, must come before SurveysController

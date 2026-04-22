@@ -22,7 +22,8 @@ use AllFeedback\Traits\Hooks;
  * migrations previously recorded in wp_options (_allfb_migrations) are
  * automatically imported into the new table.
  *
- * @since 1.0.0
+ * @package AllFeedback\Infrastructure\Database
+ * @since   1.0.0
  */
 class Migrator {
 
@@ -31,23 +32,27 @@ class Migrator {
 	/**
 	 * Legacy wp_options key — used only for one-time import on upgrade.
 	 *
+	 * @var string
 	 * @since 1.0.0
 	 */
 	private const LEGACY_OPTION_KEY = '_allfb_migrations';
 
-	/** @since 1.0.0 */
+	/**
+	 * Absolute path to the migrations directory.
+	 *
+	 * @var string
+	 * @since 1.0.0
+	 */
 	private string $migrationsPath;
 
 	/**
-	 * @since 1.0.0
+	 * Resolve the migrations directory path from the plugin root.
+	 *
+	 * @since  1.0.0
 	 */
 	public function __construct() {
 		$this->migrationsPath = Constants::path( 'database/migrations/' );
 	}
-
-	// ------------------------------------------------------------------
-	// Setup
-	// ------------------------------------------------------------------
 
 	/**
 	 * Ensure the migrations tracking table exists.
@@ -55,14 +60,14 @@ class Migrator {
 	 * Safe to call on every request — uses a SHOW TABLES guard so it only
 	 * runs dbDelta() once per environment.
 	 *
-	 * @since 1.0.0
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function ensureTable(): void {
 		global $wpdb;
 
 		$table = $this->tableName();
 
-		// Bail early if the table already exists (avoids dbDelta overhead on every request).
 		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table ) {
 			return;
 		}
@@ -83,17 +88,13 @@ class Migrator {
 		$this->importLegacyOption();
 	}
 
-	// ------------------------------------------------------------------
-	// Public API
-	// ------------------------------------------------------------------
-
 	/**
 	 * Run all pending migrations in ascending order.
 	 *
 	 * Returns the list of migration names that were run.
 	 *
 	 * @return string[]
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function run(): array {
 		$this->ensureTable();
@@ -108,7 +109,6 @@ class Migrator {
 
 		$batch = $this->currentBatch() + 1;
 
-		/** Fires before any pending migrations are executed. */
 		$this->doAction( 'allfeedback:migrations:before_run', $pending );
 
 		$executed = [];
@@ -116,18 +116,15 @@ class Migrator {
 		foreach ( $pending as $file ) {
 			$name = $this->nameFromFile( $file );
 
-			/** Fires before a single migration runs. */
 			$this->doAction( 'allfeedback:migration:before', $name );
 
 			$this->resolve( $file )->up();
 			$this->recordRan( $name, $batch );
 			$executed[] = $name;
 
-			/** Fires after a single migration runs. */
 			$this->doAction( 'allfeedback:migration:after', $name );
 		}
 
-		/** Fires after all pending migrations have executed. */
 		$this->doAction( 'allfeedback:migrations:after_run', $executed );
 
 		return $executed;
@@ -138,9 +135,9 @@ class Migrator {
 	 *
 	 * Returns the list of migration names that were rolled back.
 	 *
-	 * @param int $step Number of batches to roll back.
+	 * @param  int $step Number of batches to roll back.
 	 * @return string[]
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function rollback( int $step = 1 ): array {
 		$this->ensureTable();
@@ -162,7 +159,6 @@ class Migrator {
 			return [];
 		}
 
-		/** Fires before rolling back migrations. */
 		$this->doAction( 'allfeedback:migrations:before_rollback', $names );
 
 		$rolledBack = [];
@@ -173,18 +169,15 @@ class Migrator {
 				continue;
 			}
 
-			/** Fires before a single migration is rolled back. */
 			$this->doAction( 'allfeedback:migration:before_rollback', $name );
 
 			$this->resolve( $fileMap[ $name ] )->down();
 			$this->deleteRan( $name );
 			$rolledBack[] = $name;
 
-			/** Fires after a single migration is rolled back. */
 			$this->doAction( 'allfeedback:migration:after_rollback', $name );
 		}
 
-		/** Fires after all migrations have been rolled back. */
 		$this->doAction( 'allfeedback:migrations:after_rollback', $rolledBack );
 
 		return $rolledBack;
@@ -194,7 +187,7 @@ class Migrator {
 	 * Roll back ALL ran migrations, then run them all again.
 	 *
 	 * @return string[] Migration names that were re-run.
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function refresh(): array {
 		$this->reset();
@@ -205,7 +198,7 @@ class Migrator {
 	 * Roll back every ran migration in reverse order.
 	 *
 	 * @return string[]
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function reset(): array {
 		$this->ensureTable();
@@ -214,7 +207,6 @@ class Migrator {
 		$ran        = $this->getRanNames();
 		$rolledBack = [];
 
-		/** Fires before rolling back migrations. */
 		$this->doAction( 'allfeedback:migrations:before_rollback', $ran );
 
 		foreach ( $files as $file ) {
@@ -224,18 +216,15 @@ class Migrator {
 				continue;
 			}
 
-			/** Fires before a single migration is rolled back. */
 			$this->doAction( 'allfeedback:migration:before_rollback', $name );
 
 			$this->resolve( $file )->down();
 			$this->deleteRan( $name );
 			$rolledBack[] = $name;
 
-			/** Fires after a single migration is rolled back. */
 			$this->doAction( 'allfeedback:migration:after_rollback', $name );
 		}
 
-		/** Fires after all migrations have been rolled back. */
 		$this->doAction( 'allfeedback:migrations:after_rollback', $rolledBack );
 
 		return $rolledBack;
@@ -251,8 +240,9 @@ class Migrator {
 	 * because every migration uses existence guards (IF NOT EXISTS / SHOW
 	 * COLUMNS / indexExists) so re-running on intact tables is a no-op.
 	 *
-	 * @param string[] $tables Unprefixed table names, e.g. ['af_surveys', 'af_responses'].
-	 * @since 1.0.0
+	 * @param  string[] $tables Unprefixed table names, e.g. ['af_surveys', 'af_responses'].
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function resetIfTablesMissing( array $tables ): void {
 		global $wpdb;
@@ -270,7 +260,8 @@ class Migrator {
 	/**
 	 * Return true when there are migration files that have not been run yet.
 	 *
-	 * @since 1.0.0
+	 * @return bool
+	 * @since  1.0.0
 	 */
 	public function hasPending(): bool {
 		$this->ensureTable();
@@ -284,7 +275,7 @@ class Migrator {
 	 * Each entry: ['name' => string, 'ran' => bool, 'batch' => int|null, 'ran_at' => string|null]
 	 *
 	 * @return array<int, array{name: string, ran: bool, batch: int|null, ran_at: string|null}>
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function status(): array {
 		$this->ensureTable();
@@ -320,20 +311,17 @@ class Migrator {
 	 * Return the list of migration names that have already been run.
 	 *
 	 * @return string[]
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function getRanMigrations(): array {
 		return $this->getRanNames();
 	}
 
-	// ------------------------------------------------------------------
-	// Internal helpers
-	// ------------------------------------------------------------------
-
 	/**
-	 * Fully-qualified migrations table name.
+	 * Return the fully-qualified migrations tracking table name.
 	 *
-	 * @since 1.0.0
+	 * @return string
+	 * @since  1.0.0
 	 */
 	private function tableName(): string {
 		global $wpdb;
@@ -341,9 +329,10 @@ class Migrator {
 	}
 
 	/**
-	 * Current highest batch number (0 if table is empty).
+	 * Return the current highest batch number (0 if the table is empty).
 	 *
-	 * @since 1.0.0
+	 * @return int
+	 * @since  1.0.0
 	 */
 	private function currentBatch(): int {
 		global $wpdb;
@@ -355,7 +344,7 @@ class Migrator {
 	 * Return just the migration names that are stored in the tracking table.
 	 *
 	 * @return string[]
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function getRanNames(): array {
 		global $wpdb;
@@ -366,7 +355,10 @@ class Migrator {
 	/**
 	 * Insert a row into the migrations table.
 	 *
-	 * @since 1.0.0
+	 * @param  string $name  Migration name (basename without extension).
+	 * @param  int    $batch Batch number to assign.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	private function recordRan( string $name, int $batch ): void {
 		global $wpdb;
@@ -384,7 +376,9 @@ class Migrator {
 	/**
 	 * Remove a row from the migrations table.
 	 *
-	 * @since 1.0.0
+	 * @param  string $name Migration name to remove.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	private function deleteRan( string $name ): void {
 		global $wpdb;
@@ -394,10 +388,10 @@ class Migrator {
 	/**
 	 * Return files whose filename is NOT already in $ran.
 	 *
-	 * @param string[] $files
-	 * @param string[] $ran
+	 * @param  string[] $files Absolute file paths to filter.
+	 * @param  string[] $ran   Migration names already recorded as run.
 	 * @return string[]
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function filterPending( array $files, array $ran ): array {
 		return array_values(
@@ -412,15 +406,9 @@ class Migrator {
 	 * Discover all *.php files in the migrations directory, sorted ascending.
 	 *
 	 * @return string[]
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function discoverFiles(): array {
-		/**
-		 * Filter: allfeedback:migrations:path
-		 *
-		 * @param string $path Absolute path to the migrations directory.
-		 * @since 1.0.0
-		 */
 		$path  = $this->applyFilters( 'allfeedback:migrations:path', $this->migrationsPath );
 		$files = glob( $path . '*.php' ) ?: [];
 		sort( $files );
@@ -432,7 +420,7 @@ class Migrator {
 	 * Build a map of migration-name → file-path for fast lookup during rollback.
 	 *
 	 * @return array<string, string>
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function fileMapByName(): array {
 		$map = [];
@@ -445,7 +433,9 @@ class Migrator {
 	/**
 	 * Derive the migration name (basename without extension).
 	 *
-	 * @since 1.0.0
+	 * @param  string $filePath Absolute path to the migration file.
+	 * @return string
+	 * @since  1.0.0
 	 */
 	private function nameFromFile( string $filePath ): string {
 		return pathinfo( $filePath, PATHINFO_FILENAME );
@@ -454,7 +444,9 @@ class Migrator {
 	/**
 	 * Instantiate the migration class from a file path.
 	 *
-	 * @since 1.0.0
+	 * @param  string $filePath Absolute path to the migration file.
+	 * @return Migration
+	 * @since  1.0.0
 	 */
 	private function resolve( string $filePath ): Migration {
 		require_once $filePath;
@@ -474,7 +466,8 @@ class Migrator {
 	 *
 	 * Called only when the migrations table is first created.
 	 *
-	 * @since 1.0.0
+	 * @return void
+	 * @since  1.0.0
 	 */
 	private function importLegacyOption(): void {
 		$legacy = get_option( self::LEGACY_OPTION_KEY, '[]' );
@@ -488,7 +481,6 @@ class Migrator {
 			$this->recordRan( (string) $name, 1 );
 		}
 
-		// Clean up the old option — the table is now authoritative.
 		delete_option( self::LEGACY_OPTION_KEY );
 	}
 }

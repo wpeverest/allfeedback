@@ -16,15 +16,32 @@ use DateTimeImmutable;
  * response payload, an optional numeric score, contextual metadata
  * (page URL, device type, anonymised IP), and GDPR consent state.
  *
- * @since 1.0.0
+ * @package AllFeedback\Domain\Response
+ * @since   1.0.0
  */
 class Response extends Entity {
 
-	/** @since 1.0.0 */
+	/**
+	 * UTC timestamp of when the response was submitted.
+	 *
+	 * @var DateTimeImmutable
+	 * @since 1.0.0
+	 */
 	private DateTimeImmutable $createdAt;
 
 	/**
-	 * @since 1.0.0
+	 * @param  int         $surveyId     Primary key of the parent survey.
+	 * @param  array<mixed> $responseData Raw key/value payload from the respondent.
+	 * @param  float|null   $score        Optional numeric score.
+	 * @param  string|null  $pageUrl      URL of the page on which the survey was shown.
+	 * @param  string|null  $deviceType   Device category: desktop | mobile | tablet.
+	 * @param  string|null  $ipHash       HMAC hash of the visitor IP for analytics.
+	 * @param  string|null  $ipAddress    Raw IP address, null when privacy mode is active.
+	 * @param  int|null     $userId       WordPress user ID, null for anonymous submissions.
+	 * @param  string|null  $guestToken   Persistent guest UUID for duplicate detection.
+	 * @param  bool         $consentGiven Whether the respondent gave explicit consent.
+	 * @param  bool         $isRead       Whether an admin has marked this response as read.
+	 * @since  1.0.0
 	 */
 	public function __construct(
 		private int $surveyId,
@@ -45,7 +62,21 @@ class Response extends Entity {
 	/**
 	 * Reconstitute a Response from a persistence row.
 	 *
-	 * @since 1.0.0
+	 * @param  int               $id           Primary key.
+	 * @param  int               $surveyId     Parent survey ID.
+	 * @param  array<mixed>      $responseData Decoded response payload.
+	 * @param  float|null        $score        Numeric score, or null.
+	 * @param  string|null       $pageUrl      Page URL at submission time.
+	 * @param  string|null       $deviceType   Device category.
+	 * @param  string|null       $ipHash       Hashed IP.
+	 * @param  string|null       $ipAddress    Raw IP address.
+	 * @param  int|null          $userId       WordPress user ID.
+	 * @param  string|null       $guestToken   Guest UUID.
+	 * @param  bool              $consentGiven Consent flag.
+	 * @param  DateTimeImmutable $createdAt    Submission timestamp.
+	 * @param  bool              $isRead       Read flag.
+	 * @return self
+	 * @since  1.0.0
 	 */
 	public static function reconstitute(
 		int $id,
@@ -69,9 +100,10 @@ class Response extends Entity {
 	}
 
 	/**
-	 * Return the id of the Survey this response belongs to.
+	 * Return the primary key of the parent survey.
 	 *
-	 * @since 1.0.0
+	 * @return int
+	 * @since  1.0.0
 	 */
 	public function getSurveyId(): int {
 		return $this->surveyId;
@@ -80,7 +112,8 @@ class Response extends Entity {
 	/**
 	 * Return the raw key/value response payload submitted by the respondent.
 	 *
-	 * @since 1.0.0
+	 * @return array<mixed>
+	 * @since  1.0.0
 	 */
 	public function getResponseData(): array {
 		return $this->responseData;
@@ -89,7 +122,8 @@ class Response extends Entity {
 	/**
 	 * Return the numeric score extracted from the response, or null if absent.
 	 *
-	 * @since 1.0.0
+	 * @return float|null
+	 * @since  1.0.0
 	 */
 	public function getScore(): ?float {
 		return $this->score;
@@ -98,7 +132,8 @@ class Response extends Entity {
 	/**
 	 * Return the URL of the page from which the survey was submitted.
 	 *
-	 * @since 1.0.0
+	 * @return string|null
+	 * @since  1.0.0
 	 */
 	public function getPageUrl(): ?string {
 		return $this->pageUrl;
@@ -107,7 +142,8 @@ class Response extends Entity {
 	/**
 	 * Return the device type string (e.g. "desktop", "mobile", "tablet").
 	 *
-	 * @since 1.0.0
+	 * @return string|null
+	 * @since  1.0.0
 	 */
 	public function getDeviceType(): ?string {
 		return $this->deviceType;
@@ -116,7 +152,8 @@ class Response extends Entity {
 	/**
 	 * Return the one-way hashed IP address for analytics without PII retention.
 	 *
-	 * @since 1.0.0
+	 * @return string|null
+	 * @since  1.0.0
 	 */
 	public function getIpHash(): ?string {
 		return $this->ipHash;
@@ -125,16 +162,18 @@ class Response extends Entity {
 	/**
 	 * Return the raw IP address of the respondent, or null if privacy mode was active.
 	 *
-	 * @since 1.0.0
+	 * @return string|null
+	 * @since  1.0.0
 	 */
 	public function getIpAddress(): ?string {
 		return $this->ipAddress;
 	}
 
 	/**
-	 * Return the WordPress user id of the respondent, or null for anonymous submissions.
+	 * Return the WordPress user ID of the respondent, or null for anonymous submissions.
 	 *
-	 * @since 1.0.0
+	 * @return int|null
+	 * @since  1.0.0
 	 */
 	public function getUserId(): ?int {
 		return $this->userId;
@@ -143,7 +182,8 @@ class Response extends Entity {
 	/**
 	 * Return the persistent guest UUID used for duplicate detection, or null for logged-in users.
 	 *
-	 * @since 1.0.0
+	 * @return string|null
+	 * @since  1.0.0
 	 */
 	public function getGuestToken(): ?string {
 		return $this->guestToken;
@@ -152,7 +192,8 @@ class Response extends Entity {
 	/**
 	 * Return true when the respondent explicitly granted data-processing consent.
 	 *
-	 * @since 1.0.0
+	 * @return bool
+	 * @since  1.0.0
 	 */
 	public function isConsentGiven(): bool {
 		return $this->consentGiven;
@@ -161,7 +202,8 @@ class Response extends Entity {
 	/**
 	 * Return true when an admin has marked this response as read.
 	 *
-	 * @since 1.0.0
+	 * @return bool
+	 * @since  1.0.0
 	 */
 	public function isRead(): bool {
 		return $this->isRead;
@@ -170,7 +212,8 @@ class Response extends Entity {
 	/**
 	 * Return the UTC timestamp at which the response was submitted.
 	 *
-	 * @since 1.0.0
+	 * @return DateTimeImmutable
+	 * @since  1.0.0
 	 */
 	public function getCreatedAt(): DateTimeImmutable {
 		return $this->createdAt;
@@ -179,7 +222,8 @@ class Response extends Entity {
 	/**
 	 * Serialise the aggregate to a plain associative array for persistence.
 	 *
-	 * @since 1.0.0
+	 * @return array<string, mixed>
+	 * @since  1.0.0
 	 */
 	public function toArray(): array {
 		return [

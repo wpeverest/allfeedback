@@ -12,12 +12,18 @@ defined( 'ABSPATH' ) || exit;
  * Provides pagination, full-text search, and ordering parameters shared by
  * all concrete filter classes.
  *
- * @since 1.0.0
+ * @package AllFeedback\Domain\Shared
+ * @since   1.0.0
  */
 abstract class QueryFilter {
 
 	/**
-	 * @since 1.0.0
+	 * @param  int         $page    1-based page number.
+	 * @param  int         $perPage Results per page.
+	 * @param  string|null $search  Optional full-text search string.
+	 * @param  string      $orderBy Column to order by. Default 'date'.
+	 * @param  string      $order   Sort direction: ASC | DESC.
+	 * @since  1.0.0
 	 */
 	public function __construct(
 		public readonly int $page = 1,

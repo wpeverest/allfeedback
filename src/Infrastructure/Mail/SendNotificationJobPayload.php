@@ -14,12 +14,16 @@ use AllFeedback\Core\Jobs\AbstractJobPayload;
  * Carries the notification type and the identifiers needed to reconstruct
  * the domain objects required by each notification class.
  *
- * @since 1.0.0
+ * @package AllFeedback\Infrastructure\Mail
+ * @since   1.0.0
  */
 class SendNotificationJobPayload extends AbstractJobPayload {
 
 	/**
-	 * @since 1.0.0
+	 * @param  string $notificationType Notification type identifier (e.g. `new_response_alert`).
+	 * @param  int    $surveyId         Survey primary key.
+	 * @param  int    $responseId       Response primary key (0 for survey-only notifications).
+	 * @since  1.0.0
 	 */
 	public function __construct(
 		public readonly string $notificationType = '',
@@ -30,8 +34,9 @@ class SendNotificationJobPayload extends AbstractJobPayload {
 	/**
 	 * Reconstruct a payload from a serialised array.
 	 *
-	 * @param array<string, mixed> $data Serialised payload data.
-	 * @since 1.0.0
+	 * @param  array<string, mixed> $data Serialised payload data.
+	 * @return self
+	 * @since  1.0.0
 	 */
 	public static function fromArray( array $data ): self {
 		return new self(

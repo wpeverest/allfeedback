@@ -8,38 +8,55 @@ use DI\ContainerBuilder;
 use Psr\Container\ContainerInterface;
 
 /**
- * Class Container
- *
  * Wraps the PHP-DI container with a small API used throughout the plugin.
- * Enables compiled container in production for a performance boost.
+ *
+ * Enables a compiled container in production for a performance boost. The
+ * compiled class is cached under `wp-content/cache/allfeedback/{version}/`
+ * so a version bump automatically invalidates a stale compiled container.
+ *
+ * @package AllFeedback\Core
+ * @since   1.0.0
  */
 class Container {
 
+	/**
+	 * The underlying PSR-11 container instance.
+	 *
+	 * @var ContainerInterface
+	 * @since 1.0.0
+	 */
 	private ContainerInterface $container;
 
-	/** Whether the container was compiled to disk. */
+	/**
+	 * Whether the container was compiled to disk on this request.
+	 *
+	 * @var bool
+	 * @since 1.0.0
+	 */
 	private bool $compiled = false;
 
+	/**
+	 * Build and configure the DI container.
+	 *
+	 * @since  1.0.0
+	 */
 	public function __construct() {
 		$this->buildContainer();
 	}
 
-	// ------------------------------------------------------------------
-	// Build
-	// ------------------------------------------------------------------
-
+	/**
+	 * Construct the PHP-DI ContainerBuilder, enable optional compilation,
+	 * load service definitions, and finalise the container.
+	 *
+	 * @return void
+	 * @since  1.0.0
+	 */
 	private function buildContainer(): void {
 		$builder = new ContainerBuilder();
 
-		// Enable auto-wiring so classes without explicit definitions are still resolved.
 		$builder->useAutowiring( true );
 		$builder->useAttributes( true );
 
-		// In production, compile the container to a PHP file for speed.
-		// The version slug is embedded in the cache path so a plugin update
-		// automatically invalidates the old compiled container — preventing
-		// the "too few arguments to constructor" fatal that occurs when the
-		// compiled class still reflects the previous parameter list.
 		if ( $this->isProduction() ) {
 			$cacheDir = WP_CONTENT_DIR . '/cache/allfeedback/' . Constants::VERSION;
 			$builder->enableCompilation( $cacheDir );
@@ -47,17 +64,18 @@ class Container {
 			$this->compiled = true;
 		}
 
-		// Load definitions from config/services.php.
 		$this->loadServiceDefinitions( $builder );
 
-		// Build the container and inject self-references so providers can
-		// ask for the container by class name.
 		$this->container = $builder->build();
 		$this->container->set( self::class, $this );
 	}
 
 	/**
-	 * Load the DI definitions file (config/services.php).
+	 * Require and register the DI definitions file (`config/services.php`).
+	 *
+	 * @param  ContainerBuilder $builder PHP-DI builder instance.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	private function loadServiceDefinitions( ContainerBuilder $builder ): void {
 		$servicesFile = Constants::path( 'config/services.php' );
@@ -68,22 +86,25 @@ class Container {
 		}
 	}
 
-	// ------------------------------------------------------------------
-	// PSR-11 proxy + extras
-	// ------------------------------------------------------------------
-
 	/**
 	 * Resolve an entry from the container.
 	 *
 	 * @template T
-	 * @param class-string<T>|string $id
-	 * @return T|mixed
+	 * @param  class-string<T>|string $id Entry identifier.
+	 * @return T|mixed                    Resolved value.
+	 * @since  1.0.0
 	 */
 	public function get( string $id ): mixed {
 		return $this->container->get( $id );
 	}
 
-	/** Check if an entry exists in the container. */
+	/**
+	 * Check whether an entry exists in the container.
+	 *
+	 * @param  string $id Entry identifier.
+	 * @return bool
+	 * @since  1.0.0
+	 */
 	public function has( string $id ): bool {
 		return $this->container->has( $id );
 	}
@@ -91,40 +112,56 @@ class Container {
 	/**
 	 * Resolve an entry while injecting extra parameters.
 	 *
-	 * @param class-string|string $id
-	 * @param array<string, mixed> $parameters
+	 * @param  class-string|string  $id         Entry identifier.
+	 * @param  array<string, mixed> $parameters Named parameters to inject.
+	 * @return mixed
+	 * @since  1.0.0
 	 */
 	public function make( string $id, array $parameters = [] ): mixed {
 		return $this->container->make( $id, $parameters );
 	}
 
 	/**
-	 * Override or add an entry in the container (useful for testing).
+	 * Override or add an entry in the container.
 	 *
-	 * @param string $id    Entry name.
-	 * @param mixed  $value The value to set.
+	 * @param  string $id    Entry name.
+	 * @param  mixed  $value The value to bind.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function set( string $id, mixed $value ): void {
 		$this->container->set( $id, $value );
 	}
 
-	/** Returns the underlying PSR-11 container. */
+	/**
+	 * Return the underlying PSR-11 container instance.
+	 *
+	 * @return ContainerInterface
+	 * @since  1.0.0
+	 */
 	public function getContainer(): ContainerInterface {
 		return $this->container;
 	}
 
-	// ------------------------------------------------------------------
-	// Environment helpers
-	// ------------------------------------------------------------------
-
 	/**
-	 * Production = no RMB_ENV constant, or RMB_ENV !== 'development'.
+	 * Determine whether the current environment is production.
+	 *
+	 * Production is assumed unless the `RMB_ENV` constant is defined and set
+	 * to `'development'` in `wp-config.php`.
+	 *
+	 * @return bool
+	 * @since  1.0.0
 	 */
 	private function isProduction(): bool {
 		return ! defined( 'RMB_ENV' ) || 'development' !== constant( 'RMB_ENV' );
 	}
 
-	/** Whether the container was compiled to disk on this request. */
+	/**
+	 * Return whether the container was compiled to disk on this request.
+	 *
+	 * @return bool
+	 * @since  1.0.0
+	 */
 	public function isCompiled(): bool {
 		return $this->compiled;
 	}

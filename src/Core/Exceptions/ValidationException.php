@@ -22,50 +22,39 @@ class ValidationException extends AllFeedbackException {
 	 * Keyed error map: field name → array of human-readable error strings.
 	 *
 	 * @var array<string, string[]>
+	 * @since 1.0.0
 	 */
 	private array $errors = [];
-
-	// ------------------------------------------------------------------
-	// Mutators
-	// ------------------------------------------------------------------
 
 	/**
 	 * Replace the entire error map.
 	 *
-	 * @param array<string, string[]> $errors Field → messages map.
+	 * @param  array<string, string[]> $errors Field → messages map.
 	 * @return static
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function setErrors( array $errors ): static {
 		$this->errors = $errors;
 		return $this;
 	}
 
-	// ------------------------------------------------------------------
-	// Accessors
-	// ------------------------------------------------------------------
-
 	/**
 	 * Return the full error map.
 	 *
 	 * @return array<string, string[]>
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function getErrors(): array {
 		return $this->errors;
 	}
 
-	// ------------------------------------------------------------------
-	// Factory
-	// ------------------------------------------------------------------
-
 	/**
 	 * Build a ValidationException pre-populated with an error map.
 	 *
-	 * @param array<string, string[]> $errors  Field → messages map.
-	 * @param string                  $message Top-level exception message.
+	 * @param  array<string, string[]> $errors  Field → messages map.
+	 * @param  string                  $message Top-level exception message.
 	 * @return static
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public static function withErrors( array $errors, string $message = 'Validation failed.' ): static {
 		$exception = new static( $message );

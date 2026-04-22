@@ -15,25 +15,25 @@ use AllFeedback\Infrastructure\Mail\NotificationServiceProvider;
 use AllFeedback\Traits\Hooks;
 
 /**
- * Class AppServiceProvider
- *
- * The top-level bootstrapper. Called once by Plugin::boot().
+ * The top-level bootstrapper. Called once by `Plugin::boot()`.
  *
  * Responsibilities:
  *  1. Load the plugin text domain.
  *  2. Boot core services (migrations, post types, roles).
  *  3. Boot context-specific providers (Admin | Frontend | API).
- *  4. Boot cross-cutting providers (Jobs, Notifications, Google).
+ *  4. Boot cross-cutting providers (Jobs, Notifications).
  *  5. Register global enqueue hooks.
  *
- * @since 1.0.0
+ * @package AllFeedback\Core
+ * @since   1.0.0
  */
 class AppServiceProvider implements ServiceProviderInterface {
 
 	use Hooks;
 
 	/**
-	 * @since 1.0.0
+	 * @param  Container $container DI container for resolving service providers.
+	 * @since  1.0.0
 	 */
 	public function __construct(
 		private readonly Container $container,
@@ -42,7 +42,8 @@ class AppServiceProvider implements ServiceProviderInterface {
 	/**
 	 * Main entry point. Called by Plugin::boot().
 	 *
-	 * @since 1.0.0
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function boot(): void {
 		$this->loadTextDomain();
@@ -54,7 +55,8 @@ class AppServiceProvider implements ServiceProviderInterface {
 	/**
 	 * Load plugin translations from the /languages directory.
 	 *
-	 * @since 1.0.0
+	 * @return void
+	 * @since  1.0.0
 	 */
 	private function loadTextDomain(): void {
 		$this->addAction(
@@ -72,7 +74,8 @@ class AppServiceProvider implements ServiceProviderInterface {
 	/**
 	 * Boot services that must run regardless of admin / frontend context.
 	 *
-	 * @since 1.0.0
+	 * @return void
+	 * @since  1.0.0
 	 */
 	private function bootCore(): void {
 		$this->container->get( CoreServiceProvider::class )->boot();
@@ -81,23 +84,16 @@ class AppServiceProvider implements ServiceProviderInterface {
 	/**
 	 * Boot the appropriate service providers for the current request context.
 	 *
-	 * @since 1.0.0
+	 * @return void
+	 * @since  1.0.0
 	 */
 	private function registerProviders(): void {
 		if ( $this->isAdminContext() ) {
 			$this->container->get( AdminServiceProvider::class )->boot();
 		}
 
-		// Boot on every request: registers the Gutenberg block (needed in the
-		// block editor = admin context) and shortcodes (needed on the frontend).
-		// Asset enqueueing inside FrontendServiceProvider is guarded by its own
-		// namespaced action and only fires on actual frontend page loads.
 		$this->container->get( FrontendServiceProvider::class )->boot();
-
-		// REST API routes registered on every request.
 		$this->container->get( ApiServiceProvider::class )->boot();
-
-		// Cross-cutting providers — always boot.
 		$this->container->get( JobServiceProvider::class )->boot();
 		$this->container->get( NotificationServiceProvider::class )->boot();
 	}
@@ -105,7 +101,8 @@ class AppServiceProvider implements ServiceProviderInterface {
 	/**
 	 * Register global enqueue hooks.
 	 *
-	 * @since 1.0.0
+	 * @return void
+	 * @since  1.0.0
 	 */
 	private function registerHooks(): void {
 		$this->addAction( 'admin_enqueue_scripts', [ $this, 'enqueueAdminAssets' ] );
@@ -115,8 +112,9 @@ class AppServiceProvider implements ServiceProviderInterface {
 	/**
 	 * Relay admin enqueue to a namespaced action.
 	 *
-	 * @param string $hook Current admin page hook suffix.
-	 * @since 1.0.0
+	 * @param  string $hook Current admin page hook suffix.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function enqueueAdminAssets( string $hook ): void {
 		$this->doAction( 'allfeedback:enqueue-assets:admin', $hook );
@@ -125,7 +123,8 @@ class AppServiceProvider implements ServiceProviderInterface {
 	/**
 	 * Relay frontend enqueue to a namespaced action.
 	 *
-	 * @since 1.0.0
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function enqueueFrontendAssets(): void {
 		$this->doAction( 'allfeedback:enqueue-assets:frontend' );
@@ -134,7 +133,8 @@ class AppServiceProvider implements ServiceProviderInterface {
 	/**
 	 * Determine if we are running inside the WP admin (excluding AJAX and REST).
 	 *
-	 * @since 1.0.0
+	 * @return bool
+	 * @since  1.0.0
 	 */
 	private function isAdminContext(): bool {
 		if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {

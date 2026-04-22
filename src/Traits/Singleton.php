@@ -5,18 +5,29 @@ declare(strict_types=1);
 namespace AllFeedback\Traits;
 
 /**
- * Trait Singleton
- *
  * Provides a thread-safe, single-instance pattern.
- * Classes using this trait should declare __construct() as private.
+ *
+ * Classes using this trait should declare `__construct()` as private
+ * to prevent direct instantiation.
+ *
+ * @package AllFeedback\Traits
+ * @since   1.0.0
  */
 trait Singleton {
 
-	/** @var static|null Holds the single instance. */
+	/**
+	 * Holds the single instance of the class.
+	 *
+	 * @var static|null
+	 * @since 1.0.0
+	 */
 	private static ?self $instance = null;
 
 	/**
-	 * Returns the single instance of the class, creating it on first call.
+	 * Return the single instance of the class, creating it on first call.
+	 *
+	 * @return static
+	 * @since  1.0.0
 	 */
 	public static function getInstance(): static {
 		if ( static::$instance === null ) {
@@ -26,13 +37,20 @@ trait Singleton {
 		return static::$instance;
 	}
 
-	/** Prevent cloning. */
-	private function __clone() {}
+	/**
+	 * Prevent cloning of the singleton instance.
+	 *
+	 * @return void
+	 * @since  1.0.0
+	 */
+	private function __clone(): void {}
 
 	/**
-	 * Prevent unserialization.
+	 * Prevent unserialization of the singleton instance.
 	 *
-	 * @throws \Exception Always.
+	 * @return void
+	 * @throws \Exception Always throws to prevent unserialization.
+	 * @since  1.0.0
 	 */
 	public function __wakeup(): void {
 		throw new \Exception( 'Cannot unserialize singleton.' );

@@ -34,7 +34,9 @@ class ResponseContext {
 	public array $errors = [];
 
 	/**
-	 * @since 1.0.0
+	 * @param  ResponseDTO $dto    The validated response payload.
+	 * @param  Survey      $survey The target survey aggregate.
+	 * @since  1.0.0
 	 */
 	public function __construct(
 		public readonly ResponseDTO $dto,

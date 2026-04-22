@@ -19,7 +19,8 @@ use AllFeedback\Domain\Survey\SurveyRepository;
 class UpdateSurveyService {
 
 	/**
-	 * @since 1.0.0
+	 * @param  SurveyRepository $repository Persistence layer for survey aggregates.
+	 * @since  1.0.0
 	 */
 	public function __construct(
 		private readonly SurveyRepository $repository,
@@ -31,11 +32,11 @@ class UpdateSurveyService {
 	 * Only keys present in $rawData are applied; absent keys leave the
 	 * existing field value unchanged.
 	 *
-	 * @param int   $id      ID of the survey to update.
-	 * @param array $rawData Partial field map from the request.
+	 * @param  int                  $id      ID of the survey to update.
+	 * @param  array<string, mixed> $rawData Partial field map from the request.
 	 * @return Survey
 	 * @throws NotFoundException When no survey exists for the given ID.
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function execute( int $id, array $rawData ): Survey {
 		$survey = $this->repository->findById( $id );
@@ -43,6 +44,8 @@ class UpdateSurveyService {
 		if ( $survey === null ) {
 			throw NotFoundException::forResource( esc_html__( 'Survey', 'all-feedback' ), $id );
 		}
+
+		$previousStatus = $survey->getStatus();
 
 		if ( array_key_exists( 'title', $rawData ) ) {
 			$survey->setTitle( (string) $rawData['title'] );
@@ -71,6 +74,10 @@ class UpdateSurveyService {
 		$survey = $this->repository->save( $survey );
 
 		do_action( 'allfeedback:survey:updated', $survey );
+
+		if ( $survey->getStatus()->isPublished() && ! $previousStatus->isPublished() ) {
+			do_action( 'allfeedback:survey:activated', $survey );
+		}
 
 		return $survey;
 	}

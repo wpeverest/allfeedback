@@ -19,14 +19,18 @@ use AllFeedback\Traits\Hooks;
  *  - Custom post type and taxonomy registration on init
  *  - Role creation on plugin activation
  *
- * @since 1.0.0
+ * @package AllFeedback\Core
+ * @since   1.0.0
  */
 class CoreServiceProvider implements ServiceProviderInterface {
 
 	use Hooks;
 
 	/**
-	 * @since 1.0.0
+	 * @param  RoleManager $roleManager Handles custom role creation.
+	 * @param  Migrator    $migrator    Runs pending database migrations.
+	 * @param  Logger      $logger      Plugin logger for shutdown handler registration.
+	 * @since  1.0.0
 	 */
 	public function __construct(
 		private readonly RoleManager $roleManager,
@@ -37,7 +41,8 @@ class CoreServiceProvider implements ServiceProviderInterface {
 	/**
 	 * Register WordPress hooks.
 	 *
-	 * @since 1.0.0
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function boot(): void {
 		$this->logger->registerShutdownHandler();
@@ -48,7 +53,8 @@ class CoreServiceProvider implements ServiceProviderInterface {
 	/**
 	 * Execute any migrations that have not been run yet.
 	 *
-	 * @since 1.0.0
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function runPendingMigrations(): void {
 		if ( $this->migrator->hasPending() ) {
@@ -59,7 +65,8 @@ class CoreServiceProvider implements ServiceProviderInterface {
 	/**
 	 * Tasks to run on plugin activation.
 	 *
-	 * @since 1.0.0
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function onActivation(): void {
 		$this->migrator->resetIfTablesMissing( [ 'af_surveys', 'af_responses' ] );

@@ -15,7 +15,8 @@ defined( 'ABSPATH' ) || exit;
  * Any exception thrown inside the callback rolls back the transaction before
  * being re-thrown so no partial writes are committed.
  *
- * @since 1.0.0
+ * @package AllFeedback\Core\Database
+ * @since   1.0.0
  */
 class Transaction {
 
@@ -23,10 +24,10 @@ class Transaction {
 	 * Execute a callback inside a database transaction.
 	 *
 	 * @template T
-	 * @param callable(): T $callback The work to perform atomically.
-	 * @return T The value returned by $callback.
-	 * @throws \Throwable Re-throws any exception after rolling back.
-	 * @since 1.0.0
+	 * @param  callable(): T $callback The work to perform atomically.
+	 * @return T              The value returned by $callback.
+	 * @throws \Throwable     Re-throws any exception after rolling back.
+	 * @since  1.0.0
 	 */
 	public static function run( callable $callback ): mixed {
 		global $wpdb;

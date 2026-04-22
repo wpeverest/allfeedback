@@ -24,21 +24,26 @@ use AllFeedback\Domain\Survey\SurveyRepository;
  * The accent colour is injected via wp_add_inline_script so the preview
  * matches the live widget colour without an extra REST request.
  *
- * @since 1.0.0
+ * @package AllFeedback\Frontend\Blocks
+ * @since   1.0.0
  */
 class SurveyBlock extends AbstractBlock {
 
+	/**
+	 * @param  Container       $container       DI container for lazy repository resolution.
+	 * @param  SettingsManager $settingsManager Plugin settings for widget colour injection.
+	 * @since  1.0.0
+	 */
 	public function __construct(
 		private readonly Container $container,
 		private readonly SettingsManager $settingsManager,
 	) {}
 
-	// ------------------------------------------------------------------
-	// AbstractBlock contract
-	// ------------------------------------------------------------------
-
 	/**
-	 * @since 1.0.0
+	 * Return the block folder slug.
+	 *
+	 * @return string
+	 * @since  1.0.0
 	 */
 	protected function getSlug(): string {
 		return 'survey';
@@ -50,8 +55,9 @@ class SurveyBlock extends AbstractBlock {
 	 * window.__ALLFB_BLOCK__ is read by the React editor component to apply
 	 * the correct accent colour to the form preview.
 	 *
-	 * @param  \WP_Block_Type $blockType
-	 * @since 1.0.0
+	 * @param  \WP_Block_Type $blockType Registered block type object.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	protected function afterRegister( \WP_Block_Type $blockType ): void {
 		if ( empty( $blockType->editor_script_handles ) ) {
@@ -76,8 +82,8 @@ class SurveyBlock extends AbstractBlock {
 	 * canvas handles its own preview entirely in TypeScript (no PHP form HTML).
 	 *
 	 * @param  array<string, mixed> $attributes Block attributes.
-	 * @return string                           HTML or empty string.
-	 * @since 1.0.0
+	 * @return string HTML or empty string.
+	 * @since  1.0.0
 	 */
 	public function render( array $attributes ): string {
 		$surveyId = (int) ( $attributes['surveyId'] ?? 0 );

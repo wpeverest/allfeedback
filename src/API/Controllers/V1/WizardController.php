@@ -4,26 +4,69 @@ declare(strict_types=1);
 
 namespace AllFeedback\API\Controllers\V1;
 
+defined( 'ABSPATH' ) || exit;
+
 use AllFeedback\API\RestController;
 use AllFeedback\Core\Constants;
 use AllFeedback\Core\Settings\SettingsManager;
 use AllFeedback\Domain\Survey\Survey;
 use AllFeedback\Domain\Survey\SurveyRepository;
-use WP_REST_Request;
-use WP_REST_Response;
+use AllFeedback\Support\Logger;
 
+/**
+ * REST controller for the one-time Setup Wizard flow.
+ *
+ * Raw wizard submission data is persisted to `_allfb_wizard_data` so that
+ * pro add-ons can act on it after the fact via the `allfeedback:wizard:completed`
+ * action hook.
+ *
+ * @package AllFeedback\API\Controllers\V1
+ * @since   1.0.0
+ */
 class WizardController extends RestController {
 
+	/**
+	 * REST resource slug.
+	 *
+	 * @var string
+	 * @since 1.0.0
+	 */
 	protected string $restBase = 'wizard';
 
+	/**
+	 * wp_options key that tracks the wizard lifecycle state.
+	 *
+	 * @var string
+	 * @since 1.0.0
+	 */
 	private const OPTION_STATUS = 'allfeedback_wizard_status';
-	private const OPTION_DATA   = '_allfb_wizard_data';
 
+	/**
+	 * wp_options key that persists the raw wizard submission for audit / pro add-ons.
+	 *
+	 * @var string
+	 * @since 1.0.0
+	 */
+	private const OPTION_DATA = '_allfb_wizard_data';
+
+	/**
+	 * @param  SettingsManager  $settingsManager  Plugin-wide settings store.
+	 * @param  SurveyRepository $surveyRepository Survey persistence layer.
+	 * @param  Logger           $logger           Structured event logger.
+	 * @since  1.0.0
+	 */
 	public function __construct(
-		private readonly SettingsManager $settingsManager,
+		private readonly SettingsManager  $settingsManager,
 		private readonly SurveyRepository $surveyRepository,
+		private readonly Logger           $logger,
 	) {}
 
+	/**
+	 * Register all REST routes for this controller.
+	 *
+	 * @return void
+	 * @since  1.0.0
+	 */
 	public function registerRoutes(): void {
 		register_rest_route(
 			$this->namespace,
@@ -33,6 +76,7 @@ class WizardController extends RestController {
 					'methods'             => \WP_REST_Server::READABLE,
 					'callback'            => [ $this, 'getStatus' ],
 					'permission_callback' => [ $this, 'adminPermission' ],
+					'args'                => [],
 				],
 			]
 		);
@@ -51,48 +95,102 @@ class WizardController extends RestController {
 		);
 	}
 
-	public function getStatus( WP_REST_Request $request ): WP_REST_Response {
-		return $this->successResponse( [
-			'status' => get_option( self::OPTION_STATUS, 'not_started' ),
-		] );
+	/**
+	 * Handle `GET /wizard`.
+	 *
+	 * Returns the current wizard lifecycle status. The response shape can be
+	 * extended by pro add-ons via the `allfeedback_wizard_status_response` filter.
+	 *
+	 * @param  \WP_REST_Request $request Full request data.
+	 * @return \WP_REST_Response
+	 * @since  1.0.0
+	 */
+	public function getStatus( \WP_REST_Request $request ): \WP_REST_Response {
+		$status = (string) get_option( self::OPTION_STATUS, 'not_started' );
+
+		/**
+		 * Filter the GET /wizard response payload.
+		 *
+		 * @param array<string, mixed> $response Response data before it is sent.
+		 * @since 1.0.0
+		 */
+		$response = (array) apply_filters( 'allfeedback_wizard_status_response', [ 'status' => $status ] );
+
+		return $this->successResponse( $response );
 	}
 
-	public function complete( WP_REST_Request $request ): WP_REST_Response|\WP_Error {
-		$brandColor = $request->get_param( 'brand_color' );
-		$position   = $request->get_param( 'position' );
+	/**
+	 * Handle `POST /wizard/complete`.
+	 *
+	 * Persists widget appearance settings, saves the raw submission for the audit
+	 * trail, creates the first survey from the chosen template, and marks the
+	 * wizard as completed.
+	 *
+	 * Fires `allfeedback:wizard:before_complete` before processing so pro add-ons
+	 * can modify or validate the wizard data, and `allfeedback:wizard:completed`
+	 * after the survey is created so add-ons can apply remaining settings
+	 * (notification email, consent, IP anonymisation, retention policy).
+	 *
+	 * @param  \WP_REST_Request $request Full request data.
+	 * @return \WP_REST_Response|\WP_Error
+	 * @since  1.0.0
+	 */
+	public function complete( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		$brandColor = sanitize_hex_color( (string) ( $request->get_param( 'brand_color' ) ?? '' ) ) ?: null;
+		$position   = sanitize_key( (string) ( $request->get_param( 'position' )   ?? '' ) );
+		$templateId = sanitize_key( (string) ( $request->get_param( 'template' )   ?? 'nps' ) );
+		$adminEmail = sanitize_email( (string) ( $request->get_param( 'admin_email' ) ?? '' ) );
 
+		// Apply widget appearance settings immediately.
 		$widget = (array) $this->settingsManager->get( 'general.widget' );
-		$this->settingsManager->setSection( 'general', 'widget', array_merge( $widget, [
-			'color'    => $brandColor ?: $widget['color'],
-			'position' => $position ?: $widget['position'],
-		] ) );
-
-		update_option(
-			self::OPTION_DATA,
-			[
-				'template'        => $request->get_param( 'template' ),
-				'admin_email'     => $request->get_param( 'admin_email' ),
-				'notif_frequency' => $request->get_param( 'notif_frequency' ),
-				'consent'         => $request->get_param( 'consent' ),
-				'anonymize_ip'    => $request->get_param( 'anonymize_ip' ),
-				'retention'       => $request->get_param( 'retention' ),
-			],
-			false
+		$this->settingsManager->setSection(
+			'general',
+			'widget',
+			array_merge( $widget, [
+				'color'    => $brandColor ?: $widget['color'],
+				'position' => $position   ?: $widget['position'],
+			] )
 		);
 
+		// Build and persist the sanitised wizard data payload.
+		$wizardData = [
+			'template'        => $templateId,
+			'admin_email'     => $adminEmail,
+			'notif_frequency' => sanitize_key( (string) ( $request->get_param( 'notif_frequency' ) ?? 'instant' ) ),
+			'consent'         => (bool) $request->get_param( 'consent' ),
+			'anonymize_ip'    => (bool) $request->get_param( 'anonymize_ip' ),
+			'retention'       => sanitize_key( (string) ( $request->get_param( 'retention' ) ?? '12m' ) ),
+		];
+
+		update_option( self::OPTION_DATA,   $wizardData, false );
 		update_option( self::OPTION_STATUS, 'completed', false );
 
-		$templateId = $request->get_param( 'template' );
-		$schema     = [];
-		$path       = Constants::path( "resources/scripts/admin/data/templates/{$templateId}.json" );
+		/**
+		 * Fires before wizard completion is finalised.
+		 *
+		 *
+		 * @param array<string, mixed> $wizardData Sanitised wizard submission.
+		 * @since 1.0.0
+		 */
+		do_action( 'allfeedback:wizard:before_complete', $wizardData );
 
-		if ( file_exists( $path ) ) {
-			$schema = json_decode( (string) file_get_contents( $path ), true ) ?: [];
-		}
+		// Create the first survey from the chosen template.
+		$formSchema = $this->loadTemplate( $templateId );
+
+		/**
+		 * Filter the default title of the first survey created by the wizard.
+		 *
+		 * @param string $title Default survey title.
+		 * @since 1.0.0
+		 */
+		$surveyTitle = (string) apply_filters(
+			'allfeedback_wizard_default_survey_title',
+			__( 'My First Feedback Form', 'all-feedback' )
+		);
 
 		$survey = new Survey(
-			title:      __( 'My First Feedback Form', 'all-feedback' ),
-			formSchema: $schema,
+			title:      $surveyTitle,
+			formSchema: $formSchema,
 			styling:    [
 				'brand_color' => $brandColor ?: '#6366F1',
 			],
@@ -106,57 +204,124 @@ class WizardController extends RestController {
 		);
 
 		$formId = null;
+
 		try {
 			$survey = $this->surveyRepository->save( $survey );
 			$formId = $survey->getId();
 		} catch ( \Exception $e ) {
-			// Fail silently
+			$this->logger->error(
+				'Wizard: failed to create first survey.',
+				[ 'error' => $e->getMessage(), 'template' => $templateId ]
+			);
 		}
 
-		return $this->successResponse( [ 
+		$this->logger->info(
+			'Setup wizard completed.',
+			[
+				'template' => $templateId,
+				'form_id'  => $formId,
+				'user_id'  => get_current_user_id(),
+			]
+		);
+
+		/**
+		 * Fires after the wizard is completed and the first survey is created.
+		 *
+		 * @param array<string, mixed> $wizardData Sanitised wizard submission.
+		 * @param int|null             $formId     ID of the newly created survey, or null on failure.
+		 * @since 1.0.0
+		 */
+		do_action( 'allfeedback:wizard:completed', $wizardData, $formId );
+
+		return $this->successResponse( [
 			'status' => 'completed',
 			'id'     => $formId,
 		] );
 	}
 
+	/**
+	 * Load a survey template JSON schema from the bundled data directory.
+	 *
+	 *
+	 * @param  string $templateId Template identifier (e.g. "nps", "bug-report").
+	 * @return array<mixed> Decoded JSON schema, or an empty array when not found.
+	 * @since  1.0.0
+	 */
+	private function loadTemplate( string $templateId ): array {
+		static $cache = [];
+
+		if ( isset( $cache[ $templateId ] ) ) {
+			return $cache[ $templateId ];
+		}
+
+		$path   = Constants::path( "resources/scripts/admin/data/templates/{$templateId}.json" );
+		$schema = [];
+
+		if ( file_exists( $path ) ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+			$schema = json_decode( (string) file_get_contents( $path ), true ) ?: [];
+		}
+
+		$cache[ $templateId ] = $schema;
+
+		return $schema;
+	}
+
+	/**
+	 * Build the argument schema for the `POST /wizard/complete` endpoint.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 * @since  1.0.0
+	 */
 	private function completeArgs(): array {
+		/**
+		 * Filter the list of survey templates available in the wizard.
+		 *
+		 * @param string[] $templates Allowed template IDs.
+		 * @since 1.0.0
+		 */
+		$allowedTemplates = (array) apply_filters(
+			'allfeedback_wizard_templates',
+			[ 'nps', 'general-feedback', 'bug-report', 'feature-request', 'product-feedback', 'customer-research' ]
+		);
+
 		return [
 			'template'        => $this->argEnum(
-				description: 'Survey template',
-				values:      [ 'nps', 'general-feedback', 'bug-report', 'feature-request', 'product-feedback', 'customer-research' ],
-				default:     'nps'
+				description: __( 'Survey template to use for the first form.', 'all-feedback' ),
+				values:      $allowedTemplates,
+				default:     'nps',
 			),
 			'brand_color'     => $this->argString(
-				description: 'Brand color hex value',
+				description: __( 'Brand accent colour (hex, e.g. #6366F1).', 'all-feedback' ),
 				sanitize:    'sanitize_hex_color',
-				default:     '#6366F1'
+				default:     '#6366F1',
 			),
 			'position'        => $this->argEnum(
-				description: 'Widget position on page',
+				description: __( 'Widget position on the page.', 'all-feedback' ),
 				values:      [ 'bottom-right', 'bottom-left', 'side-tab' ],
-				default:     'bottom-right'
+				default:     'bottom-right',
 			),
 			'admin_email'     => $this->argString(
-				description: 'Admin notification email address',
-				sanitize:    'sanitize_email'
+				description: __( 'Email address for admin notifications.', 'all-feedback' ),
+				sanitize:    'sanitize_email',
 			),
 			'notif_frequency' => $this->argEnum(
-				description: 'Email notification frequency',
+				description: __( 'How often to receive email notification digests.', 'all-feedback' ),
 				values:      [ 'instant', 'daily', 'weekly' ],
-				default:     'instant'
+				default:     'instant',
 			),
 			'consent'         => $this->argBoolean(
-				description: 'Show consent notice to visitors',
-				default:     true
+				description: __( 'Show a consent notice to visitors before recording responses.', 'all-feedback' ),
+				default:     true,
 			),
 			'anonymize_ip'    => $this->argBoolean(
-				description: 'Anonymize respondent IP addresses',
-				default:     true
+				description: __( 'Anonymise respondent IP addresses before storage.', 'all-feedback' ),
+				default:     true,
 			),
 			'retention'       => $this->argEnum(
-				description: 'Response data retention period',
+				description: __( 'How long to retain response data before automatic purging.', 'all-feedback' ),
 				values:      [ 'forever', '24m', '12m', '6m', '3m' ],
-				default:     '12m'
+				default:     '12m',
 			),
 		];
 	}

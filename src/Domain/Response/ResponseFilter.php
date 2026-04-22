@@ -14,12 +14,22 @@ use AllFeedback\Domain\Shared\QueryFilter;
  * Extends the base pagination / ordering parameters with Response-specific
  * constraints for survey scope, user, and submission date range.
  *
- * @since 1.0.0
+ * @package AllFeedback\Domain\Response
+ * @since   1.0.0
  */
 final class ResponseFilter extends QueryFilter {
 
 	/**
-	 * @since 1.0.0
+	 * @param  int|null    $surveyId Restrict results to responses for this survey ID.
+	 * @param  int|null    $userId   Restrict results to responses from this user ID.
+	 * @param  string|null $dateFrom Lower bound for created_at (Y-m-d format).
+	 * @param  string|null $dateTo   Upper bound for created_at (Y-m-d format).
+	 * @param  int         $page     1-based page number.
+	 * @param  int         $perPage  Results per page.
+	 * @param  string|null $search   Optional full-text search string.
+	 * @param  string      $orderBy  Column to order by. Default 'date'.
+	 * @param  string      $order    Sort direction: ASC | DESC.
+	 * @since  1.0.0
 	 */
 	public function __construct(
 		public readonly ?int $surveyId = null,

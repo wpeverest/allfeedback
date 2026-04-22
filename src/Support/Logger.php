@@ -57,6 +57,7 @@ class Logger {
 	 * Higher number = more severe.
 	 *
 	 * @var array<string, int>
+	 * @since 1.0.0
 	 */
 	private const LEVELS = [
 		'debug'   => 100,
@@ -73,34 +74,32 @@ class Logger {
 	 * PHP 8.x when a type constraint is violated.
 	 *
 	 * @var int[]
+	 * @since 1.0.0
 	 */
 	private const FATAL_TYPES = [
-		E_ERROR,            // 1  — runtime fatal
-		E_PARSE,            // 4  — parse error
-		E_CORE_ERROR,       // 16 — PHP startup fatal
-		E_COMPILE_ERROR,    // 64 — Zend compile fatal
-		E_USER_ERROR,       // 256 — trigger_error( …, E_USER_ERROR )
-		E_RECOVERABLE_ERROR, // 4096 — catchable fatal (type errors in PHP 8)
+		E_ERROR,
+		E_PARSE,
+		E_CORE_ERROR,
+		E_COMPILE_ERROR,
+		E_USER_ERROR,
+		E_RECOVERABLE_ERROR,
 	];
 
 	/**
-	 * @param SettingsManager $settings Plugin settings (for enabled, level, retention_days).
-	 * @since 1.0.0
+	 * @param  SettingsManager $settings Plugin settings (for enabled, level, retention_days).
+	 * @since  1.0.0
 	 */
 	public function __construct(
 		private readonly SettingsManager $settings,
 	) {}
 
-	// ------------------------------------------------------------------
-	// Public API — normal log levels (require logging to be enabled)
-	// ------------------------------------------------------------------
-
 	/**
 	 * Log a DEBUG-level message.
 	 *
-	 * @param string               $message Human-readable message.
-	 * @param array<string, mixed> $context Additional key→value context.
-	 * @since 1.0.0
+	 * @param  string               $message Human-readable message.
+	 * @param  array<string, mixed> $context Additional key→value context.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function debug( string $message, array $context = [] ): void {
 		$this->log( 'debug', $message, $context );
@@ -109,9 +108,10 @@ class Logger {
 	/**
 	 * Log an INFO-level message.
 	 *
-	 * @param string               $message Human-readable message.
-	 * @param array<string, mixed> $context Additional key→value context.
-	 * @since 1.0.0
+	 * @param  string               $message Human-readable message.
+	 * @param  array<string, mixed> $context Additional key→value context.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function info( string $message, array $context = [] ): void {
 		$this->log( 'info', $message, $context );
@@ -120,9 +120,10 @@ class Logger {
 	/**
 	 * Log a WARNING-level message.
 	 *
-	 * @param string               $message Human-readable message.
-	 * @param array<string, mixed> $context Additional key→value context.
-	 * @since 1.0.0
+	 * @param  string               $message Human-readable message.
+	 * @param  array<string, mixed> $context Additional key→value context.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function warning( string $message, array $context = [] ): void {
 		$this->log( 'warning', $message, $context );
@@ -131,17 +132,14 @@ class Logger {
 	/**
 	 * Log an ERROR-level message.
 	 *
-	 * @param string               $message Human-readable message.
-	 * @param array<string, mixed> $context Additional key→value context.
-	 * @since 1.0.0
+	 * @param  string               $message Human-readable message.
+	 * @param  array<string, mixed> $context Additional key→value context.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function error( string $message, array $context = [] ): void {
 		$this->log( 'error', $message, $context );
 	}
-
-	// ------------------------------------------------------------------
-	// Shutdown handler — always active, regardless of logging setting
-	// ------------------------------------------------------------------
 
 	/**
 	 * Register a PHP shutdown function that captures fatal errors.
@@ -153,7 +151,8 @@ class Logger {
 	 * Only errors whose file path contains the plugin directory are captured —
 	 * fatals from WordPress core or other plugins are not our responsibility.
 	 *
-	 * @since 1.0.0
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function registerShutdownHandler(): void {
 		$pluginDir = defined( 'ABSPATH' )
@@ -172,7 +171,6 @@ class Logger {
 					return;
 				}
 
-				// Only capture errors originating inside this plugin.
 				if ( $pluginDir !== '' && strpos( $error['file'], $pluginDir ) === false ) {
 					return;
 				}
@@ -186,15 +184,11 @@ class Logger {
 		);
 	}
 
-	// ------------------------------------------------------------------
-	// Directory helpers (used by LogsController and CoreServiceProvider)
-	// ------------------------------------------------------------------
-
 	/**
 	 * Absolute filesystem path to the log directory (no trailing slash).
 	 *
 	 * @return string
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function logDir(): string {
 		return wp_upload_dir()['basedir'] . '/allfeedback/logs';
@@ -206,7 +200,7 @@ class Logger {
 	 * Safe to call multiple times — is a no-op if already set up.
 	 *
 	 * @return bool True if the directory exists and is writable.
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function ensureDirectory(): bool {
 		$dir = $this->logDir();
@@ -215,14 +209,12 @@ class Logger {
 			return false;
 		}
 
-		// Block direct file access via Apache.
 		$htaccess = $dir . '/.htaccess';
 		if ( ! file_exists( $htaccess ) ) {
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 			file_put_contents( $htaccess, "deny from all\n" );
 		}
 
-		// Fallback for nginx / servers that ignore .htaccess.
 		$index = $dir . '/index.php';
 		if ( ! file_exists( $index ) ) {
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
@@ -232,24 +224,22 @@ class Logger {
 		return is_writable( $dir );
 	}
 
-	// ------------------------------------------------------------------
-	// Internal — normal log path (gated by enabled + threshold)
-	// ------------------------------------------------------------------
-
 	/**
 	 * Check whether logging is switched on via settings.
 	 *
-	 * @since 1.0.0
+	 * @return bool
+	 * @since  1.0.0
 	 */
 	private function isEnabled(): bool {
 		return (bool) $this->settings->get( 'advanced.logging.enabled' );
 	}
 
 	/**
-	 * Check whether $level meets the minimum configured threshold.
+	 * Check whether `$level` meets the minimum configured threshold.
 	 *
-	 * @param string $level One of: debug | info | warning | error.
-	 * @since 1.0.0
+	 * @param  string $level One of: `debug` | `info` | `warning` | `error`.
+	 * @return bool
+	 * @since  1.0.0
 	 */
 	private function meetsThreshold( string $level ): bool {
 		$threshold = (string) ( $this->settings->get( 'advanced.logging.level' ) ?? 'error' );
@@ -257,9 +247,10 @@ class Logger {
 	}
 
 	/**
-	 * Absolute path to today's log file.
+	 * Return the absolute path to today's log file.
 	 *
-	 * @since 1.0.0
+	 * @return string
+	 * @since  1.0.0
 	 */
 	private function currentLogFile(): string {
 		return $this->logDir() . '/allfeedback-' . gmdate( 'Y-m-d' ) . '.log';
@@ -268,12 +259,13 @@ class Logger {
 	/**
 	 * Format a single log entry line.
 	 *
-	 *   [2026-04-13T10:30:00+00:00] [ERROR] Message {"key":"value"}
+	 * Example: `[2026-04-13T10:30:00+00:00] [ERROR] Message {"key":"value"}`
 	 *
-	 * @param string               $level   Severity label.
-	 * @param string               $message Human-readable message.
-	 * @param array<string, mixed> $context Key→value context pairs.
-	 * @since 1.0.0
+	 * @param  string               $level   Severity label.
+	 * @param  string               $message Human-readable message.
+	 * @param  array<string, mixed> $context Key→value context pairs.
+	 * @return string
+	 * @since  1.0.0
 	 */
 	private function format( string $level, string $message, array $context ): string {
 		$entry = sprintf( '[%s] [%s] %s', gmdate( 'c' ), strtoupper( $level ), $message );
@@ -286,14 +278,13 @@ class Logger {
 	}
 
 	/**
-	 * Write a log entry to today's log file.
-	 * Gated by advanced.logging.enabled only — all severities are captured
-	 * when logging is on because no level selector is exposed in the UI.
+	 * Write a log entry to today's log file when logging is enabled.
 	 *
-	 * @param string               $level   Severity label.
-	 * @param string               $message Human-readable message.
-	 * @param array<string, mixed> $context Key→value context pairs.
-	 * @since 1.0.0
+	 * @param  string               $level   Severity label.
+	 * @param  string               $message Human-readable message.
+	 * @param  array<string, mixed> $context Key→value context pairs.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	private function log( string $level, string $message, array $context ): void {
 		if ( ! $this->isEnabled() ) {
@@ -311,9 +302,10 @@ class Logger {
 	 * because shutdown functions run after normal PHP execution has ended
 	 * and other resources may already be released.
 	 *
-	 * @param string               $message Human-readable message.
-	 * @param array<string, mixed> $context Key→value context pairs.
-	 * @since 1.0.0
+	 * @param  string               $message Human-readable message.
+	 * @param  array<string, mixed> $context Key→value context pairs.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	private function writeFatal( string $message, array $context ): void {
 		$this->write( 'fatal', $message, $context );
@@ -321,12 +313,14 @@ class Logger {
 
 	/**
 	 * Low-level file write — no guards, no pruning.
-	 * Called by both log() and writeFatal().
 	 *
-	 * @param string               $level   Severity label.
-	 * @param string               $message Human-readable message.
-	 * @param array<string, mixed> $context Key→value context pairs.
-	 * @since 1.0.0
+	 * Called by both `log()` and `writeFatal()`.
+	 *
+	 * @param  string               $level   Severity label.
+	 * @param  string               $message Human-readable message.
+	 * @param  array<string, mixed> $context Key→value context pairs.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	private function write( string $level, string $message, array $context ): void {
 		$dir = $this->logDir();
@@ -344,10 +338,11 @@ class Logger {
 	/**
 	 * Delete log files older than the configured retention period.
 	 *
-	 * Called after every normal write. Skipped in writeFatal() because
+	 * Called after every normal write. Skipped in `writeFatal()` because
 	 * shutdown functions should do as little as possible.
 	 *
-	 * @since 1.0.0
+	 * @return void
+	 * @since  1.0.0
 	 */
 	private function pruneOldLogs(): void {
 		$days = (int) ( $this->settings->get( 'advanced.logging.retention_days' ) ?? 30 );

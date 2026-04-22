@@ -19,13 +19,15 @@ use AllFeedback\Domain\Survey\SurveySchema;
  * String registration should be called whenever a survey schema is saved.
  * Translation is applied at render time by calling translate().
  *
- * @since 1.0.0
+ * @package AllFeedback\Core\I18n
+ * @since   1.0.0
  */
 class SurveySchemaTranslator {
 
 	/**
 	 * Context string used when registering strings with WPML.
 	 *
+	 * @var string
 	 * @since 1.0.0
 	 */
 	private const WPML_CONTEXT = 'AllFeedback Survey Schema';
@@ -33,6 +35,7 @@ class SurveySchemaTranslator {
 	/**
 	 * Group name used when registering strings with Polylang.
 	 *
+	 * @var string
 	 * @since 1.0.0
 	 */
 	private const PLL_GROUP = 'AllFeedback';
@@ -41,9 +44,10 @@ class SurveySchemaTranslator {
 	 * Register every field label in the given schema with WPML and Polylang
 	 * so they appear in the translation interface.
 	 *
-	 * @param int          $surveyId The primary key of the survey being registered.
-	 * @param SurveySchema $schema   The schema whose field labels should be registered.
-	 * @since 1.0.0
+	 * @param  int          $surveyId The primary key of the survey being registered.
+	 * @param  SurveySchema $schema   The schema whose field labels should be registered.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function registerStrings( int $surveyId, SurveySchema $schema ): void {
 		foreach ( $schema->getFields() as $index => $field ) {
@@ -72,10 +76,10 @@ class SurveySchemaTranslator {
 	 * When neither multilingual plugin is active, the original schema is
 	 * returned unchanged.
 	 *
-	 * @param int          $surveyId The primary key of the survey being translated.
-	 * @param SurveySchema $schema   The schema to translate.
+	 * @param  int          $surveyId The primary key of the survey being translated.
+	 * @param  SurveySchema $schema   The schema to translate.
 	 * @return SurveySchema
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function translate( int $surveyId, SurveySchema $schema ): SurveySchema {
 		if ( $schema->isEmpty() ) {
@@ -95,12 +99,12 @@ class SurveySchemaTranslator {
 	/**
 	 * Translate a single field label and return a (possibly new) field instance.
 	 *
-	 * @param int         $surveyId The survey primary key.
-	 * @param int         $index    Zero-based field index within the schema.
-	 * @param SurveyField $field    The field whose label should be translated.
-	 * @param string      $locale   The current WordPress locale string.
+	 * @param  int         $surveyId The survey primary key.
+	 * @param  int         $index    Zero-based field index within the schema.
+	 * @param  SurveyField $field    The field whose label should be translated.
+	 * @param  string      $locale   The current WordPress locale string.
 	 * @return SurveyField
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function translateField(
 		int $surveyId,
@@ -141,10 +145,10 @@ class SurveySchemaTranslator {
 	 * Falls back from full locale (e.g. 'en_US') to two-letter language code
 	 * ('en') and finally to the 'en' entry or the first available value.
 	 *
-	 * @param array<string, string> $map    Locale or language code => label.
-	 * @param string                $locale Current WordPress locale.
+	 * @param  array<string, string> $map    Locale or language code => label.
+	 * @param  string                $locale Current WordPress locale.
 	 * @return string
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function resolveInlineLabel( array $map, string $locale ): string {
 		if ( isset( $map[ $locale ] ) ) {
@@ -163,10 +167,10 @@ class SurveySchemaTranslator {
 	 * Build the unique string name used when registering and retrieving a
 	 * field label translation with WPML or Polylang.
 	 *
-	 * @param int $surveyId   Survey primary key.
-	 * @param int $fieldIndex Zero-based field index within the schema.
+	 * @param  int $surveyId   Survey primary key.
+	 * @param  int $fieldIndex Zero-based field index within the schema.
 	 * @return string
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function stringName( int $surveyId, int $fieldIndex ): string {
 		return "allfeedback_survey_{$surveyId}_field_{$fieldIndex}_label";

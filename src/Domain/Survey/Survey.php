@@ -16,27 +16,61 @@ use DateTimeImmutable;
  * schema, display settings, targeting rules, lifecycle status, and aggregate
  * response count.
  *
- * @since 1.0.0
+ * @package AllFeedback\Domain\Survey
+ * @since   1.0.0
  */
 class Survey extends Entity {
 
-	/** @since 1.0.0 */
+	/**
+	 * Current lifecycle status of the survey.
+	 *
+	 * @var SurveyStatus
+	 * @since 1.0.0
+	 */
 	private SurveyStatus $status;
 
-	/** @since 1.0.0 */
+	/**
+	 * Human-readable explanation of a targeting conflict, or null when none.
+	 *
+	 * @var string|null
+	 * @since 1.0.0
+	 */
 	private ?string $conflictReason = null;
 
-	/** @since 1.0.0 */
+	/**
+	 * Denormalised count of submitted responses for this survey.
+	 *
+	 * @var int
+	 * @since 1.0.0
+	 */
 	private int $responseCount;
 
-	/** @since 1.0.0 */
+	/**
+	 * Timestamp of when the survey was first persisted.
+	 *
+	 * @var DateTimeImmutable
+	 * @since 1.0.0
+	 */
 	private DateTimeImmutable $createdAt;
 
-	/** @since 1.0.0 */
+	/**
+	 * Timestamp of the most recent update, or null when unmodified since creation.
+	 *
+	 * @var DateTimeImmutable|null
+	 * @since 1.0.0
+	 */
 	private ?DateTimeImmutable $updatedAt = null;
 
 	/**
-	 * @since 1.0.0
+	 * @param  string            $title         Human-readable survey title.
+	 * @param  string            $description   Optional survey description.
+	 * @param  array<mixed>      $formSchema    Structured form field definitions.
+	 * @param  array<mixed>      $settings      Survey display and behaviour settings.
+	 * @param  array<mixed>      $styling       Visual customisation overrides.
+	 * @param  int               $createdBy     WordPress user ID of the author.
+	 * @param  SurveyStatus|null $status        Initial status; defaults to Draft.
+	 * @param  int               $responseCount Seed value for the response counter.
+	 * @since  1.0.0
 	 */
 	public function __construct(
 		private string $title,
@@ -56,7 +90,20 @@ class Survey extends Entity {
 	/**
 	 * Reconstitute a Survey from a persistence row.
 	 *
-	 * @since 1.0.0
+	 * @param  int                    $id             Primary key.
+	 * @param  string                 $title          Survey title.
+	 * @param  string                 $description    Survey description.
+	 * @param  array<mixed>           $formSchema     Decoded form schema.
+	 * @param  array<mixed>           $settings       Decoded settings.
+	 * @param  SurveyStatus           $status         Current status.
+	 * @param  int                    $responseCount  Denormalised response count.
+	 * @param  int                    $createdBy      Author user ID.
+	 * @param  DateTimeImmutable      $createdAt      Creation timestamp.
+	 * @param  DateTimeImmutable|null $updatedAt      Last-updated timestamp.
+	 * @param  array<mixed>           $styling        Styling overrides.
+	 * @param  string|null            $conflictReason Targeting conflict explanation.
+	 * @return self
+	 * @since  1.0.0
 	 */
 	public static function reconstitute(
 		int $id,
@@ -81,14 +128,21 @@ class Survey extends Entity {
 	}
 
 	/**
-	 * @since 1.0.0
+	 * Return the survey title.
+	 *
+	 * @return string
+	 * @since  1.0.0
 	 */
 	public function getTitle(): string {
 		return $this->title;
 	}
 
 	/**
-	 * @since 1.0.0
+	 * Update the survey title and record a modification timestamp.
+	 *
+	 * @param  string $title New title.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function setTitle( string $title ): void {
 		$this->title = $title;
@@ -96,14 +150,21 @@ class Survey extends Entity {
 	}
 
 	/**
-	 * @since 1.0.0
+	 * Return the survey description.
+	 *
+	 * @return string
+	 * @since  1.0.0
 	 */
 	public function getDescription(): string {
 		return $this->description;
 	}
 
 	/**
-	 * @since 1.0.0
+	 * Update the survey description and record a modification timestamp.
+	 *
+	 * @param  string $description New description.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function setDescription( string $description ): void {
 		$this->description = $description;
@@ -111,14 +172,21 @@ class Survey extends Entity {
 	}
 
 	/**
-	 * @since 1.0.0
+	 * Return the raw form schema array.
+	 *
+	 * @return array<mixed>
+	 * @since  1.0.0
 	 */
 	public function getFormSchema(): array {
 		return $this->formSchema;
 	}
 
 	/**
-	 * @since 1.0.0
+	 * Replace the form schema and record a modification timestamp.
+	 *
+	 * @param  array<mixed> $formSchema New form schema.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function setFormSchema( array $formSchema ): void {
 		$this->formSchema = $formSchema;
@@ -126,14 +194,21 @@ class Survey extends Entity {
 	}
 
 	/**
-	 * @since 1.0.0
+	 * Return the display and behaviour settings array.
+	 *
+	 * @return array<mixed>
+	 * @since  1.0.0
 	 */
 	public function getSettings(): array {
 		return $this->settings;
 	}
 
 	/**
-	 * @since 1.0.0
+	 * Replace the settings array and record a modification timestamp.
+	 *
+	 * @param  array<mixed> $settings New settings.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function setSettings( array $settings ): void {
 		$this->settings = $settings;
@@ -141,14 +216,21 @@ class Survey extends Entity {
 	}
 
 	/**
-	 * @since 1.0.0
+	 * Return the visual styling overrides array.
+	 *
+	 * @return array<mixed>
+	 * @since  1.0.0
 	 */
 	public function getStyling(): array {
 		return $this->styling;
 	}
 
 	/**
-	 * @since 1.0.0
+	 * Replace the styling array and record a modification timestamp.
+	 *
+	 * @param  array<mixed> $styling New styling overrides.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function setStyling( array $styling ): void {
 		$this->styling = $styling;
@@ -156,43 +238,71 @@ class Survey extends Entity {
 	}
 
 	/**
-	 * @since 1.0.0
+	 * Return the current lifecycle status.
+	 *
+	 * @return SurveyStatus
+	 * @since  1.0.0
 	 */
 	public function getStatus(): SurveyStatus {
 		return $this->status;
 	}
 
+	/**
+	 * Return the targeting conflict reason string, or null when absent.
+	 *
+	 * @return string|null
+	 * @since  1.0.0
+	 */
 	public function getConflictReason(): ?string {
 		return $this->conflictReason;
 	}
 
+	/**
+	 * Set or clear the targeting conflict reason.
+	 *
+	 * @param  string|null $reason Conflict explanation, or null to clear.
+	 * @return void
+	 * @since  1.0.0
+	 */
 	public function setConflictReason( ?string $reason ): void {
 		$this->conflictReason = $reason;
 	}
 
 	/**
-	 * @since 1.0.0
+	 * Return the denormalised response count.
+	 *
+	 * @return int
+	 * @since  1.0.0
 	 */
 	public function getResponseCount(): int {
 		return $this->responseCount;
 	}
 
 	/**
-	 * @since 1.0.0
+	 * Return the WordPress user ID of the survey author.
+	 *
+	 * @return int
+	 * @since  1.0.0
 	 */
 	public function getCreatedBy(): int {
 		return $this->createdBy;
 	}
 
 	/**
-	 * @since 1.0.0
+	 * Return the survey creation timestamp.
+	 *
+	 * @return DateTimeImmutable
+	 * @since  1.0.0
 	 */
 	public function getCreatedAt(): DateTimeImmutable {
 		return $this->createdAt;
 	}
 
 	/**
-	 * @since 1.0.0
+	 * Return the last-updated timestamp, or null when never modified.
+	 *
+	 * @return DateTimeImmutable|null
+	 * @since  1.0.0
 	 */
 	public function getUpdatedAt(): ?DateTimeImmutable {
 		return $this->updatedAt;
@@ -201,7 +311,8 @@ class Survey extends Entity {
 	/**
 	 * Transition the survey to Published status so it is publicly visible.
 	 *
-	 * @since 1.0.0
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function publish(): void {
 		$this->status = SurveyStatus::Published;
@@ -211,7 +322,8 @@ class Survey extends Entity {
 	/**
 	 * Transition the survey to Archived status, hiding it from public view.
 	 *
-	 * @since 1.0.0
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function archive(): void {
 		$this->status = SurveyStatus::Archived;
@@ -221,7 +333,8 @@ class Survey extends Entity {
 	/**
 	 * Move the survey to the Trashed status (soft delete).
 	 *
-	 * @since 1.0.0
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function trash(): void {
 		$this->status = SurveyStatus::Trashed;
@@ -231,7 +344,8 @@ class Survey extends Entity {
 	/**
 	 * Restore a trashed survey back to Draft.
 	 *
-	 * @since 1.0.0
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function restore(): void {
 		$this->status = SurveyStatus::Draft;
@@ -241,7 +355,8 @@ class Survey extends Entity {
 	/**
 	 * Increment the denormalised response counter by one.
 	 *
-	 * @since 1.0.0
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function incrementResponseCount(): void {
 		++$this->responseCount;
@@ -251,7 +366,8 @@ class Survey extends Entity {
 	/**
 	 * Serialise the aggregate to a plain associative array for persistence.
 	 *
-	 * @since 1.0.0
+	 * @return array<string, mixed>
+	 * @since  1.0.0
 	 */
 	public function toArray(): array {
 		return [
@@ -269,7 +385,12 @@ class Survey extends Entity {
 		];
 	}
 
-	/** @since 1.0.0 */
+	/**
+	 * Update the last-modified timestamp to now.
+	 *
+	 * @return void
+	 * @since  1.0.0
+	 */
 	private function touch(): void {
 		$this->updatedAt = new DateTimeImmutable();
 	}

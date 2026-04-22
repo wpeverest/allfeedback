@@ -13,13 +13,15 @@ defined( 'ABSPATH' ) || exit;
  * handle() method) using a middleware-style chain. Each pipe receives the
  * current subject and a $next callable that advances to the following pipe.
  *
- * @since 1.0.0
+ * @package AllFeedback\Core\Pipeline
+ * @since   1.0.0
  */
 class Pipeline {
 
 	/**
 	 * The value being passed through the pipeline.
 	 *
+	 * @var mixed
 	 * @since 1.0.0
 	 */
 	private mixed $passable;
@@ -35,9 +37,9 @@ class Pipeline {
 	/**
 	 * Set the subject that will travel through the pipeline.
 	 *
-	 * @param mixed $passable The subject to pass through each pipe.
+	 * @param  mixed $passable The subject to pass through each pipe.
 	 * @return static
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function send( mixed $passable ): self {
 		$this->passable = $passable;
@@ -47,9 +49,9 @@ class Pipeline {
 	/**
 	 * Define the complete list of pipes to run.
 	 *
-	 * @param array<int, callable|object> $pipes
+	 * @param  array<int, callable|object> $pipes Ordered list of pipe callables or objects.
 	 * @return static
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function through( array $pipes ): self {
 		$this->pipes = $pipes;
@@ -59,9 +61,9 @@ class Pipeline {
 	/**
 	 * Append a single pipe to the pipeline.
 	 *
-	 * @param callable $pipe
+	 * @param  callable $pipe A callable pipe to append.
 	 * @return static
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function pipe( callable $pipe ): self {
 		$this->pipes[] = $pipe;
@@ -71,9 +73,9 @@ class Pipeline {
 	/**
 	 * Run the pipeline and pass the final result to $destination.
 	 *
-	 * @param callable $destination The terminal callable that receives the passable.
-	 * @return mixed The value returned by $destination.
-	 * @since 1.0.0
+	 * @param  callable $destination The terminal callable that receives the passable.
+	 * @return mixed                 The value returned by $destination.
+	 * @since  1.0.0
 	 */
 	public function then( callable $destination ): mixed {
 		$pipeline = array_reduce(
@@ -89,7 +91,7 @@ class Pipeline {
 	 * Run the pipeline and return the passable as-is after all pipes have run.
 	 *
 	 * @return mixed
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function thenReturn(): mixed {
 		return $this->then( fn( $passable ) => $passable );
@@ -99,7 +101,7 @@ class Pipeline {
 	 * Build the reducer closure that nests each pipe around the next.
 	 *
 	 * @return \Closure
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	protected function carry(): \Closure {
 		return function ( $stack, $pipe ) {
@@ -121,7 +123,7 @@ class Pipeline {
 	 * Create a new pipeline instance.
 	 *
 	 * @return static
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public static function make(): self {
 		return new self();

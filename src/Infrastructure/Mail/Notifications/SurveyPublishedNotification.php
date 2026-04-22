@@ -16,12 +16,15 @@ use AllFeedback\Infrastructure\Mail\NotificationContext;
  * Fired by NotificationServiceProvider on the `allfeedback:survey:activated` action.
  * Only dispatched when `email_notifications` is enabled in plugin settings.
  *
- * @since 1.0.0
+ * @package AllFeedback\Infrastructure\Mail\Notifications
+ * @since   1.0.0
  */
 class SurveyPublishedNotification {
 
 	/**
-	 * @since 1.0.0
+	 * @param  Mailer          $mailer   Mailer for dispatching the email.
+	 * @param  SettingsManager $settings Plugin settings for toggling and recipient configuration.
+	 * @since  1.0.0
 	 */
 	public function __construct(
 		private readonly Mailer $mailer,
@@ -31,7 +34,9 @@ class SurveyPublishedNotification {
 	/**
 	 * Compose and dispatch the survey-published alert to the admin email.
 	 *
-	 * @since 1.0.0
+	 * @param  NotificationContext $context Context containing the activated survey aggregate.
+	 * @return bool True when the email was dispatched successfully.
+	 * @since  1.0.0
 	 */
 	public function send( NotificationContext $context ): bool {
 		if ( ! $this->settings->get( 'email_notifications' ) ) {
@@ -63,18 +68,19 @@ class SurveyPublishedNotification {
 	/**
 	 * Build the template variable map from the notification context.
 	 *
+	 * @param  NotificationContext $context Context containing the activated survey aggregate.
 	 * @return array<string, string>
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function buildVars( NotificationContext $context ): array {
 		$survey = $context->getSurvey();
 
 		return [
-			'survey_title' => $survey->getTitle(),
+			'survey_title' => esc_html( $survey->getTitle() ),
 			'survey_id'    => (string) $survey->getId(),
-			'activated_at' => current_time( 'mysql' ),
-			'site_name'    => get_bloginfo( 'name' ),
-			'site_url'     => home_url(),
+			'activated_at' => esc_html( current_time( 'mysql' ) ),
+			'site_name'    => esc_html( get_bloginfo( 'name' ) ),
+			'site_url'     => esc_url( home_url() ),
 		];
 	}
 }

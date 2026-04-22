@@ -12,14 +12,16 @@ defined( 'ABSPATH' ) || exit;
  * Implemented by any class that needs to run initialisation logic after the
  * dependency-injection container has been fully built.
  *
- * @since 1.0.0
+ * @package AllFeedback\Core\Contracts
+ * @since   1.0.0
  */
 interface Bootable {
 
 	/**
 	 * Execute any boot-time initialisation for this class.
 	 *
-	 * @since 1.0.0
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function boot(): void;
 }

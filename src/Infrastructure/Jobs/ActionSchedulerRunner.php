@@ -21,17 +21,25 @@ use Psr\Container\ContainerInterface;
  * Any uncaught exception is logged and re-thrown so that Action Scheduler
  * records the action as failed rather than silently swallowing the error.
  *
- * @since 1.0.0
+ * @package AllFeedback\Infrastructure\Jobs
+ * @since   1.0.0
  */
 class ActionSchedulerRunner {
 
 	use Hooks;
 
-	/** @since 1.0.0 */
+	/**
+	 * Action Scheduler hook name consumed by this runner.
+	 *
+	 * @var string
+	 * @since 1.0.0
+	 */
 	public const HOOK = 'allfeedback/run_job';
 
 	/**
-	 * @since 1.0.0
+	 * @param  ContainerInterface $container DI container used to resolve job instances.
+	 * @param  Logger             $logger    Logger for recording malformed or failed jobs.
+	 * @since  1.0.0
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
@@ -41,7 +49,8 @@ class ActionSchedulerRunner {
 	/**
 	 * Register the Action Scheduler callback hook.
 	 *
-	 * @since 1.0.0
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function register(): void {
 		$this->addAction( self::HOOK, [ $this, 'run' ] );
@@ -50,8 +59,9 @@ class ActionSchedulerRunner {
 	/**
 	 * Decode the job data, resolve the class, and execute the job.
 	 *
-	 * @param string $jobData JSON-encoded job class + payload from Action Scheduler.
-	 * @since 1.0.0
+	 * @param  string $jobData JSON-encoded job class and payload from Action Scheduler.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function run( string $jobData ): void {
 		$data = json_decode( $jobData, true );

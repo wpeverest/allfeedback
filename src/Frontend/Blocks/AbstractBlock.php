@@ -23,7 +23,8 @@ use AllFeedback\Core\Constants;
  *
  * webpack.config.js, BlockRegistry, and FrontendServiceProvider never change.
  *
- * @since 1.0.0
+ * @package AllFeedback\Frontend\Blocks
+ * @since   1.0.0
  */
 abstract class AbstractBlock {
 
@@ -33,7 +34,8 @@ abstract class AbstractBlock {
 	 * Must match the folder name: resources/scripts/blocks/{slug}/block.json.
 	 * Example: "survey" for the folder resources/scripts/blocks/survey/.
 	 *
-	 * @since 1.0.0
+	 * @return string
+	 * @since  1.0.0
 	 */
 	abstract protected function getSlug(): string;
 
@@ -45,7 +47,7 @@ abstract class AbstractBlock {
 	 *
 	 * @param  array<string, mixed> $attributes Block attributes from block.json.
 	 * @return string
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	abstract public function render( array $attributes ): string;
 
@@ -56,7 +58,8 @@ abstract class AbstractBlock {
 	 * callback, then calls afterRegister() so subclasses can inject editor data
 	 * via wp_add_inline_script or perform other post-registration work.
 	 *
-	 * @since 1.0.0
+	 * @return void
+	 * @since  1.0.0
 	 */
 	final public function register(): void {
 		if ( ! function_exists( 'register_block_type' ) ) {
@@ -96,7 +99,8 @@ abstract class AbstractBlock {
 	 *   wp_add_inline_script($blockType->editor_script_handles[0], '...', 'before');
 	 *
 	 * @param  \WP_Block_Type $blockType Registered block type object.
-	 * @since 1.0.0
+	 * @return void
+	 * @since  1.0.0
 	 */
 	protected function afterRegister( \WP_Block_Type $blockType ): void {}
 }

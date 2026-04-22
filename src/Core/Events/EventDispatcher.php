@@ -14,7 +14,8 @@ use AllFeedback\Traits\Hooks;
  * Dispatches domain events to registered listeners and also fires a
  * WordPress action hook so external code can react to every event.
  *
- * @since 1.0.0
+ * @package AllFeedback\Core\Events
+ * @since   1.0.0
  */
 class EventDispatcher {
 
@@ -32,9 +33,9 @@ class EventDispatcher {
 	 * Dispatch an event to all registered listeners in priority order and
 	 * then fire a corresponding WordPress action hook.
 	 *
-	 * @param Event $event The event instance to dispatch.
-	 * @return Event The same event instance, potentially mutated by listeners.
-	 * @since 1.0.0
+	 * @param  Event $event The event instance to dispatch.
+	 * @return Event        The same event instance, potentially mutated by listeners.
+	 * @since  1.0.0
 	 */
 	public function dispatch( Event $event ): Event {
 		$eventName = $event::class;
@@ -59,10 +60,11 @@ class EventDispatcher {
 	/**
 	 * Register a callable listener for a specific event class.
 	 *
-	 * @param string   $eventClass Fully-qualified event class name.
-	 * @param callable $listener   Callable that accepts the event instance.
-	 * @param int      $priority   Lower numbers run first. Default 10.
-	 * @since 1.0.0
+	 * @param  string   $eventClass Fully-qualified event class name.
+	 * @param  callable $listener   Callable that accepts the event instance.
+	 * @param  int      $priority   Lower numbers run first. Default 10.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function listen( string $eventClass, callable $listener, int $priority = 10 ): void {
 		if ( ! isset( $this->listeners[ $eventClass ] ) ) {
@@ -76,8 +78,9 @@ class EventDispatcher {
 	/**
 	 * Register all event-to-method mappings declared by an EventSubscriber.
 	 *
-	 * @param EventSubscriber $subscriber The subscriber to register.
-	 * @since 1.0.0
+	 * @param  EventSubscriber $subscriber The subscriber to register.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function subscribe( EventSubscriber $subscriber ): void {
 		foreach ( $subscriber->getSubscribedEvents() as $eventClass => $params ) {

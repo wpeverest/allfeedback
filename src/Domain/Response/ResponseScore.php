@@ -11,14 +11,16 @@ defined( 'ABSPATH' ) || exit;
  *
  * Supports NPS (0–10), CSAT (1–5), and CES (1–7) score types.
  *
- * @since 1.0.0
+ * @package AllFeedback\Domain\Response
+ * @since   1.0.0
  */
 final class ResponseScore {
 
 	/**
-	 * @since 1.0.0
-	 *
+	 * @param  float  $score Numeric score value.
+	 * @param  string $type  Score type: nps | csat | ces.
 	 * @throws \InvalidArgumentException When the type is not one of nps, csat, or ces.
+	 * @since  1.0.0
 	 */
 	public function __construct(
 		private readonly float $score,
@@ -40,7 +42,8 @@ final class ResponseScore {
 	/**
 	 * Return the numeric score value.
 	 *
-	 * @since 1.0.0
+	 * @return float
+	 * @since  1.0.0
 	 */
 	public function getValue(): float {
 		return $this->score;
@@ -49,7 +52,8 @@ final class ResponseScore {
 	/**
 	 * Return the score type identifier: nps | csat | ces.
 	 *
-	 * @since 1.0.0
+	 * @return string
+	 * @since  1.0.0
 	 */
 	public function getType(): string {
 		return $this->type;
@@ -61,8 +65,7 @@ final class ResponseScore {
 	 * Returns null when the type is not nps.
 	 *
 	 * @return 'promoter'|'passive'|'detractor'|null
-	 *
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function getNpsCategory(): ?string {
 		if ( 'nps' !== $this->type ) {

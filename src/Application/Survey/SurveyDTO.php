@@ -15,7 +15,13 @@ defined( 'ABSPATH' ) || exit;
 class SurveyDTO {
 
 	/**
-	 * @since 1.0.0
+	 * @param  string      $title       Survey title.
+	 * @param  string      $description Survey description.
+	 * @param  array<mixed> $formSchema  Structured form field definitions.
+	 * @param  array<mixed> $settings    Display and behaviour settings.
+	 * @param  array<mixed> $targeting   Targeting rules.
+	 * @param  string      $status      Lifecycle status string.
+	 * @since  1.0.0
 	 */
 	public function __construct(
 		public readonly string $title,
@@ -29,9 +35,9 @@ class SurveyDTO {
 	/**
 	 * Build a SurveyDTO from a raw associative array.
 	 *
-	 * @param array $data Raw request data.
+	 * @param  array<mixed> $data Raw request data.
 	 * @return self
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public static function fromArray( array $data ): self {
 		return new self(

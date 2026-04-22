@@ -34,27 +34,60 @@ use AllFeedback\Traits\Hooks;
  *       $modules['sample-module'] = SampleModule::class;
  *       return $modules;
  *   } );
+ *
+ * @package AllFeedback\Modules
+ * @since   1.0.0
  */
 abstract class AbstractModule implements ModuleInterface {
 
 	use Hooks;
 
-	/** @var Container DI container — use $this->get( SomeService::class ) to resolve. */
+	/**
+	 * DI container — use $this->get( SomeService::class ) to resolve.
+	 *
+	 * @var Container
+	 * @since 1.0.0
+	 */
 	protected Container $container;
 
-	/** Whether this module is currently enabled (loaded from WP options). */
+	/**
+	 * Whether this module is currently enabled (loaded from WP options).
+	 *
+	 * @var bool
+	 * @since 1.0.0
+	 */
 	protected bool $enabled = false;
 
-	/** Unique module slug — override in child class. */
+	/**
+	 * Unique module slug — override in child class.
+	 *
+	 * @var string
+	 * @since 1.0.0
+	 */
 	protected string $id = '';
 
-	/** Human-readable name — override in child class. */
+	/**
+	 * Human-readable name — override in child class.
+	 *
+	 * @var string
+	 * @since 1.0.0
+	 */
 	protected string $name = '';
 
-	/** Short description — override in child class. */
+	/**
+	 * Short description — override in child class.
+	 *
+	 * @var string
+	 * @since 1.0.0
+	 */
 	protected string $description = '';
 
-	/** Module version — override in child class if needed. */
+	/**
+	 * Module version — override in child class if needed.
+	 *
+	 * @var string
+	 * @since 1.0.0
+	 */
 	protected string $version = '1.0.0';
 
 	/**
@@ -62,95 +95,130 @@ abstract class AbstractModule implements ModuleInterface {
 	 * The loader will boot those modules first.
 	 *
 	 * @var string[]
+	 * @since 1.0.0
 	 */
 	protected array $dependencies = [];
 
+	/**
+	 * @param  Container $container DI container for resolving services within the module.
+	 * @since  1.0.0
+	 */
 	public function __construct( Container $container ) {
 		$this->container = $container;
 		$this->loadModuleState();
 	}
 
-	// ------------------------------------------------------------------
-	// Default implementations (override in child classes as needed)
-	// ------------------------------------------------------------------
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @return void
+	 * @since  1.0.0
+	 */
+	public function register(): void {}
 
-	/** {@inheritdoc} */
-	public function register(): void {
-		// Override to register services / listeners.
-	}
-
-	/** {@inheritdoc} */
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @return void
+	 * @since  1.0.0
+	 */
 	public function boot(): void {
-		// Guard — do nothing if disabled or dependencies not met.
 		if ( ! $this->isEnabled() ) {
 			return;
 		}
-		// Override with your module logic.
 	}
 
-	// ------------------------------------------------------------------
-	// State
-	// ------------------------------------------------------------------
-
-	/** {@inheritdoc} */
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @return bool
+	 * @since  1.0.0
+	 */
 	public function isEnabled(): bool {
 		return $this->enabled && $this->checkDependencies();
 	}
 
-	/** {@inheritdoc} */
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @return string
+	 * @since  1.0.0
+	 */
 	public function getId(): string { return $this->id; }
 
-	/** {@inheritdoc} */
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @return string
+	 * @since  1.0.0
+	 */
 	public function getName(): string { return $this->name; }
 
-	/** {@inheritdoc} */
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @return string
+	 * @since  1.0.0
+	 */
 	public function getDescription(): string { return $this->description; }
 
-	/** {@inheritdoc} */
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @return string
+	 * @since  1.0.0
+	 */
 	public function getVersion(): string { return $this->version; }
 
-	/** {@inheritdoc} */
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @return string[]
+	 * @since  1.0.0
+	 */
 	public function getDependencies(): array { return $this->dependencies; }
 
-	// ------------------------------------------------------------------
-	// Enable / Disable
-	// ------------------------------------------------------------------
-
-	/** {@inheritdoc} */
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @return void
+	 * @since  1.0.0
+	 */
 	public function enable(): void {
 		$this->enabled = true;
 		$this->saveModuleState();
 		$this->doAction( "allfeedback:module:{$this->id}:enabled" );
 	}
 
-	/** {@inheritdoc} */
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @return void
+	 * @since  1.0.0
+	 */
 	public function disable(): void {
 		$this->enabled = false;
 		$this->saveModuleState();
 		$this->doAction( "allfeedback:module:{$this->id}:disabled" );
 	}
 
-	// ------------------------------------------------------------------
-	// Helpers
-	// ------------------------------------------------------------------
-
 	/**
 	 * Resolve a service from the DI container.
 	 *
 	 * @template T
-	 * @param class-string<T>|string $id
+	 * @param  class-string<T>|string $id Service or class identifier.
 	 * @return T|mixed
+	 * @since  1.0.0
 	 */
 	protected function get( string $id ): mixed {
 		return $this->container->get( $id );
 	}
 
-	// ------------------------------------------------------------------
-	// Internal
-	// ------------------------------------------------------------------
-
 	/**
 	 * Check that all declared dependencies are registered and enabled.
+	 *
+	 * @return bool
+	 * @since  1.0.0
 	 */
 	private function checkDependencies(): bool {
 		$registry = ModuleRegistry::getInstance();
@@ -167,6 +235,9 @@ abstract class AbstractModule implements ModuleInterface {
 
 	/**
 	 * Load the enabled/disabled state from wp_options.
+	 *
+	 * @return void
+	 * @since  1.0.0
 	 */
 	private function loadModuleState(): void {
 		$enabledModules = (array) get_option( '_allfb_enabled_modules', [] );
@@ -175,6 +246,9 @@ abstract class AbstractModule implements ModuleInterface {
 
 	/**
 	 * Persist the current enabled/disabled state to wp_options.
+	 *
+	 * @return void
+	 * @since  1.0.0
 	 */
 	private function saveModuleState(): void {
 		$enabledModules = (array) get_option( '_allfb_enabled_modules', [] );

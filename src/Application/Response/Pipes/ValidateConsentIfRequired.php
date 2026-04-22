@@ -20,11 +20,11 @@ class ValidateConsentIfRequired {
 	 * Reject the submission when the survey requires consent and the respondent
 	 * has not provided it.
 	 *
-	 * @param ResponseContext $context Shared pipeline context.
-	 * @param \Closure        $next    Next stage in the pipeline.
+	 * @param  ResponseContext $context Shared pipeline context.
+	 * @param  \Closure        $next    Next stage in the pipeline.
 	 * @return mixed
 	 * @throws ValidationException When consent is required but was not given.
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function execute( ResponseContext $context, \Closure $next ): mixed {
 		$settings        = $context->survey->getSettings();

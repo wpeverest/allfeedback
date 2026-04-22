@@ -12,7 +12,8 @@ defined( 'ABSPATH' ) || exit;
  * Abstraction over a dependency-injection container that can build and return
  * an instance for a given identifier.
  *
- * @since 1.0.0
+ * @package AllFeedback\Core\Contracts
+ * @since   1.0.0
  */
 interface ResolverInterface {
 

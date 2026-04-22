@@ -47,20 +47,22 @@ use AllFeedback\Traits\Hooks;
  *
  * Pro add-ons can extend the rule set via `allfeedback_targeting_rule_matches`.
  *
- * @since 1.0.0
+ * @package AllFeedback\Frontend
+ * @since   1.0.0
  */
 class TargetingEngine {
 
 	use Hooks;
 
+	/**
+	 * @param  SurveyRepository $surveyRepository Repository for loading published surveys.
+	 * @param  Logger           $logger           Logger for recording load failures.
+	 * @since  1.0.0
+	 */
 	public function __construct(
 		private readonly SurveyRepository $surveyRepository,
 		private readonly Logger $logger,
 	) {}
-
-	// ------------------------------------------------------------------
-	// Public API
-	// ------------------------------------------------------------------
 
 	/**
 	 * Return the IDs of ALL published surveys that target the current page,
@@ -70,14 +72,14 @@ class TargetingEngine {
 	 * passes the client-side audience / frequency gates.
 	 *
 	 * @return int[]
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function resolveAllForCurrentPage(): array {
 		try {
 			$surveys = $this->surveyRepository->findAll(
 				new SurveyFilter(
 					status:  SurveyStatus::Published,
-					perPage: 100, // practical limit; sites rarely have more than this
+					perPage: 100,
 					orderBy: 'date',
 					order:   'DESC',
 				)
@@ -102,16 +104,12 @@ class TargetingEngine {
 	 * page, or null if no survey matches.
 	 *
 	 * @return int|null
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function resolveForCurrentPage(): ?int {
 		$ids = $this->resolveAllForCurrentPage();
 		return $ids[0] ?? null;
 	}
-
-	// ------------------------------------------------------------------
-	// Internal helpers
-	// ------------------------------------------------------------------
 
 	/**
 	 * Evaluate whether a survey's targeting rules accept the current page.
@@ -122,14 +120,14 @@ class TargetingEngine {
 	 *  2. Otherwise fall back to the form builder's UI-level page targeting stored
 	 *     in the `settings` column (target_pages / target_page_ids / targetPages).
 	 *
-	 * @since 1.0.0
+	 * @param  Survey $survey The survey to evaluate.
+	 * @return bool
+	 * @since  1.0.0
 	 */
 	private function surveyMatchesCurrentPage( Survey $survey ): bool {
 		$settings  = $survey->getSettings();
 		$targeting = (array) ( $settings['targeting'] ?? [] );
 
-		// If no advanced targeting is configured, fall back to the form builder's
-		// UI-level page targeting stored directly in settings.
 		if ( empty( $targeting ) ) {
 			return $this->matchesSettingsTargeting( $settings );
 		}
@@ -138,7 +136,6 @@ class TargetingEngine {
 		$rules      = (array)  ( $targeting['rules'] ?? [] );
 		$exclusions = (array)  ( $targeting['exclusions'] ?? [] );
 
-		// Check exclusions first — any match disqualifies the survey.
 		foreach ( $exclusions as $rule ) {
 			if ( is_array( $rule ) && $this->evaluateRule( $rule ) ) {
 				return false;
@@ -149,7 +146,6 @@ class TargetingEngine {
 			return true;
 		}
 
-		// mode === 'specific' — at least one inclusion rule must match.
 		foreach ( $rules as $rule ) {
 			if ( is_array( $rule ) && $this->evaluateRule( $rule ) ) {
 				return true;
@@ -168,23 +164,20 @@ class TargetingEngine {
 	 *
 	 * @param  array<string, mixed> $settings Survey::getSettings() decoded array.
 	 * @return bool
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function matchesSettingsTargeting( array $settings ): bool {
-		// Prefer the full targetPages value; fall back to simplified target_pages.
 		$targetPages = (string) ( $settings['targetPages'] ?? $settings['target_pages'] ?? 'all' );
 
 		if ( $targetPages === 'all' ) {
 			return true;
 		}
 
-		// Collect IDs saved by the form builder (always a flat array of ints).
 		$ids = array_values( array_filter(
 			array_map( 'intval', (array) ( $settings['target_page_ids'] ?? [] ) ),
 			fn( int $id ) => $id > 0
 		) );
 
-		// Specific mode with no IDs configured → match nothing (avoid unintended exposure).
 		if ( $ids === [] ) {
 			return false;
 		}
@@ -224,8 +217,9 @@ class TargetingEngine {
 	 * }, 10, 2 );
 	 * ```
 	 *
-	 * @param array<string, mixed> $rule
-	 * @since 1.0.0
+	 * @param  array<string, mixed> $rule Rule array with `type` and `value` keys.
+	 * @return bool
+	 * @since  1.0.0
 	 */
 	private function evaluateRule( array $rule ): bool {
 		$type  = (string) ( $rule['type']  ?? '' );
@@ -238,16 +232,6 @@ class TargetingEngine {
 			default     => false,
 		};
 
-		/**
-		 * Filter: allfeedback_targeting_rule_matches
-		 *
-		 * Allows pro add-ons to handle custom targeting rule types, or
-		 * override built-in logic.
-		 *
-		 * @param bool  $matched Whether the built-in handler matched.
-		 * @param array $rule    The rule array: { type: string, value: mixed }.
-		 * @since 1.0.0
-		 */
 		return (bool) apply_filters( 'allfeedback_targeting_rule_matches', $matched, $rule );
 	}
 }

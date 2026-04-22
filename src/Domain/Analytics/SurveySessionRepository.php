@@ -9,22 +9,26 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Contract for persisting and querying SurveySession aggregates.
  *
- * @since 1.0.0
+ * @package AllFeedback\Domain\Analytics
+ * @since   1.0.0
  */
 interface SurveySessionRepository {
 
 	/**
 	 * Persist a new or updated SurveySession.
 	 *
-	 * @since 1.0.0
+	 * @param  SurveySession $session The aggregate to persist.
+	 * @return SurveySession The saved instance with its persistence ID assigned.
+	 * @since  1.0.0
 	 */
 	public function save( SurveySession $session ): SurveySession;
 
 	/**
-	 * Find a session by its client-generated UUID.
-	 * Returns null when the session does not exist.
+	 * Find a session by its client-generated UUID, or null when absent.
 	 *
-	 * @since 1.0.0
+	 * @param  string $sessionId Client-generated session UUID.
+	 * @return SurveySession|null
+	 * @since  1.0.0
 	 */
 	public function findBySessionId( string $sessionId ): ?SurveySession;
 
@@ -34,8 +38,9 @@ interface SurveySessionRepository {
 	 * Keys: total_views, total_starts, total_submissions,
 	 *       completion_rate, abandonment_rate, avg_completion_time.
 	 *
+	 * @param  int $surveyId Survey primary key.
 	 * @return array<string, int|float|null>
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function getAnalytics( int $surveyId ): array;
 }

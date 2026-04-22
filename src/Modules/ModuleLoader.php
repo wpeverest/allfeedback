@@ -22,12 +22,20 @@ use AllFeedback\Traits\Hooks;
  *
  * The loader handles dependency resolution — if MyModule declares
  * dependencies = ['other-module'], that module is booted first.
+ *
+ * @package AllFeedback\Modules
+ * @since   1.0.0
  */
 class ModuleLoader {
 
 	use Hooks;
 
-	/** Singleton registry — written to during load, read by modules. */
+	/**
+	 * Singleton registry — written to during load, read by modules.
+	 *
+	 * @var ModuleRegistry
+	 * @since 1.0.0
+	 */
 	private ModuleRegistry $registry;
 
 	/**
@@ -35,9 +43,15 @@ class ModuleLoader {
 	 * Populated via the 'allfeedback:modules:register' filter.
 	 *
 	 * @var array<string, class-string<ModuleInterface>>
+	 * @since 1.0.0
 	 */
 	private array $availableModules = [];
 
+	/**
+	 * @param  Container $container DI container for instantiating module classes.
+	 * @param  Logger    $logger    Logger for recording instantiation and boot errors.
+	 * @since  1.0.0
+	 */
 	public function __construct(
 		private readonly Container $container,
 		private readonly Logger $logger,
@@ -45,26 +59,18 @@ class ModuleLoader {
 		$this->registry = ModuleRegistry::getInstance();
 	}
 
-	// ------------------------------------------------------------------
-	// Public API
-	// ------------------------------------------------------------------
-
 	/**
 	 * Run the full module lifecycle:
 	 *   1. Allow third-party code to register module classes.
 	 *   2. Instantiate modules.
 	 *   3. Sort by dependency graph.
 	 *   4. Call register() on each.
-	 *   5. Call boot()     on each enabled module.
+	 *   5. Call boot() on each enabled module.
+	 *
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function loadModules(): void {
-		/**
-		 * Filter: allfeedback:modules:register
-		 *
-		 * Add your module FQCN here. Keyed by module id.
-		 *
-		 * @param array<string, class-string<ModuleInterface>> $modules
-		 */
 		$this->availableModules = $this->applyFilters(
 			'allfeedback:modules:register',
 			$this->availableModules
@@ -73,39 +79,32 @@ class ModuleLoader {
 		$modules = $this->discoverModules();
 		$sorted  = $this->sortByDependencies( $modules );
 
-		// Register phase — all modules declared before any is booted.
 		foreach ( $sorted as $module ) {
 			$this->registerModule( $module );
 		}
 
-		// Boot phase — only enabled modules, in dependency order.
 		foreach ( $sorted as $module ) {
 			$this->bootModule( $module );
 		}
 
-		/**
-		 * Action: allfeedback:modules:loaded
-		 *
-		 * Fires after all modules have been registered and booted.
-		 *
-		 * @param ModuleInterface[] $sorted Sorted module list.
-		 */
 		$this->doAction( 'allfeedback:modules:loaded', $sorted );
 	}
 
-	/** Access the registry to inspect module state. */
+	/**
+	 * Access the registry to inspect module state.
+	 *
+	 * @return ModuleRegistry
+	 * @since  1.0.0
+	 */
 	public function getRegistry(): ModuleRegistry {
 		return $this->registry;
 	}
-
-	// ------------------------------------------------------------------
-	// Internal — discover
-	// ------------------------------------------------------------------
 
 	/**
 	 * Instantiate each registered module class.
 	 *
 	 * @return ModuleInterface[]
+	 * @since  1.0.0
 	 */
 	private function discoverModules(): array {
 		$modules = [];
@@ -129,15 +128,12 @@ class ModuleLoader {
 		return $modules;
 	}
 
-	// ------------------------------------------------------------------
-	// Internal — dependency sort (topological)
-	// ------------------------------------------------------------------
-
 	/**
 	 * Return modules sorted so each module comes after its dependencies.
 	 *
-	 * @param ModuleInterface[] $modules
+	 * @param  ModuleInterface[] $modules Unsorted module list.
 	 * @return ModuleInterface[]
+	 * @since  1.0.0
 	 */
 	private function sortByDependencies( array $modules ): array {
 		$sorted  = [];
@@ -153,10 +149,12 @@ class ModuleLoader {
 	/**
 	 * Recursive DFS visit for topological sort.
 	 *
-	 * @param ModuleInterface   $module
-	 * @param ModuleInterface[] $all
-	 * @param ModuleInterface[] $sorted  (by reference)
-	 * @param array<string,bool> $visited (by reference)
+	 * @param  ModuleInterface         $module  Module being visited.
+	 * @param  ModuleInterface[]       $all     All discovered modules.
+	 * @param  ModuleInterface[]       $sorted  Accumulator (by reference).
+	 * @param  array<string, bool>     $visited Visited map (by reference).
+	 * @return void
+	 * @since  1.0.0
 	 */
 	private function visit(
 		ModuleInterface $module,
@@ -167,12 +165,11 @@ class ModuleLoader {
 		$id = $module->getId();
 
 		if ( isset( $visited[ $id ] ) ) {
-			return; // Already processed.
+			return;
 		}
 
 		$visited[ $id ] = true;
 
-		// Process dependencies first.
 		foreach ( $module->getDependencies() as $depId ) {
 			foreach ( $all as $candidate ) {
 				if ( $candidate->getId() === $depId ) {
@@ -184,10 +181,13 @@ class ModuleLoader {
 		$sorted[] = $module;
 	}
 
-	// ------------------------------------------------------------------
-	// Internal — register & boot
-	// ------------------------------------------------------------------
-
+	/**
+	 * Register a single module in the registry and invoke its register() method.
+	 *
+	 * @param  ModuleInterface $module Module to register.
+	 * @return void
+	 * @since  1.0.0
+	 */
 	private function registerModule( ModuleInterface $module ): void {
 		try {
 			$this->registry->register( $module );
@@ -200,8 +200,14 @@ class ModuleLoader {
 		}
 	}
 
+	/**
+	 * Boot a single module if it is enabled and has not already been booted.
+	 *
+	 * @param  ModuleInterface $module Module to boot.
+	 * @return void
+	 * @since  1.0.0
+	 */
 	private function bootModule( ModuleInterface $module ): void {
-		// Skip disabled or already-booted modules.
 		if ( ! $module->isEnabled() || $this->registry->isBooted( $module->getId() ) ) {
 			return;
 		}

@@ -16,49 +16,75 @@ use AllFeedback\Traits\Singleton;
  *   $registry = ModuleRegistry::getInstance();
  *   $module   = $registry->getModule( 'sample-module' );
  *   $enabled  = $registry->getEnabledModules();
+ *
+ * @package AllFeedback\Modules
+ * @since   1.0.0
  */
 class ModuleRegistry {
 
 	use Singleton;
 
-	/** @var array<string, ModuleInterface> Map of module-id → module instance. */
+	/**
+	 * Map of module-id → module instance.
+	 *
+	 * @var array<string, ModuleInterface>
+	 * @since 1.0.0
+	 */
 	private array $modules = [];
 
-	/** @var array<string, bool> Tracks which modules have been booted. */
+	/**
+	 * Tracks which modules have been booted.
+	 *
+	 * @var array<string, bool>
+	 * @since 1.0.0
+	 */
 	private array $booted = [];
-
-	// ------------------------------------------------------------------
-	// Registration
-	// ------------------------------------------------------------------
 
 	/**
 	 * Register a module. Silently skips duplicate IDs.
+	 *
+	 * @param  ModuleInterface $module Module instance to register.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function register( ModuleInterface $module ): void {
 		$id = $module->getId();
 
 		if ( isset( $this->modules[ $id ] ) ) {
-			return; // Already registered — idempotent.
+			return;
 		}
 
 		$this->modules[ $id ] = $module;
 		$this->booted[ $id ]  = false;
 	}
 
-	// ------------------------------------------------------------------
-	// Queries
-	// ------------------------------------------------------------------
-
+	/**
+	 * Return a module by its ID, or null if not registered.
+	 *
+	 * @param  string $id Module slug.
+	 * @return ModuleInterface|null
+	 * @since  1.0.0
+	 */
 	public function getModule( string $id ): ?ModuleInterface {
 		return $this->modules[ $id ] ?? null;
 	}
 
-	/** @return array<string, ModuleInterface> */
+	/**
+	 * Return all registered modules keyed by their ID.
+	 *
+	 * @return array<string, ModuleInterface>
+	 * @since  1.0.0
+	 */
 	public function getAllModules(): array {
 		return $this->modules;
 	}
 
-	/** @return array<string, ModuleInterface> */
+	/**
+	 * Return only enabled modules keyed by their ID.
+	 *
+	 * @return array<string, ModuleInterface>
+	 * @since  1.0.0
+	 */
 	public function getEnabledModules(): array {
 		return array_filter(
 			$this->modules,
@@ -66,30 +92,56 @@ class ModuleRegistry {
 		);
 	}
 
+	/**
+	 * Return true when a module with the given ID has been registered.
+	 *
+	 * @param  string $id Module slug.
+	 * @return bool
+	 * @since  1.0.0
+	 */
 	public function hasModule( string $id ): bool {
 		return isset( $this->modules[ $id ] );
 	}
 
+	/**
+	 * Return the total number of registered modules.
+	 *
+	 * @return int
+	 * @since  1.0.0
+	 */
 	public function count(): int {
 		return count( $this->modules );
 	}
 
-	// ------------------------------------------------------------------
-	// Boot tracking
-	// ------------------------------------------------------------------
-
+	/**
+	 * Return true when the given module has been booted.
+	 *
+	 * @param  string $id Module slug.
+	 * @return bool
+	 * @since  1.0.0
+	 */
 	public function isBooted( string $id ): bool {
 		return $this->booted[ $id ] ?? false;
 	}
 
+	/**
+	 * Mark a module as booted.
+	 *
+	 * @param  string $id Module slug.
+	 * @return void
+	 * @since  1.0.0
+	 */
 	public function markAsBooted( string $id ): void {
 		$this->booted[ $id ] = true;
 	}
 
-	// ------------------------------------------------------------------
-	// Enable / Disable helpers
-	// ------------------------------------------------------------------
-
+	/**
+	 * Enable a registered module and persist the state.
+	 *
+	 * @param  string $id Module slug.
+	 * @return bool True when the module was found and enabled; false otherwise.
+	 * @since  1.0.0
+	 */
 	public function enableModule( string $id ): bool {
 		$module = $this->getModule( $id );
 		if ( ! $module ) {
@@ -99,6 +151,13 @@ class ModuleRegistry {
 		return true;
 	}
 
+	/**
+	 * Disable a registered module and persist the state.
+	 *
+	 * @param  string $id Module slug.
+	 * @return bool True when the module was found and disabled; false otherwise.
+	 * @since  1.0.0
+	 */
 	public function disableModule( string $id ): bool {
 		$module = $this->getModule( $id );
 		if ( ! $module ) {

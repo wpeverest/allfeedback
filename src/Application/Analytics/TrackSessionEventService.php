@@ -16,11 +16,15 @@ use DateTimeImmutable;
  * All transitions are idempotent — calling the same event multiple times
  * for the same session_id is safe.
  *
- * @since 1.0.0
+ * @package AllFeedback\Application\Analytics
+ * @since   1.0.0
  */
 class TrackSessionEventService {
 
-	/** @since 1.0.0 */
+	/**
+	 * @param  SurveySessionRepository $sessionRepository Persistence layer for session aggregates.
+	 * @since  1.0.0
+	 */
 	public function __construct(
 		private readonly SurveySessionRepository $sessionRepository,
 	) {}
@@ -28,12 +32,13 @@ class TrackSessionEventService {
 	/**
 	 * Process one analytics event.
 	 *
-	 * @param int         $surveyId  Target survey.
-	 * @param string      $event     One of: viewed | started | abandoned | heartbeat.
-	 * @param string      $sessionId Client-generated UUID (v4).
-	 * @param int|null    $userId    WordPress user ID, or null for guests.
-	 * @param string|null $guestId   Persistent guest token from localStorage.
-	 * @since 1.0.0
+	 * @param  int         $surveyId  Target survey.
+	 * @param  string      $event     One of: viewed | started | abandoned | heartbeat.
+	 * @param  string      $sessionId Client-generated UUID (v4).
+	 * @param  int|null    $userId    WordPress user ID, or null for guests.
+	 * @param  string|null $guestId   Persistent guest token from localStorage.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function execute(
 		int $surveyId,

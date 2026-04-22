@@ -15,7 +15,8 @@ use AllFeedback\Core\Jobs\Contracts\JobPayload;
  * Concrete payloads must implement the fromArray() and toArray() methods
  * declared by the JobPayload contract.
  *
- * @since 1.0.0
+ * @package AllFeedback\Core\Jobs
+ * @since   1.0.0
  */
 abstract class AbstractJobPayload implements JobPayload {
 }

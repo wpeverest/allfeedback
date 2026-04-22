@@ -21,14 +21,25 @@ use DateTimeImmutable;
  * JSON columns (form_schema, settings, targeting) are encoded on write and
  * decoded on read so that the domain layer always works with PHP arrays.
  *
- * @since 1.0.0
+ * @package AllFeedback\Infrastructure\Database\Repositories
+ * @since   1.0.0
  */
 class WpdbSurveyRepository implements SurveyRepository {
 
-	/** @since 1.0.0 */
+	/**
+	 * Fully-qualified table name including the wpdb prefix.
+	 *
+	 * @var string
+	 * @since 1.0.0
+	 */
 	private string $table;
 
-	/** @since 1.0.0 */
+	/**
+	 * Column names permitted as ORDER BY targets to prevent SQL injection.
+	 *
+	 * @var string[]
+	 * @since 1.0.0
+	 */
 	private const ALLOWED_ORDERBY = [
 		'id',
 		'title',
@@ -39,7 +50,7 @@ class WpdbSurveyRepository implements SurveyRepository {
 	];
 
 	/**
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function __construct() {
 		global $wpdb;
@@ -49,7 +60,9 @@ class WpdbSurveyRepository implements SurveyRepository {
 	/**
 	 * Persist a new or updated Survey and return the saved instance.
 	 *
-	 * @since 1.0.0
+	 * @param  Survey $survey The aggregate to persist.
+	 * @return Survey The saved instance with its persistence ID assigned.
+	 * @since  1.0.0
 	 */
 	public function save( Survey $survey ): Survey {
 		return $survey->isNew() ? $this->insert( $survey ) : $this->update( $survey );
@@ -58,7 +71,9 @@ class WpdbSurveyRepository implements SurveyRepository {
 	/**
 	 * Retrieve a single Survey by its primary key, or null if not found.
 	 *
-	 * @since 1.0.0
+	 * @param  int $id Survey primary key.
+	 * @return Survey|null
+	 * @since  1.0.0
 	 */
 	public function findById( int $id ): ?Survey {
 		global $wpdb;
@@ -77,8 +92,9 @@ class WpdbSurveyRepository implements SurveyRepository {
 	/**
 	 * Retrieve all Surveys matching the given filter.
 	 *
+	 * @param  SurveyFilter $filter Query constraints and pagination.
 	 * @return Survey[]
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function findAll( SurveyFilter $filter ): array {
 		global $wpdb;
@@ -104,7 +120,9 @@ class WpdbSurveyRepository implements SurveyRepository {
 	/**
 	 * Count all Surveys matching the given filter.
 	 *
-	 * @since 1.0.0
+	 * @param  SurveyFilter $filter Query constraints.
+	 * @return int
+	 * @since  1.0.0
 	 */
 	public function count( SurveyFilter $filter ): int {
 		global $wpdb;
@@ -124,7 +142,9 @@ class WpdbSurveyRepository implements SurveyRepository {
 	/**
 	 * Permanently remove a Survey by its primary key.
 	 *
-	 * @since 1.0.0
+	 * @param  int $id Survey primary key.
+	 * @return bool True on success.
+	 * @since  1.0.0
 	 */
 	public function delete( int $id ): bool {
 		global $wpdb;
@@ -134,7 +154,9 @@ class WpdbSurveyRepository implements SurveyRepository {
 	/**
 	 * Atomically increment the denormalised response counter by one.
 	 *
-	 * @since 1.0.0
+	 * @param  int $id Survey primary key.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function incrementResponseCount( int $id ): void {
 		global $wpdb;
@@ -145,7 +167,9 @@ class WpdbSurveyRepository implements SurveyRepository {
 	/**
 	 * Atomically decrement the denormalised response counter (never below zero).
 	 *
-	 * @since 1.0.0
+	 * @param  int $id Survey primary key.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function decrementResponseCount( int $id ): void {
 		global $wpdb;
@@ -156,7 +180,10 @@ class WpdbSurveyRepository implements SurveyRepository {
 	/**
 	 * Insert a new Survey row and return the reconstituted instance with its assigned id.
 	 *
-	 * @since 1.0.0
+	 * @param  Survey $survey The new aggregate to insert.
+	 * @return Survey The reconstituted instance with the generated primary key.
+	 * @throws \RuntimeException When the wpdb insert fails.
+	 * @since  1.0.0
 	 */
 	private function insert( Survey $survey ): Survey {
 		global $wpdb;
@@ -204,7 +231,10 @@ class WpdbSurveyRepository implements SurveyRepository {
 	/**
 	 * Update an existing Survey row.
 	 *
-	 * @since 1.0.0
+	 * @param  Survey $survey The aggregate with updated field values.
+	 * @return Survey The same instance after the update.
+	 * @throws \RuntimeException When the wpdb update fails.
+	 * @since  1.0.0
 	 */
 	private function update( Survey $survey ): Survey {
 		global $wpdb;
@@ -239,8 +269,9 @@ class WpdbSurveyRepository implements SurveyRepository {
 	/**
 	 * Hydrate a Survey aggregate from a raw database row.
 	 *
-	 * @param array<string, mixed> $row Raw associative array from wpdb.
-	 * @since 1.0.0
+	 * @param  array<string, mixed> $row Raw associative array from wpdb.
+	 * @return Survey
+	 * @since  1.0.0
 	 */
 	private function hydrate( array $row ): Survey {
 		return Survey::reconstitute(
@@ -262,8 +293,9 @@ class WpdbSurveyRepository implements SurveyRepository {
 	/**
 	 * Build the WHERE conditions and parameter list from a SurveyFilter.
 	 *
+	 * @param  SurveyFilter $filter Query constraints.
 	 * @return array{0: string[], 1: mixed[]}
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function buildFilterQuery( SurveyFilter $filter ): array {
 		global $wpdb;
@@ -292,7 +324,9 @@ class WpdbSurveyRepository implements SurveyRepository {
 	/**
 	 * Decode a JSON string to an array, returning an empty array on failure.
 	 *
-	 * @since 1.0.0
+	 * @param  string $json JSON-encoded string.
+	 * @return array<mixed>
+	 * @since  1.0.0
 	 */
 	private function decodeJson( string $json ): array {
 		if ( $json === '' ) {

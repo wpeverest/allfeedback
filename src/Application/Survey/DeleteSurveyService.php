@@ -18,7 +18,8 @@ use AllFeedback\Domain\Survey\SurveyRepository;
 class DeleteSurveyService {
 
 	/**
-	 * @since 1.0.0
+	 * @param  SurveyRepository $repository Persistence layer for survey aggregates.
+	 * @since  1.0.0
 	 */
 	public function __construct(
 		private readonly SurveyRepository $repository,
@@ -27,10 +28,10 @@ class DeleteSurveyService {
 	/**
 	 * Delete a survey by ID.
 	 *
-	 * @param int $id Survey ID to delete.
+	 * @param  int $id Survey ID to delete.
 	 * @return void
 	 * @throws NotFoundException When no survey exists for the given ID.
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function execute( int $id ): void {
 		$survey = $this->repository->findById( $id );

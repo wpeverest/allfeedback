@@ -19,7 +19,8 @@ use AllFeedback\Domain\Survey\SurveyRepository;
 class SurveyQueryService {
 
 	/**
-	 * @since 1.0.0
+	 * @param  SurveyRepository $repository Persistence layer for survey aggregates.
+	 * @since  1.0.0
 	 */
 	public function __construct(
 		private readonly SurveyRepository $repository,
@@ -28,10 +29,10 @@ class SurveyQueryService {
 	/**
 	 * Retrieve a single survey by its ID.
 	 *
-	 * @param int $id Survey ID.
+	 * @param  int $id Survey ID.
 	 * @return Survey
 	 * @throws NotFoundException When no survey exists for the given ID.
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function getById( int $id ): Survey {
 		$survey = $this->repository->findById( $id );
@@ -46,9 +47,9 @@ class SurveyQueryService {
 	/**
 	 * Retrieve a paginated list of surveys matching the given parameters.
 	 *
-	 * @param array $params Filter / pagination parameters (page, per_page, status, search, etc.).
+	 * @param  array<string, mixed> $params Filter / pagination parameters (page, per_page, status, search, etc.).
 	 * @return Survey[]
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function getAll( array $params = [] ): array {
 		return $this->repository->findAll( $params );
@@ -57,9 +58,9 @@ class SurveyQueryService {
 	/**
 	 * Count surveys matching the given parameters.
 	 *
-	 * @param array $params Filter parameters (status, search, etc.).
+	 * @param  array<string, mixed> $params Filter parameters (status, search, etc.).
 	 * @return int
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function count( array $params = [] ): int {
 		return $this->repository->count( $params );

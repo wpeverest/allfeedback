@@ -62,9 +62,10 @@ if ( ! function_exists( 'allfeedback_log' ) ) {
 	 * Supported levels: 'debug', 'info', 'warning', 'error'.
 	 * An unrecognised level falls back to 'debug'.
 	 *
-	 * @param string $message The message to log.
-	 * @param string $level   Severity level — 'debug' | 'info' | 'warning' | 'error'.
-	 * @since 1.0.0
+	 * @param  string $message The message to log.
+	 * @param  string $level   Severity level — 'debug' | 'info' | 'warning' | 'error'.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	function allfeedback_log( string $message, string $level = 'debug' ): void {
 		static $logger = null;

@@ -19,7 +19,9 @@ use AllFeedback\Domain\Survey\SurveyRepository;
 class SurveyAnalyticsService {
 
 	/**
-	 * @since 1.0.0
+	 * @param  SurveyRepository   $surveyRepository   Reads survey aggregates.
+	 * @param  ResponseRepository $responseRepository Provides aggregated response statistics.
+	 * @since  1.0.0
 	 */
 	public function __construct(
 		private readonly SurveyRepository $surveyRepository,
@@ -39,10 +41,10 @@ class SurveyAnalyticsService {
 	 *  - response_rate_by_device (array<string, int>)
 	 *  - responses_over_time     (array<string, int>  keyed by date Y-m-d)
 	 *
-	 * @param int $surveyId ID of the survey to analyse.
-	 * @return array
+	 * @param  int $surveyId ID of the survey to analyse.
+	 * @return array<string, mixed>
 	 * @throws NotFoundException When no survey exists for the given ID.
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function getAnalytics( int $surveyId ): array {
 		$survey = $this->surveyRepository->findById( $surveyId );

@@ -22,17 +22,19 @@ use AllFeedback\Core\Jobs\Contracts\JobPayload;
  *  - `scheduleRecurring` runs the job once; recurrence is not supported.
  *  - `cancel` and `isPending` are no-ops (nothing is enqueued).
  *
- * @since 1.0.0
+ * @package AllFeedback\Infrastructure\Jobs
+ * @since   1.0.0
  */
 class SynchronousJobDispatcher implements JobDispatcher {
 
 	/**
 	 * Dispatch a one-off job by running it immediately in the current request.
 	 *
-	 * @param class-string $jobClass Fully-qualified job class name.
-	 * @param JobPayload   $payload  Typed payload instance.
-	 * @param int          $delay    Ignored — synchronous dispatch has no delay.
-	 * @since 1.0.0
+	 * @param  class-string $jobClass Fully-qualified job class name.
+	 * @param  JobPayload   $payload  Typed payload instance.
+	 * @param  int          $delay    Ignored — synchronous dispatch has no delay.
+	 * @return int Always returns 0 (no Action Scheduler action ID).
+	 * @since  1.0.0
 	 */
 	public function dispatch( string $jobClass, JobPayload $payload, int $delay = 0 ): int {
 		do_action( ActionSchedulerRunner::HOOK, $this->encode( $jobClass, $payload ) );
@@ -42,10 +44,11 @@ class SynchronousJobDispatcher implements JobDispatcher {
 	/**
 	 * Dispatch a job immediately (deduplication is not available synchronously).
 	 *
-	 * @param class-string $jobClass
-	 * @param JobPayload   $payload
-	 * @param int          $delay    Ignored.
-	 * @since 1.0.0
+	 * @param  class-string $jobClass Fully-qualified job class name.
+	 * @param  JobPayload   $payload  Typed payload instance.
+	 * @param  int          $delay    Ignored.
+	 * @return int Always returns 0 (no Action Scheduler action ID).
+	 * @since  1.0.0
 	 */
 	public function dispatchUnique( string $jobClass, JobPayload $payload, int $delay = 0 ): int {
 		do_action( ActionSchedulerRunner::HOOK, $this->encode( $jobClass, $payload ) );
@@ -55,10 +58,11 @@ class SynchronousJobDispatcher implements JobDispatcher {
 	/**
 	 * Dispatch a job immediately, ignoring the scheduled timestamp.
 	 *
-	 * @param class-string $jobClass
-	 * @param JobPayload   $payload
-	 * @param int          $timestamp Ignored.
-	 * @since 1.0.0
+	 * @param  class-string $jobClass  Fully-qualified job class name.
+	 * @param  JobPayload   $payload   Typed payload instance.
+	 * @param  int          $timestamp Ignored.
+	 * @return int Always returns 0 (no Action Scheduler action ID).
+	 * @since  1.0.0
 	 */
 	public function scheduleAt( string $jobClass, JobPayload $payload, int $timestamp ): int {
 		do_action( ActionSchedulerRunner::HOOK, $this->encode( $jobClass, $payload ) );
@@ -68,11 +72,12 @@ class SynchronousJobDispatcher implements JobDispatcher {
 	/**
 	 * Run the job once immediately. Recurring cadence is not supported without AS.
 	 *
-	 * @param class-string $jobClass
-	 * @param JobPayload   $payload
-	 * @param int          $intervalSeconds Ignored.
-	 * @param int          $startAt         Ignored.
-	 * @since 1.0.0
+	 * @param  class-string $jobClass        Fully-qualified job class name.
+	 * @param  JobPayload   $payload         Typed payload instance.
+	 * @param  int          $intervalSeconds Ignored.
+	 * @param  int          $startAt         Ignored.
+	 * @return int Always returns 0 (no Action Scheduler action ID).
+	 * @since  1.0.0
 	 */
 	public function scheduleRecurring( string $jobClass, JobPayload $payload, int $intervalSeconds, int $startAt = 0 ): int {
 		do_action( ActionSchedulerRunner::HOOK, $this->encode( $jobClass, $payload ) );
@@ -82,18 +87,20 @@ class SynchronousJobDispatcher implements JobDispatcher {
 	/**
 	 * No-op — nothing is enqueued, so there is nothing to cancel.
 	 *
-	 * @param class-string $jobClass
-	 * @param JobPayload   $payload
-	 * @since 1.0.0
+	 * @param  class-string $jobClass Fully-qualified job class name.
+	 * @param  JobPayload   $payload  Typed payload instance.
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function cancel( string $jobClass, JobPayload $payload ): void {}
 
 	/**
 	 * Always returns false — nothing is pending in the synchronous dispatcher.
 	 *
-	 * @param class-string $jobClass
-	 * @param JobPayload   $payload
-	 * @since 1.0.0
+	 * @param  class-string $jobClass Fully-qualified job class name.
+	 * @param  JobPayload   $payload  Typed payload instance.
+	 * @return bool
+	 * @since  1.0.0
 	 */
 	public function isPending( string $jobClass, JobPayload $payload ): bool {
 		return false;
@@ -102,7 +109,10 @@ class SynchronousJobDispatcher implements JobDispatcher {
 	/**
 	 * JSON-encode the job class and payload for ActionSchedulerRunner consumption.
 	 *
-	 * @since 1.0.0
+	 * @param  string     $jobClass Fully-qualified job class name.
+	 * @param  JobPayload $payload  Typed payload instance.
+	 * @return string JSON-encoded string containing class name and payload array.
+	 * @since  1.0.0
 	 */
 	private function encode( string $jobClass, JobPayload $payload ): string {
 		return (string) wp_json_encode(

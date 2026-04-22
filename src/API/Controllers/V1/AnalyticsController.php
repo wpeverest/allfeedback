@@ -13,24 +13,39 @@ use AllFeedback\Domain\Analytics\SurveySessionRepository;
 /**
  * REST controller for survey session analytics.
  *
- * Routes (under all-feedback/v1):
- *   POST /surveys/{id}/analytics/event   — public; track a single session event
- *   GET  /surveys/{id}/analytics         — admin; return aggregate metrics
+ * Routes (under `all-feedback/v1`):
+ *   `POST /surveys/{id}/analytics/event` — public; track a single session event.
+ *   `GET  /surveys/{id}/analytics`       — admin; return aggregate metrics.
  *
- * @since 1.0.0
+ * @package AllFeedback\API\Controllers\V1
+ * @since   1.0.0
  */
 class AnalyticsController extends RestController {
 
-	/** @since 1.0.0 */
+	/**
+	 * Route base for survey resources.
+	 *
+	 * @var string
+	 * @since 1.0.0
+	 */
 	protected string $restBase = 'surveys';
 
-	/** @since 1.0.0 */
+	/**
+	 * @param  TrackSessionEventService  $trackService       Use-case service for recording events.
+	 * @param  SurveySessionRepository   $sessionRepository  Session repository for aggregate queries.
+	 * @since  1.0.0
+	 */
 	public function __construct(
 		private readonly TrackSessionEventService $trackService,
 		private readonly SurveySessionRepository $sessionRepository,
 	) {}
 
-	/** @since 1.0.0 */
+	/**
+	 * Register all REST routes for this controller.
+	 *
+	 * @return void
+	 * @since  1.0.0
+	 */
 	public function registerRoutes(): void {
 		register_rest_route(
 			$this->namespace,
@@ -55,14 +70,12 @@ class AnalyticsController extends RestController {
 		);
 	}
 
-	// ------------------------------------------------------------------
-	// Handlers
-	// ------------------------------------------------------------------
-
 	/**
-	 * POST /surveys/{id}/analytics/event
+	 * Handle `POST /surveys/{id}/analytics/event`.
 	 *
-	 * @since 1.0.0
+	 * @param  \WP_REST_Request $request Full request data.
+	 * @return \WP_REST_Response|\WP_Error
+	 * @since  1.0.0
 	 */
 	public function trackEvent( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$surveyId  = (int) $request->get_param( 'id' );
@@ -75,15 +88,45 @@ class AnalyticsController extends RestController {
 			return $this->errorResponse( __( 'session_id is required.', 'all-feedback' ), 400 );
 		}
 
+		if ( ! $this->checkAnalyticsRateLimit( $sessionId ) ) {
+			return $this->successResponse( null );
+		}
+
 		$this->trackService->execute( $surveyId, $event, $sessionId, $userId, $guestId );
 
 		return $this->successResponse( null );
 	}
 
 	/**
-	 * GET /surveys/{id}/analytics
+	 * Rate-limit analytics events per session to prevent data poisoning.
 	 *
-	 * @since 1.0.0
+	 * A session may fire at most `allfeedback_analytics_rate_limit` events
+	 * (default 60) per 5-minute window. Excess events are silently dropped so
+	 * the widget's UX is unaffected.
+	 *
+	 * @param  string $sessionId Client-generated session UUID.
+	 * @return bool True when under the limit; false when exceeded.
+	 * @since  1.0.0
+	 */
+	private function checkAnalyticsRateLimit( string $sessionId ): bool {
+		$limit = max( 1, (int) apply_filters( 'allfeedback_analytics_rate_limit', 60 ) );
+		$key   = 'allfb_al_' . substr( hash( 'sha256', $sessionId ), 0, 16 );
+		$count = (int) get_transient( $key );
+
+		if ( $count >= $limit ) {
+			return false;
+		}
+
+		set_transient( $key, $count + 1, 5 * MINUTE_IN_SECONDS );
+		return true;
+	}
+
+	/**
+	 * Handle `GET /surveys/{id}/analytics`.
+	 *
+	 * @param  \WP_REST_Request $request Full request data.
+	 * @return \WP_REST_Response|\WP_Error
+	 * @since  1.0.0
 	 */
 	public function getAnalytics( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$surveyId = (int) $request->get_param( 'id' );
@@ -92,11 +135,12 @@ class AnalyticsController extends RestController {
 		return $this->successResponse( $metrics );
 	}
 
-	// ------------------------------------------------------------------
-	// Argument schema
-	// ------------------------------------------------------------------
-
-	/** @return array<string, array<string, mixed>> */
+	/**
+	 * Build the argument schema for the event-tracking endpoint.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 * @since  1.0.0
+	 */
 	private function eventArgs(): array {
 		return [
 			'event'      => $this->argEnum(

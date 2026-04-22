@@ -17,14 +17,17 @@ use AllFeedback\Traits\Hooks;
  * The sender name and address default to the site name and admin email when
  * not configured in plugin settings.
  *
- * @since 1.0.0
+ * @package AllFeedback\Infrastructure\Mail
+ * @since   1.0.0
  */
 class Mailer {
 
 	use Hooks;
 
 	/**
-	 * @since 1.0.0
+	 * @param  SettingsManager $settings Plugin settings for sender name and address.
+	 * @param  Logger          $logger   Logger for recording send failures.
+	 * @since  1.0.0
 	 */
 	public function __construct(
 		private readonly SettingsManager $settings,
@@ -35,48 +38,33 @@ class Mailer {
 	 * Send an HTML email via wp_mail().
 	 *
 	 * Headers are merged with a Content-Type and From header derived from plugin
-	 * settings.  The body is wrapped in a minimal HTML layout before dispatch.
+	 * settings. The body is wrapped in a minimal HTML layout before dispatch.
 	 *
-	 * @param string   $to      Recipient email address.
-	 * @param string   $subject Email subject line.
-	 * @param string   $body    Plain or partial HTML body content.
-	 * @param string[] $headers Additional raw email headers.
-	 * @since 1.0.0
+	 * @param  string   $to      Recipient email address.
+	 * @param  string   $subject Email subject line.
+	 * @param  string   $body    Plain or partial HTML body content.
+	 * @param  string[] $headers Additional raw email headers.
+	 * @return bool True when wp_mail() reports success.
+	 * @since  1.0.0
 	 */
 	public function send( string $to, string $subject, string $body, array $headers = [] ): bool {
-		$senderName  = (string) ( $this->settings->get( 'email_sender_name' ) ?: get_bloginfo( 'name' ) );
-		$senderEmail = (string) ( $this->settings->get( 'email_sender_email' ) ?: get_option( 'admin_email' ) );
+		$senderName  = sanitize_text_field( (string) ( $this->settings->get( 'email_sender_name' ) ?: get_bloginfo( 'name' ) ) );
+		$senderEmail = sanitize_email( (string) ( $this->settings->get( 'email_sender_email' ) ?: get_option( 'admin_email' ) ) );
 
 		$headers[] = 'Content-Type: text/html; charset=UTF-8';
 		$headers[] = sprintf( 'From: %s <%s>', $senderName, $senderEmail );
 
-		/**
-		 * Filters the email headers before sending.
-		 *
-		 * @param string[] $headers Email headers.
-		 * @param string   $to      Recipient address.
-		 * @param string   $subject Email subject.
-		 */
 		$headers = $this->applyFilters( 'allfeedback:mail:headers', $headers, $to, $subject );
 
 		$htmlBody = $this->wrapInLayout( $body, $subject );
 
-		/**
-		 * Filters the final HTML body before sending.
-		 *
-		 * @param string $htmlBody The wrapped HTML email body.
-		 * @param string $to       Recipient address.
-		 * @param string $subject  Email subject.
-		 */
 		$htmlBody = $this->applyFilters( 'allfeedback:mail:body', $htmlBody, $to, $subject );
 
 		$sent = wp_mail( $to, $subject, $htmlBody, $headers );
 
 		if ( $sent ) {
-			/** Fires after an email has been sent successfully. */
 			$this->doAction( 'allfeedback:mail:sent', $to, $subject );
 		} else {
-			/** Fires when an email fails to send. */
 			$this->doAction( 'allfeedback:mail:failed', $to, $subject );
 
 			$this->logger->error(
@@ -94,9 +82,10 @@ class Mailer {
 	/**
 	 * Replace `{key}` placeholders in a template string with the supplied values.
 	 *
-	 * @param string                $template Template string containing `{key}` tokens.
-	 * @param array<string, string> $vars     Key-to-replacement map.
-	 * @since 1.0.0
+	 * @param  string                $template Template string containing `{key}` tokens.
+	 * @param  array<string, string> $vars     Key-to-replacement map.
+	 * @return string
+	 * @since  1.0.0
 	 */
 	public function interpolate( string $template, array $vars ): string {
 		$replacements = [];
@@ -109,7 +98,10 @@ class Mailer {
 	/**
 	 * Wrap raw body content in a minimal, inline-styled HTML email layout.
 	 *
-	 * @since 1.0.0
+	 * @param  string $body    Raw body content to embed.
+	 * @param  string $subject Subject used as the HTML document title.
+	 * @return string Fully-rendered HTML email document.
+	 * @since  1.0.0
 	 */
 	private function wrapInLayout( string $body, string $subject ): string {
 		$siteName = esc_html( get_bloginfo( 'name' ) );

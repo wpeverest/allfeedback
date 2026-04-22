@@ -46,21 +46,18 @@ abstract class RestController {
 	 * Register all REST routes for this controller.
 	 * Called by ApiServiceProvider::registerRoutes() on 'rest_api_init'.
 	 *
-	 * @since 1.0.0
+	 * @return void
+	 * @since  1.0.0
 	 */
 	abstract public function registerRoutes(): void;
-
-	// ------------------------------------------------------------------
-	// Response helpers
-	// ------------------------------------------------------------------
 
 	/**
 	 * Build a successful JSON response envelope.
 	 *
-	 * @param mixed $data   Payload to include under the 'data' key.
-	 * @param int   $status HTTP status code (default 200).
+	 * @param  mixed $data   Payload to include under the 'data' key.
+	 * @param  int   $status HTTP status code (default 200).
 	 * @return \WP_REST_Response
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	protected function successResponse( mixed $data, int $status = 200 ): \WP_REST_Response {
 		return new \WP_REST_Response(
@@ -75,10 +72,10 @@ abstract class RestController {
 	/**
 	 * Build a generic error WP_Error.
 	 *
-	 * @param string $message Human-readable error message.
-	 * @param int    $status  HTTP status code (default 400).
+	 * @param  string $message Human-readable error message.
+	 * @param  int    $status  HTTP status code (default 400).
 	 * @return \WP_Error
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	protected function errorResponse( string $message, int $status = 400 ): \WP_Error {
 		return new \WP_Error(
@@ -91,9 +88,9 @@ abstract class RestController {
 	/**
 	 * Build a 404 Not Found WP_Error.
 	 *
-	 * @param string $resource Optional resource name to include in the message.
+	 * @param  string $resource Optional resource name to include in the message.
 	 * @return \WP_Error
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	protected function notFoundResponse( string $resource = '' ): \WP_Error {
 		$message = $resource
@@ -111,7 +108,7 @@ abstract class RestController {
 	 * Build a 403 Forbidden WP_Error.
 	 *
 	 * @return \WP_Error
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	protected function forbiddenResponse(): \WP_Error {
 		return new \WP_Error(
@@ -124,9 +121,9 @@ abstract class RestController {
 	/**
 	 * Translate a domain exception into the appropriate WP_Error response.
 	 *
-	 * @param \Throwable $e
+	 * @param  \Throwable $e The exception to translate.
 	 * @return \WP_Error
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	protected function exceptionToResponse( \Throwable $e ): \WP_Error {
 		if ( $e instanceof NotFoundException ) {
@@ -147,16 +144,12 @@ abstract class RestController {
 		return $this->errorResponse( __( 'An unexpected error occurred.', 'all-feedback' ), 500 );
 	}
 
-	// ------------------------------------------------------------------
-	// Permission helpers
-	// ------------------------------------------------------------------
-
 	/**
 	 * Allow all requests including unauthenticated ones.
 	 * Use for read-only, non-sensitive public endpoints.
 	 *
 	 * @return bool
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function publicPermission(): bool {
 		return true;
@@ -174,18 +167,16 @@ abstract class RestController {
 	 * ```
 	 *
 	 * @return bool
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function adminPermission(): bool {
-		/**
-		 * Filter: allfeedback_required_capability
-		 *
-		 * Override the capability required to access AllFeedback admin REST routes.
-		 *
-		 * @param string $capability WordPress capability string. Default 'manage_options'.
-		 * @since 1.0.0
-		 */
 		$capability = (string) apply_filters( 'allfeedback_required_capability', 'manage_options' );
+
+		// Enforce a manage_options floor so the filter cannot silently downgrade
+		// access to subscriber-level capabilities.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return false;
+		}
 
 		return current_user_can( $capability );
 	}
@@ -194,26 +185,22 @@ abstract class RestController {
 	 * Allow any authenticated user.
 	 *
 	 * @return bool
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function authenticatedPermission(): bool {
 		return is_user_logged_in();
 	}
 
-	// ------------------------------------------------------------------
-	// Argument schema builders
-	// ------------------------------------------------------------------
-
 	/**
 	 * Build a REST integer argument descriptor.
 	 *
-	 * @param string   $description Human-readable description.
-	 * @param bool     $required    Whether the argument is required.
-	 * @param int      $min         Minimum acceptable value.
-	 * @param int|null $max         Maximum acceptable value (null = no upper bound).
-	 * @param mixed    $default     Default value (null = no default).
+	 * @param  string   $description Human-readable description.
+	 * @param  bool     $required    Whether the argument is required.
+	 * @param  int      $min         Minimum acceptable value.
+	 * @param  int|null $max         Maximum acceptable value (null = no upper bound).
+	 * @param  mixed    $default     Default value (null = no default).
 	 * @return array<string, mixed>
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	protected function argInteger(
 		string $description,
@@ -242,14 +229,14 @@ abstract class RestController {
 	/**
 	 * Build a REST string argument descriptor.
 	 *
-	 * @param string          $description Human-readable description.
-	 * @param bool            $required    Whether the argument is required.
-	 * @param int|null        $minLength   Minimum string length.
-	 * @param int|null        $maxLength   Maximum string length.
-	 * @param string|callable $sanitize    Sanitize callback (default sanitize_text_field).
-	 * @param mixed           $default     Default value (null = no default).
+	 * @param  string          $description Human-readable description.
+	 * @param  bool            $required    Whether the argument is required.
+	 * @param  int|null        $minLength   Minimum string length.
+	 * @param  int|null        $maxLength   Maximum string length.
+	 * @param  string|callable $sanitize    Sanitize callback (default sanitize_text_field).
+	 * @param  mixed           $default     Default value (null = no default).
 	 * @return array<string, mixed>
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	protected function argString(
 		string $description,
@@ -281,11 +268,11 @@ abstract class RestController {
 	/**
 	 * Build a REST boolean argument descriptor.
 	 *
-	 * @param string $description Human-readable description.
-	 * @param bool   $required    Whether the argument is required.
-	 * @param bool   $default     Default value.
+	 * @param  string $description Human-readable description.
+	 * @param  bool   $required    Whether the argument is required.
+	 * @param  bool   $default     Default value.
 	 * @return array<string, mixed>
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	protected function argBoolean(
 		string $description,
@@ -305,13 +292,13 @@ abstract class RestController {
 	/**
 	 * Build a REST enum argument descriptor.
 	 *
-	 * @param string          $description Human-readable description.
-	 * @param string[]        $values      Allowed enum values.
-	 * @param bool            $required    Whether the argument is required.
-	 * @param string|callable $sanitize    Sanitize callback (default sanitize_key).
-	 * @param mixed           $default     Default value (null = no default).
+	 * @param  string          $description Human-readable description.
+	 * @param  string[]        $values      Allowed enum values.
+	 * @param  bool            $required    Whether the argument is required.
+	 * @param  string|callable $sanitize    Sanitize callback (default sanitize_key).
+	 * @param  mixed           $default     Default value (null = no default).
 	 * @return array<string, mixed>
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	protected function argEnum(
 		string $description,
@@ -337,10 +324,10 @@ abstract class RestController {
 	/**
 	 * Return standard pagination arguments (page + per_page).
 	 *
-	 * @param int $defaultPerPage Items per page to use when the arg is absent.
-	 * @param int $maxPerPage     Hard upper limit on per_page.
+	 * @param  int $defaultPerPage Items per page to use when the arg is absent.
+	 * @param  int $maxPerPage     Hard upper limit on per_page.
 	 * @return array<string, array<string, mixed>>
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	protected function paginationArgs( int $defaultPerPage = 20, int $maxPerPage = 100 ): array {
 		return [
@@ -365,9 +352,9 @@ abstract class RestController {
 	/**
 	 * Return the standard route-level 'id' argument descriptor.
 	 *
-	 * @param string $description Optional override description.
+	 * @param  string $description Optional override description.
 	 * @return array<string, array<string, mixed>>
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	protected function idArg( string $description = '' ): array {
 		return [
