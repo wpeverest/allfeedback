@@ -467,35 +467,59 @@ function StepFinal( { onFinish, submitting }: { onFinish: ( target: 'editor' | '
 
 	return (
 		<div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden">
-			<canvas
-				ref={ canvasRef }
-				className="pointer-events-none absolute inset-0 size-full"
+			<canvas ref={ canvasRef } className="pointer-events-none absolute inset-0 size-full" />
+
+			<div
+				className="pointer-events-none absolute inset-0 select-none"
+				style={ { background: 'radial-gradient(ellipse 75% 50% at 50% 35%, oklch(0.580 0.238 277 / 0.09), transparent)' } }
+				aria-hidden
 			/>
 
-			<div className="relative z-10 flex w-full flex-col items-center gap-8">
-				<div className="flex flex-col items-center gap-3 text-center">
-					<div className="flex size-16 items-center justify-center rounded-2xl bg-primary text-white shadow-sm">
-						<Rocket className="size-7" />
+			<div className="relative z-10 flex w-full flex-col items-center gap-10">
+
+				<div className="flex flex-col items-center gap-5 text-center">
+					<div className="relative">
+						<div className="absolute -inset-4 rounded-3xl bg-primary/10 blur-lg" />
+						<div
+							className="relative flex size-[72px] items-center justify-center rounded-[22px] bg-primary text-white"
+							style={ { boxShadow: '0 8px 32px oklch(0.580 0.238 277 / 0.40), 0 0 0 1px oklch(0.580 0.238 277 / 0.15)' } }
+						>
+							<Rocket className="size-8" />
+						</div>
 					</div>
-					<div>
+					<div className="space-y-2">
 						<h2 className="text-2xl font-bold tracking-tight text-foreground" style={ { margin: 0 } }>
-							{ __( "You're ready to launch", 'all-feedback' ) }
+							{ __( "You're all set!", 'all-feedback' ) }
 						</h2>
-						<p className="mt-1.5 text-sm text-muted-foreground" style={ { margin: 0 } }>
-							{ __( 'Your widget is configured. Open the builder to fine-tune your survey, then publish when ready.', 'all-feedback' ) }
+						<p className="mx-auto max-w-sm text-sm leading-relaxed text-muted-foreground" style={ { margin: 0 } }>
+							{ __( 'Your widget is configured and your first survey is ready. Open the editor to fine-tune your questions, then publish when ready.', 'all-feedback' ) }
 						</p>
 					</div>
 				</div>
 
+				<div className="flex w-full items-center gap-4">
+					<div className="h-px flex-1 bg-gradient-to-r from-transparent to-border" />
+					<span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/40">
+						{ __( "What's next", 'all-feedback' ) }
+					</span>
+					<div className="h-px flex-1 bg-gradient-to-l from-transparent to-border" />
+				</div>
+
 				<div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-3">
-					{ LAUNCH_HIGHLIGHTS.map( ( item ) => (
-						<div key={ item.title } className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5 shadow-sm">
-							<div className={ cn( 'flex size-9 items-center justify-center rounded-xl', item.color ) }>
-								<item.Icon className="size-4" />
+					{ LAUNCH_HIGHLIGHTS.map( ( item, i ) => (
+						<div
+							key={ item.title }
+							className="relative flex flex-col gap-4 overflow-hidden rounded-2xl border border-border/50 bg-card p-6 shadow-card"
+						>
+							<span className="pointer-events-none absolute right-4 top-2 select-none text-[52px] font-black leading-none tabular-nums text-foreground/[0.03]">
+								{ i + 1 }
+							</span>
+							<div className={ cn( 'flex size-10 items-center justify-center rounded-xl', item.color ) }>
+								<item.Icon className="size-[18px]" />
 							</div>
-							<div>
-								<p className="text-sm font-semibold text-foreground">{ item.title }</p>
-								<p className="mt-1 text-sm leading-relaxed text-muted-foreground">{ item.desc }</p>
+							<div className="space-y-1.5">
+								<p className="text-[14px] font-semibold text-foreground">{ item.title }</p>
+								<p className="text-[13px] leading-relaxed text-muted-foreground">{ item.desc }</p>
 							</div>
 						</div>
 					) ) }
@@ -513,15 +537,16 @@ function StepFinal( { onFinish, submitting }: { onFinish: ( target: 'editor' | '
 					</Button>
 					<Button
 						size="lg"
-						className="h-11 font-semibold"
+						className="h-11 font-semibold !text-white"
 						onClick={ () => onFinish( 'editor' ) }
 						disabled={ submitting }
 					>
 						{ submitting ? <Loader2 className="size-5 animate-spin" /> : <Edit2 className="size-5" /> }
-						{ __( 'Go to Editor', 'all-feedback' ) }
+						{ __( 'Open Editor', 'all-feedback' ) }
 						<ArrowRight className="size-5" />
 					</Button>
 				</div>
+
 			</div>
 		</div>
 	);

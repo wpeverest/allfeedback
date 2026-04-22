@@ -37,6 +37,7 @@ import {
 	Eye,
 	EyeOff,
 	Globe,
+	Inbox,
 	Laptop,
 	Loader2,
 	Mail,
@@ -548,13 +549,33 @@ const ResponseDetail = () => {
 					<span className="mx-3 h-5 w-px bg-border" />
 					<span className="text-sm font-semibold text-foreground">{__('Response not found', 'all-feedback')}</span>
 				</div>
-				<div className="flex min-h-[300px] items-center justify-center p-6">
-					<div className="flex flex-col items-center gap-2 text-center">
-						<MessageSquare className="size-8 text-muted-foreground/30" />
-						<p className="text-sm text-muted-foreground">{__('This response may have been deleted or does not exist.', 'all-feedback')}</p>
-						<Button variant="outline" size="sm" className="mt-2" onClick={() => void navigate({ to: '/responses', search: { surveyId } })}>
+				<div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden px-8 py-16 text-center">
+					<div
+						className="pointer-events-none absolute inset-0 select-none"
+						style={ { background: 'radial-gradient(ellipse 80% 55% at 50% 45%, oklch(0.580 0.238 277 / 0.07), transparent)' } }
+						aria-hidden
+					/>
+					<div className="relative z-10 flex flex-col items-center">
+						<div className="flex items-center gap-3">
+							<div className="h-px w-14 bg-gradient-to-r from-transparent to-border" />
+							<div className="flex size-10 items-center justify-center rounded-xl bg-muted">
+								<Inbox className="size-[18px] text-muted-foreground/70" strokeWidth={ 1.5 } />
+							</div>
+							<div className="h-px w-14 bg-gradient-to-l from-transparent to-border" />
+						</div>
+						<h2 className="mt-6 text-xl font-bold tracking-tight text-foreground">
+							{__('Response not found', 'all-feedback')}
+						</h2>
+						<p className="mt-2.5 max-w-[268px] text-sm leading-relaxed text-muted-foreground">
+							{__('This response may have been deleted or does not exist.', 'all-feedback')}
+						</p>
+						<Button
+							variant="outline"
+							className="mt-8"
+							onClick={ () => void navigate({ to: '/responses', search: { surveyId } }) }
+						>
 							<ArrowLeft className="size-3.5" />
-							{__('Go back', 'all-feedback')}
+							{__('Back to Responses', 'all-feedback')}
 						</Button>
 					</div>
 				</div>
@@ -774,9 +795,22 @@ const ResponseDetail = () => {
 						))}
 
 						{schemaFields.length === 0 && Object.keys(responseData).length === 0 && (
-							<div className="flex flex-col items-center gap-2 py-16 text-center">
-								<MessageSquare className="size-7 text-muted-foreground/25" />
-								<p className="text-base text-muted-foreground">{__('No response data recorded.', 'all-feedback')}</p>
+							<div className="relative flex flex-col items-center justify-center overflow-hidden px-8 py-14 text-center">
+								<div
+									className="pointer-events-none absolute inset-0 select-none"
+									style={ { background: 'radial-gradient(ellipse 80% 60% at 50% 50%, oklch(0.580 0.238 277 / 0.05), transparent)' } }
+									aria-hidden
+								/>
+								<div className="relative z-10 flex flex-col items-center gap-4">
+									<div className="flex items-center gap-3">
+										<div className="h-px w-10 bg-gradient-to-r from-transparent to-border" />
+										<div className="flex size-9 items-center justify-center rounded-xl bg-muted">
+											<MessageSquare className="size-4 text-muted-foreground/60" strokeWidth={ 1.5 } />
+										</div>
+										<div className="h-px w-10 bg-gradient-to-l from-transparent to-border" />
+									</div>
+									<p className="text-sm text-muted-foreground">{__('No response data recorded.', 'all-feedback')}</p>
+								</div>
 							</div>
 						)}
 					</div>
