@@ -1,5 +1,6 @@
-﻿import { surveyQuery } from '@/admin/queries/surveys';
-import { createFileRoute, lazyRouteComponent } from '@tanstack/react-router';
+﻿import NotFound from '@/admin/pages/NotFound';
+import { surveyQuery } from '@/admin/queries/surveys';
+import { createFileRoute, lazyRouteComponent, notFound } from '@tanstack/react-router';
 
 const BuilderPending = () => (
 	<div className="allfb-builder fixed inset-0 z-[99999] flex flex-col bg-background">
@@ -58,6 +59,15 @@ const BuilderPending = () => (
 	</div>
 );
 
+const BuilderNotFound = () => (
+	<div
+		className="flex items-center justify-center bg-background"
+		style={{ height: 'calc(100vh - var(--wp-admin--admin-bar--height, 32px))' }}
+	>
+		<NotFound />
+	</div>
+);
+
 export const Route = createFileRoute('/builder/')({
 	validateSearch: (search: Record<string, unknown>) => {
 
@@ -89,12 +99,14 @@ export const Route = createFileRoute('/builder/')({
 
 	loader: async ({ context: { queryClient }, deps: { id } }) => {
 		if (id !== undefined && !Number.isNaN(id)) {
-			await queryClient.ensureQueryData(surveyQuery(id)).catch(() => undefined);
+			const result = await queryClient.ensureQueryData(surveyQuery(id)).catch(() => null);
+			if (!result) throw notFound();
 		}
 	},
 
-	component:        lazyRouteComponent(() => import('@/admin/pages/forms/FormBuilder')),
-	pendingComponent: BuilderPending,
-	pendingMs:        100,   
-	pendingMinMs:     300,   
+	component:          lazyRouteComponent(() => import('@/admin/pages/forms/FormBuilder')),
+	notFoundComponent:  BuilderNotFound,
+	pendingComponent:   BuilderPending,
+	pendingMs:          100,
+	pendingMinMs:       300,
 });

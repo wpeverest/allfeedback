@@ -1,9 +1,19 @@
 import GlobalHeader from '@/admin/components/GlobalHeader';
+import NotFound from '@/admin/pages/NotFound';
 import { wizardApi, WIZARD_STATUS_QUERY_KEY } from '@/admin/api/wizard';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useFetchProgress } from '@/hooks/useFetchProgress';
 import { Outlet, createFileRoute, redirect } from '@tanstack/react-router';
+
+const AppNotFound = () => (
+	<NotFound
+		title="Page not found"
+		description="The page you're looking for doesn't exist or has been moved."
+		showFormsLink={ false }
+		className="flex-1"
+	/>
+);
 
 export const Route = createFileRoute( '/_app' )( {
 	beforeLoad: async ( { context: { queryClient } } ) => {
@@ -16,8 +26,9 @@ export const Route = createFileRoute( '/_app' )( {
 			throw redirect( { to: '/wizard/' } );
 		}
 	},
-	component: AppLayout,
-	pendingComponent: PendingLayout,
+	component:         AppLayout,
+	notFoundComponent: AppNotFound,
+	pendingComponent:  PendingLayout,
 } );
 
 function AppLayout() {
