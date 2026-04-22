@@ -54,11 +54,20 @@ class ResponseDTO {
 			? $rawToken
 			: null;
 
+		$rawUrl  = isset( $data['page_url'] ) ? (string) $data['page_url'] : '';
+		$pageUrl = null;
+		if ( $rawUrl !== '' ) {
+			$scheme  = wp_parse_url( $rawUrl, PHP_URL_SCHEME );
+			$pageUrl = ( filter_var( $rawUrl, FILTER_VALIDATE_URL ) && in_array( $scheme, [ 'http', 'https' ], true ) )
+				? esc_url_raw( $rawUrl )
+				: null;
+		}
+
 		return new self(
 			surveyId: $surveyId,
 			responseData: $data['response_data'] ?? [],
 			score: isset( $data['score'] ) ? (float) $data['score'] : null,
-			pageUrl: $data['page_url'] ?? null,
+			pageUrl: $pageUrl,
 			deviceType: $data['device_type'] ?? null,
 			consentGiven: ! empty( $data['consent_given'] ),
 			userId: get_current_user_id(),

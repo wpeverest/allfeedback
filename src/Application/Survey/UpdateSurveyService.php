@@ -45,6 +45,8 @@ class UpdateSurveyService {
 			throw NotFoundException::forResource( esc_html__( 'Survey', 'all-feedback' ), $id );
 		}
 
+		$previousStatus = $survey->getStatus();
+
 		if ( array_key_exists( 'title', $rawData ) ) {
 			$survey->setTitle( (string) $rawData['title'] );
 		}
@@ -72,6 +74,10 @@ class UpdateSurveyService {
 		$survey = $this->repository->save( $survey );
 
 		do_action( 'allfeedback:survey:updated', $survey );
+
+		if ( $survey->getStatus()->isPublished() && ! $previousStatus->isPublished() ) {
+			do_action( 'allfeedback:survey:activated', $survey );
+		}
 
 		return $survey;
 	}

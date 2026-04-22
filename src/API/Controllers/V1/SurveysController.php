@@ -61,10 +61,10 @@ class SurveysController extends RestController {
 	protected string $restBase = 'surveys';
 
 	/**
-	 * @param SurveyRepository   $surveyRepository   Survey aggregate repository.
-	 * @param ResponseRepository $responseRepository Response aggregate repository.
-	 * @param Logger             $logger             Structured logger.
-	 * @since 1.0.0
+	 * @param  SurveyRepository   $surveyRepository   Survey aggregate repository.
+	 * @param  ResponseRepository $responseRepository Response aggregate repository.
+	 * @param  Logger             $logger             Structured logger.
+	 * @since  1.0.0
 	 */
 	public function __construct(
 		private readonly SurveyRepository $surveyRepository,
@@ -75,7 +75,8 @@ class SurveysController extends RestController {
 	/**
 	 * Register all routes for this controller.
 	 *
-	 * @since 1.0.0
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function registerRoutes(): void {
 		register_rest_route(
@@ -190,9 +191,9 @@ class SurveysController extends RestController {
 	 *
 	 * Return a paginated list of surveys.
 	 *
-	 * @param \WP_REST_Request $request Full request data.
+	 * @param  \WP_REST_Request $request Full request data.
 	 * @return \WP_REST_Response
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function index( \WP_REST_Request $request ): \WP_REST_Response {
 		$page    = max( 1, (int) ( $request->get_param( 'page' ) ?? 1 ) );
@@ -229,9 +230,9 @@ class SurveysController extends RestController {
 	 *
 	 * Create a new survey.
 	 *
-	 * @param \WP_REST_Request $request Full request data.
+	 * @param  \WP_REST_Request $request Full request data.
 	 * @return \WP_REST_Response|\WP_Error
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function store( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$formSchema = $request->get_param( 'form_schema' );
@@ -249,16 +250,6 @@ class SurveysController extends RestController {
 			if ( is_wp_error( $settingsCheck ) ) {
 				return $settingsCheck;
 			}
-			/**
-			 * Filter the settings object immediately before it is persisted.
-			 *
-			 * Pro add-ons can use this to inject or transform settings values
-			 * (e.g. pro-only trigger types, custom targeting rules).
-			 *
-			 * @param mixed            $settings Normalised settings array.
-			 * @param \WP_REST_Request $request  The current REST request.
-			 * @since 1.0.0
-			 */
 			$settings = apply_filters( 'allfeedback_settings_before_save', $settings, $request );
 		}
 
@@ -303,9 +294,9 @@ class SurveysController extends RestController {
 	 *
 	 * Return a single survey including full form_schema, settings, and targeting.
 	 *
-	 * @param \WP_REST_Request $request Full request data.
+	 * @param  \WP_REST_Request $request Full request data.
 	 * @return \WP_REST_Response|\WP_Error
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function show( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$survey = $this->surveyRepository->findById( (int) $request->get_param( 'id' ) );
@@ -327,9 +318,9 @@ class SurveysController extends RestController {
 	 * Apply a full or partial update to an existing survey.
 	 * Called by the builder autosave on every change.
 	 *
-	 * @param \WP_REST_Request $request Full request data.
+	 * @param  \WP_REST_Request $request Full request data.
 	 * @return \WP_REST_Response|\WP_Error
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function update( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$id   = (int) $request->get_param( 'id' );
@@ -340,7 +331,8 @@ class SurveysController extends RestController {
 			return $this->notFoundResponse( __( 'Survey', 'all-feedback' ) );
 		}
 
-		$changed = false;
+		$previousStatus = $survey->getStatus();
+		$changed        = false;
 
 		if ( array_key_exists( 'title', $body ) ) {
 			$survey->setTitle( sanitize_text_field( (string) $request->get_param( 'title' ) ) );
@@ -456,6 +448,12 @@ class SurveysController extends RestController {
 
 		$this->logger->info( 'Survey updated.', $logContext );
 
+		do_action( 'allfeedback:survey:updated', $survey );
+
+		if ( $transitioningToPublished && $survey->getStatus()->isPublished() && ! $previousStatus->isPublished() ) {
+			do_action( 'allfeedback:survey:activated', $survey );
+		}
+
 		return $this->successResponse( $this->prepareSurvey( $survey ) );
 	}
 
@@ -465,9 +463,9 @@ class SurveysController extends RestController {
 	 * Move a survey to the trash (sets status to 'trashed').
 	 * To permanently remove a trashed survey use DELETE /surveys/{id}/delete.
 	 *
-	 * @param \WP_REST_Request $request Full request data.
+	 * @param  \WP_REST_Request $request Full request data.
 	 * @return \WP_REST_Response|\WP_Error
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function destroy( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$id     = (int) $request->get_param( 'id' );
@@ -507,9 +505,9 @@ class SurveysController extends RestController {
 	 * Permanently remove a trashed survey from the database.
 	 * The survey must have status 'trashed' — use DELETE /surveys/{id}/trash first.
 	 *
-	 * @param \WP_REST_Request $request Full request data.
+	 * @param  \WP_REST_Request $request Full request data.
 	 * @return \WP_REST_Response|\WP_Error
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function destroyPermanent( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$id     = (int) $request->get_param( 'id' );
@@ -546,9 +544,9 @@ class SurveysController extends RestController {
 	 *
 	 * Create a copy of a survey with status reset to draft.
 	 *
-	 * @param \WP_REST_Request $request Full request data.
+	 * @param  \WP_REST_Request $request Full request data.
 	 * @return \WP_REST_Response|\WP_Error
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function duplicate( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$id       = (int) $request->get_param( 'id' );
@@ -581,9 +579,9 @@ class SurveysController extends RestController {
 	 *
 	 * Transition a survey to published status.
 	 *
-	 * @param \WP_REST_Request $request Full request data.
+	 * @param  \WP_REST_Request $request Full request data.
 	 * @return \WP_REST_Response|\WP_Error
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function publish( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		return $this->transitionStatus( (int) $request->get_param( 'id' ), SurveyStatus::Published );
@@ -595,9 +593,9 @@ class SurveysController extends RestController {
 	 * Bulk-trash multiple surveys by ID.
 	 * Surveys that are already trashed are skipped (not counted as failures).
 	 *
-	 * @param \WP_REST_Request $request Full request data.
+	 * @param  \WP_REST_Request $request Full request data.
 	 * @return \WP_REST_Response|\WP_Error
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function destroyMany( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$ids = array_values( array_filter( array_map( 'absint', (array) ( $request->get_param( 'ids' ) ?? [] ) ) ) );
@@ -660,9 +658,9 @@ class SurveysController extends RestController {
 	 * Only surveys with status 'trashed' are deleted — others are skipped.
 	 * Use DELETE /surveys/trash first to move surveys to the trash.
 	 *
-	 * @param \WP_REST_Request $request Full request data.
+	 * @param  \WP_REST_Request $request Full request data.
 	 * @return \WP_REST_Response|\WP_Error
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function destroyManyPermanent( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$ids = array_values( array_filter( array_map( 'absint', (array) ( $request->get_param( 'ids' ) ?? [] ) ) ) );
@@ -720,7 +718,7 @@ class SurveysController extends RestController {
 	 * JSON schema for a single survey item.
 	 *
 	 * @return array<string, mixed>
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function getPublicItemSchema(): array {
 		$statusValues = array_column( SurveyStatus::cases(), 'value' );
@@ -795,7 +793,7 @@ class SurveysController extends RestController {
 	 * Query-string arguments for GET /surveys.
 	 *
 	 * @return array<string, array<string, mixed>>
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function collectionArgs(): array {
 		$statusValues = array_column( SurveyStatus::cases(), 'value' );
@@ -828,9 +826,9 @@ class SurveysController extends RestController {
 	/**
 	 * Body arguments for POST (create) and PUT (update).
 	 *
-	 * @param bool $required Whether title is required (true for create, false for update).
+	 * @param  bool $required Whether title is required (true for create, false for update).
 	 * @return array<string, array<string, mixed>>
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function writeArgs( bool $required ): array {
 		$statusValues = array_column( SurveyStatus::cases(), 'value' );
@@ -871,7 +869,7 @@ class SurveysController extends RestController {
 	 * Body arguments shared by bulk trash and bulk permanent delete endpoints.
 	 *
 	 * @return array<string, array<string, mixed>>
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function bulkActionArgs(): array {
 		return [
@@ -891,9 +889,9 @@ class SurveysController extends RestController {
 	/**
 	 * Serialise a Survey aggregate into the REST response shape.
 	 *
-	 * @param Survey $survey Survey aggregate root.
+	 * @param  Survey $survey Survey aggregate root.
 	 * @return array<string, mixed>
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function prepareSurvey( Survey $survey ): array {
 		$formSchema = $survey->getFormSchema();
@@ -916,26 +914,16 @@ class SurveysController extends RestController {
 			'updated_at'      => $survey->getUpdatedAt()?->format( 'Y-m-d H:i:s' ),
 		];
 
-		/**
-		 * Filter the prepared survey response object before it is returned.
-		 *
-		 * Pro add-ons can use this to append extra fields (e.g. analytics,
-		 * pro-only settings, computed properties) without forking the controller.
-		 *
-		 * @param array<string, mixed> $prepared Serialised survey data.
-		 * @param Survey               $survey   Survey aggregate root.
-		 * @since 1.0.0
-		 */
 		return apply_filters( 'allfeedback_prepare_survey', $prepared, $survey );
 	}
 
 	/**
 	 * Retrieve a survey, change its status, persist, and return the updated representation.
 	 *
-	 * @param int          $id     Survey primary key.
-	 * @param SurveyStatus $status Target status.
+	 * @param  int          $id     Survey primary key.
+	 * @param  SurveyStatus $status Target status.
 	 * @return \WP_REST_Response|\WP_Error
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function transitionStatus( int $id, SurveyStatus $status ): \WP_REST_Response|\WP_Error {
 		$survey = $this->surveyRepository->findById( $id );
@@ -1016,6 +1004,12 @@ class SurveysController extends RestController {
 			)
 		);
 
+		do_action( 'allfeedback:survey:updated', $survey );
+
+		if ( $survey->getStatus()->isPublished() && ! $previousStatus->isPublished() ) {
+			do_action( 'allfeedback:survey:activated', $survey );
+		}
+
 		return $this->successResponse( $this->prepareSurvey( $survey ) );
 	}
 
@@ -1024,7 +1018,7 @@ class SurveysController extends RestController {
 	 *
 	 * Returns an array of conflict descriptors (id, title, targeting_scope).
 	 *
-	 * @param  Survey $published The survey that was just published.
+	 * @param  Survey $published The survey being published.
 	 * @return array<int, array<string, mixed>>
 	 * @since  1.0.0
 	 */
@@ -1074,7 +1068,9 @@ class SurveysController extends RestController {
 	/**
 	 * Return a human-readable targeting scope string for a survey.
 	 *
-	 * @since 1.0.0
+	 * @param  Survey $survey Survey aggregate to inspect.
+	 * @return string Either 'all_pages' or 'specific_pages'.
+	 * @since  1.0.0
 	 */
 	private function targetingScope( Survey $survey ): string {
 		$settings  = $survey->getSettings();
@@ -1092,8 +1088,9 @@ class SurveysController extends RestController {
 	/**
 	 * Return the page/post IDs a survey explicitly targets (empty = all pages).
 	 *
+	 * @param  Survey $survey Survey aggregate to inspect.
 	 * @return int[]
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function targetingPageIds( Survey $survey ): array {
 		$settings  = $survey->getSettings();
@@ -1129,9 +1126,9 @@ class SurveysController extends RestController {
 	 * Accepts arrays (WP JSON body parsing), stdClass objects, or pre-encoded
 	 * JSON strings — all three are normalised to an array before validation.
 	 *
-	 * @param mixed $schema Raw value from the request.
+	 * @param  mixed $schema Raw value from the request.
 	 * @return true|\WP_Error
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function validateFormSchema( mixed $schema ): true|\WP_Error {
 		if ( $schema === null || $schema === '' ) {
@@ -1181,9 +1178,9 @@ class SurveysController extends RestController {
 	 * Unknown keys pass through unmodified (forward-compatibility for pro add-ons).
 	 * Each enum list is filterable so pro features can register new valid values.
 	 *
-	 * @param mixed $settings Raw settings value from the request.
+	 * @param  mixed $settings Raw settings value from the request.
 	 * @return true|\WP_Error
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function validateSettings( mixed $settings ): true|\WP_Error {
 		if ( $settings === null || $settings === '' ) {
@@ -1293,9 +1290,9 @@ class SurveysController extends RestController {
 	 *   widget_label    — string (launcher button text), max 80 chars
 	 *   widget_color    — string (CSS colour value), max 30 chars
 	 *
-	 * @param mixed $styling Raw styling value from the request.
+	 * @param  mixed $styling Raw styling value from the request.
 	 * @return true|\WP_Error
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function validateStyling( mixed $styling ): true|\WP_Error {
 		if ( $styling === null || $styling === '' ) {
@@ -1357,9 +1354,9 @@ class SurveysController extends RestController {
 	/**
 	 * Extract section and field counts from a form_schema array.
 	 *
-	 * @param array<string, mixed>|null $schema Decoded form_schema array.
+	 * @param  array<string, mixed>|null $schema Decoded form_schema array.
 	 * @return array{section_count: int, field_count: int}
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function schemaStats( mixed $schema ): array {
 		$stats = [ 'section_count' => 0, 'field_count' => 0 ];
@@ -1394,9 +1391,9 @@ class SurveysController extends RestController {
 	 * so objects arrive as stdClass. Some clients send pre-encoded JSON strings.
 	 * This method handles all three forms and returns a plain array, or null on failure.
 	 *
-	 * @param mixed $value Raw parameter value.
+	 * @param  mixed $value Raw parameter value.
 	 * @return array<string, mixed>|null
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function normaliseJsonParam( mixed $value ): ?array {
 		if ( is_array( $value ) ) {

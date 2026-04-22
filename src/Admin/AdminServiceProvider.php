@@ -267,12 +267,15 @@ class AdminServiceProvider implements ServiceProvider {
 
 		global $wpdb;
 
-		$curlVersion = function_exists( 'curl_version' ) ? curl_version() : null;
-		$curlStr      = $curlVersion
-			? $curlVersion['version'] . ( ! empty( $curlVersion['ssl_version'] ) ? ', ' . $curlVersion['ssl_version'] : '' )
-			: null;
+		$isAdmin = current_user_can( 'manage_options' );
+		$widget  = (array) $this->settingsManager->get( 'general.widget' );
 
-		$widget = (array) $this->settingsManager->get( 'general.widget' );
+		// Diagnostic system info is only resolved and exposed for administrators.
+		$curlStr = null;
+		if ( $isAdmin && function_exists( 'curl_version' ) ) {
+			$cv      = curl_version();
+			$curlStr = $cv['version'] . ( ! empty( $cv['ssl_version'] ) ? ', ' . $cv['ssl_version'] : '' );
+		}
 
 		$adminData = $this->applyFilters(
 			'allfeedback:admin:script_data',
@@ -283,7 +286,7 @@ class AdminServiceProvider implements ServiceProvider {
 				'pluginUrl'       => Constants::url(),
 				'buildUrl'        => Constants::url( 'resources/build/' ),
 				'currentUserId'   => get_current_user_id(),
-				'isAdmin'         => current_user_can( 'manage_options' ),
+				'isAdmin'         => $isAdmin,
 				'nonce'           => wp_create_nonce( 'wp_rest' ),
 				'submitNonce'     => wp_create_nonce( 'allfeedback_submit' ),
 				'version'         => Constants::VERSION,
@@ -291,22 +294,22 @@ class AdminServiceProvider implements ServiceProvider {
 				'siteUrl'         => get_site_url(),
 				'wpVersion'       => get_bloginfo( 'version' ),
 				'isMultisite'     => is_multisite(),
-				'wpMemoryLimit'   => defined( 'WP_MEMORY_LIMIT' ) ? WP_MEMORY_LIMIT : 'N/A',
-				'debug'           => defined( 'WP_DEBUG' ) && WP_DEBUG,
-				'wpCron'          => ! ( defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON ),
+				'wpMemoryLimit'   => $isAdmin ? ( defined( 'WP_MEMORY_LIMIT' ) ? WP_MEMORY_LIMIT : 'N/A' ) : null,
+				'debug'           => $isAdmin ? ( defined( 'WP_DEBUG' ) && WP_DEBUG ) : null,
+				'wpCron'          => $isAdmin ? ! ( defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON ) : null,
 				'language'        => get_locale(),
-				'extObjectCache'  => wp_using_ext_object_cache(),
-				'serverInfo'      => isset( $_SERVER['SERVER_SOFTWARE'] ) ? sanitize_text_field( wp_unslash( $_SERVER['SERVER_SOFTWARE'] ) ) : 'N/A',
-				'mysqlVersion'    => $wpdb->db_version(),
-				'phpVersion'      => PHP_VERSION,
-				'defaultTimezone' => date_default_timezone_get(),
-				'phpPostMaxSize'  => ini_get( 'post_max_size' ) ?: 'N/A',
-				'phpTimeLimit'    => ini_get( 'max_execution_time' ) ?: 'N/A',
+				'extObjectCache'  => $isAdmin ? wp_using_ext_object_cache() : null,
+				'serverInfo'      => $isAdmin ? ( isset( $_SERVER['SERVER_SOFTWARE'] ) ? sanitize_text_field( wp_unslash( $_SERVER['SERVER_SOFTWARE'] ) ) : 'N/A' ) : null,
+				'mysqlVersion'    => $isAdmin ? $wpdb->db_version() : null,
+				'phpVersion'      => $isAdmin ? PHP_VERSION : null,
+				'defaultTimezone' => $isAdmin ? date_default_timezone_get() : null,
+				'phpPostMaxSize'  => $isAdmin ? ( ini_get( 'post_max_size' ) ?: 'N/A' ) : null,
+				'phpTimeLimit'    => $isAdmin ? ( ini_get( 'max_execution_time' ) ?: 'N/A' ) : null,
 				'curlVersion'     => $curlStr,
-				'hasFsockopen'    => function_exists( 'fsockopen' ) || function_exists( 'curl_init' ),
-				'hasGzip'         => function_exists( 'gzopen' ),
-				'hasDomDocument'  => class_exists( 'DOMDocument' ),
-				'hasMultibyte'    => function_exists( 'mb_strtolower' ),
+				'hasFsockopen'    => $isAdmin ? ( function_exists( 'fsockopen' ) || function_exists( 'curl_init' ) ) : null,
+				'hasGzip'         => $isAdmin ? function_exists( 'gzopen' ) : null,
+				'hasDomDocument'  => $isAdmin ? class_exists( 'DOMDocument' ) : null,
+				'hasMultibyte'    => $isAdmin ? function_exists( 'mb_strtolower' ) : null,
 			]
 		);
 

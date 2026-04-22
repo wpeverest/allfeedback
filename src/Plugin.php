@@ -71,7 +71,7 @@ final class Plugin {
 	/**
 	 * Private constructor — use `Plugin::getInstance()` instead.
 	 *
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function __construct() {
 		$this->container = new Container();
@@ -106,12 +106,6 @@ final class Plugin {
 
 		$this->maybeFlushRewriteRules();
 
-		/**
-		 * Action: allfeedback:booted
-		 *
-		 * Fires once after the plugin is fully initialised.
-		 * Third-party code can hook here to add functionality.
-		 */
 		$this->doAction( 'allfeedback:booted' );
 	}
 
@@ -152,12 +146,6 @@ final class Plugin {
 			);
 		}
 
-		/**
-		 * Action: allfeedback:activated
-		 *
-		 * `CoreServiceProvider::onActivation()` hooks here to run migrations
-		 * and create custom user roles.
-		 */
 		$this->doAction( 'allfeedback:activated' );
 
 		flush_rewrite_rules();
@@ -176,11 +164,6 @@ final class Plugin {
 		$this->container->get( RoleManager::class )->removeRoles();
 		flush_rewrite_rules();
 
-		/**
-		 * Action: allfeedback:deactivated
-		 *
-		 * Fires after the plugin has been deactivated.
-		 */
 		$this->doAction( 'allfeedback:deactivated' );
 	}
 
@@ -247,13 +230,6 @@ final class Plugin {
 	private function maybeFlushRewriteRules(): void {
 		$optionKey = 'allfb_rewrite_version';
 
-		/**
-		 * Filter: allfeedback:rewrite:expected_version
-		 *
-		 * Increment the default value to trigger a rewrite flush on the next load.
-		 *
-		 * @param string $version Current expected rewrite version.
-		 */
 		$expected = $this->applyFilters( 'allfeedback:rewrite:expected_version', '1' );
 
 		if ( get_option( $optionKey ) !== $expected ) {

@@ -88,9 +88,37 @@ class AnalyticsController extends RestController {
 			return $this->errorResponse( __( 'session_id is required.', 'all-feedback' ), 400 );
 		}
 
+		if ( ! $this->checkAnalyticsRateLimit( $sessionId ) ) {
+			return $this->successResponse( null );
+		}
+
 		$this->trackService->execute( $surveyId, $event, $sessionId, $userId, $guestId );
 
 		return $this->successResponse( null );
+	}
+
+	/**
+	 * Rate-limit analytics events per session to prevent data poisoning.
+	 *
+	 * A session may fire at most `allfeedback_analytics_rate_limit` events
+	 * (default 60) per 5-minute window. Excess events are silently dropped so
+	 * the widget's UX is unaffected.
+	 *
+	 * @param  string $sessionId Client-generated session UUID.
+	 * @return bool True when under the limit; false when exceeded.
+	 * @since  1.0.0
+	 */
+	private function checkAnalyticsRateLimit( string $sessionId ): bool {
+		$limit = max( 1, (int) apply_filters( 'allfeedback_analytics_rate_limit', 60 ) );
+		$key   = 'allfb_al_' . substr( hash( 'sha256', $sessionId ), 0, 16 );
+		$count = (int) get_transient( $key );
+
+		if ( $count >= $limit ) {
+			return false;
+		}
+
+		set_transient( $key, $count + 1, 5 * MINUTE_IN_SECONDS );
+		return true;
 	}
 
 	/**

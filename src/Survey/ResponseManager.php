@@ -316,7 +316,7 @@ class ResponseManager {
 	 * per visitor per install.
 	 *
 	 * @return string 64-character hex digest.
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function hashIp(): string {
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash

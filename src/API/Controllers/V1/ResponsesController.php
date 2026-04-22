@@ -46,10 +46,10 @@ class ResponsesController extends RestController {
 	protected string $restBase = 'surveys';
 
 	/**
-	 * @param SurveyRepository   $surveyRepository   Repository for survey lookups.
-	 * @param ResponseRepository $responseRepository Repository for response reads and writes.
-	 * @param Logger             $logger             Structured logger.
-	 * @since 1.0.0
+	 * @param  SurveyRepository   $surveyRepository   Repository for survey lookups.
+	 * @param  ResponseRepository $responseRepository Repository for response reads and writes.
+	 * @param  Logger             $logger             Structured logger.
+	 * @since  1.0.0
 	 */
 	public function __construct(
 		private readonly SurveyRepository $surveyRepository,
@@ -60,7 +60,8 @@ class ResponsesController extends RestController {
 	/**
 	 * Register all routes for this controller.
 	 *
-	 * @since 1.0.0
+	 * @return void
+	 * @since  1.0.0
 	 */
 	public function registerRoutes(): void {
 		register_rest_route(
@@ -242,9 +243,9 @@ class ResponsesController extends RestController {
 	 *
 	 * Return a paginated list of all responses across every survey.
 	 *
-	 * @param \WP_REST_Request $request Full request data.
+	 * @param  \WP_REST_Request $request Full request data.
 	 * @return \WP_REST_Response|\WP_Error
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function indexAll( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$page     = max( 1, (int) ( $request->get_param( 'page' ) ?? 1 ) );
@@ -277,9 +278,9 @@ class ResponsesController extends RestController {
 	 *
 	 * Bulk-delete multiple responses by ID across any survey.
 	 *
-	 * @param \WP_REST_Request $request Full request data.
+	 * @param  \WP_REST_Request $request Full request data.
 	 * @return \WP_REST_Response|\WP_Error
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function destroyManyGlobal( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$ids = array_values( array_filter( array_map( 'absint', (array) ( $request->get_param( 'ids' ) ?? [] ) ) ) );
@@ -327,9 +328,9 @@ class ResponsesController extends RestController {
 	 *
 	 * Bulk mark responses as read across any survey.
 	 *
-	 * @param \WP_REST_Request $request Full request data.
+	 * @param  \WP_REST_Request $request Full request data.
 	 * @return \WP_REST_Response|\WP_Error
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function markManyRead( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		return $this->bulkSetReadStatus( $request, true );
@@ -340,9 +341,9 @@ class ResponsesController extends RestController {
 	 *
 	 * Bulk mark responses as unread across any survey.
 	 *
-	 * @param \WP_REST_Request $request Full request data.
+	 * @param  \WP_REST_Request $request Full request data.
 	 * @return \WP_REST_Response|\WP_Error
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function markManyUnread( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		return $this->bulkSetReadStatus( $request, false );
@@ -355,7 +356,7 @@ class ResponsesController extends RestController {
 	 * Used by the React admin to keep the WP sidebar badge in sync without a reload.
 	 *
 	 * @return \WP_REST_Response
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function unreadCount(): \WP_REST_Response {
 		return $this->successResponse( [ 'count' => $this->responseRepository->countUnread() ] );
@@ -366,9 +367,9 @@ class ResponsesController extends RestController {
 	 *
 	 * Return a paginated list of responses for a survey.
 	 *
-	 * @param \WP_REST_Request $request Full request data.
+	 * @param  \WP_REST_Request $request Full request data.
 	 * @return \WP_REST_Response|\WP_Error
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function index( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$surveyId = (int) $request->get_param( 'id' );
@@ -422,9 +423,9 @@ class ResponsesController extends RestController {
 	 * Return a single response record.
 	 * Verifies the response belongs to the given survey.
 	 *
-	 * @param \WP_REST_Request $request Full request data.
+	 * @param  \WP_REST_Request $request Full request data.
 	 * @return \WP_REST_Response|\WP_Error
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function show( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$surveyId   = (int) $request->get_param( 'id' );
@@ -445,9 +446,9 @@ class ResponsesController extends RestController {
 	 * Patch response_data and/or is_read on an existing response.
 	 * Verifies the response belongs to the given survey before saving.
 	 *
-	 * @param \WP_REST_Request $request Full request data.
+	 * @param  \WP_REST_Request $request Full request data.
 	 * @return \WP_REST_Response|\WP_Error
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function update( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$surveyId   = (int) $request->get_param( 'id' );
@@ -513,9 +514,9 @@ class ResponsesController extends RestController {
 	 * Bulk-delete multiple responses by ID.
 	 * Only deletes responses that belong to the given survey — others are counted as failures.
 	 *
-	 * @param \WP_REST_Request $request Full request data.
+	 * @param  \WP_REST_Request $request Full request data.
 	 * @return \WP_REST_Response|\WP_Error
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function destroyMany( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$surveyId = (int) $request->get_param( 'id' );
@@ -572,9 +573,9 @@ class ResponsesController extends RestController {
 	 * Permanently delete a single response record.
 	 * Verifies the response belongs to the given survey before deleting.
 	 *
-	 * @param \WP_REST_Request $request Full request data.
+	 * @param  \WP_REST_Request $request Full request data.
 	 * @return \WP_REST_Response|\WP_Error
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function destroy( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$surveyId   = (int) $request->get_param( 'id' );
@@ -608,7 +609,7 @@ class ResponsesController extends RestController {
 	 * JSON schema for a single response item.
 	 *
 	 * @return array<string, mixed>
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function getPublicItemSchema(): array {
 		return [
@@ -672,9 +673,9 @@ class ResponsesController extends RestController {
 	/**
 	 * Serialise a Response aggregate into the REST response shape.
 	 *
-	 * @param Response $response Response aggregate root.
+	 * @param  Response $response Response aggregate root.
 	 * @return array<string, mixed>
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function prepareResponse( Response $response ): array {
 		$responseData = $response->getResponseData();
@@ -697,7 +698,7 @@ class ResponsesController extends RestController {
 	 * Shared `rid` (response ID) argument definition.
 	 *
 	 * @return array<string, mixed>
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function ridArg(): array {
 		return [
@@ -714,7 +715,7 @@ class ResponsesController extends RestController {
 	 * Shared `ids` array argument definition used by bulk endpoints.
 	 *
 	 * @return array<string, mixed>
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function idsArg(): array {
 		return [
@@ -735,10 +736,10 @@ class ResponsesController extends RestController {
 	 * Iterates over the provided IDs and updates the `is_read` column on each
 	 * response that exists. Non-existent IDs are counted as failures.
 	 *
-	 * @param \WP_REST_Request $request Full request data.
-	 * @param bool             $isRead  True = mark as read, false = mark as unread.
+	 * @param  \WP_REST_Request $request Full request data.
+	 * @param  bool             $isRead  True = mark as read, false = mark as unread.
 	 * @return \WP_REST_Response|\WP_Error
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	private function bulkSetReadStatus( \WP_REST_Request $request, bool $isRead ): \WP_REST_Response|\WP_Error {
 		$ids = array_values( array_filter( array_map( 'absint', (array) ( $request->get_param( 'ids' ) ?? [] ) ) ) );

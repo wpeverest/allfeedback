@@ -79,12 +79,12 @@ class NewResponseAdminNotification {
 		$response = $context->getResponse();
 
 		return [
-			'survey_title' => $survey->getTitle(),
+			'survey_title' => esc_html( $survey->getTitle() ),
 			'survey_id'    => (string) $survey->getId(),
 			'response_id'  => $response ? (string) $response->getId() : '',
-			'submitted_at' => $response ? $response->getCreatedAt()->format( 'Y-m-d H:i:s' ) : '',
-			'site_name'    => get_bloginfo( 'name' ),
-			'site_url'     => home_url(),
+			'submitted_at' => $response ? esc_html( $response->getCreatedAt()->format( 'Y-m-d H:i:s' ) ) : '',
+			'site_name'    => esc_html( get_bloginfo( 'name' ) ),
+			'site_url'     => esc_url( home_url() ),
 		];
 	}
 }

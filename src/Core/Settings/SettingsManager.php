@@ -574,6 +574,10 @@ class SettingsManager {
 				return $this->getDefaults()[ $page ][ $section ][ $field ];
 			}
 
+			if ( str_ends_with( $field, '_email' ) ) {
+				return sanitize_email( $sanitised );
+			}
+
 			return $sanitised;
 		}
 

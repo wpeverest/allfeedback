@@ -114,6 +114,13 @@ class SubmitController extends RestController {
 			return $this->errorResponse( __( 'Invalid or expired nonce.', 'all-feedback' ), 403 );
 		}
 
+		[ $ipHash, $rawIp ] = $this->resolveIp();
+
+		if ( ! $this->checkRateLimit( $ipHash ) ) {
+			$this->logger->warning( 'Submission rejected: rate limit exceeded.', [ 'survey_id' => (int) $request->get_param( 'id' ) ] );
+			return $this->errorResponse( __( 'Too many submissions. Please wait before trying again.', 'all-feedback' ), 429 );
+		}
+
 		$surveyId = (int) $request->get_param( 'id' );
 		$survey   = $this->surveyRepository->findById( $surveyId );
 
@@ -131,8 +138,6 @@ class SubmitController extends RestController {
 			);
 			return $this->errorResponse( __( 'This survey is not currently accepting responses.', 'all-feedback' ), 403 );
 		}
-
-		[ $ipHash, $rawIp ] = $this->resolveIp();
 
 		if ( ! (bool) apply_filters( 'allfeedback_allow_response_submission', true, $surveyId, $survey, $request ) ) {
 			$this->logger->warning( 'Submission blocked by filter.', [ 'survey_id' => $surveyId ] );
@@ -167,11 +172,13 @@ class SubmitController extends RestController {
 			}
 		}
 
-		$responseData = (array) apply_filters(
-			'allfeedback_response_data_before_save',
-			(array) ( $request->get_param( 'response_data' ) ?? [] ),
-			$surveyId,
-			$survey
+		$responseData = $this->sanitizeResponseData(
+			(array) apply_filters(
+				'allfeedback_response_data_before_save',
+				(array) ( $request->get_param( 'response_data' ) ?? [] ),
+				$surveyId,
+				$survey
+			)
 		);
 
 		$dto = ResponseDTO::fromArray(
@@ -217,19 +224,82 @@ class SubmitController extends RestController {
 	 * Resolve the visitor's IP address and return both the HMAC-SHA256 hash
 	 * and the raw sanitised IP string.
 	 *
-	 * The hash is used for duplicate detection; the raw IP is stored only when
-	 * the privacy "disable user details" setting is off.
+	 * Uses REMOTE_ADDR (the real connection IP, not spoofable) by default.
+	 * HTTP_X_FORWARDED_FOR is only trusted when the connection originates from
+	 * an IP listed in the `allfeedback_trusted_proxies` filter (e.g. a load
+	 * balancer or CDN whose IP is known and fixed).
 	 *
 	 * @return array{0: string, 1: string} [ $hash, $rawIp ]
 	 * @since  1.0.0
 	 */
 	private function resolveIp(): array {
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
-		$raw    = (string) ( $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '' );
-		$ip     = sanitize_text_field( trim( explode( ',', $raw )[0] ) );
+		$remoteAddr = sanitize_text_field( (string) ( $_SERVER['REMOTE_ADDR'] ?? '' ) );
+		$ip         = $remoteAddr;
+
+		$trustedProxies = (array) apply_filters( 'allfeedback_trusted_proxies', [] );
+
+		if ( $trustedProxies !== [] && in_array( $remoteAddr, $trustedProxies, true ) ) {
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+			$forwarded = sanitize_text_field( trim( explode( ',', (string) ( $_SERVER['HTTP_X_FORWARDED_FOR'] ?? '' ) )[0] ) );
+			if ( $forwarded !== '' && filter_var( $forwarded, FILTER_VALIDATE_IP ) ) {
+				$ip = $forwarded;
+			}
+		}
+
 		$secret = defined( 'AUTH_KEY' ) ? AUTH_KEY : 'allfeedback';
 
 		return [ hash_hmac( 'sha256', $ip, $secret ), $ip ];
+	}
+
+	/**
+	 * Rate-limit submissions by IP hash using a transient counter.
+	 *
+	 * Allows a maximum of `allfeedback_submit_rate_limit` submissions (default 10)
+	 * per IP within a 5-minute window.
+	 *
+	 * @param  string $ipHash HMAC hash of the visitor IP.
+	 * @return bool True when under the limit; false when exceeded.
+	 * @since  1.0.0
+	 */
+	private function checkRateLimit( string $ipHash ): bool {
+		$limit = max( 1, (int) apply_filters( 'allfeedback_submit_rate_limit', 10 ) );
+		$key   = 'allfb_rl_' . substr( $ipHash, 0, 16 );
+		$count = (int) get_transient( $key );
+
+		if ( $count >= $limit ) {
+			return false;
+		}
+
+		set_transient( $key, $count + 1, 5 * MINUTE_IN_SECONDS );
+		return true;
+	}
+
+	/**
+	 * Recursively sanitise the response_data array.
+	 *
+	 * Strips HTML from all string values so that arbitrary markup submitted by
+	 * a visitor is never stored in the database. Numeric and boolean values are
+	 * left as-is; nested arrays are processed recursively. Unknown types are
+	 * dropped silently.
+	 *
+	 * @param  array<mixed> $data Raw response_data payload.
+	 * @return array<mixed> Sanitised payload.
+	 * @since  1.0.0
+	 */
+	private function sanitizeResponseData( array $data ): array {
+		$clean = [];
+		foreach ( $data as $key => $value ) {
+			$key = is_string( $key ) ? sanitize_text_field( $key ) : (int) $key;
+			if ( is_array( $value ) ) {
+				$clean[ $key ] = $this->sanitizeResponseData( $value );
+			} elseif ( is_string( $value ) ) {
+				$clean[ $key ] = sanitize_text_field( $value );
+			} elseif ( is_int( $value ) || is_float( $value ) || is_bool( $value ) || $value === null ) {
+				$clean[ $key ] = $value;
+			}
+		}
+		return $clean;
 	}
 
 	/**
@@ -248,7 +318,6 @@ class SubmitController extends RestController {
 				'description'       => __( 'Field answers keyed by field ID.', 'all-feedback' ),
 				'type'              => 'object',
 				'required'          => true,
-				'sanitize_callback' => null,
 				'validate_callback' => 'rest_validate_request_arg',
 			],
 			'score'         => $this->argInteger(

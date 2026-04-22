@@ -26,11 +26,32 @@ class ValidateResponseData {
 	 * @since  1.0.0
 	 */
 	public function execute( ResponseContext $context, \Closure $next ): mixed {
-		if ( empty( $context->dto->responseData ) ) {
+		$data = $context->dto->responseData;
+
+		if ( empty( $data ) ) {
 			throw ValidationException::withErrors(
 				[ 'response_data' => esc_html__( 'Response data cannot be empty.', 'all-feedback' ) ]
 			);
 		}
+
+		$maxKeys = max( 1, (int) apply_filters( 'allfeedback_response_max_keys', 100 ) );
+		if ( count( $data ) > $maxKeys ) {
+			throw ValidationException::withErrors(
+				[ 'response_data' => esc_html__( 'Response data contains too many fields.', 'all-feedback' ) ]
+			);
+		}
+
+		$maxLength = max( 1, (int) apply_filters( 'allfeedback_response_max_value_length', 5000 ) );
+		array_walk_recursive(
+			$data,
+			function ( $value ) use ( $maxLength ): void {
+				if ( is_string( $value ) && mb_strlen( $value ) > $maxLength ) {
+					throw ValidationException::withErrors(
+						[ 'response_data' => esc_html__( 'A response value exceeds the maximum allowed length.', 'all-feedback' ) ]
+					);
+				}
+			}
+		);
 
 		return $next( $context );
 	}

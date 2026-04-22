@@ -137,8 +137,10 @@ class WpdbResponseRepository implements ResponseRepository {
 	/**
 	 * Retrieve all Responses for a given Survey, applying the filter.
 	 *
+	 * @param  int            $surveyId Survey primary key.
+	 * @param  ResponseFilter $filter   Query constraints and pagination.
 	 * @return Response[]
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function findBySurveyId( int $surveyId, ResponseFilter $filter ): array {
 		global $wpdb;
@@ -187,8 +189,9 @@ class WpdbResponseRepository implements ResponseRepository {
 	/**
 	 * Retrieve all Responses across every survey, applying the filter (pagination + date).
 	 *
+	 * @param  ResponseFilter $filter Query constraints and pagination.
 	 * @return Response[]
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function findAll( ResponseFilter $filter ): array {
 		global $wpdb;
@@ -325,9 +328,12 @@ class WpdbResponseRepository implements ResponseRepository {
 		$surveysTable = $wpdb->prefix . 'af_surveys';
 
 		$count = (int) $wpdb->get_var(
-			"SELECT COUNT(*) FROM {$this->table}
-			 WHERE is_read = 0
-			   AND survey_id IN (SELECT id FROM {$surveysTable} WHERE status != 'trashed')" // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$this->table}
+				 WHERE is_read = 0
+				   AND survey_id IN (SELECT id FROM {$surveysTable} WHERE status != %s)", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				'trashed'
+			)
 		);
 
 		set_transient( self::UNREAD_CACHE_KEY, $count, 5 * MINUTE_IN_SECONDS );
@@ -380,7 +386,7 @@ class WpdbResponseRepository implements ResponseRepository {
 	 * @param  int[]  $ids    Response primary keys to update.
 	 * @param  bool   $isRead Target read state.
 	 * @return int[]          IDs from $ids that were not found in the database.
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 */
 	public function bulkUpdateReadStatus( array $ids, bool $isRead ): array {
 		if ( empty( $ids ) ) {

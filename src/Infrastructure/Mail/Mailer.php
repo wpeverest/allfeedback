@@ -48,30 +48,16 @@ class Mailer {
 	 * @since  1.0.0
 	 */
 	public function send( string $to, string $subject, string $body, array $headers = [] ): bool {
-		$senderName  = (string) ( $this->settings->get( 'email_sender_name' ) ?: get_bloginfo( 'name' ) );
-		$senderEmail = (string) ( $this->settings->get( 'email_sender_email' ) ?: get_option( 'admin_email' ) );
+		$senderName  = sanitize_text_field( (string) ( $this->settings->get( 'email_sender_name' ) ?: get_bloginfo( 'name' ) ) );
+		$senderEmail = sanitize_email( (string) ( $this->settings->get( 'email_sender_email' ) ?: get_option( 'admin_email' ) ) );
 
 		$headers[] = 'Content-Type: text/html; charset=UTF-8';
 		$headers[] = sprintf( 'From: %s <%s>', $senderName, $senderEmail );
 
-		/**
-		 * Filters the email headers before sending.
-		 *
-		 * @param string[] $headers Email headers.
-		 * @param string   $to      Recipient address.
-		 * @param string   $subject Email subject.
-		 */
 		$headers = $this->applyFilters( 'allfeedback:mail:headers', $headers, $to, $subject );
 
 		$htmlBody = $this->wrapInLayout( $body, $subject );
 
-		/**
-		 * Filters the final HTML body before sending.
-		 *
-		 * @param string $htmlBody The wrapped HTML email body.
-		 * @param string $to       Recipient address.
-		 * @param string $subject  Email subject.
-		 */
 		$htmlBody = $this->applyFilters( 'allfeedback:mail:body', $htmlBody, $to, $subject );
 
 		$sent = wp_mail( $to, $subject, $htmlBody, $headers );

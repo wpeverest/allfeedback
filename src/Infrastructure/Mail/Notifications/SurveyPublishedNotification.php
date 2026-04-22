@@ -76,11 +76,11 @@ class SurveyPublishedNotification {
 		$survey = $context->getSurvey();
 
 		return [
-			'survey_title' => $survey->getTitle(),
+			'survey_title' => esc_html( $survey->getTitle() ),
 			'survey_id'    => (string) $survey->getId(),
-			'activated_at' => current_time( 'mysql' ),
-			'site_name'    => get_bloginfo( 'name' ),
-			'site_url'     => home_url(),
+			'activated_at' => esc_html( current_time( 'mysql' ) ),
+			'site_name'    => esc_html( get_bloginfo( 'name' ) ),
+			'site_url'     => esc_url( home_url() ),
 		];
 	}
 }
