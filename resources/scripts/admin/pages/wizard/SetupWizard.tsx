@@ -8,9 +8,10 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import {
 	MessageSquare, Check, ArrowLeft, ArrowRight, AlertCircle,
-	Gauge, Box, Headphones, LifeBuoy, Monitor, Plus, Mail,
-	Clock, Calendar, Zap, Globe, Lock, Pipette,
-	Rocket, Palette, MapPin, Bell, Wand2, Info,
+	Gauge, Box, Bug, Lightbulb, Users,
+	Clock, Calendar, Zap, Globe, Lock, Pipette, Loader2,
+	Rocket, Palette, Bell, Wand2, Info,
+	LayoutDashboard, Edit2,
 } from 'lucide-react';
 
 const STEPS = [
@@ -24,8 +25,8 @@ type StepId = typeof STEPS[number]['id'];
 
 const STEP_HEADERS: Record<StepId, { title: string; desc: string }> = {
 	template: {
-		title: "Welcome to AllFeedback",
-		desc:  'Choose a starting template — you can customize everything in the builder.',
+		title: '👋 Welcome to AllFeedback',
+		desc:  'Pick a template to get started — every field, label, and setting can be changed in the builder.',
 	},
 	style: {
 		title: 'Make it yours',
@@ -84,52 +85,46 @@ function canAdvance( state: WizardCompletePayload, step: number ): boolean {
 
 const TEMPLATES = [
 	{
-		id:      'nps',
-		title:   'Net Promoter Score',
-		desc:    'Ask how likely customers are to recommend you. The gold standard for measuring loyalty.',
-		Icon:    Gauge,
-		cat:     'Loyalty',
+		id:    'nps',
+		title: 'NPS Survey',
+		desc:  'Measure how likely customers are to recommend you to others.',
+		Icon:  Gauge,
 	},
 	{
-		id:    'product',
+		id:    'general-feedback',
+		title: 'General Feedback',
+		desc:  'Collect open-ended thoughts, ratings, and suggestions from your audience.',
+		Icon:  MessageSquare,
+	},
+	{
+		id:    'bug-report',
+		title: 'Bug Report',
+		desc:  'Let users flag technical issues quickly with structured, actionable reports.',
+		Icon:  Bug,
+	},
+	{
+		id:    'feature-request',
+		title: 'Feature Request',
+		desc:  'Capture ideas for new features and improvements directly from your users.',
+		Icon:  Lightbulb,
+	},
+	{
+		id:    'product-feedback',
 		title: 'Product Feedback',
 		desc:  'Uncover what users love and what to build next with targeted product questions.',
 		Icon:  Box,
-		cat:   'Research',
 	},
 	{
-		id:    'service',
-		title: 'Service Rating',
-		desc:  'Measure satisfaction after every interaction with a simple, proven CSAT question.',
-		Icon:  Headphones,
-		cat:   'CSAT',
-	},
-	{
-		id:    'support',
-		title: 'Support Follow-up',
-		desc:  'Close the loop after a ticket resolves to confirm customers truly feel helped.',
-		Icon:  LifeBuoy,
-		cat:   'Support',
-	},
-	{
-		id:    'website',
-		title: 'Website Feedback',
-		desc:  'Capture real-time opinions on your pages — design, copy, or overall experience.',
-		Icon:  Monitor,
-		cat:   'Research',
-	},
-	{
-		id:    'undecided',
-		title: 'Start from Scratch',
-		desc:  'Skip the template and build exactly what you need in the form builder.',
-		Icon:  Plus,
-		cat:   'Custom',
+		id:    'customer-research',
+		title: 'Customer Research',
+		desc:  'Learn more about your audience, their goals, and how they discovered you.',
+		Icon:  Users,
 	},
 ] as const;
 
 function StepTemplate( { state, set }: { state: WizardCompletePayload; set: ( u: Partial<WizardCompletePayload> ) => void } ) {
 	return (
-		<div className="grid grid-cols-3 gap-5">
+		<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
 			{ TEMPLATES.map( ( t ) => {
 				const isSelected = state.template === t.id;
 				return (
@@ -138,43 +133,39 @@ function StepTemplate( { state, set }: { state: WizardCompletePayload; set: ( u:
 						type="button"
 						onClick={ () => set( { template: t.id } ) }
 						className={ cn(
-							'group relative flex flex-col gap-5 rounded-2xl border p-6 text-left transition-all duration-300',
+							'group relative flex flex-col gap-5 rounded-2xl border p-6 text-left transition-all duration-300 bg-card',
 							isSelected
-								? 'border-primary bg-primary/[0.03] shadow-[0_8px_30px_rgb(0,0,0,0.04),0_0_0_1px_var(--color-primary)]'
-								: 'border-border/50 bg-card hover:border-border/80 hover:shadow-xl hover:shadow-black/[0.02]',
+								? 'border-primary shadow-card'
+								: 'border-border/50 hover:border-border/80',
 						) }
 					>
 						<div className={ cn(
 							'flex size-12 items-center justify-center rounded-xl transition-all duration-300',
 							isSelected
-								? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
+								? 'bg-primary text-primary-foreground shadow-sm'
 								: 'bg-muted/50 text-muted-foreground/50 group-hover:bg-primary/10 group-hover:text-primary',
 						) }>
 							<t.Icon className="size-6" />
 						</div>
 						<div className="space-y-2">
-							<div className="flex items-center justify-between">
-								<span className="text-[15px] font-bold tracking-tight text-foreground">
+							<div className="flex items-center justify-between gap-2">
+								<span className="text-[15px] font-semibold tracking-tight text-foreground">
 									{ t.title }
 								</span>
-								{ isSelected && (
-									<div className="flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm animate-in zoom-in-50 duration-300">
-										<Check className="size-3" strokeWidth={ 3 } />
-									</div>
-								) }
+								<div className={ cn(
+									'flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm transition-all duration-300',
+									isSelected ? 'opacity-100 scale-100' : 'opacity-0 scale-75 pointer-events-none',
+								) }>
+									<Check className="size-3" strokeWidth={ 3 } />
+								</div>
 							</div>
 							<p className={ cn(
 								'text-[13px] leading-relaxed line-clamp-2',
-								isSelected ? 'text-muted-foreground' : 'text-muted-foreground/70',
+								isSelected ? 'text-muted-foreground' : 'text-muted-foreground/60',
 							) }>
 								{ t.desc }
 							</p>
 						</div>
-						{ 'popular' in t && t.popular && (
-							<div className="absolute -right-2 -top-2 rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-amber-600 shadow-sm border border-amber-200">
-								Popular
-							</div>
-						) }
 					</button>
 				);
 			} ) }
@@ -247,7 +238,7 @@ function ColorPicker( { value, onChange }: { value: string; onChange: ( v: strin
 function BrowserPreview( { color, position }: { color: string; position: PositionValue } ) {
 	return (
 		<div
-			className="flex w-full max-w-[440px] flex-col overflow-hidden rounded-xl border border-border/60 bg-white shadow-md"
+			className="flex w-full max-w-[440px] flex-col overflow-hidden rounded-xl border border-border/50 bg-white shadow-card"
 			style={ { aspectRatio: '16/9' } }
 		>
 			<div className="shrink-0 select-none bg-[#dee1e6]">
@@ -318,17 +309,17 @@ function BrowserPreview( { color, position }: { color: string; position: Positio
 
 function StepStyle( { state, set }: { state: WizardCompletePayload; set: ( u: Partial<WizardCompletePayload> ) => void } ) {
 	return (
-		<div className="grid grid-cols-[1fr_1.3fr] gap-8">
-			<div className="flex flex-col gap-6">
-				<div className="rounded-2xl border border-border/50 bg-card p-8 shadow-sm">
+		<div className="grid grid-cols-1 lg:grid-cols-[1fr_1.3fr] items-stretch gap-8">
+			<div className="flex flex-col">
+				<div className="flex h-full flex-col rounded-2xl border border-border/50 bg-card p-6 md:p-8 shadow-card">
 					<div className="space-y-6">
 						<div className="space-y-3">
-							<p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/50">Brand color</p>
+							<label className="block text-sm font-semibold text-foreground">Brand color</label>
 							<ColorPicker value={ state.brand_color } onChange={ ( v ) => set( { brand_color: v } ) } />
 						</div>
-						<div className="h-px bg-border/40" />
+						<div className="h-px bg-border/50" />
 						<div className="space-y-4">
-							<p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/50">Widget position</p>
+							<label className="block text-sm font-semibold text-foreground">Widget position</label>
 							<div className="flex flex-col gap-2">
 								{ ALL_POSITIONS.map( ( pos ) => (
 									<button
@@ -339,7 +330,7 @@ function StepStyle( { state, set }: { state: WizardCompletePayload; set: ( u: Pa
 											'flex items-center justify-between rounded-xl border px-5 py-4 transition-all duration-300',
 											state.position === pos.value
 												? 'border-primary bg-primary/[0.03] text-primary shadow-sm'
-												: 'border-border/40 bg-muted/20 text-muted-foreground hover:border-border hover:bg-muted/40 hover:text-foreground',
+												: 'border-border/50 bg-muted/20 text-muted-foreground hover:border-border hover:bg-muted/40 hover:text-foreground',
 										) }
 									>
 										<span className="text-[14px] font-semibold">{ pos.label }</span>
@@ -352,8 +343,8 @@ function StepStyle( { state, set }: { state: WizardCompletePayload; set: ( u: Pa
 				</div>
 			</div>
 
-			<div className="overflow-hidden rounded-3xl border border-border/50 bg-card shadow-2xl shadow-black/[0.03]">
-				<div className="flex shrink-0 items-center justify-between border-b border-border/40 px-6 py-4 bg-muted/10">
+			<div className="overflow-hidden rounded-2xl border border-border/50 bg-card shadow-card">
+				<div className="flex shrink-0 items-center justify-between border-b border-border/50 px-6 py-4 bg-muted/10">
 					<div className="flex items-center gap-2.5">
 						<div className="flex gap-1.5">
 							<span className="size-2.5 rounded-full bg-destructive/20" />
@@ -364,7 +355,7 @@ function StepStyle( { state, set }: { state: WizardCompletePayload; set: ( u: Pa
 					</div>
 					<div className="h-2 w-24 rounded-full bg-muted/40" />
 				</div>
-				<div className="flex items-center justify-center bg-muted/5 p-12">
+				<div className="flex items-center justify-center bg-muted/5 p-6 md:p-12">
 					<BrowserPreview color={ state.brand_color } position={ state.position as PositionValue } />
 				</div>
 			</div>
@@ -382,80 +373,96 @@ function StepSettings( { state, set }: { state: WizardCompletePayload; set: ( u:
 	const emailOk = ! state.admin_email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test( state.admin_email );
 
 	return (
-		<div className="rounded-2xl border border-border/60 bg-card shadow-card overflow-hidden">
-			<div className="p-10 space-y-10">
-				<div className="space-y-4">
-					<div className="space-y-1.5">
-						<label className="text-sm font-semibold tracking-tight text-foreground">Where to send new response notifications</label>
-						<p className="text-[13px] leading-relaxed text-muted-foreground/80">This email will receive an alert whenever a new feedback is submitted.</p>
-					</div>
-					<div className="space-y-2">
-						<Input
-							type="email"
-							placeholder="you@company.com"
-							value={ state.admin_email }
-							onChange={ ( e ) => set( { admin_email: e.target.value } ) }
-							className={ cn( 
-								'h-12 text-[14px] bg-muted/40 border-border/40 focus:bg-white focus:border-primary/40 focus:ring-4 focus:ring-primary/5', 
-								! emailOk && 'border-destructive/40 bg-destructive/5 focus:border-destructive/60 focus:ring-destructive/10' 
-							) }
-						/>
-						{ ! emailOk && (
-							<div className="flex items-center gap-2 text-[12px] font-medium text-destructive">
-								<AlertCircle className="size-4" />
-								<span>Enter a valid email address.</span>
-							</div>
-						) }
-					</div>
-				</div>
-
-				<div className="space-y-4">
-					<div className="space-y-1.5">
-						<label className="text-sm font-semibold tracking-tight text-foreground">Delivery frequency</label>
-						<p className="text-[13px] leading-relaxed text-muted-foreground/80">Choose how often you want to receive notification digests.</p>
-					</div>
-					<div className="inline-flex items-center rounded-xl border border-border/50 bg-muted/30 p-1">
-						{ NOTIF_OPTIONS.map( ( opt ) => (
-							<button
-								key={ opt.id }
-								type="button"
-								onClick={ () => set( { notif_frequency: opt.id } ) }
+		<div className="flex flex-col gap-4">
+			<div className="rounded-2xl border border-border/50 bg-card shadow-card">
+				<div className="p-6 md:p-10 space-y-8 md:space-y-10">
+					<div className="space-y-4">
+						<div className="space-y-1.5">
+							<label className="text-sm font-semibold text-foreground">Where to send new response notifications</label>
+							<p className="text-sm leading-relaxed text-muted-foreground">This email will receive an alert whenever a new feedback is submitted.</p>
+						</div>
+						<div className="space-y-2">
+							<Input
+								type="email"
+								placeholder="you@company.com"
+								value={ state.admin_email }
+								onChange={ ( e ) => set( { admin_email: e.target.value } ) }
 								className={ cn(
-									'flex items-center gap-2 rounded-lg px-5 py-2.5 text-[13px] font-medium transition-all duration-300',
-									state.notif_frequency === opt.id
-										? 'bg-white text-primary shadow-sm border border-border/20'
-										: 'text-muted-foreground hover:text-foreground hover:bg-white/50',
+									'h-12 bg-muted/40 border-border/50 focus:bg-white focus:border-primary/40',
+									! emailOk && 'border-destructive/40 bg-destructive/5 focus:border-destructive/60'
 								) }
-							>
-								<opt.Icon className={ cn( 'size-4', state.notif_frequency === opt.id ? 'text-primary' : 'text-muted-foreground/60' ) } />
-								{ opt.label }
-							</button>
-						) ) }
+							/>
+							{ ! emailOk && (
+								<div className="flex items-center gap-2 text-[12px] font-medium text-destructive">
+									<AlertCircle className="size-4" />
+									<span>Enter a valid email address.</span>
+								</div>
+							) }
+						</div>
+					</div>
+
+					<div className="space-y-4">
+						<div className="space-y-1.5">
+							<label className="text-sm font-semibold text-foreground">Delivery frequency</label>
+							<p className="text-sm leading-relaxed text-muted-foreground">Choose how often you want to receive notification digests.</p>
+						</div>
+						<div className="inline-flex flex-col sm:flex-row sm:items-center rounded-xl border border-border/50 bg-muted/30 p-1">
+							{ NOTIF_OPTIONS.map( ( opt ) => (
+								<button
+									key={ opt.id }
+									type="button"
+									onClick={ () => set( { notif_frequency: opt.id } ) }
+									className={ cn(
+										'flex items-center gap-2 rounded-lg px-5 py-2.5 text-[13px] font-medium transition-all duration-300',
+										state.notif_frequency === opt.id
+											? 'bg-white text-primary shadow-sm border border-border/20'
+											: 'text-muted-foreground hover:text-foreground hover:bg-white/50',
+									) }
+								>
+									<opt.Icon className={ cn( 'size-4', state.notif_frequency === opt.id ? 'text-primary' : 'text-muted-foreground/60' ) } />
+									{ opt.label }
+								</button>
+							) ) }
+						</div>
 					</div>
 				</div>
 			</div>
 
-			<div className="bg-blue-50/40 border-t border-blue-100/50 px-10 py-6">
-				<div className="flex items-center gap-4">
-					<div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600">
-						<Info className="size-4" />
-					</div>
-					<p className="text-[13px] leading-relaxed text-blue-900/70">
-						All feedback is stored on your server only — no data is shared with third parties.
-						Consent banners and IP anonymization can be configured in{' '}
-						<strong className="font-semibold text-blue-900/90">Settings → Advanced</strong>.
-					</p>
-				</div>
+			<div className="flex items-start gap-3 rounded-xl border border-info/20 bg-info-subtle/50 px-5 py-4">
+				<Info className="mt-0.5 size-4 shrink-0 text-info" />
+				<p className="text-sm leading-relaxed text-foreground/70">
+					All feedback is stored on your server only — no data is shared with third parties.
+					Consent banners and IP anonymization can be configured in{' '}
+					<strong className="font-semibold text-foreground">Settings → Advanced</strong>.
+				</p>
 			</div>
 		</div>
 	);
 }
 
-function StepFinal( { state, onFinish, submitting }: { state: WizardCompletePayload; onFinish: () => void; submitting: boolean } ) {
-	const tpl        = TEMPLATES.find( ( t ) => t.id === state.template ) ?? TEMPLATES[ 0 ];
-	const notifLabel = NOTIF_OPTIONS.find( ( o ) => o.id === state.notif_frequency )?.label ?? state.notif_frequency;
-	const posLabel   = ALL_POSITIONS.find( ( p ) => p.value === state.position )?.label ?? state.position;
-	const canvasRef  = useRef<HTMLCanvasElement>( null );
+const LAUNCH_HIGHLIGHTS = [
+	{
+		Icon:  Check,
+		title: 'Survey ready',
+		desc:  'A starter form is waiting in the builder — customize questions, copy, and logic.',
+		color: 'bg-success-subtle text-success',
+	},
+	{
+		Icon:  Zap,
+		title: 'Go live instantly',
+		desc:  'Publish with one click whenever you\'re satisfied. Your widget appears on your site immediately.',
+		color: 'bg-accent text-accent-foreground',
+	},
+	{
+		Icon:  Bell,
+		title: 'Stay notified',
+		desc:  'Get alerted each time a new response arrives, so you never miss a piece of feedback.',
+		color: 'bg-warning-subtle text-warning-foreground',
+	},
+] as const;
+
+function StepFinal( { onFinish, submitting }: { onFinish: ( target: 'editor' | 'dashboard' ) => void; submitting: boolean } ) {
+	const canvasRef = useRef<HTMLCanvasElement>( null );
 
 	useEffect( () => {
 		if ( ! canvasRef.current ) return;
@@ -482,38 +489,6 @@ function StepFinal( { state, onFinish, submitting }: { state: WizardCompletePayl
 		};
 	}, [] );
 
-	const summaryItems = [
-		{
-			Icon:  tpl.Icon,
-			label: 'Survey type',
-			value: tpl.title,
-			color: 'bg-indigo-50 text-indigo-600',
-		},
-		{
-			Icon:  Palette,
-			label: 'Brand color',
-			value: (
-				<span className="flex items-center gap-2">
-					<span className="inline-block size-3.5 rounded-[4px] border border-black/10 shadow-sm" style={ { backgroundColor: state.brand_color } } />
-					{ state.brand_color.toUpperCase() }
-				</span>
-			),
-			color: 'bg-pink-50 text-pink-600',
-		},
-		{
-			Icon:  MapPin,
-			label: 'Position',
-			value: posLabel,
-			color: 'bg-cyan-50 text-cyan-600',
-		},
-		{
-			Icon:  Bell,
-			label: 'Notifications',
-			value: notifLabel + ( state.admin_email ? ` · ${ state.admin_email }` : '' ),
-			color: 'bg-amber-50 text-amber-600',
-		},
-	];
-
 	return (
 		<div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden">
 			<canvas
@@ -521,9 +496,9 @@ function StepFinal( { state, onFinish, submitting }: { state: WizardCompletePayl
 				className="pointer-events-none absolute inset-0 size-full"
 			/>
 
-			<div className="relative z-10 flex w-full max-w-lg flex-col items-center gap-7">
+			<div className="relative z-10 flex w-full flex-col items-center gap-8">
 				<div className="flex flex-col items-center gap-3 text-center">
-					<div className="flex size-16 items-center justify-center rounded-2xl bg-primary text-white shadow-[0_8px_24px_-4px_var(--color-primary)/40]">
+					<div className="flex size-16 items-center justify-center rounded-2xl bg-primary text-white shadow-sm">
 						<Rocket className="size-7" />
 					</div>
 					<div>
@@ -531,40 +506,52 @@ function StepFinal( { state, onFinish, submitting }: { state: WizardCompletePayl
 							You're ready to launch
 						</h2>
 						<p className="mt-1.5 text-sm text-muted-foreground" style={ { margin: 0 } }>
-							Here's a summary of your setup. Hit <strong className="text-foreground">Finish</strong> to activate your survey.
+							Your widget is configured. Open the builder to fine-tune your survey, then publish when ready.
 						</p>
 					</div>
 				</div>
 
-				<div className="w-full overflow-hidden rounded-2xl border border-border/60 bg-card shadow-card">
-					{ summaryItems.map( ( item, i ) => (
-						<div
-							key={ i }
-							className="flex items-center gap-4 border-b border-border/40 px-6 py-4 last:border-0"
-						>
-							<div className={ cn( 'flex size-9 shrink-0 items-center justify-center rounded-xl shadow-sm', item.color ) }>
+				<div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-3">
+					{ LAUNCH_HIGHLIGHTS.map( ( item ) => (
+						<div key={ item.title } className="flex flex-col gap-3 rounded-xl border border-border/50 bg-card p-5 shadow-card">
+							<div className={ cn( 'flex size-9 items-center justify-center rounded-xl', item.color ) }>
 								<item.Icon className="size-4" />
 							</div>
-							<span className="w-32 shrink-0 text-[11px] font-bold uppercase tracking-wider text-muted-foreground/60">
-								{ item.label }
-							</span>
-							<span className="flex-1 text-[14px] font-semibold text-foreground">
-								{ item.value }
-							</span>
+							<div>
+								<p className="text-sm font-semibold text-foreground">{ item.title }</p>
+								<p className="mt-1 text-sm leading-relaxed text-muted-foreground">{ item.desc }</p>
+							</div>
 						</div>
 					) ) }
 				</div>
 
-				<Button size="lg" className="h-12 w-full text-base" disabled={ submitting } onClick={ onFinish }>
-					{ submitting ? 'Setting up…' : 'Finish & go to dashboard' }
-					{ ! submitting && <Rocket className="ml-2 size-5" /> }
-				</Button>
+				<div className="flex w-full items-center justify-end gap-3">
+					<Button
+						variant="outline"
+						size="lg"
+						className="h-11 font-semibold"
+						onClick={ () => onFinish( 'dashboard' ) }
+						disabled={ submitting }
+					>
+						<LayoutDashboard className="size-5" />
+						Go to Dashboard
+					</Button>
+					<Button
+						size="lg"
+						className="h-11 font-semibold"
+						onClick={ () => onFinish( 'editor' ) }
+						disabled={ submitting }
+					>
+						{ submitting ? <Loader2 className="size-5 animate-spin" /> : <Edit2 className="size-5" /> }
+						Go to Editor
+						<ArrowRight className="size-5" />
+					</Button>
+				</div>
 			</div>
 		</div>
 	);
 }
 
-const isMac = typeof navigator !== 'undefined' && /mac/i.test( navigator.platform );
 
 export default function SetupWizard() {
 	const navigate    = useNavigate();
@@ -592,17 +579,24 @@ export default function SetupWizard() {
 		localStorage.setItem( STORAGE_KEY + '-step', String( clamped ) );
 	}, [] );
 
-	const finish = useCallback( async () => {
+	const finish = useCallback( async ( target: 'editor' | 'dashboard' = 'dashboard' ) => {
 		setSubmitting( true );
 		try {
-			await wizardApi.complete( state );
-		} catch {
-			// Fail silently to allow navigation even if API is slow/fails
-		} finally {
+			const res = await wizardApi.complete( state );
+			
+			// Always mark as completed locally even if API fails/slow
 			queryClient.setQueryData( WIZARD_STATUS_QUERY_KEY, { status: 'completed' } );
 			localStorage.removeItem( STORAGE_KEY );
 			localStorage.removeItem( STORAGE_KEY + '-step' );
+
+			if ( target === 'editor' && res.id ) {
+				navigate( { to: '/builder', search: { id: res.id, new: true } } );
+			} else {
+				navigate( { to: '/dashboard' } );
+			}
+		} catch {
 			navigate( { to: '/dashboard' } );
+		} finally {
 			setSubmitting( false );
 		}
 	}, [ state, queryClient, navigate ] );
@@ -634,9 +628,9 @@ export default function SetupWizard() {
 	return (
 		<div className="flex h-screen flex-col bg-background">
 			{ ! isDone && (
-				<header className="flex h-[72px] shrink-0 items-center justify-between border-b border-border/50 bg-card px-10 shadow-sm">
+				<header className="flex h-[72px] shrink-0 items-center justify-between border-b border-border/50 bg-card px-4 md:px-10">
 					<div className="flex items-center gap-3">
-						<div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-[0_4px_12px_-2px_var(--color-primary)/30]">
+						<div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
 							<MessageSquare className="size-5" />
 						</div>
 						<span className="text-[16px] font-bold tracking-tight text-foreground">
@@ -645,8 +639,8 @@ export default function SetupWizard() {
 					</div>
 					<button
 						type="button"
-						onClick={ finish }
-						className="group flex items-center gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+						onClick={ () => finish( 'dashboard' ) }
+						className="group flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-all hover:text-primary hover:underline hover:underline-offset-4"
 					>
 						Skip setup
 						<ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
@@ -655,10 +649,10 @@ export default function SetupWizard() {
 			) }
 
 			<main className="flex min-h-0 flex-1 flex-col overflow-auto">
-				<div className="mx-auto flex w-full max-w-[1000px] flex-1 flex-col px-8 py-8" key={ step }>
+				<div className="mx-auto flex w-full max-w-[1000px] flex-1 flex-col px-4 md:px-8 py-6 md:py-8" key={ step }>
 					{ ! isDone && (
-						<div className="mb-14 flex justify-center">
-							<div className="relative flex items-center bg-card p-2 rounded-2xl border border-border/40 shadow-sm">
+						<div className="mb-8 md:mb-14 flex justify-center">
+							<div className="relative flex items-center bg-card p-2 rounded-2xl border border-border/50 shadow-sm">
 								{ STEPS.map( ( s, i ) => {
 									const isActive    = i === step;
 									const isDoneStep  = i < step;
@@ -669,19 +663,24 @@ export default function SetupWizard() {
 												type="button"
 												className={ cn(
 													'group relative flex items-center gap-3 rounded-xl px-5 py-3 transition-all duration-300',
-													isActive ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'text-muted-foreground',
-													isClickable && 'hover:bg-muted/40 hover:text-foreground',
+													isActive ? 'bg-primary text-primary-foreground shadow-sm' : (isDoneStep ? 'text-foreground/90' : 'text-muted-foreground/70'),
+													isClickable && !isActive && 'hover:bg-muted/40 hover:text-foreground',
 												) }
 												style={ { cursor: isClickable ? 'pointer' : 'default' } }
 												onClick={ () => isClickable && goto( i ) }
 											>
 												<div className={ cn(
-													'flex size-6 shrink-0 items-center justify-center rounded-full text-[11px] font-black',
-													isActive || isDoneStep ? 'bg-white/20' : 'bg-muted text-muted-foreground/60',
+													'flex size-6 shrink-0 items-center justify-center rounded-full text-[12px] font-semibold',
+													isActive ? 'bg-white/20 text-white' : (isDoneStep ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground/50'),
 												) }>
-													{ isDoneStep ? <Check className="size-3" strokeWidth={ 4 } /> : i + 1 }
+													{ isDoneStep ? <Check className="size-3" strokeWidth={ 3 } /> : i + 1 }
 												</div>
-												<span className="text-[14px] font-bold tracking-tight">{ s.label }</span>
+												<span className={ cn(
+													'text-[14px] tracking-tight',
+													isActive || isDoneStep ? 'font-semibold' : 'font-medium'
+												) }>
+													{ s.label }
+												</span>
 											</button>
 											{ i < STEPS.length - 1 && (
 												<div className="mx-2 flex items-center gap-1 opacity-20">
@@ -711,24 +710,14 @@ export default function SetupWizard() {
 						{ ! isDone && step === 0 && <StepTemplate state={ state } set={ set } /> }
 						{ ! isDone && step === 1 && <StepStyle    state={ state } set={ set } /> }
 						{ ! isDone && step === 2 && <StepSettings state={ state } set={ set } /> }
-						{ ! isDone && step === 3 && <StepFinal    state={ state } onFinish={ finish } submitting={ submitting } /> }
+						{ ! isDone && step === 3 && <StepFinal onFinish={ ( t ) => finish( t ) } submitting={ submitting } /> }
 					</div>
 				</div>
 			</main>
 
 			{ ! isDone && step < STEPS.length - 1 && (
-				<footer className="flex h-[76px] shrink-0 items-center justify-between border-t border-border/50 bg-card px-10 shadow-[0_-4px_12px_rgba(0,0,0,0.02)]">
-					<span className="flex items-center gap-1.5">
-						{ ( isMac ? [ '⌘', '↵' ] : [ 'Ctrl', '↵' ] ).map( ( k ) => (
-							<kbd
-								key={ k }
-								className="rounded-md border border-border bg-muted/50 px-2 py-1 text-[10px] font-bold leading-none text-muted-foreground/50 shadow-sm"
-							>
-								{ k }
-							</kbd>
-						) ) }
-						<span className="ml-1 text-[13px] font-medium text-muted-foreground/60">to continue</span>
-					</span>
+				<footer className="flex h-[76px] shrink-0 items-center justify-end border-t border-border/50 bg-card px-4 md:px-10">
+
 					<div className="flex gap-3">
 						{ step > 0 && (
 							<Button variant="secondary" className="h-11 px-6" onClick={ () => goto( step - 1 ) }>

@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace AllFeedback\API\Controllers\V1;
 
 use AllFeedback\API\RestController;
+use AllFeedback\Core\Constants;
 use AllFeedback\Core\Settings\SettingsManager;
+use AllFeedback\Domain\Survey\Survey;
+use AllFeedback\Domain\Survey\SurveyRepository;
 use WP_REST_Request;
 use WP_REST_Response;
 
@@ -18,6 +21,7 @@ class WizardController extends RestController {
 
 	public function __construct(
 		private readonly SettingsManager $settingsManager,
+		private readonly SurveyRepository $surveyRepository,
 	) {}
 
 	public function registerRoutes(): void {
@@ -78,14 +82,48 @@ class WizardController extends RestController {
 
 		update_option( self::OPTION_STATUS, 'completed', false );
 
-		return $this->successResponse( [ 'status' => 'completed' ] );
+		$templateId = $request->get_param( 'template' );
+		$schema     = [];
+		$path       = Constants::path( "resources/scripts/admin/data/templates/{$templateId}.json" );
+
+		if ( file_exists( $path ) ) {
+			$schema = json_decode( (string) file_get_contents( $path ), true ) ?: [];
+		}
+
+		$survey = new Survey(
+			title:      __( 'My First Feedback Form', 'all-feedback' ),
+			formSchema: $schema,
+			styling:    [
+				'brand_color' => $brandColor ?: '#6366F1',
+			],
+			settings:   [
+				'widget' => [
+					'enabled'  => true,
+					'position' => $position ?: 'bottom-right',
+				],
+			],
+			createdBy:  get_current_user_id() ?: 0,
+		);
+
+		$formId = null;
+		try {
+			$survey = $this->surveyRepository->save( $survey );
+			$formId = $survey->getId();
+		} catch ( \Exception $e ) {
+			// Fail silently
+		}
+
+		return $this->successResponse( [ 
+			'status' => 'completed',
+			'id'     => $formId,
+		] );
 	}
 
 	private function completeArgs(): array {
 		return [
 			'template'        => $this->argEnum(
 				description: 'Survey template',
-				values:      [ 'nps', 'product', 'service', 'support', 'website', 'undecided' ],
+				values:      [ 'nps', 'general-feedback', 'bug-report', 'feature-request', 'product-feedback', 'customer-research' ],
 				default:     'nps'
 			),
 			'brand_color'     => $this->argString(

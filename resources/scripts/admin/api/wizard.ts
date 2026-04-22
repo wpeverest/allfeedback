@@ -20,7 +20,7 @@ export const wizardApi = {
 		request<WizardStatus>( '/wizard' ),
 
 	complete: ( data: WizardCompletePayload ) =>
-		request<{ completed: boolean }>( '/wizard/complete', { method: 'POST', data } ),
+		request<{ status: string; id?: number }>( '/wizard/complete', { method: 'POST', data } ),
 };
 
 export const WIZARD_STATUS_QUERY_KEY = [ 'wizard', 'status' ] as const;
