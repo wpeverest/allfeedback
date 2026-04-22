@@ -12,6 +12,7 @@ use AllFeedback\API\Controllers\V1\SettingsController;
 use AllFeedback\API\Controllers\V1\SubmitController;
 use AllFeedback\API\Controllers\V1\SurveyStateController;
 use AllFeedback\API\Controllers\V1\SurveysController;
+use AllFeedback\API\Controllers\V1\WizardController;
 use AllFeedback\Core\Container;
 use AllFeedback\Core\ServiceProvider;
 use AllFeedback\Traits\Hooks;
@@ -70,14 +71,15 @@ class ApiServiceProvider implements ServiceProvider {
 	 */
 	public function registerRoutes(): void {
 		$controllers = [
-			SubmitController::class,
-			AnalyticsController::class,
-			SurveyStateController::class,
-			ResponsesController::class,
-			SurveysController::class,
-			SettingsController::class,
-			ContentSearchController::class,
-			LogsController::class,
+			SubmitController::class,        // /surveys/{id}/submit            — public, nonce-gated
+			AnalyticsController::class,     // /surveys/{id}/analytics[/event] — public POST, admin GET
+			SurveyStateController::class,   // /surveys/{id}/state             — logged-in users only
+			ResponsesController::class,     // /surveys/{id}/responses         — admin, must come before SurveysController
+			SurveysController::class,       // /surveys
+			SettingsController::class,      // /settings
+			WizardController::class,        // /wizard
+			ContentSearchController::class, // /content-search
+			LogsController::class,          // /logs
 		];
 
 		foreach ( $controllers as $class ) {

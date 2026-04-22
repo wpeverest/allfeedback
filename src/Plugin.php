@@ -148,6 +148,12 @@ final class Plugin {
 
 		$this->doAction( 'allfeedback:activated' );
 
+		// Seed wizard status so maybeRedirectToWizard() fires on first admin load.
+		$wizardStatus = get_option( 'allfeedback_wizard_status' );
+		if ( ! $wizardStatus || $wizardStatus === 'not_started' ) {
+			update_option( 'allfeedback_wizard_status', 'pending_redirect' );
+		}
+
 		flush_rewrite_rules();
 	}
 

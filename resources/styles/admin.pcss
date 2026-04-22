@@ -8,6 +8,7 @@
 
 @import './app.pcss';
 @import './frontend.pcss';
+@import './wizard.pcss';
 
 /* ── Remove WP default content padding and footer so our SPA fills edge-to-edge ─────── */
 .toplevel_page_all-feedback #wpcontent,
@@ -47,9 +48,9 @@
 
 /* ── Focused inputs always use primary colour as border ──────────────────── */
 /* Exclude allfb-* widget inputs so preview focus styles apply unmodified.   */
-#ALLFB-Admin-Root input:not([type='checkbox']):not([type='radio']):not(.allfb-input):focus,
-#ALLFB-Admin-Root select:focus,
-#ALLFB-Admin-Root textarea:not(.allfb-textarea):focus,
+#ALLFB-Admin-Root input:not([type='checkbox']):not([type='radio']):not(.allfb-input):not([class*='wz-']):focus,
+#ALLFB-Admin-Root select:not([class*='wz-']):focus,
+#ALLFB-Admin-Root textarea:not(.allfb-textarea):not([class*='wz-']):focus,
 #ALLFB-Admin-Root [data-slot='select-trigger']:focus,
 #ALLFB-Admin-Root [data-slot='select-trigger']:focus-visible {
 	border-color: var(--primary);
@@ -61,9 +62,9 @@
 #ALLFB-Admin-Root [data-slot='input'],
 #ALLFB-Admin-Root [data-slot='textarea'],
 #ALLFB-Admin-Root [data-slot='select-trigger'],
-#ALLFB-Admin-Root input:not([type='checkbox']):not([type='radio']):not(.allfb-input),
-#ALLFB-Admin-Root select,
-#ALLFB-Admin-Root textarea:not(.allfb-textarea) {
+#ALLFB-Admin-Root input:not([type='checkbox']):not([type='radio']):not(.allfb-input):not([class*='wz-']),
+#ALLFB-Admin-Root select:not([class*='wz-']),
+#ALLFB-Admin-Root textarea:not(.allfb-textarea):not([class*='wz-']) {
 	box-sizing:       border-box;  /* WP admin can flip inputs back to content-box */
 	background-color: var(--card);
 	color:            var(--foreground);
@@ -99,7 +100,7 @@
 /* Exclude allfb-* widget buttons so preview styles apply unmodified.        */
 /* Exclude [data-slot='select-trigger'] so Radix Select keeps its border.    */
 /* Exclude [role='switch'] so Radix Switch keeps its border-2 thumb spacing. */
-#ALLFB-Admin-Root button:not(.allfb-btn):not(.allfb-star):not(.allfb-scale__btn):not(.allfb-panel__close):not(.allfb-launcher):not([data-slot='select-trigger']):not([role='switch']) {
+#ALLFB-Admin-Root button:not(.allfb-btn):not(.allfb-star):not(.allfb-scale__btn):not(.allfb-panel__close):not(.allfb-launcher):not([data-slot='select-trigger']):not([role='switch']):not([class*='wz-']) {
 	border:      none;
 	appearance:  none;
 	margin:      0;

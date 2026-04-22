@@ -80,6 +80,7 @@ class AdminServiceProvider implements ServiceProvider {
 		$this->addAction( 'allfeedback:enqueue-assets:admin',     [ $this, 'enqueueAssets'         ] );
 		$this->addAction( 'admin_footer',                         [ $this, 'inlineMenuHighlight'   ] );
 		$this->addAction( 'in_admin_header',                      [ $this, 'suppressAdminNotices'  ] );
+		$this->addAction( 'admin_init',                           [ $this, 'maybeRedirectToWizard' ] );
 	}
 
 	/**
@@ -182,6 +183,26 @@ class AdminServiceProvider implements ServiceProvider {
 	}
 
 	/**
+	 * Automatically redirect to the Setup Wizard after activation.
+	 *
+	 * @return void
+	 * @since  1.0.0
+	 */
+	public function maybeRedirectToWizard(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		$status = get_option( 'allfeedback_wizard_status', 'not_started' );
+		if ( $status === 'pending_redirect' || $status === 'not_started' ) {
+			update_option( 'allfeedback_wizard_status', 'initiated' );
+			wp_safe_redirect( admin_url( 'admin.php?page=all-feedback#/wizard' ) );
+			exit;
+		}
+	}
+
+
+	/**
 	 * Remove all third-party and WP core admin notices on AllFeedback pages.
 	 *
 	 * Fires on `'in_admin_header'` — after other plugins register their notices
@@ -281,6 +302,7 @@ class AdminServiceProvider implements ServiceProvider {
 			'allfeedback:admin:script_data',
 			[
 				'adminUrl'        => admin_url( 'admin.php' ),
+				'adminEmail'      => $isAdmin ? sanitize_email( (string) get_option( 'admin_email', '' ) ) : null,
 				'widgetColor'     => $widget['color']    ?? '#6366f1',
 				'widgetPosition'  => $widget['position'] ?? 'bottom-right',
 				'pluginUrl'       => Constants::url(),

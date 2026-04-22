@@ -452,7 +452,7 @@ const FormBuilder = () => {
 	};
 
  	const handleBack = () => {
-		router.history.back();
+		router.navigate( { to: '/forms' } );
 	};
 
 	const isMac = typeof navigator !== 'undefined' && /mac/i.test(navigator.platform);

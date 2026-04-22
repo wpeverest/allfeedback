@@ -1,13 +1,24 @@
-﻿import GlobalHeader from '@/admin/components/GlobalHeader';
+import GlobalHeader from '@/admin/components/GlobalHeader';
+import { wizardApi, WIZARD_STATUS_QUERY_KEY } from '@/admin/api/wizard';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useFetchProgress } from '@/hooks/useFetchProgress';
-import { Outlet, createFileRoute } from '@tanstack/react-router';
+import { Outlet, createFileRoute, redirect } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/_app')({
+export const Route = createFileRoute( '/_app' )( {
+	beforeLoad: async ( { context: { queryClient } } ) => {
+		const status = await queryClient.ensureQueryData( {
+			queryKey: WIZARD_STATUS_QUERY_KEY,
+			queryFn:  wizardApi.getStatus,
+			staleTime: Infinity,
+		} );
+		if ( status.status === 'pending_redirect' || status.status === 'not_started' ) {
+			throw redirect( { to: '/wizard/' } );
+		}
+	},
 	component: AppLayout,
 	pendingComponent: PendingLayout,
-});
+} );
 
 function AppLayout() {
 	const progress = useFetchProgress();
