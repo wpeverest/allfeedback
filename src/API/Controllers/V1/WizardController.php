@@ -13,8 +13,8 @@ class WizardController extends RestController {
 
 	protected string $restBase = 'wizard';
 
-	private const OPTION_COMPLETED = '_allfb_wizard_completed';
-	private const OPTION_DATA      = '_allfb_wizard_data';
+	private const OPTION_STATUS = 'allfeedback_wizard_status';
+	private const OPTION_DATA   = '_allfb_wizard_data';
 
 	public function __construct(
 		private readonly SettingsManager $settingsManager,
@@ -49,7 +49,7 @@ class WizardController extends RestController {
 
 	public function getStatus( WP_REST_Request $request ): WP_REST_Response {
 		return $this->successResponse( [
-			'completed' => (bool) get_option( self::OPTION_COMPLETED, false ),
+			'status' => get_option( self::OPTION_STATUS, 'not_started' ),
 		] );
 	}
 
@@ -76,9 +76,9 @@ class WizardController extends RestController {
 			false
 		);
 
-		update_option( self::OPTION_COMPLETED, true, false );
+		update_option( self::OPTION_STATUS, 'completed', false );
 
-		return $this->successResponse( [ 'completed' => true ] );
+		return $this->successResponse( [ 'status' => 'completed' ] );
 	}
 
 	private function completeArgs(): array {

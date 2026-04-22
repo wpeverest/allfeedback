@@ -139,6 +139,12 @@ final class Plugin {
 		 */
 		$this->doAction( 'allfeedback:activated' );
 
+		// Mark wizard as pending redirect on next admin load if not already seen/completed.
+		$wizardStatus = get_option( 'allfeedback_wizard_status' );
+		if ( ! $wizardStatus || $wizardStatus === 'not_started' ) {
+			update_option( 'allfeedback_wizard_status', 'pending_redirect' );
+		}
+
 		// Flush rewrite rules so any new endpoints are live immediately.
 		flush_rewrite_rules();
 	}

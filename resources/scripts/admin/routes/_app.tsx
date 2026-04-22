@@ -1,4 +1,4 @@
-﻿import GlobalHeader from '@/admin/components/GlobalHeader';
+import GlobalHeader from '@/admin/components/GlobalHeader';
 import { wizardApi, WIZARD_STATUS_QUERY_KEY } from '@/admin/api/wizard';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -12,7 +12,7 @@ export const Route = createFileRoute( '/_app' )( {
 			queryFn:  wizardApi.getStatus,
 			staleTime: Infinity,
 		} );
-		if ( ! status.completed ) {
+		if ( status.status === 'pending_redirect' || status.status === 'not_started' ) {
 			throw redirect( { to: '/wizard/' } );
 		}
 	},

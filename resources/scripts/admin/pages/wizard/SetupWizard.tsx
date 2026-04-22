@@ -24,7 +24,7 @@ type StepId = typeof STEPS[number]['id'];
 
 const STEP_HEADERS: Record<StepId, { title: string; desc: string }> = {
 	template: {
-		title: "Let's get you set up",
+		title: "Welcome to AllFeedback",
 		desc:  'Choose a starting template — you can customize everything in the builder.',
 	},
 	style: {
@@ -38,31 +38,41 @@ const STEP_HEADERS: Record<StepId, { title: string; desc: string }> = {
 	final: { title: '', desc: '' },
 };
 
-const INITIAL_STATE: WizardCompletePayload = {
-	template:        'nps',
-	brand_color:     '#6366F1',
-	position:        'bottom-right',
-	admin_email:     __ALLFB_ADMIN__.adminEmail ?? '',
-	notif_frequency: 'instant',
-	consent:         true,
-	anonymize_ip:    true,
-	retention:       '12m',
-};
-
 const STORAGE_KEY = 'allfb-wizard-v1';
 
+function getInitialState(): WizardCompletePayload {
+	return {
+		template:        'nps',
+		brand_color:     '#6366F1',
+		position:        'bottom-right',
+		admin_email:     ( typeof __ALLFB_ADMIN__ !== 'undefined' ? __ALLFB_ADMIN__.adminEmail : '' ),
+		notif_frequency: 'instant',
+		consent:         true,
+		anonymize_ip:    true,
+		retention:       '12m',
+	};
+}
+
 function loadState(): WizardCompletePayload {
+	const base = getInitialState();
 	try {
 		const raw = localStorage.getItem( STORAGE_KEY );
-		return raw ? { ...INITIAL_STATE, ...JSON.parse( raw ) } : { ...INITIAL_STATE };
+		if ( ! raw ) return base;
+		const parsed = JSON.parse( raw );
+		// If storage has empty email but we have a default, use the default
+		if ( ! parsed.admin_email && base.admin_email ) {
+			parsed.admin_email = base.admin_email;
+		}
+		return { ...base, ...parsed };
 	} catch {
-		return { ...INITIAL_STATE };
+		return base;
 	}
 }
 
 function loadStep(): number {
 	const n = parseInt( localStorage.getItem( STORAGE_KEY + '-step' ) ?? '0', 10 );
-	return isNaN( n ) ? 0 : Math.min( Math.max( n, 0 ), STEPS.length );
+	const val = isNaN( n ) ? 0 : n;
+	return ( val >= STEPS.length ) ? 0 : Math.max( val, 0 );
 }
 
 function canAdvance( state: WizardCompletePayload, step: number ): boolean {
@@ -79,7 +89,6 @@ const TEMPLATES = [
 		desc:    'Ask how likely customers are to recommend you. The gold standard for measuring loyalty.',
 		Icon:    Gauge,
 		cat:     'Loyalty',
-		popular: true,
 	},
 	{
 		id:    'product',
@@ -120,7 +129,7 @@ const TEMPLATES = [
 
 function StepTemplate( { state, set }: { state: WizardCompletePayload; set: ( u: Partial<WizardCompletePayload> ) => void } ) {
 	return (
-		<div className="grid grid-cols-3 gap-3">
+		<div className="grid grid-cols-3 gap-5">
 			{ TEMPLATES.map( ( t ) => {
 				const isSelected = state.template === t.id;
 				return (
@@ -129,46 +138,43 @@ function StepTemplate( { state, set }: { state: WizardCompletePayload; set: ( u:
 						type="button"
 						onClick={ () => set( { template: t.id } ) }
 						className={ cn(
-							'group relative flex flex-col gap-3.5 rounded-2xl border p-5 text-left transition-all duration-150',
+							'group relative flex flex-col gap-5 rounded-2xl border p-6 text-left transition-all duration-300',
 							isSelected
-								? 'border-primary bg-white shadow-[0_0_0_3px_var(--color-primary)/10]'
-								: 'border-border/60 bg-white hover:border-border hover:shadow-sm',
+								? 'border-primary bg-primary/[0.03] shadow-[0_8px_30px_rgb(0,0,0,0.04),0_0_0_1px_var(--color-primary)]'
+								: 'border-border/50 bg-card hover:border-border/80 hover:shadow-xl hover:shadow-black/[0.02]',
 						) }
 					>
-						{ isSelected && (
-							<div className="absolute right-3.5 top-3.5 flex size-5 items-center justify-center rounded-full bg-primary text-white shadow-sm">
-								<Check className="size-3" strokeWidth={ 2.5 } />
-							</div>
-						) }
 						<div className={ cn(
-							'flex size-10 items-center justify-center rounded-xl transition-colors duration-150',
+							'flex size-12 items-center justify-center rounded-xl transition-all duration-300',
 							isSelected
-								? 'bg-primary text-white shadow-sm'
-								: 'bg-muted/70 text-foreground/40 group-hover:bg-muted group-hover:text-foreground/60',
+								? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
+								: 'bg-muted/50 text-muted-foreground/50 group-hover:bg-primary/10 group-hover:text-primary',
 						) }>
-							<t.Icon className="size-[18px]" />
+							<t.Icon className="size-6" />
 						</div>
-						<div className="space-y-1.5">
-							<div className="flex flex-wrap items-center gap-2">
-								<span className={ cn(
-									'text-[13.5px] font-semibold leading-snug tracking-tight',
-									isSelected ? 'text-foreground' : 'text-foreground/80',
-								) }>
+						<div className="space-y-2">
+							<div className="flex items-center justify-between">
+								<span className="text-[15px] font-bold tracking-tight text-foreground">
 									{ t.title }
 								</span>
-								{ 'popular' in t && t.popular && (
-									<span className="rounded-full bg-primary/10 px-1.5 py-px text-[9px] font-bold uppercase tracking-wider text-primary">
-										Popular
-									</span>
+								{ isSelected && (
+									<div className="flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm animate-in zoom-in-50 duration-300">
+										<Check className="size-3" strokeWidth={ 3 } />
+									</div>
 								) }
 							</div>
 							<p className={ cn(
-								'text-xs leading-relaxed',
+								'text-[13px] leading-relaxed line-clamp-2',
 								isSelected ? 'text-muted-foreground' : 'text-muted-foreground/70',
 							) }>
 								{ t.desc }
 							</p>
 						</div>
+						{ 'popular' in t && t.popular && (
+							<div className="absolute -right-2 -top-2 rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-amber-600 shadow-sm border border-amber-200">
+								Popular
+							</div>
+						) }
 					</button>
 				);
 			} ) }
@@ -291,19 +297,20 @@ function BrowserPreview( { color, position }: { color: string; position: Positio
 						<MessageSquare className="size-3.5" />
 					</div>
 				) ) }
-				{ position === 'side-tab' && (
-					<div
-						className="absolute right-0 top-1/2 -translate-y-1/2 rounded-l-lg px-1.5 py-3 text-white"
-						style={ { backgroundColor: color } }
+				<div
+					className={ cn(
+						'absolute right-0 top-1/2 -translate-y-1/2 rounded-l-lg px-1.5 py-3 transition-all duration-300',
+						position === 'side-tab' ? 'text-white' : 'bg-foreground/[0.07] text-foreground/20'
+					) }
+					style={ position === 'side-tab' ? { backgroundColor: color } : undefined }
+				>
+					<span
+						className="select-none text-[8px] font-semibold tracking-widest"
+						style={ { writingMode: 'vertical-rl', transform: 'rotate(180deg)' } }
 					>
-						<span
-							className="select-none text-[8px] font-semibold tracking-widest"
-							style={ { writingMode: 'vertical-rl', transform: 'rotate(180deg)' } }
-						>
-							Feedback
-						</span>
-					</div>
-				) }
+						Feedback
+					</span>
+				</div>
 			</div>
 		</div>
 	);
@@ -311,43 +318,53 @@ function BrowserPreview( { color, position }: { color: string; position: Positio
 
 function StepStyle( { state, set }: { state: WizardCompletePayload; set: ( u: Partial<WizardCompletePayload> ) => void } ) {
 	return (
-		<div className="grid grid-cols-[1fr_1.3fr] gap-6">
-			<div className="overflow-y-auto rounded-2xl border border-border/60 bg-white">
-				<div className="space-y-5 p-6">
-					<div className="space-y-3">
-						<p className="text-2xs font-semibold uppercase tracking-widest text-muted-foreground/70">Brand color</p>
-						<ColorPicker value={ state.brand_color } onChange={ ( v ) => set( { brand_color: v } ) } />
-					</div>
-					<div className="border-t border-border/50" />
-					<div className="space-y-3">
-						<p className="text-2xs font-semibold uppercase tracking-widest text-muted-foreground/70">Widget position</p>
-						<div className="inline-flex items-center rounded-lg border border-border/60 p-0.5">
-							{ ALL_POSITIONS.map( ( pos ) => (
-								<button
-									key={ pos.value }
-									type="button"
-									onClick={ () => set( { position: pos.value } ) }
-									className={ cn(
-										'rounded-md px-3.5 py-2 text-sm font-medium transition-colors',
-										state.position === pos.value
-											? 'bg-primary/10 text-primary'
-											: 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
-									) }
-								>
-									{ pos.label }
-								</button>
-							) ) }
+		<div className="grid grid-cols-[1fr_1.3fr] gap-8">
+			<div className="flex flex-col gap-6">
+				<div className="rounded-2xl border border-border/50 bg-card p-8 shadow-sm">
+					<div className="space-y-6">
+						<div className="space-y-3">
+							<p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/50">Brand color</p>
+							<ColorPicker value={ state.brand_color } onChange={ ( v ) => set( { brand_color: v } ) } />
+						</div>
+						<div className="h-px bg-border/40" />
+						<div className="space-y-4">
+							<p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/50">Widget position</p>
+							<div className="flex flex-col gap-2">
+								{ ALL_POSITIONS.map( ( pos ) => (
+									<button
+										key={ pos.value }
+										type="button"
+										onClick={ () => set( { position: pos.value } ) }
+										className={ cn(
+											'flex items-center justify-between rounded-xl border px-5 py-4 transition-all duration-300',
+											state.position === pos.value
+												? 'border-primary bg-primary/[0.03] text-primary shadow-sm'
+												: 'border-border/40 bg-muted/20 text-muted-foreground hover:border-border hover:bg-muted/40 hover:text-foreground',
+										) }
+									>
+										<span className="text-[14px] font-semibold">{ pos.label }</span>
+										{ state.position === pos.value && <Check className="size-4" strokeWidth={ 3 } /> }
+									</button>
+								) ) }
+							</div>
 						</div>
 					</div>
 				</div>
 			</div>
 
-			<div className="overflow-hidden rounded-2xl border border-border/60 bg-white">
-				<div className="flex shrink-0 items-center gap-3 border-b border-border/50 px-5 py-3.5">
-					<span className="size-2 rounded-full bg-green-400 shadow-[0_0_0_3px_oklch(0.96_0.04_145)]" />
-					<span className="text-sm font-medium text-foreground/70">Live preview</span>
+			<div className="overflow-hidden rounded-3xl border border-border/50 bg-card shadow-2xl shadow-black/[0.03]">
+				<div className="flex shrink-0 items-center justify-between border-b border-border/40 px-6 py-4 bg-muted/10">
+					<div className="flex items-center gap-2.5">
+						<div className="flex gap-1.5">
+							<span className="size-2.5 rounded-full bg-destructive/20" />
+							<span className="size-2.5 rounded-full bg-amber-400/20" />
+							<span className="size-2.5 rounded-full bg-green-500/20" />
+						</div>
+						<span className="text-xs font-bold uppercase tracking-widest text-muted-foreground/40 ml-2">Live Preview</span>
+					</div>
+					<div className="h-2 w-24 rounded-full bg-muted/40" />
 				</div>
-				<div className="flex items-start justify-center bg-gradient-to-b from-indigo-50/30 to-muted/60 p-6">
+				<div className="flex items-center justify-center bg-muted/5 p-12">
 					<BrowserPreview color={ state.brand_color } position={ state.position as PositionValue } />
 				</div>
 			</div>
@@ -365,65 +382,69 @@ function StepSettings( { state, set }: { state: WizardCompletePayload; set: ( u:
 	const emailOk = ! state.admin_email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test( state.admin_email );
 
 	return (
-		<div className="rounded-2xl border border-border/60 bg-white">
-			<div className="flex items-start gap-6 px-6 py-5">
-				<div className="w-48 shrink-0 pt-0.5">
-					<p className="text-2xs font-semibold uppercase tracking-widest text-muted-foreground/70">Admin email</p>
-					<p className="mt-1 text-sm text-muted-foreground">Where to send new response notifications.</p>
-				</div>
-				<div className="flex-1 space-y-2">
-					<div className="relative">
-						<Mail className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/50" />
+		<div className="rounded-2xl border border-border/60 bg-card shadow-card overflow-hidden">
+			<div className="p-10 space-y-10">
+				<div className="space-y-4">
+					<div className="space-y-1.5">
+						<label className="text-sm font-semibold tracking-tight text-foreground">Where to send new response notifications</label>
+						<p className="text-[13px] leading-relaxed text-muted-foreground/80">This email will receive an alert whenever a new feedback is submitted.</p>
+					</div>
+					<div className="space-y-2">
 						<Input
 							type="email"
 							placeholder="you@company.com"
 							value={ state.admin_email }
 							onChange={ ( e ) => set( { admin_email: e.target.value } ) }
-							className={ cn( 'pl-9', ! emailOk && 'border-destructive/50 focus:border-destructive' ) }
+							className={ cn( 
+								'h-12 text-[14px] bg-muted/40 border-border/40 focus:bg-white focus:border-primary/40 focus:ring-4 focus:ring-primary/5', 
+								! emailOk && 'border-destructive/40 bg-destructive/5 focus:border-destructive/60 focus:ring-destructive/10' 
+							) }
 						/>
+						{ ! emailOk && (
+							<div className="flex items-center gap-2 text-[12px] font-medium text-destructive">
+								<AlertCircle className="size-4" />
+								<span>Enter a valid email address.</span>
+							</div>
+						) }
 					</div>
-					{ ! emailOk && (
-						<p className="flex items-center gap-1.5 text-xs text-destructive">
-							<AlertCircle className="size-3.5" />
-							Enter a valid email address.
-						</p>
-					) }
 				</div>
-			</div>
 
-			<div className="border-t border-border/50" />
-
-			<div className="flex items-start gap-6 px-6 py-5">
-				<div className="w-48 shrink-0 pt-0.5">
-					<p className="text-2xs font-semibold uppercase tracking-widest text-muted-foreground/70">Delivery frequency</p>
-				</div>
-				<div className="flex-1 space-y-4">
-					<div className="inline-flex items-center rounded-lg border border-border/60 p-0.5">
+				<div className="space-y-4">
+					<div className="space-y-1.5">
+						<label className="text-sm font-semibold tracking-tight text-foreground">Delivery frequency</label>
+						<p className="text-[13px] leading-relaxed text-muted-foreground/80">Choose how often you want to receive notification digests.</p>
+					</div>
+					<div className="inline-flex items-center rounded-xl border border-border/50 bg-muted/30 p-1">
 						{ NOTIF_OPTIONS.map( ( opt ) => (
 							<button
 								key={ opt.id }
 								type="button"
 								onClick={ () => set( { notif_frequency: opt.id } ) }
 								className={ cn(
-									'flex items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium transition-colors',
+									'flex items-center gap-2 rounded-lg px-5 py-2.5 text-[13px] font-medium transition-all duration-300',
 									state.notif_frequency === opt.id
-										? 'bg-primary/10 text-primary'
-										: 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+										? 'bg-white text-primary shadow-sm border border-border/20'
+										: 'text-muted-foreground hover:text-foreground hover:bg-white/50',
 								) }
 							>
-								<opt.Icon className="size-3.5" />
+								<opt.Icon className={ cn( 'size-4', state.notif_frequency === opt.id ? 'text-primary' : 'text-muted-foreground/60' ) } />
 								{ opt.label }
 							</button>
 						) ) }
 					</div>
-					<div className="flex items-start gap-3 rounded-xl border border-blue-100/80 bg-blue-50/60 px-4 py-3.5">
-						<Info className="mt-0.5 size-4 shrink-0 text-blue-500" />
-						<p className="text-xs leading-relaxed text-blue-700/80">
-							All feedback is stored on your server only — no data is shared with third parties.
-							Consent banners and IP anonymization can be configured in{' '}
-							<strong className="font-medium text-blue-800/70">Settings → Advanced</strong>.
-						</p>
+				</div>
+			</div>
+
+			<div className="bg-blue-50/40 border-t border-blue-100/50 px-10 py-6">
+				<div className="flex items-center gap-4">
+					<div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+						<Info className="size-4" />
 					</div>
+					<p className="text-[13px] leading-relaxed text-blue-900/70">
+						All feedback is stored on your server only — no data is shared with third parties.
+						Consent banners and IP anonymization can be configured in{' '}
+						<strong className="font-semibold text-blue-900/90">Settings → Advanced</strong>.
+					</p>
 				</div>
 			</div>
 		</div>
@@ -466,7 +487,7 @@ function StepFinal( { state, onFinish, submitting }: { state: WizardCompletePayl
 			Icon:  tpl.Icon,
 			label: 'Survey type',
 			value: tpl.title,
-			color: 'bg-violet-50 text-violet-600',
+			color: 'bg-indigo-50 text-indigo-600',
 		},
 		{
 			Icon:  Palette,
@@ -477,13 +498,13 @@ function StepFinal( { state, onFinish, submitting }: { state: WizardCompletePayl
 					{ state.brand_color.toUpperCase() }
 				</span>
 			),
-			color: 'bg-rose-50 text-rose-500',
+			color: 'bg-pink-50 text-pink-600',
 		},
 		{
 			Icon:  MapPin,
 			label: 'Position',
 			value: posLabel,
-			color: 'bg-sky-50 text-sky-600',
+			color: 'bg-cyan-50 text-cyan-600',
 		},
 		{
 			Icon:  Bell,
@@ -515,54 +536,30 @@ function StepFinal( { state, onFinish, submitting }: { state: WizardCompletePayl
 					</div>
 				</div>
 
-				<div className="w-full overflow-hidden rounded-2xl border border-border/60 bg-white shadow-sm">
+				<div className="w-full overflow-hidden rounded-2xl border border-border/60 bg-card shadow-card">
 					{ summaryItems.map( ( item, i ) => (
 						<div
 							key={ i }
-							className="flex items-center gap-4 border-b border-border/40 px-5 py-3.5 last:border-0"
+							className="flex items-center gap-4 border-b border-border/40 px-6 py-4 last:border-0"
 						>
-							<div className={ cn( 'flex size-8 shrink-0 items-center justify-center rounded-xl', item.color ) }>
-								<item.Icon className="size-3.5" />
+							<div className={ cn( 'flex size-9 shrink-0 items-center justify-center rounded-xl shadow-sm', item.color ) }>
+								<item.Icon className="size-4" />
 							</div>
-							<span className="w-28 shrink-0 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+							<span className="w-32 shrink-0 text-[11px] font-bold uppercase tracking-wider text-muted-foreground/60">
 								{ item.label }
 							</span>
-							<span className="flex-1 text-sm font-medium text-foreground">
+							<span className="flex-1 text-[14px] font-semibold text-foreground">
 								{ item.value }
 							</span>
 						</div>
 					) ) }
 				</div>
 
-				<Button size="lg" className="w-full" disabled={ submitting } onClick={ onFinish }>
+				<Button size="lg" className="h-12 w-full text-base" disabled={ submitting } onClick={ onFinish }>
 					{ submitting ? 'Setting up…' : 'Finish & go to dashboard' }
-					{ ! submitting && <Rocket className="size-4" /> }
+					{ ! submitting && <Rocket className="ml-2 size-5" /> }
 				</Button>
 			</div>
-		</div>
-	);
-}
-
-function StepDone( { state, onNavigate }: { state: WizardCompletePayload; onNavigate: () => void } ) {
-	const tpl = TEMPLATES.find( ( t ) => t.id === state.template ) ?? TEMPLATES[ 0 ];
-	return (
-		<div className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
-			<div className="flex size-20 items-center justify-center rounded-full bg-primary/10 text-primary">
-				<Check className="size-10" strokeWidth={ 2.5 } />
-			</div>
-			<div className="space-y-2">
-				<h1 className="text-3xl font-bold tracking-tight text-foreground" style={ { margin: 0 } }>
-					You're all set
-				</h1>
-				<p className="text-base text-muted-foreground" style={ { margin: 0 } }>
-					Your <strong className="text-foreground">{ tpl.title }</strong> survey is ready to go.
-					Head to the dashboard to publish it and start collecting responses.
-				</p>
-			</div>
-			<Button size="lg" onClick={ onNavigate }>
-				Go to dashboard
-				<ArrowRight />
-			</Button>
 		</div>
 	);
 }
@@ -599,14 +596,22 @@ export default function SetupWizard() {
 		setSubmitting( true );
 		try {
 			await wizardApi.complete( state );
-			queryClient.setQueryData( WIZARD_STATUS_QUERY_KEY, { completed: true } );
+		} catch {
+			// Fail silently to allow navigation even if API is slow/fails
+		} finally {
+			queryClient.setQueryData( WIZARD_STATUS_QUERY_KEY, { status: 'completed' } );
 			localStorage.removeItem( STORAGE_KEY );
 			localStorage.removeItem( STORAGE_KEY + '-step' );
-			goto( STEPS.length );
-		} finally {
+			navigate( { to: '/dashboard' } );
 			setSubmitting( false );
 		}
-	}, [ state, queryClient, goto ] );
+	}, [ state, queryClient, navigate ] );
+
+	useEffect( () => {
+		if ( step >= STEPS.length ) {
+			navigate( { to: '/dashboard' } );
+		}
+	}, [ step, navigate ] );
 
 	useEffect( () => {
 		const onKey = ( e: KeyboardEvent ) => {
@@ -624,26 +629,27 @@ export default function SetupWizard() {
 	}, [ state, step, goto, finish ] );
 
 	const isDone      = step >= STEPS.length;
-	const currentStep = STEPS[ step ];
+	const currentStep = STEPS[ step ] || STEPS[ 0 ];
 
 	return (
 		<div className="flex h-screen flex-col bg-background">
 			{ ! isDone && (
-				<header className="flex h-[64px] shrink-0 items-center justify-between border-b border-border/50 bg-white px-8">
-					<div className="flex items-center gap-2.5">
-						<div className="flex size-8 items-center justify-center rounded-xl bg-primary text-white shadow-[inset_0_0_0_1px_oklch(1_0_0/0.08)]">
-							<MessageSquare className="size-[15px]" />
+				<header className="flex h-[72px] shrink-0 items-center justify-between border-b border-border/50 bg-card px-10 shadow-sm">
+					<div className="flex items-center gap-3">
+						<div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-[0_4px_12px_-2px_var(--color-primary)/30]">
+							<MessageSquare className="size-5" />
 						</div>
-						<span className="text-[14.5px] tracking-[-0.01em] text-foreground" style={ { lineHeight: 1 } }>
-							<strong>All</strong><span className="font-normal opacity-60">Feedback</span>
+						<span className="text-[16px] font-bold tracking-tight text-foreground">
+							All<span className="font-normal text-muted-foreground/60">Feedback</span>
 						</span>
 					</div>
 					<button
 						type="button"
 						onClick={ finish }
-						className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+						className="group flex items-center gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
 					>
 						Skip setup
+						<ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
 					</button>
 				</header>
 			) }
@@ -651,52 +657,47 @@ export default function SetupWizard() {
 			<main className="flex min-h-0 flex-1 flex-col overflow-auto">
 				<div className="mx-auto flex w-full max-w-[1000px] flex-1 flex-col px-8 py-8" key={ step }>
 					{ ! isDone && (
-						<div className="mb-8 flex justify-center">
-							{ STEPS.map( ( s, i ) => {
-								const isActive    = i === step;
-								const isDoneStep  = i < step;
-								const isClickable = i < step;
-								return (
-									<div key={ s.id } className="flex items-center">
-										<button
-											type="button"
-											className={ cn(
-												'group flex items-center gap-2.5 text-base font-medium transition-colors',
-												isActive ? 'text-primary' : 'text-muted-foreground',
-												isClickable && 'hover:text-foreground',
+						<div className="mb-14 flex justify-center">
+							<div className="relative flex items-center bg-card p-2 rounded-2xl border border-border/40 shadow-sm">
+								{ STEPS.map( ( s, i ) => {
+									const isActive    = i === step;
+									const isDoneStep  = i < step;
+									const isClickable = i < step;
+									return (
+										<div key={ s.id } className="flex items-center">
+											<button
+												type="button"
+												className={ cn(
+													'group relative flex items-center gap-3 rounded-xl px-5 py-3 transition-all duration-300',
+													isActive ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'text-muted-foreground',
+													isClickable && 'hover:bg-muted/40 hover:text-foreground',
+												) }
+												style={ { cursor: isClickable ? 'pointer' : 'default' } }
+												onClick={ () => isClickable && goto( i ) }
+											>
+												<div className={ cn(
+													'flex size-6 shrink-0 items-center justify-center rounded-full text-[11px] font-black',
+													isActive || isDoneStep ? 'bg-white/20' : 'bg-muted text-muted-foreground/60',
+												) }>
+													{ isDoneStep ? <Check className="size-3" strokeWidth={ 4 } /> : i + 1 }
+												</div>
+												<span className="text-[14px] font-bold tracking-tight">{ s.label }</span>
+											</button>
+											{ i < STEPS.length - 1 && (
+												<div className="mx-2 flex items-center gap-1 opacity-20">
+													<div className="size-1 rounded-full bg-foreground" />
+													<div className="size-1 rounded-full bg-foreground" />
+													<div className="size-1 rounded-full bg-foreground" />
+												</div>
 											) }
-											style={ { cursor: isClickable ? 'pointer' : 'default' } }
-											onClick={ () => isClickable && goto( i ) }
-										>
-											<span className={ cn(
-												'flex size-10 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-200',
-												isActive || isDoneStep
-													? 'border-primary bg-primary'
-													: 'border-border bg-white group-hover:border-border/80 group-hover:bg-muted/40',
-											) }>
-												{ isDoneStep
-													? <Check className="size-[14px] text-white" strokeWidth={ 2.5 } />
-													: <s.Icon className={ cn(
-														'size-4 transition-colors',
-														isActive ? 'text-white' : 'text-muted-foreground/60',
-													) } />
-												}
-											</span>
-											{ s.label }
-										</button>
-										{ i < STEPS.length - 1 && (
-											<div className="mx-4 h-px w-12 shrink-0 bg-border/70" />
-										) }
-									</div>
-								);
-							} ) }
+										</div>
+									);
+								} ) }
+							</div>
 						</div>
 					) }
 
 					<div className="flex flex-1 flex-col justify-center gap-5">
-						{ isDone && (
-							<StepDone state={ state } onNavigate={ () => navigate( { to: '/dashboard' } ) } />
-						) }
 						{ ! isDone && currentStep!.id !== 'final' && (
 							<div className="text-center">
 								<h1 className="text-xl font-semibold tracking-tight text-foreground" style={ { margin: 0 } }>
@@ -716,34 +717,34 @@ export default function SetupWizard() {
 			</main>
 
 			{ ! isDone && step < STEPS.length - 1 && (
-				<footer className="flex h-[68px] shrink-0 items-center justify-between border-t border-border/50 bg-white px-8">
-					<span className="flex items-center gap-1">
+				<footer className="flex h-[76px] shrink-0 items-center justify-between border-t border-border/50 bg-card px-10 shadow-[0_-4px_12px_rgba(0,0,0,0.02)]">
+					<span className="flex items-center gap-1.5">
 						{ ( isMac ? [ '⌘', '↵' ] : [ 'Ctrl', '↵' ] ).map( ( k ) => (
 							<kbd
 								key={ k }
-								className="rounded border border-border bg-muted/60 px-1.5 py-0.5 text-2xs font-medium leading-none text-muted-foreground/60"
+								className="rounded-md border border-border bg-muted/50 px-2 py-1 text-[10px] font-bold leading-none text-muted-foreground/50 shadow-sm"
 							>
 								{ k }
 							</kbd>
 						) ) }
-						<span className="ml-1 text-sm text-muted-foreground">to continue</span>
+						<span className="ml-1 text-[13px] font-medium text-muted-foreground/60">to continue</span>
 					</span>
-					<div className="flex gap-2">
-						{ step > 0 && step < STEPS.length - 1 && (
-							<Button variant="outline" onClick={ () => goto( step - 1 ) }>
-								<ArrowLeft />
+					<div className="flex gap-3">
+						{ step > 0 && (
+							<Button variant="secondary" className="h-11 px-6" onClick={ () => goto( step - 1 ) }>
+								<ArrowLeft className="mr-2 size-4" />
 								Back
 							</Button>
 						) }
-						{ step < STEPS.length - 1 && (
-							<Button
-								disabled={ ! canAdvance( state, step ) }
-								onClick={ () => goto( step + 1 ) }
-							>
-								Continue
-								<ArrowRight />
-							</Button>
-						) }
+						<Button
+							size="lg"
+							className="h-11 px-8 shadow-sm"
+							disabled={ ! canAdvance( state, step ) }
+							onClick={ () => goto( step + 1 ) }
+						>
+							Continue
+							<ArrowRight className="ml-2 size-4" />
+						</Button>
 					</div>
 				</footer>
 			) }

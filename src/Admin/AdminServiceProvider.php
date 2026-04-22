@@ -57,6 +57,7 @@ class AdminServiceProvider implements ServiceProvider {
 		$this->addAction( 'allfeedback:enqueue-assets:admin',     [ $this, 'enqueueAssets'         ] );
 		$this->addAction( 'admin_footer',                         [ $this, 'inlineMenuHighlight'   ] );
 		$this->addAction( 'in_admin_header',                      [ $this, 'suppressAdminNotices'  ] );
+		$this->addAction( 'admin_init',                           [ $this, 'maybeRedirectToWizard' ] );
 	}
 
 	// ------------------------------------------------------------------
@@ -158,6 +159,22 @@ class AdminServiceProvider implements ServiceProvider {
 
 		// Remove the auto-generated duplicate of the top-level entry.
 		remove_submenu_page( self::MENU_SLUG, self::MENU_SLUG );
+	}
+
+	/**
+	 * Automatically redirect to the Setup Wizard after activation.
+	 */
+	public function maybeRedirectToWizard(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		$status = get_option( 'allfeedback_wizard_status', 'not_started' );
+		if ( $status === 'pending_redirect' || $status === 'not_started' ) {
+			update_option( 'allfeedback_wizard_status', 'initiated' );
+			wp_safe_redirect( admin_url( 'admin.php?page=all-feedback#/wizard' ) );
+			exit;
+		}
 	}
 
 	// ------------------------------------------------------------------

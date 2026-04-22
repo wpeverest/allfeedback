@@ -1,7 +1,7 @@
 import { request } from './client';
 
 export type WizardStatus = {
-	completed: boolean;
+	status: 'not_started' | 'pending_redirect' | 'initiated' | 'completed';
 };
 
 export type WizardCompletePayload = {
