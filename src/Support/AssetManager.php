@@ -39,7 +39,8 @@ class AssetManager {
 	private const HANDLE_PREFIX = 'allfb-';
 
 	/**
-	 * Local dev server URL — used when ALLFEEDBACK_ENV === 'development'.
+	 * Local dev server URL — used only when the plugin is explicitly in
+	 * development mode via `wp-config.php`.
 	 *
 	 * @var string
 	 * @since 1.0.0
@@ -84,8 +85,8 @@ class AssetManager {
 	 */
 	public function __construct(
 		private readonly Logger $logger,
-		) {
-			$this->isDevServer = defined( 'ALLFEEDBACK_ENV' ) && 'development' === ALLFEEDBACK_ENV;
+	) {
+		$this->isDevServer = Constants::isDevelopment();
 		$this->buildPath   = Constants::path( 'resources/build/' );
 		$this->buildUrl    = $this->isDevServer ? self::DEV_SERVER : Constants::url( 'resources/build/' );
 	}

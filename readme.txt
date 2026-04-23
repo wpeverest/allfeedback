@@ -44,7 +44,8 @@ it via the `allfeedback:modules:register` filter.
 
 = How do I enable development mode? =
 
-Define `ALLFEEDBACK_ENV` as `development` in `wp-config.php`.
+Define `ALLFEEDBACK_ENV` as `development` in `wp-config.php`. If the constant
+is missing or set to any other value, the plugin stays in production mode.
 
 == Changelog ==
 

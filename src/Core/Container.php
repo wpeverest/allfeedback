@@ -146,14 +146,14 @@ class Container {
 	/**
 	 * Determine whether the current environment is production.
 	 *
-	 * Production is assumed unless the `ALLFEEDBACK_ENV` constant is defined and set
-	 * to `'development'` in `wp-config.php`.
+	 * Production is assumed unless the plugin-specific environment constant is
+	 * explicitly set to `development` in `wp-config.php`.
 	 *
 	 * @return bool
 	 * @since  1.0.0
 	 */
 	private function isProduction(): bool {
-		return ! defined( 'ALLFEEDBACK_ENV' ) || 'development' !== constant( 'ALLFEEDBACK_ENV' );
+		return Constants::isProduction();
 	}
 
 	/**

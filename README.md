@@ -113,7 +113,7 @@ pnpm dev
 - React state is preserved across JS updates
 - Cross-origin headers are set automatically so WordPress admin can load assets from the dev server
 
-> **Tip:** You do **not** need to define `RMB_ENV=development` in `wp-config.php` when using `pnpm dev` — Webpack handles asset serving automatically via its dev server.
+> **Tip:** All Feedback enters development mode only when `ALLFEEDBACK_ENV` is explicitly set to `development` in `wp-config.php`.
 
 ### Dev mode without HMR (watch mode)
 

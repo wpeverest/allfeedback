@@ -48,6 +48,16 @@ final class Constants {
 	public const MIN_WP_VERSION = '6.5';
 
 	/**
+	 * Environment constant name used to switch into development mode.
+	 *
+	 * Define this in `wp-config.php` as `'development'` to enable dev mode.
+	 *
+	 * @var string
+	 * @since 1.0.0
+	 */
+	public const ENV_CONSTANT = 'ALLFEEDBACK_ENV';
+
+	/**
 	 * Absolute path to the main plugin file.
 	 *
 	 * @var string|null
@@ -102,7 +112,7 @@ final class Constants {
 		self::$pluginUrl      = plugin_dir_url( $pluginFile );
 		self::$pluginBasename = plugin_basename( $pluginFile );
 
-		self::$environment = defined( 'ALLFEEDBACK_ENV' ) ? (string) constant( 'ALLFEEDBACK_ENV' ) : 'production';
+		self::$environment = self::resolveEnvironment();
 	}
 
 	/**
@@ -176,6 +186,27 @@ final class Constants {
 	}
 
 	/**
+	 * Return true only when the plugin environment constant is explicitly set to
+	 * `development` in WordPress configuration.
+	 *
+	 * @return bool
+	 * @since  1.0.0
+	 */
+	public static function isDevelopment(): bool {
+		return 'development' === self::environment();
+	}
+
+	/**
+	 * Return true when the plugin is not explicitly running in development mode.
+	 *
+	 * @return bool
+	 * @since  1.0.0
+	 */
+	public static function isProduction(): bool {
+		return ! self::isDevelopment();
+	}
+
+	/**
 	 * Build an absolute filesystem path relative to the plugin root.
 	 *
 	 * @param  string $relativePath Relative path, e.g. `'config/services.php'`.
@@ -216,5 +247,23 @@ final class Constants {
 	public static function meetsWPRequirement(): bool {
 		global $wp_version;
 		return version_compare( $wp_version, self::MIN_WP_VERSION, '>=' );
+	}
+
+	/**
+	 * Resolve the current environment from the plugin-specific wp-config constant.
+	 *
+	 * Any value other than the explicit string `development` is treated as
+	 * production, so the plugin only enters development mode when the constant is
+	 * intentionally applied in `wp-config.php`.
+	 *
+	 * @return string
+	 * @since  1.0.0
+	 */
+	private static function resolveEnvironment(): string {
+		if ( ! defined( self::ENV_CONSTANT ) ) {
+			return 'production';
+		}
+
+		return 'development' === (string) constant( self::ENV_CONSTANT ) ? 'development' : 'production';
 	}
 }
