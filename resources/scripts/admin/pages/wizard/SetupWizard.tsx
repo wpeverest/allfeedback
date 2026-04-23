@@ -12,7 +12,7 @@ import {
 	Gauge, Box, Bug, Lightbulb, Users,
 	Clock, Calendar, Zap, Globe, Lock, Pipette, Loader2,
 	Rocket, Palette, Bell, Wand2, Info,
-	LayoutDashboard, Edit2,
+	LayoutGrid, Edit2,
 } from 'lucide-react';
 
 const STEPS = [
@@ -523,8 +523,8 @@ function StepFinal( { onFinish, submitting }: { onFinish: ( target: 'editor' | '
 						onClick={ () => onFinish( 'dashboard' ) }
 						disabled={ submitting }
 					>
-						<LayoutDashboard className="size-4" />
-						{ __( 'Go to Dashboard', 'all-feedback' ) }
+						<LayoutGrid className="size-4" />
+						{ __( 'Go to All Forms', 'all-feedback' ) }
 					</Button>
 					<Button
 						size="lg"
@@ -564,7 +564,7 @@ export default function SetupWizard() {
 		setStepRaw( Math.min( Math.max( n, 0 ), STEPS.length ) );
 	}, [] );
 
-	const finish = useCallback( async ( target: 'editor' | 'dashboard' = 'dashboard' ) => {
+	const finish = useCallback( async ( target: 'editor' | 'forms' = 'forms' ) => {
 		setSubmitting( true );
 		try {
 			const res = await wizardApi.complete( state );
@@ -574,10 +574,10 @@ export default function SetupWizard() {
 			if ( target === 'editor' && res.id ) {
 				navigate( { to: '/builder', search: { id: res.id, new: true } } );
 			} else {
-				navigate( { to: '/dashboard' } );
+				navigate( { to: '/forms' } );
 			}
 		} catch {
-			navigate( { to: '/dashboard' } );
+			navigate( { to: '/forms' } );
 		} finally {
 			setSubmitting( false );
 		}
@@ -585,7 +585,7 @@ export default function SetupWizard() {
 
 	useEffect( () => {
 		if ( step >= STEPS.length ) {
-			navigate( { to: '/dashboard' } );
+			navigate( { to: '/forms' } );
 		}
 	}, [ step, navigate ] );
 
@@ -623,7 +623,7 @@ export default function SetupWizard() {
 					{ step < STEPS.length - 1 && (
 						<button
 							type="button"
-							onClick={ () => finish( 'dashboard' ) }
+							onClick={ () => finish( 'forms' ) }
 							className="group flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-all hover:text-primary hover:underline hover:underline-offset-4"
 						>
 							{ __( 'Skip setup', 'all-feedback' ) }
