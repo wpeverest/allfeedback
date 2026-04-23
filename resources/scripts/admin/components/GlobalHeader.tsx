@@ -33,8 +33,6 @@ const GlobalHeader = () => {
 	const { data: unreadData } = useQuery(unreadCountQuery());
 	const unreadCount = unreadData?.count ?? 0;
 
-	// Keep the WP sidebar "Responses" badge in sync — the PHP-rendered badge
-	// is only correct on page load; this updates it reactively.
 	useEffect(() => {
 		const link = document.querySelector<HTMLElement>(
 			'#adminmenu a[href*="all-feedback%23%2Fresponses"], #adminmenu a[href*="all-feedback#/responses"]'

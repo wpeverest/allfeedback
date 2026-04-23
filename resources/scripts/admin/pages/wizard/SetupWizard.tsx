@@ -437,7 +437,7 @@ const LAUNCH_HIGHLIGHTS = [
 	},
 ];
 
-function StepFinal( { onFinish, submitting }: { onFinish: ( target: 'editor' | 'dashboard' ) => void; submitting: boolean } ) {
+function StepFinal( { onFinish, submitting }: { onFinish: ( target: 'editor' | 'forms' ) => void; submitting: boolean } ) {
 	const canvasRef = useRef<HTMLCanvasElement>( null );
 
 	useEffect( () => {
@@ -520,7 +520,7 @@ function StepFinal( { onFinish, submitting }: { onFinish: ( target: 'editor' | '
 					<Button
 						variant="secondary"
 						className="h-11 px-6 bg-transparent"
-						onClick={ () => onFinish( 'dashboard' ) }
+						onClick={ () => onFinish( 'forms' ) }
 						disabled={ submitting }
 					>
 						<LayoutGrid className="size-4" />

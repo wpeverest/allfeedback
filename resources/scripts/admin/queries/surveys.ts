@@ -33,8 +33,3 @@ export const unreadCountQuery = () => ({
 	refetchOnWindowFocus: true,
 	staleTime:            30_000,
 });
-
-export const dashboardQuery = () => ({
-	queryKey: ['dashboard', 'stats'] as const,
-	queryFn:  () => surveysApi.getDashboardStats(),
-});
