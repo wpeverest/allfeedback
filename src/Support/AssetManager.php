@@ -144,8 +144,11 @@ class AssetManager {
 		$objectName = $localize['object_name'] ?? '__ALLFEEDBACK__';
 		$data       = $localize['data']        ?? [];
 
-		$json = wp_json_encode( $data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
-		wp_add_inline_script( $fullHandle, "var {$objectName} = {$json};", 'before' );
+		if ( ! preg_match( '/^[a-zA-Z_$][a-zA-Z0-9_$]*$/', $objectName ) ) {
+			$objectName = '__ALLFEEDBACK__';
+		}
+
+		wp_localize_script( $fullHandle, $objectName, $data );
 	}
 
 	/**
