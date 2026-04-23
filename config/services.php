@@ -1,15 +1,7 @@
 <?php
 
-/**
- * Dependency-injection container definitions.
- *
- * Loaded by Container::buildContainer() via PHP-DI.
- * Add new service / manager / controller bindings here as the plugin grows.
- *
- * @see https://php-di.org/doc/php-definitions.html
- */
+defined( 'ABSPATH' ) || exit;
 
-declare(strict_types=1);
 
 // ── Support ───────────────────────────────────────────────────────────────────
 use AllFeedback\Support\AssetManager;
