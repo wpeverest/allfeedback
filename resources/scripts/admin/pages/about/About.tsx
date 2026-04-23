@@ -59,14 +59,14 @@ const COMMUNITY_LINKS = [
 
 const About = () => {
 	return (
-		<div className="h-full overflow-y-auto p-6 md:p-8">
-			<div className="mx-auto flex w-full max-w-[1340px] items-start gap-6">
+		<div className="h-full overflow-y-auto p-4 sm:p-6 md:p-8">
+			<div className="mx-auto flex w-full max-w-[1340px] flex-col gap-6 lg:flex-row lg:items-start">
 
-				<div className="min-w-0 flex-[7] overflow-hidden rounded-2xl border border-border/60 bg-black">
+				<div className="w-full overflow-hidden rounded-2xl border border-border/60 bg-black lg:min-w-0 lg:flex-[7]">
 					<div className="relative aspect-video">
 						<iframe
 							src="https://www.youtube.com/embed/dQw4w9WgXcQ"
-							title={__('All Feedback â€” Quick Tour', 'all-feedback')}
+							title={__('All Feedback — Quick Tour', 'all-feedback')}
 							allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
 							allowFullScreen
 							className="absolute inset-0 h-full w-full"
@@ -74,7 +74,7 @@ const About = () => {
 					</div>
 				</div>
 
-				<div className="flex flex-[3] flex-col gap-4">
+				<div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:flex-[3] lg:grid-cols-1">
 					<ResourceGroup
 						icon={Book}
 						title={__('Documentation', 'all-feedback')}
