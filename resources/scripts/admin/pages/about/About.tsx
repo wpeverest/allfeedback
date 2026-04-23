@@ -26,7 +26,7 @@ const ResourceGroup = ({
 					href={href}
 					target="_blank"
 					rel="noopener noreferrer"
-					className="group flex items-center justify-between rounded-xl px-2.5 py-2.5 text-base text-muted-foreground transition-colors hover:bg-primary/[0.06] hover:!text-primary"
+					className="group flex items-center justify-between rounded-xl px-2.5 py-2.5 text-base text-muted-foreground transition-colors hover:bg-primary/[0.06] hover:!text-foreground"
 				>
 					<span className="font-medium">{label}</span>
 					<ArrowUpRight className="size-3.5 shrink-0 opacity-40 transition-all group-hover:opacity-100 group-hover:text-primary" />
