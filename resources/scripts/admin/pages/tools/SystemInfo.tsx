@@ -2,6 +2,8 @@ import { Button } from '@/components/ui/button';
 import { __ } from '@wordpress/i18n';
 import { Check, ClipboardCopy, Info, X } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
+
 
 const labelCls = 'text-base font-normal text-foreground/80';
 const valueCls = 'text-base font-normal text-foreground';
@@ -75,8 +77,9 @@ const SystemInfo = () => {
 	const handleCopy = () => {
 		const text = buildCopyText(info);
 		const trigger = () => {
+			toast.success(__('System info copied to clipboard.', 'all-feedback'));
 			setCopied(true);
-			setTimeout(() => setCopied(false), 2000);
+			setTimeout(() => setCopied(false), 1500);
 		};
 		if (navigator.clipboard?.writeText) {
 			void navigator.clipboard.writeText(text).then(trigger);
