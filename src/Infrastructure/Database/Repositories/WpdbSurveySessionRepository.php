@@ -125,6 +125,79 @@ class WpdbSurveySessionRepository implements SurveySessionRepository {
 	}
 
 	/**
+	 * Return session analytics for multiple surveys in a single query, keyed by survey_id.
+	 *
+	 * @param  int[] $surveyIds Survey primary keys.
+	 * @return array<int, array<string, int|float|null>>
+	 * @since  1.0.0
+	 */
+	public function getAnalyticsForAllSurveys( array $surveyIds ): array {
+		if ( empty( $surveyIds ) ) {
+			return [];
+		}
+
+		global $wpdb;
+
+		$timeout      = self::ABANDON_TIMEOUT_MINUTES;
+		$placeholders = implode( ',', array_fill( 0, count( $surveyIds ), '%d' ) );
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT
+					survey_id,
+					COUNT(*)                                                                     AS total_views,
+					SUM(started_at   IS NOT NULL)                                                AS total_starts,
+					SUM(submitted_at IS NOT NULL)                                                AS total_submissions,
+					ROUND(
+						SUM(submitted_at IS NOT NULL)
+						/ NULLIF( SUM(started_at IS NOT NULL), 0 ) * 100
+					, 2)                                                                         AS completion_rate,
+					ROUND(
+						SUM(
+							abandoned_at IS NOT NULL
+							OR (
+								started_at   IS NOT NULL
+								AND submitted_at IS NULL
+								AND last_active_at < DATE_SUB(NOW(), INTERVAL %d MINUTE)
+							)
+						)
+						/ NULLIF( SUM(started_at IS NOT NULL), 0 ) * 100
+					, 2)                                                                         AS abandonment_rate,
+					ROUND(
+						AVG(
+							CASE
+								WHEN started_at IS NOT NULL AND submitted_at IS NOT NULL
+								THEN TIMESTAMPDIFF(SECOND, started_at, submitted_at)
+							END
+						)
+					, 0)                                                                         AS avg_completion_time
+				FROM `{$this->table}`
+				WHERE survey_id IN ({$placeholders})
+				GROUP BY survey_id",
+				$timeout,
+				...$surveyIds
+			),
+			ARRAY_A
+		) ?: [];
+
+		$result = [];
+		foreach ( $rows as $row ) {
+			$id            = (int) $row['survey_id'];
+			$result[ $id ] = [
+				'total_views'         => (int) $row['total_views'],
+				'total_starts'        => (int) $row['total_starts'],
+				'total_submissions'   => (int) $row['total_submissions'],
+				'completion_rate'     => $row['completion_rate']     !== null ? (float) $row['completion_rate']     : null,
+				'abandonment_rate'    => $row['abandonment_rate']    !== null ? (float) $row['abandonment_rate']    : null,
+				'avg_completion_time' => $row['avg_completion_time'] !== null ? (int)   $row['avg_completion_time'] : null,
+			];
+		}
+
+		return $result;
+	}
+
+	/**
 	 * Return aggregate analytics for a survey using timestamps as source of truth.
 	 * Abandonment includes explicit closes AND timed-out started sessions.
 	 *

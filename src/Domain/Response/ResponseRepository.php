@@ -191,4 +191,16 @@ interface ResponseRepository {
 	 * @since  1.0.0
 	 */
 	public function countByDate( int $surveyId ): array;
+
+	/**
+	 * Aggregate score statistics for multiple surveys in a single query.
+	 *
+	 * Returns an array keyed by survey_id. Each value has the same shape as
+	 * aggregateScoreStats(): total, score_count, score_sum, promoters, passives, detractors.
+	 *
+	 * @param  int[] $surveyIds Survey primary keys to include.
+	 * @return array<int, array{total: int, score_count: int, score_sum: float, promoters: int, passives: int, detractors: int}>
+	 * @since  1.0.0
+	 */
+	public function aggregateScoreStatsForAllSurveys( array $surveyIds ): array;
 }

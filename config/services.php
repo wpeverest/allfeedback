@@ -68,6 +68,7 @@ use AllFeedback\Admin\AdminServiceProvider;
 use AllFeedback\API\ApiServiceProvider;
 use AllFeedback\API\Controllers\V1\AnalyticsController;
 use AllFeedback\API\Controllers\V1\ContentSearchController;
+use AllFeedback\API\Controllers\V1\FormAnalyticsController;
 use AllFeedback\Frontend\Blocks\BlockRegistry;
 use AllFeedback\Frontend\Blocks\SurveyBlock;
 use AllFeedback\API\Controllers\V1\LogsController;
@@ -196,6 +197,7 @@ return [
 	// REST API controllers
 	// ------------------------------------------------------------------
 	AnalyticsController::class       => autowire(),
+	FormAnalyticsController::class   => autowire(),
 	SurveysController::class         => autowire(),
 	ResponsesController::class       => autowire(),
 	SubmitController::class          => autowire(),

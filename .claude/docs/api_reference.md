@@ -324,6 +324,160 @@ Permanently delete a single response. Returns 404 if the response does not belon
 
 ---
 
+## Analytics
+
+### `POST /surveys/{id}/analytics/event`
+Track a single session lifecycle event for a survey. **Public** — no `manage_options` required, but rate-limited to 60 events per session per 5-minute window (configurable via `allfeedback_analytics_rate_limit` filter).
+
+**Body**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `event` | string | Yes | One of: `viewed`, `started`, `abandoned`, `heartbeat` |
+| `session_id` | string | Yes | Client-generated UUID v4 (max 36 chars) |
+| `guest_id` | string | No | Persistent guest visitor token from `localStorage` (max 36 chars) |
+
+**Response — 200**
+```json
+{ "success": true, "data": null }
+```
+
+---
+
+### `GET /surveys/{id}/analytics`
+Return aggregate session metrics for a single survey. Admin only.
+
+**Response**
+```json
+{
+  "total_views": 500,
+  "total_starts": 200,
+  "total_submissions": 150,
+  "completion_rate": 75.00,
+  "abandonment_rate": 25.00,
+  "avg_completion_time": 120
+}
+```
+
+> `completion_rate` and `abandonment_rate` are percentages (0–100). `avg_completion_time` is in seconds. All three fields are `null` when there are no started sessions yet.
+> Abandonment includes explicit closes **and** sessions with `started_at` set but no `submitted_at` whose `last_active_at` is older than 30 minutes.
+
+---
+
+### `GET /analytics/forms`
+Return a paginated list of all forms with per-form session and response metrics. Admin only. Uses bulk SQL aggregation — **2 queries regardless of page size**, not N+1.
+
+**Query params**
+
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `page` | int | 1 | Page number (1-based) |
+| `per_page` | int | 20 | Items per page (max 100) |
+| `status` | string | — | Filter by status: `draft`, `published`, `archived`, `trashed` |
+
+**Response**
+```json
+{
+  "forms": [
+    {
+      "id": 1,
+      "title": "Customer NPS Survey",
+      "status": "published",
+      "response_count": 150,
+      "created_at": "2024-01-15 10:00:00",
+      "updated_at": "2024-02-01 12:00:00",
+      "session_metrics": {
+        "total_views": 500,
+        "total_starts": 200,
+        "total_submissions": 150,
+        "completion_rate": 75.00,
+        "abandonment_rate": 25.00,
+        "avg_completion_time": 120
+      },
+      "response_metrics": {
+        "total_responses": 150,
+        "average_score": 8.5,
+        "nps_score": {
+          "score": 65.00,
+          "promoters": 100,
+          "passives": 30,
+          "detractors": 20
+        }
+      }
+    }
+  ],
+  "pagination": {
+    "total": 5,
+    "total_pages": 1,
+    "page": 1,
+    "per_page": 20
+  },
+  "totals": {
+    "total_forms": 5,
+    "total_responses": 750,
+    "total_views": 2500
+  }
+}
+```
+
+> `average_score` is `null` when no scored responses exist. `nps_score.score` is `0.0` when there are no responses. Session metric fields (`completion_rate`, `abandonment_rate`, `avg_completion_time`) are `null` when no sessions exist for that form.
+
+---
+
+### `GET /analytics/forms/{id}`
+Return full analytics for a single form: survey metadata + session metrics + complete response metrics (including device breakdown and responses over time). Admin only.
+
+**Response**
+```json
+{
+  "survey": {
+    "id": 1,
+    "title": "Customer NPS Survey",
+    "description": "Help us improve.",
+    "status": "published",
+    "response_count": 150,
+    "created_at": "2024-01-15 10:00:00",
+    "updated_at": "2024-02-01 12:00:00"
+  },
+  "session_metrics": {
+    "total_views": 500,
+    "total_starts": 200,
+    "total_submissions": 150,
+    "completion_rate": 75.00,
+    "abandonment_rate": 25.00,
+    "avg_completion_time": 120
+  },
+  "response_metrics": {
+    "total_responses": 150,
+    "average_score": 8.5,
+    "nps_score": {
+      "score": 65.00,
+      "promoters": 100,
+      "passives": 30,
+      "detractors": 20
+    },
+    "response_rate_by_device": {
+      "desktop": 100,
+      "mobile": 40,
+      "tablet": 10
+    },
+    "responses_over_time": {
+      "2024-01-15": 10,
+      "2024-01-16": 15,
+      "2024-01-17": 8
+    }
+  }
+}
+```
+
+**Error responses**
+
+| Code | Reason |
+|------|--------|
+| 404 | Survey not found |
+
+---
+
 ## Submit (Public)
 
 ### `POST /surveys/{id}/submit`
@@ -368,6 +522,95 @@ Accept a public widget submission. Requires a valid WordPress nonce (`action: al
 | 409 | Duplicate submission (user_id, guest_token, or IP hash match) |
 | 422 | Validation failure in response data |
 | 404 | Survey not found |
+
+---
+
+## Dashboard
+
+### `GET /dashboard/stats`
+Return a high-level stats summary for the admin dashboard. Admin only.
+
+**Response**
+```json
+{
+  "stats": {
+    "surveys": 12,
+    "responses": 843,
+    "unread": 5
+  },
+  "chart": [
+    { "date": "2026-03-25", "count": 14 },
+    { "date": "2026-03-26", "count": 9 }
+  ],
+  "recent": [
+    {
+      "id": 42,
+      "survey_id": 3,
+      "created_at": "2026-04-22 11:05:00",
+      "summary": "Very satisfied"
+    }
+  ]
+}
+```
+
+> `chart` always contains exactly 30 entries (today − 29 days → today), with `count: 0` for days with no responses. `recent` contains the 5 most recent responses across all surveys.
+
+---
+
+## Survey State
+
+### `GET /surveys/{id}/state`
+Return the display state for a survey for the current logged-in user. Used by the frontend widget to determine whether to show, suppress, or defer the survey. Requires the user to be logged in.
+
+**Response**
+```json
+{
+  "should_show": true,
+  "reason": null
+}
+```
+
+When suppressed, `should_show` is `false` and `reason` explains why:
+
+```json
+{
+  "should_show": false,
+  "reason": "already_submitted"
+}
+```
+
+Possible `reason` values: `already_submitted`, `max_impressions_reached`, `dismissed_recently`, `targeting_mismatch`.
+
+---
+
+## Wizard
+
+### `GET /wizard`
+Return the current setup wizard state. Admin only.
+
+**Response**
+```json
+{
+  "status": "pending",
+  "completed_steps": ["welcome", "settings"],
+  "current_step": "create_survey"
+}
+```
+
+---
+
+### `PUT /wizard`
+Update the wizard state (advance steps, mark complete). Admin only.
+
+**Body**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `status` | string | `pending` or `completed` |
+| `completed_steps` | array | List of completed step slugs |
+| `current_step` | string | Active step slug |
+
+**Response** — updated wizard state object.
 
 ---
 
@@ -515,6 +758,11 @@ Permanently delete a single log file.
 | POST | `/surveys/{id}/duplicate` | Admin | Duplicate survey |
 | POST | `/surveys/{id}/publish` | Admin | Publish survey |
 | POST | `/surveys/{id}/submit` | Nonce | Submit a response (public widget) |
+| POST | `/surveys/{id}/analytics/event` | Public† | Track session lifecycle event |
+| GET | `/surveys/{id}/analytics` | Admin | Session metrics for one survey |
+| GET | `/surveys/{id}/state` | Auth | Display state for logged-in user |
+| GET | `/analytics/forms` | Admin | All forms with session + response metrics |
+| GET | `/analytics/forms/{id}` | Admin | Full analytics for a single form |
 | GET | `/responses` | Admin | List all responses (all surveys) |
 | GET | `/responses/unread-count` | Admin | Count unread responses (sidebar badge) |
 | DELETE | `/responses/delete` | Admin | Bulk delete responses (any survey) |
@@ -525,6 +773,9 @@ Permanently delete a single log file.
 | GET | `/surveys/{id}/responses/{rid}` | Admin | Get single response |
 | PUT | `/surveys/{id}/responses/{rid}` | Admin | Patch response |
 | DELETE | `/surveys/{id}/responses/{rid}` | Admin | Delete single response |
+| GET | `/dashboard/stats` | Admin | High-level stats + 30-day chart |
+| GET | `/wizard` | Admin | Get wizard state |
+| PUT | `/wizard` | Admin | Update wizard state |
 | GET | `/settings` | Admin | Get all settings |
 | PUT/PATCH | `/settings` | Admin | Update settings |
 | GET | `/content-search` | Admin | Search pages/posts for targeting |
@@ -533,4 +784,5 @@ Permanently delete a single log file.
 | GET | `/logs/{id}` | Admin | Get single log file with content |
 | DELETE | `/logs/{id}` | Admin | Delete single log file |
 
-*`GET /surveys/{id}` — admins see all statuses; non-admins see only `published` surveys.
+*`GET /surveys/{id}` — admins see all statuses; non-admins see only `published` surveys.  
+†`POST /surveys/{id}/analytics/event` — public but rate-limited to 60 events per session per 5-minute window.

@@ -43,4 +43,17 @@ interface SurveySessionRepository {
 	 * @since  1.0.0
 	 */
 	public function getAnalytics( int $surveyId ): array;
+
+	/**
+	 * Return session analytics for multiple surveys in a single query.
+	 *
+	 * Returns an array keyed by survey_id. Each value has the same shape as
+	 * getAnalytics(): total_views, total_starts, total_submissions,
+	 * completion_rate, abandonment_rate, avg_completion_time.
+	 *
+	 * @param  int[] $surveyIds Survey primary keys to include.
+	 * @return array<int, array<string, int|float|null>>
+	 * @since  1.0.0
+	 */
+	public function getAnalyticsForAllSurveys( array $surveyIds ): array;
 }

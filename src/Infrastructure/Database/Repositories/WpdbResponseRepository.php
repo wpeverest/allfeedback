@@ -595,6 +595,57 @@ class WpdbResponseRepository implements ResponseRepository {
 	}
 
 	/**
+	 * Aggregate score statistics for multiple surveys in a single query, keyed by survey_id.
+	 *
+	 * @param  int[] $surveyIds Survey primary keys.
+	 * @return array<int, array{total: int, score_count: int, score_sum: float, promoters: int, passives: int, detractors: int}>
+	 * @since  1.0.0
+	 */
+	public function aggregateScoreStatsForAllSurveys( array $surveyIds ): array {
+		if ( empty( $surveyIds ) ) {
+			return [];
+		}
+
+		global $wpdb;
+
+		$placeholders = implode( ',', array_fill( 0, count( $surveyIds ), '%d' ) );
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT
+					survey_id,
+					COUNT(*)                                                                         AS total,
+					COUNT(score)                                                                     AS score_count,
+					COALESCE(SUM(score), 0)                                                          AS score_sum,
+					SUM(CASE WHEN score >= 9              THEN 1 ELSE 0 END)                         AS promoters,
+					SUM(CASE WHEN score >= 7 AND score < 9 THEN 1 ELSE 0 END)                        AS passives,
+					SUM(CASE WHEN score < 7 AND score IS NOT NULL THEN 1 ELSE 0 END)                 AS detractors
+				FROM {$this->table}
+				WHERE survey_id IN ({$placeholders})
+				GROUP BY survey_id",
+				...$surveyIds
+			),
+			ARRAY_A
+		) ?: [];
+
+		$result = [];
+		foreach ( $rows as $row ) {
+			$id            = (int) $row['survey_id'];
+			$result[ $id ] = [
+				'total'       => (int) $row['total'],
+				'score_count' => (int) $row['score_count'],
+				'score_sum'   => (float) $row['score_sum'],
+				'promoters'   => (int) $row['promoters'],
+				'passives'    => (int) $row['passives'],
+				'detractors'  => (int) $row['detractors'],
+			];
+		}
+
+		return $result;
+	}
+
+	/**
 	 * Hydrate a Response aggregate from a raw database row.
 	 *
 	 * @param  array<string, mixed> $row Raw associative array from wpdb.

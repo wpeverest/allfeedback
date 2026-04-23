@@ -6,6 +6,7 @@ namespace AllFeedback\API;
 
 use AllFeedback\API\Controllers\V1\AnalyticsController;
 use AllFeedback\API\Controllers\V1\ContentSearchController;
+use AllFeedback\API\Controllers\V1\FormAnalyticsController;
 use AllFeedback\API\Controllers\V1\LogsController;
 use AllFeedback\API\Controllers\V1\ResponsesController;
 use AllFeedback\API\Controllers\V1\SettingsController;
@@ -76,6 +77,7 @@ class ApiServiceProvider implements ServiceProvider {
 			SurveyStateController::class,   // /surveys/{id}/state             — logged-in users only
 			ResponsesController::class,     // /surveys/{id}/responses         — admin, must come before SurveysController
 			SurveysController::class,       // /surveys
+			FormAnalyticsController::class, // /analytics/forms[/{id}]         — admin, form-level analytics
 			SettingsController::class,      // /settings
 			WizardController::class,        // /wizard
 			ContentSearchController::class, // /content-search
