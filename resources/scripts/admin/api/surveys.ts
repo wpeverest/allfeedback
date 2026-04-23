@@ -224,4 +224,7 @@ export const surveysApi = {
 
 	submit: (surveyId: number, data: SubmitFormData) =>
 		request<SubmitFormResult>(`/surveys/${surveyId}/submit`, { method: 'POST', data }),
+
+	getDashboardStats: () =>
+		request<any>('/dashboard/stats'),
 };
