@@ -1,4 +1,4 @@
-import { __ } from '@wordpress/i18n';
+﻿import { __ } from '@wordpress/i18n';
 import { ArrowUpRight, Book, LifeBuoy, Users } from 'lucide-react';
 
 const ResourceGroup = ({
@@ -26,10 +26,10 @@ const ResourceGroup = ({
 					href={href}
 					target="_blank"
 					rel="noopener noreferrer"
-					className="group flex items-center justify-between rounded-xl px-2.5 py-2.5 text-base text-muted-foreground transition-colors hover:bg-primary/[0.06] hover:text-primary"
+					className="group flex items-center justify-between rounded-xl px-2.5 py-2.5 text-base text-muted-foreground transition-colors hover:bg-primary/[0.06] hover:!text-primary"
 				>
-					<span>{label}</span>
-					<ArrowUpRight className="size-3.5 shrink-0 opacity-0 transition-all group-hover:opacity-100 group-hover:text-primary" />
+					<span className="font-medium">{label}</span>
+					<ArrowUpRight className="size-3.5 shrink-0 opacity-40 transition-all group-hover:opacity-100 group-hover:text-primary" />
 				</a>
 			))}
 		</div>
@@ -66,7 +66,7 @@ const About = () => {
 					<div className="relative aspect-video">
 						<iframe
 							src="https://www.youtube.com/embed/dQw4w9WgXcQ"
-							title={__('All Feedback — Quick Tour', 'all-feedback')}
+							title={__('All Feedback â€” Quick Tour', 'all-feedback')}
 							allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
 							allowFullScreen
 							className="absolute inset-0 h-full w-full"
