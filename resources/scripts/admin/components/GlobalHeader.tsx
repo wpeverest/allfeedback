@@ -12,12 +12,12 @@ type DisabledNavItem = { label: string; disabled: true };
 type NavItem         = ActiveNavItem | DisabledNavItem;
 
 const NAV_ITEMS: NavItem[] = [
-	{ label: __('Dashboard',  'all-feedback'), to: '/dashboard/'  },
 	{ label: __('Analytics',  'all-feedback'), to: '/analytics/'  },
 	{ label: __('All Forms',  'all-feedback'), to: '/forms/'      },
 	{ label: __('Responses',  'all-feedback'), to: '/responses/'  },
 	{ label: __('Settings',   'all-feedback'), to: '/settings/'   },
 	{ label: __('Tools',      'all-feedback'), to: '/tools/'      },
+	{ label: __('About',      'all-feedback'), to: '/about/'      },
 ];
 
 const getCurrentPath = (): string => {

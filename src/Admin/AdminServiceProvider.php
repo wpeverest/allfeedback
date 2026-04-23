@@ -117,15 +117,6 @@ class AdminServiceProvider implements ServiceProvider {
 
 		add_submenu_page(
 			parent_slug: self::MENU_SLUG,
-			page_title:  __( 'Dashboard', 'all-feedback' ),
-			menu_title:  __( 'Dashboard', 'all-feedback' ),
-			capability:  'manage_options',
-			menu_slug:   self::MENU_SLUG . '#/dashboard',
-			callback:    $mountPoint,
-		);
-
-		add_submenu_page(
-			parent_slug: self::MENU_SLUG,
 			page_title:  __( 'Analytics', 'all-feedback' ),
 			menu_title:  __( 'Analytics', 'all-feedback' ),
 			capability:  'manage_options',
@@ -176,6 +167,15 @@ class AdminServiceProvider implements ServiceProvider {
 			menu_title:  __( 'Tools', 'all-feedback' ),
 			capability:  'manage_options',
 			menu_slug:   self::MENU_SLUG . '#/tools',
+			callback:    $mountPoint,
+		);
+
+		add_submenu_page(
+			parent_slug: self::MENU_SLUG,
+			page_title:  __( 'About', 'all-feedback' ),
+			menu_title:  __( 'About', 'all-feedback' ),
+			capability:  'manage_options',
+			menu_slug:   self::MENU_SLUG . '#/about',
 			callback:    $mountPoint,
 		);
 
@@ -245,7 +245,7 @@ class AdminServiceProvider implements ServiceProvider {
 			var MENU_ROOT = '#toplevel_page_all-feedback';
 
 			function syncHighlight() {
-				var rawHash  = window.location.hash || '#/dashboard';
+				var rawHash  = window.location.hash || '#/analytics';
 				var hashPath = rawHash.split('?')[0];
 				var current  = hashPath.replace(/\/$/, '');
 
