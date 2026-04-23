@@ -48,7 +48,6 @@ import {
 	Pencil,
 	Shield,
 	Smartphone,
-	Star,
 	Tablet,
 	Trash2,
 	X,
@@ -935,11 +934,7 @@ const ResponseDetail = () => {
 								)}
 							</SidebarRow>
 
-							{response.score !== null && (
-								<SidebarRow icon={Star} label={__('Score', 'all-feedback')}>
-									{response.score}
-								</SidebarRow>
-							)}
+
 						</div>
 					</div>
 
