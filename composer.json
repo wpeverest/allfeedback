@@ -1,6 +1,6 @@
 {
-  "name": "your-vendor/all-feedback",
-  "description": "A ready-made WordPress plugin boilerplate",
+  "name": "themegrill/all-feedback",
+  "description": "WordPress-native NPS, CSAT, and CES feedback surveys",
   "type": "wordpress-plugin",
   "autoload": {
     "psr-4": {

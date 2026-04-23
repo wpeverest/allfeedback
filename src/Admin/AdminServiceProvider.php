@@ -268,7 +268,7 @@ class AdminServiceProvider implements ServiceProvider {
 			}
 
 			syncHighlight();
-			window.addEventListener('rmb:navigate', syncHighlight);
+			window.addEventListener('allfeedback:navigate', syncHighlight);
 		})();
 		</script>
 		<?php

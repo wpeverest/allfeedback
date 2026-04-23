@@ -62,10 +62,10 @@ const GlobalHeader = () => {
 			setPathname(getCurrentPath());
 			setMenuOpen(false);
 		};
-		window.addEventListener('rmb:navigate', handler);
+		window.addEventListener('allfeedback:navigate', handler);
 		window.addEventListener('hashchange', handler);
 		return () => {
-			window.removeEventListener('rmb:navigate', handler);
+			window.removeEventListener('allfeedback:navigate', handler);
 			window.removeEventListener('hashchange', handler);
 		};
 	}, []);

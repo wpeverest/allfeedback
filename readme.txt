@@ -1,6 +1,6 @@
 === All Feedback ===
-Contributors:      yourname
-Tags:              boilerplate, plugin, starter
+Contributors:      themegrill
+Tags:              feedback, surveys, nps, csat, ces
 Requires at least: 6.5
 Tested up to:      6.7
 Requires PHP:      8.2
@@ -8,24 +8,20 @@ Stable tag:        1.0.0
 License:           GPLv3 or later
 License URI:       https://www.gnu.org/licenses/gpl-3.0.html
 
-A ready-made WordPress plugin boilerplate by Themegrill.
+WordPress-native NPS, CSAT, and CES feedback surveys stored in your own database.
 
 == Description ==
 
-A modern, full-stack WordPress plugin boilerplate built with:
+All Feedback helps you collect customer feedback without sending data to an external SaaS.
 
-* PHP 8.2+ with PSR-4 autoloading via Composer
-* PHP-DI dependency injection container
-* React 18 + TypeScript 5 admin SPA
-* TanStack Router (hash-history SPA routing)
-* TanStack Query (server-state management)
-* TailwindCSS 4 + shadcn/ui components
-* @wordpress/scripts webpack build pipeline
-* Module system with dependency resolution
-* Feature-flag system
-* Settings manager
-* Database migration runner
-* REST API v1 scaffolding
+Features include:
+
+* WordPress-native survey management
+* NPS, CSAT, and CES workflows
+* React-based admin experience
+* REST API controllers for admin and frontend flows
+* Database migrations for plugin data
+* Frontend assets for survey rendering
 
 == Installation ==
 
@@ -36,21 +32,19 @@ A modern, full-stack WordPress plugin boilerplate built with:
 
 == Frequently Asked Questions ==
 
-= How do I add a new admin page? =
+= How do I add a new REST API endpoint? =
 
-Register a submenu page in `AdminServiceProvider::registerMenus()` and add the
-corresponding route file under `resources/scripts/admin/routes/`.
+Create a controller in `src/API/Controllers/V1/`, add it to the controller list
+in `ApiServiceProvider::registerRoutes()`, and bind it in `config/services.php`.
 
-= How do I add a REST API endpoint? =
-
-Create a controller in `src/API/Controllers/V1/`, then add it to the
-`$controllers` array in `ApiServiceProvider::registerRoutes()` and bind it in
-`config/services.php`.
-
-= How do I add a module? =
+= How do I register a module? =
 
 Extend `AbstractModule`, set `$id`, `$name`, and `$description`, then register
-it via the `rmb:modules:register` filter.
+it via the `allfeedback:modules:register` filter.
+
+= How do I enable development mode? =
+
+Define `ALLFEEDBACK_ENV` as `development` in `wp-config.php`.
 
 == Changelog ==
 

@@ -22,7 +22,7 @@ export function createRouter() {
 	});
 
 	router.subscribe('onResolved', () => {
-		window.dispatchEvent(new Event('rmb:navigate'));
+		window.dispatchEvent(new Event('allfeedback:navigate'));
 	});
 
 	return router;

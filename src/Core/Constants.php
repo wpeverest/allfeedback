@@ -102,7 +102,7 @@ final class Constants {
 		self::$pluginUrl      = plugin_dir_url( $pluginFile );
 		self::$pluginBasename = plugin_basename( $pluginFile );
 
-		self::$environment = defined( 'RMB_ENV' ) ? (string) constant( 'RMB_ENV' ) : 'production';
+		self::$environment = defined( 'ALLFEEDBACK_ENV' ) ? (string) constant( 'ALLFEEDBACK_ENV' ) : 'production';
 	}
 
 	/**

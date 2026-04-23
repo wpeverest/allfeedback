@@ -15,8 +15,8 @@ use AllFeedback\Traits\Hooks;
  *   User allow-list:    `[ 'users'   => [ 1, 42 ] ]`
  *   Percentage rollout: `[ 'percentage' => 20 ]`
  *
- * Runtime overrides (useful in tests or CI):
- *   `define( 'RMB_FEATURE_OVERRIDES', [ 'new-dashboard' => true ] );`
+	 * Runtime overrides (useful in tests or CI):
+	 *   `define( 'ALLFEEDBACK_FEATURE_OVERRIDES', [ 'new-dashboard' => true ] );`
  *
  * @package AllFeedback\Core\Features
  * @since   1.0.0
@@ -163,17 +163,17 @@ class FeatureManager {
 	}
 
 	/**
-	 * Load runtime overrides from the `RMB_FEATURE_OVERRIDES` constant if defined.
+	 * Load runtime overrides from the `ALLFEEDBACK_FEATURE_OVERRIDES` constant if defined.
 	 *
 	 * In `wp-config.php`:
-	 * `define( 'RMB_FEATURE_OVERRIDES', [ 'new-dashboard' => true ] );`
+	 * `define( 'ALLFEEDBACK_FEATURE_OVERRIDES', [ 'new-dashboard' => true ] );`
 	 *
 	 * @return void
 	 * @since  1.0.0
 	 */
 	private function loadOverrides(): void {
-		if ( defined( 'RMB_FEATURE_OVERRIDES' ) ) {
-			$this->overrides = (array) constant( 'RMB_FEATURE_OVERRIDES' );
+		if ( defined( 'ALLFEEDBACK_FEATURE_OVERRIDES' ) ) {
+			$this->overrides = (array) constant( 'ALLFEEDBACK_FEATURE_OVERRIDES' );
 		}
 	}
 

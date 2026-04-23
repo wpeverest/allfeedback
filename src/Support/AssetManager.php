@@ -39,7 +39,7 @@ class AssetManager {
 	private const HANDLE_PREFIX = 'allfb-';
 
 	/**
-	 * Local dev server URL — used when RMB_ENV === 'development'.
+	 * Local dev server URL — used when ALLFEEDBACK_ENV === 'development'.
 	 *
 	 * @var string
 	 * @since 1.0.0
@@ -84,8 +84,8 @@ class AssetManager {
 	 */
 	public function __construct(
 		private readonly Logger $logger,
-	) {
-		$this->isDevServer = defined( 'RMB_ENV' ) && 'development' === RMB_ENV;
+		) {
+			$this->isDevServer = defined( 'ALLFEEDBACK_ENV' ) && 'development' === ALLFEEDBACK_ENV;
 		$this->buildPath   = Constants::path( 'resources/build/' );
 		$this->buildUrl    = $this->isDevServer ? self::DEV_SERVER : Constants::url( 'resources/build/' );
 	}
@@ -140,7 +140,7 @@ class AssetManager {
 	 */
 	public function localizeScript( string $handle, array $localize ): void {
 		$fullHandle = self::HANDLE_PREFIX . $handle;
-		$objectName = $localize['object_name'] ?? '__RMB__';
+		$objectName = $localize['object_name'] ?? '__ALLFEEDBACK__';
 		$data       = $localize['data']        ?? [];
 
 		$json = wp_json_encode( $data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );

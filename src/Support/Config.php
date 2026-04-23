@@ -65,7 +65,7 @@ class Config {
 	 * @since  1.0.0
 	 */
 	public function has( string $key ): bool {
-		return $this->get( $key, '__RMB_MISSING__' ) !== '__RMB_MISSING__';
+		return $this->get( $key, '__ALLFEEDBACK_MISSING__' ) !== '__ALLFEEDBACK_MISSING__';
 	}
 
 	/**

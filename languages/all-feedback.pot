@@ -1,4 +1,4 @@
-# Copyright (C) 2024 Your Name
+# Copyright (C) 2024 Themegrill
 # This file is distributed under the GPL v3.0 or later.
 msgid ""
 msgstr ""
@@ -23,11 +23,11 @@ msgid "https://example.com"
 msgstr ""
 
 #. Description of the plugin
-msgid "A ready-made WordPress plugin boilerplate following AllCoach architecture."
+msgid "WordPress-native NPS, CSAT, and CES feedback surveys. All data stored in your database. No external accounts required."
 msgstr ""
 
 #. Author of the plugin
-msgid "Your Name"
+msgid "Themegrill"
 msgstr ""
 
 #: all-feedback.php
