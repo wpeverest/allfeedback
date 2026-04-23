@@ -51,8 +51,8 @@ const SUPPORT_LINKS = [
 ];
 
 const COMMUNITY_LINKS = [
-	{ label: __('GitHub', 'all-feedback'), href: 'https://github.com/themegrill/' },
-	{ label: __('Discord', 'all-feedback'), href: 'https://themegrill.com/' },
+	{ label: __('Facebook', 'all-feedback'), href: 'https://www.facebook.com/themegrill/' },
+	{ label: __('YouTube', 'all-feedback'), href: 'https://www.youtube.com/@themegrill' },
 	{ label: __('X / Twitter', 'all-feedback'), href: 'https://x.com/themegrill' },
 	{ label: __('Changelog', 'all-feedback'), href: 'https://themegrill.com/' },
 ];
