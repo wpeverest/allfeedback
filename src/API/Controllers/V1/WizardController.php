@@ -298,39 +298,39 @@ class WizardController extends RestController {
 
 		return [
 			'template'        => $this->argEnum(
-				description: __( 'Survey template to use for the first form.', 'all-feedback' ),
+				description: __( 'Survey template to use for the first form.', 'allfeedback' ),
 				values:      $allowedTemplates,
 				default:     'nps',
 			),
 			'brand_color'     => $this->argString(
-				description: __( 'Brand accent colour (hex, e.g. #6366F1).', 'all-feedback' ),
+				description: __( 'Brand accent colour (hex, e.g. #6366F1).', 'allfeedback' ),
 				sanitize:    'sanitize_hex_color',
 				default:     '#6366F1',
 			),
 			'position'        => $this->argEnum(
-				description: __( 'Widget position on the page.', 'all-feedback' ),
+				description: __( 'Widget position on the page.', 'allfeedback' ),
 				values:      [ 'bottom-right', 'bottom-left', 'side-tab' ],
 				default:     'bottom-right',
 			),
 			'admin_email'     => $this->argString(
-				description: __( 'Email address for admin notifications.', 'all-feedback' ),
+				description: __( 'Email address for admin notifications.', 'allfeedback' ),
 				sanitize:    'sanitize_email',
 			),
 			'notif_frequency' => $this->argEnum(
-				description: __( 'How often to receive email notification digests.', 'all-feedback' ),
+				description: __( 'How often to receive email notification digests.', 'allfeedback' ),
 				values:      [ 'instant', 'daily', 'weekly' ],
 				default:     'instant',
 			),
 			'consent'         => $this->argBoolean(
-				description: __( 'Show a consent notice to visitors before recording responses.', 'all-feedback' ),
+				description: __( 'Show a consent notice to visitors before recording responses.', 'allfeedback' ),
 				default:     true,
 			),
 			'anonymize_ip'    => $this->argBoolean(
-				description: __( 'Anonymise respondent IP addresses before storage.', 'all-feedback' ),
+				description: __( 'Anonymise respondent IP addresses before storage.', 'allfeedback' ),
 				default:     true,
 			),
 			'retention'       => $this->argEnum(
-				description: __( 'How long to retain response data before automatic purging.', 'all-feedback' ),
+				description: __( 'How long to retain response data before automatic purging.', 'allfeedback' ),
 				values:      [ 'forever', '24m', '12m', '6m', '3m' ],
 				default:     '12m',
 			),

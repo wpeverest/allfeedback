@@ -120,7 +120,7 @@ class SettingsController extends RestController {
 		$body = $request->get_json_params() ?? [];
 
 		if ( empty( $body ) ) {
-			return $this->errorResponse( __( 'No settings provided.', 'all-feedback' ), 422 );
+			return $this->errorResponse( __( 'No settings provided.', 'allfeedback' ), 422 );
 		}
 
 		$this->settingsManager->setMultiple( $body );

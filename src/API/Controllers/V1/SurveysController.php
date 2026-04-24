@@ -268,7 +268,7 @@ class SurveysController extends RestController {
 			$survey = $this->surveyRepository->save( $survey );
 		} catch ( \RuntimeException $e ) {
 			$this->logger->error( 'Survey creation failed at DB layer.', [ 'user_id' => get_current_user_id(), 'error' => $e->getMessage() ] );
-			return $this->errorResponse( __( 'Failed to create survey.', 'all-feedback' ), 500 );
+			return $this->errorResponse( __( 'Failed to create survey.', 'allfeedback' ), 500 );
 		}
 
 		$schemaStats = $this->schemaStats( $formSchemaArray );
@@ -302,11 +302,11 @@ class SurveysController extends RestController {
 		$survey = $this->surveyRepository->findById( (int) $request->get_param( 'id' ) );
 
 		if ( $survey === null ) {
-			return $this->notFoundResponse( __( 'Survey', 'all-feedback' ) );
+			return $this->notFoundResponse( __( 'Survey', 'allfeedback' ) );
 		}
 
 		if ( ! current_user_can( 'manage_options' ) && ! $survey->getStatus()->isPublished() ) {
-			return $this->notFoundResponse( __( 'Survey', 'all-feedback' ) );
+			return $this->notFoundResponse( __( 'Survey', 'allfeedback' ) );
 		}
 
 		return $this->successResponse( $this->prepareSurvey( $survey ) );
@@ -328,7 +328,7 @@ class SurveysController extends RestController {
 
 		$survey = $this->surveyRepository->findById( $id );
 		if ( $survey === null ) {
-			return $this->notFoundResponse( __( 'Survey', 'all-feedback' ) );
+			return $this->notFoundResponse( __( 'Survey', 'allfeedback' ) );
 		}
 
 		$previousStatus = $survey->getStatus();
@@ -386,7 +386,7 @@ class SurveysController extends RestController {
 				return $this->errorResponse(
 					sprintf(
 						/* translators: %s: Comma-separated list of valid statuses */
-						__( 'Invalid status. Allowed values: %s.', 'all-feedback' ),
+						__( 'Invalid status. Allowed values: %s.', 'allfeedback' ),
 						implode( ', ', array_column( SurveyStatus::cases(), 'value' ) )
 					),
 					422
@@ -420,7 +420,7 @@ class SurveysController extends RestController {
 				$survey->setConflictReason(
 					sprintf(
 						/* translators: %s: comma-separated conflicting form titles */
-						__( 'Saved as draft — same pages already targeted by %s.', 'all-feedback' ),
+						__( 'Saved as draft — same pages already targeted by %s.', 'allfeedback' ),
 						$conflictTitles
 					)
 				);
@@ -433,7 +433,7 @@ class SurveysController extends RestController {
 			$survey = $this->surveyRepository->save( $survey );
 		} catch ( \RuntimeException $e ) {
 			$this->logger->error( 'Survey update failed at DB layer.', [ 'survey_id' => $id, 'user_id' => get_current_user_id(), 'error' => $e->getMessage() ] );
-			return $this->errorResponse( __( 'Failed to update survey.', 'all-feedback' ), 500 );
+			return $this->errorResponse( __( 'Failed to update survey.', 'allfeedback' ), 500 );
 		}
 
 		$logContext = [
@@ -472,12 +472,12 @@ class SurveysController extends RestController {
 		$survey = $this->surveyRepository->findById( $id );
 
 		if ( $survey === null ) {
-			return $this->notFoundResponse( __( 'Survey', 'all-feedback' ) );
+			return $this->notFoundResponse( __( 'Survey', 'allfeedback' ) );
 		}
 
 		if ( $survey->getStatus()->isTrashed() ) {
 			return $this->errorResponse(
-				__( 'Survey is already in the trash. Use DELETE /surveys/{id}/delete to remove it permanently.', 'all-feedback' ),
+				__( 'Survey is already in the trash. Use DELETE /surveys/{id}/delete to remove it permanently.', 'allfeedback' ),
 				409
 			);
 		}
@@ -488,7 +488,7 @@ class SurveysController extends RestController {
 			$this->surveyRepository->save( $survey );
 		} catch ( \RuntimeException $e ) {
 			$this->logger->error( 'Survey trash failed at DB layer.', [ 'survey_id' => $id, 'user_id' => get_current_user_id(), 'error' => $e->getMessage() ] );
-			return $this->errorResponse( __( 'Failed to move survey to trash.', 'all-feedback' ), 500 );
+			return $this->errorResponse( __( 'Failed to move survey to trash.', 'allfeedback' ), 500 );
 		}
 
 		$this->logger->info(
@@ -514,19 +514,19 @@ class SurveysController extends RestController {
 		$survey = $this->surveyRepository->findById( $id );
 
 		if ( $survey === null ) {
-			return $this->notFoundResponse( __( 'Survey', 'all-feedback' ) );
+			return $this->notFoundResponse( __( 'Survey', 'allfeedback' ) );
 		}
 
 		if ( ! $survey->getStatus()->isTrashed() ) {
 			return $this->errorResponse(
-				__( 'Only trashed surveys can be permanently deleted. Use DELETE /surveys/{id}/trash first.', 'all-feedback' ),
+				__( 'Only trashed surveys can be permanently deleted. Use DELETE /surveys/{id}/trash first.', 'allfeedback' ),
 				409
 			);
 		}
 
 		if ( ! $this->surveyRepository->delete( $id ) ) {
 			$this->logger->error( 'Permanent survey deletion failed at DB layer.', [ 'survey_id' => $id, 'user_id' => get_current_user_id() ] );
-			return $this->errorResponse( __( 'Failed to permanently delete survey.', 'all-feedback' ), 500 );
+			return $this->errorResponse( __( 'Failed to permanently delete survey.', 'allfeedback' ), 500 );
 		}
 
 		$this->responseRepository->deleteBySurveyId( $id );
@@ -553,11 +553,11 @@ class SurveysController extends RestController {
 		$original = $this->surveyRepository->findById( $id );
 
 		if ( $original === null ) {
-			return $this->notFoundResponse( __( 'Survey', 'all-feedback' ) );
+			return $this->notFoundResponse( __( 'Survey', 'allfeedback' ) );
 		}
 
 		$copy = new Survey(
-			title:       $original->getTitle() . ' ' . __( '(Copy)', 'all-feedback' ),
+			title:       $original->getTitle() . ' ' . __( '(Copy)', 'allfeedback' ),
 			description: $original->getDescription(),
 			formSchema:  $original->getFormSchema(),
 			settings:    $original->getSettings(),
@@ -568,7 +568,7 @@ class SurveysController extends RestController {
 			$copy = $this->surveyRepository->save( $copy );
 		} catch ( \RuntimeException $e ) {
 			$this->logger->error( 'Survey duplication failed at DB layer.', [ 'source_id' => $id, 'user_id' => get_current_user_id(), 'error' => $e->getMessage() ] );
-			return $this->errorResponse( __( 'Failed to duplicate survey.', 'all-feedback' ), 500 );
+			return $this->errorResponse( __( 'Failed to duplicate survey.', 'allfeedback' ), 500 );
 		}
 
 		return $this->successResponse( $this->prepareSurvey( $copy ), 201 );
@@ -601,7 +601,7 @@ class SurveysController extends RestController {
 		$ids = array_values( array_filter( array_map( 'absint', (array) ( $request->get_param( 'ids' ) ?? [] ) ) ) );
 
 		if ( empty( $ids ) ) {
-			return $this->errorResponse( __( 'No survey IDs provided.', 'all-feedback' ), 422 );
+			return $this->errorResponse( __( 'No survey IDs provided.', 'allfeedback' ), 422 );
 		}
 
 		$trashed = 0;
@@ -666,7 +666,7 @@ class SurveysController extends RestController {
 		$ids = array_values( array_filter( array_map( 'absint', (array) ( $request->get_param( 'ids' ) ?? [] ) ) ) );
 
 		if ( empty( $ids ) ) {
-			return $this->errorResponse( __( 'No survey IDs provided.', 'all-feedback' ), 422 );
+			return $this->errorResponse( __( 'No survey IDs provided.', 'allfeedback' ), 422 );
 		}
 
 		$deleted = 0;
@@ -729,58 +729,58 @@ class SurveysController extends RestController {
 			'type'       => 'object',
 			'properties' => [
 				'id'             => [
-					'description' => __( 'Unique identifier.', 'all-feedback' ),
+					'description' => __( 'Unique identifier.', 'allfeedback' ),
 					'type'        => 'integer',
 					'context'     => [ 'view', 'edit' ],
 					'readonly'    => true,
 				],
 				'title'          => [
-					'description' => __( 'Survey title shown in the forms list.', 'all-feedback' ),
+					'description' => __( 'Survey title shown in the forms list.', 'allfeedback' ),
 					'type'        => 'string',
 					'context'     => [ 'view', 'edit' ],
 				],
 				'description'    => [
-					'description' => __( 'Optional survey description (HTML allowed).', 'all-feedback' ),
+					'description' => __( 'Optional survey description (HTML allowed).', 'allfeedback' ),
 					'type'        => [ 'string', 'null' ],
 					'context'     => [ 'view', 'edit' ],
 				],
 				'form_schema'    => [
-					'description' => __( 'Full builder structure: sections, fields, conditional logic.', 'all-feedback' ),
+					'description' => __( 'Full builder structure: sections, fields, conditional logic.', 'allfeedback' ),
 					'type'        => [ 'object', 'null' ],
 					'context'     => [ 'view', 'edit' ],
 				],
 				'settings'       => [
-					'description' => __( 'Per-survey configuration: submit labels, user targeting, trigger, display frequency.', 'all-feedback' ),
+					'description' => __( 'Per-survey configuration: submit labels, user targeting, trigger, display frequency.', 'allfeedback' ),
 					'type'        => [ 'object', 'null' ],
 					'context'     => [ 'view', 'edit' ],
 				],
 				'status'         => [
-					'description' => __( 'Survey lifecycle status.', 'all-feedback' ),
+					'description' => __( 'Survey lifecycle status.', 'allfeedback' ),
 					'type'        => 'string',
 					'enum'        => $statusValues,
 					'context'     => [ 'view', 'edit' ],
 				],
 				'response_count' => [
-					'description' => __( 'Cached count of responses received.', 'all-feedback' ),
+					'description' => __( 'Cached count of responses received.', 'allfeedback' ),
 					'type'        => 'integer',
 					'minimum'     => 0,
 					'context'     => [ 'view' ],
 					'readonly'    => true,
 				],
 				'created_by'     => [
-					'description' => __( 'WordPress user ID of the creator.', 'all-feedback' ),
+					'description' => __( 'WordPress user ID of the creator.', 'allfeedback' ),
 					'type'        => [ 'integer', 'null' ],
 					'context'     => [ 'view' ],
 					'readonly'    => true,
 				],
 				'created_at'     => [
-					'description' => __( 'Creation date (MySQL datetime).', 'all-feedback' ),
+					'description' => __( 'Creation date (MySQL datetime).', 'allfeedback' ),
 					'type'        => 'string',
 					'context'     => [ 'view' ],
 					'readonly'    => true,
 				],
 				'updated_at'     => [
-					'description' => __( 'Last update date (MySQL datetime).', 'all-feedback' ),
+					'description' => __( 'Last update date (MySQL datetime).', 'allfeedback' ),
 					'type'        => [ 'string', 'null' ],
 					'context'     => [ 'view' ],
 					'readonly'    => true,
@@ -802,20 +802,20 @@ class SurveysController extends RestController {
 			$this->paginationArgs( defaultPerPage: 20, maxPerPage: 100 ),
 			[
 				'search'  => $this->argString(
-					description: __( 'Filter surveys by title keyword.', 'all-feedback' ),
+					description: __( 'Filter surveys by title keyword.', 'allfeedback' ),
 				),
 				'status'  => $this->argEnum(
-					description: __( 'Filter by survey status.', 'all-feedback' ),
+					description: __( 'Filter by survey status.', 'allfeedback' ),
 					values:      array_merge( $statusValues, [ 'any' ] ),
 					default:     'any',
 				),
 				'orderby' => $this->argEnum(
-					description: __( 'Column to sort results by.', 'all-feedback' ),
+					description: __( 'Column to sort results by.', 'allfeedback' ),
 					values:      [ 'id', 'title', 'status', 'response_count', 'created_at', 'updated_at' ],
 					default:     'created_at',
 				),
 				'order'   => $this->argEnum(
-					description: __( 'Sort direction.', 'all-feedback' ),
+					description: __( 'Sort direction.', 'allfeedback' ),
 					values:      [ 'ASC', 'DESC' ],
 					default:     'DESC',
 				),
@@ -835,30 +835,30 @@ class SurveysController extends RestController {
 
 		return [
 			'title'       => $this->argString(
-				description: __( 'Survey title.', 'all-feedback' ),
+				description: __( 'Survey title.', 'allfeedback' ),
 				required:    $required,
 				minLength:   1,
 				maxLength:   255,
 			),
 			'description' => $this->argString(
-				description: __( 'Optional survey description (HTML allowed).', 'all-feedback' ),
+				description: __( 'Optional survey description (HTML allowed).', 'allfeedback' ),
 				sanitize:    'wp_kses_post',
 				default:     '',
 			),
 			'form_schema' => [
-				'description' => __( 'Builder structure: version string, sections array with fields.', 'all-feedback' ),
+				'description' => __( 'Builder structure: version string, sections array with fields.', 'allfeedback' ),
 				'type'        => [ 'object', 'array', 'string', 'null' ],
 			],
 			'settings'    => [
-				'description' => __( 'Per-survey configuration object (trigger, frequency, targeting, submit labels).', 'all-feedback' ),
+				'description' => __( 'Per-survey configuration object (trigger, frequency, targeting, submit labels).', 'allfeedback' ),
 				'type'        => [ 'object', 'array', 'string', 'null' ],
 			],
 			'styling'     => [
-				'description' => __( 'Per-survey visual appearance overrides (widget icon, label, position).', 'all-feedback' ),
+				'description' => __( 'Per-survey visual appearance overrides (widget icon, label, position).', 'allfeedback' ),
 				'type'        => [ 'object', 'array', 'string', 'null' ],
 			],
 			'status'      => $this->argEnum(
-				description: __( 'Survey lifecycle status.', 'all-feedback' ),
+				description: __( 'Survey lifecycle status.', 'allfeedback' ),
 				values:      $statusValues,
 				default:     'draft',
 			),
@@ -874,7 +874,7 @@ class SurveysController extends RestController {
 	private function bulkActionArgs(): array {
 		return [
 			'ids' => [
-				'description' => __( 'Array of survey IDs to operate on.', 'all-feedback' ),
+				'description' => __( 'Array of survey IDs to operate on.', 'allfeedback' ),
 				'type'        => 'array',
 				'required'    => true,
 				'items'       => [
@@ -929,7 +929,7 @@ class SurveysController extends RestController {
 		$survey = $this->surveyRepository->findById( $id );
 
 		if ( $survey === null ) {
-			return $this->notFoundResponse( __( 'Survey', 'all-feedback' ) );
+			return $this->notFoundResponse( __( 'Survey', 'allfeedback' ) );
 		}
 
 		$previousStatus = $survey->getStatus();
@@ -952,7 +952,7 @@ class SurveysController extends RestController {
 				$survey->setConflictReason(
 					sprintf(
 						/* translators: %s: comma-separated conflicting form titles */
-						\__( 'Saved as draft — same pages already targeted by %s.', 'all-feedback' ),
+						\__( 'Saved as draft — same pages already targeted by %s.', 'allfeedback' ),
 						$conflictTitles
 					)
 				);
@@ -971,7 +971,7 @@ class SurveysController extends RestController {
 			return $this->errorResponse(
 				sprintf(
 					/* translators: %s: Target status */
-					__( 'Failed to set survey status to %s.', 'all-feedback' ),
+					__( 'Failed to set survey status to %s.', 'allfeedback' ),
 					$status->value
 				),
 				500
@@ -1138,7 +1138,7 @@ class SurveysController extends RestController {
 		$schema = $this->normaliseJsonParam( $schema );
 
 		if ( $schema === null ) {
-			return $this->errorResponse( __( 'form_schema must be a valid JSON object.', 'all-feedback' ), 422 );
+			return $this->errorResponse( __( 'form_schema must be a valid JSON object.', 'allfeedback' ), 422 );
 		}
 
 		if ( ! isset( $schema['sections'] ) || ! is_array( $schema['sections'] ) ) {
@@ -1159,7 +1159,7 @@ class SurveysController extends RestController {
 					return $this->errorResponse(
 						sprintf(
 							/* translators: %s: Invalid field type value */
-							__( 'Invalid field type "%s".', 'all-feedback' ),
+							__( 'Invalid field type "%s".', 'allfeedback' ),
 							sanitize_key( (string) $field['type'] )
 						),
 						422
@@ -1190,7 +1190,7 @@ class SurveysController extends RestController {
 		$settings = $this->normaliseJsonParam( $settings );
 
 		if ( $settings === null ) {
-			return $this->errorResponse( __( 'settings must be a valid JSON object.', 'all-feedback' ), 422 );
+			return $this->errorResponse( __( 'settings must be a valid JSON object.', 'allfeedback' ), 422 );
 		}
 
 		/**
@@ -1235,7 +1235,7 @@ class SurveysController extends RestController {
 				return $this->errorResponse(
 					sprintf(
 						/* translators: 1: settings key name  2: submitted value  3: comma-separated allowed values */
-						__( 'Invalid settings.%1$s "%2$s". Allowed: %3$s.', 'all-feedback' ),
+						__( 'Invalid settings.%1$s "%2$s". Allowed: %3$s.', 'allfeedback' ),
 						$key,
 						sanitize_key( (string) $settings[ $key ] ),
 						implode( ', ', $allowed )
@@ -1253,7 +1253,7 @@ class SurveysController extends RestController {
 				return $this->errorResponse(
 					sprintf(
 						/* translators: %s: settings key name */
-						__( 'settings.%s must be a non-negative integer.', 'all-feedback' ),
+						__( 'settings.%s must be a non-negative integer.', 'allfeedback' ),
 						$key
 					),
 					422
@@ -1264,14 +1264,14 @@ class SurveysController extends RestController {
 		if ( array_key_exists( 'target_page_ids', $settings ) ) {
 			if ( ! is_array( $settings['target_page_ids'] ) ) {
 				return $this->errorResponse(
-					__( 'settings.target_page_ids must be an array.', 'all-feedback' ),
+					__( 'settings.target_page_ids must be an array.', 'allfeedback' ),
 					422
 				);
 			}
 			foreach ( $settings['target_page_ids'] as $pid ) {
 				if ( filter_var( $pid, FILTER_VALIDATE_INT ) === false || (int) $pid < 1 ) {
 					return $this->errorResponse(
-						__( 'settings.target_page_ids must contain only positive integers.', 'all-feedback' ),
+						__( 'settings.target_page_ids must contain only positive integers.', 'allfeedback' ),
 						422
 					);
 				}
@@ -1302,7 +1302,7 @@ class SurveysController extends RestController {
 		$styling = $this->normaliseJsonParam( $styling );
 
 		if ( $styling === null ) {
-			return $this->errorResponse( __( 'styling must be a valid JSON object.', 'all-feedback' ), 422 );
+			return $this->errorResponse( __( 'styling must be a valid JSON object.', 'allfeedback' ), 422 );
 		}
 
 		$allowedPositions = apply_filters(
@@ -1315,7 +1315,7 @@ class SurveysController extends RestController {
 				return $this->errorResponse(
 					sprintf(
 						/* translators: %s: submitted value */
-						__( 'Invalid styling.widget_position "%s". Allowed: bottom-right, bottom-left, side-tab, or empty string.', 'all-feedback' ),
+						__( 'Invalid styling.widget_position "%s". Allowed: bottom-right, bottom-left, side-tab, or empty string.', 'allfeedback' ),
 						sanitize_text_field( (string) $styling['widget_position'] )
 					),
 					422
@@ -1333,7 +1333,7 @@ class SurveysController extends RestController {
 				return $this->errorResponse(
 					sprintf(
 						/* translators: %s: submitted value */
-						\__( 'Invalid styling.progress_indicator "%s". Allowed: dots, numbers, bar, none.', 'all-feedback' ),
+						\__( 'Invalid styling.progress_indicator "%s". Allowed: dots, numbers, bar, none.', 'allfeedback' ),
 						sanitize_key( (string) $styling['progress_indicator'] )
 					),
 					422
@@ -1343,7 +1343,7 @@ class SurveysController extends RestController {
 
 		if ( array_key_exists( 'widget_icon', $styling ) && ! is_string( $styling['widget_icon'] ) ) {
 			return $this->errorResponse(
-				\__( 'styling.widget_icon must be a string.', 'all-feedback' ),
+				\__( 'styling.widget_icon must be a string.', 'allfeedback' ),
 				422
 			);
 		}

@@ -55,16 +55,18 @@ class ThankYouRespondentNotification {
 
 		$vars    = $this->buildVars( $context );
 		$subject = $this->mailer->interpolate(
-			__( 'Thank you for your feedback on {survey_title}', 'all-feedback' ),
+			__( 'Thank you for your feedback on {survey_title}', 'allfeedback' ),
 			$vars
 		);
 
 		$body = $this->mailer->interpolate(
 			implode( "\n\n", [
-				__( 'Thank you for taking the time to share your feedback with us.', 'all-feedback' ),
-				__( 'Your response has been recorded and will help us improve.', 'all-feedback' ),
-				sprintf( __( 'Survey: %s', 'all-feedback' ), '{survey_title}' ),
-				sprintf( __( 'Site: %s (%s)', 'all-feedback' ), '{site_name}', '{site_url}' ),
+				__( 'Thank you for taking the time to share your feedback with us.', 'allfeedback' ),
+				__( 'Your response has been recorded and will help us improve.', 'allfeedback' ),
+				/* translators: %s: survey title */
+				sprintf( __( 'Survey: %s', 'allfeedback' ), '{survey_title}' ),
+				/* translators: %1$s: site name, %2$s: site URL */
+				sprintf( __( 'Site: %1$s (%2$s)', 'allfeedback' ), '{site_name}', '{site_url}' ),
 			] ),
 			$vars
 		);

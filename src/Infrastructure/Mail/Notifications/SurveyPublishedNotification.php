@@ -48,16 +48,19 @@ class SurveyPublishedNotification {
 
 		$vars    = $this->buildVars( $context );
 		$subject = $this->mailer->interpolate(
-			__( 'Survey activated: {survey_title}', 'all-feedback' ),
+			__( 'Survey activated: {survey_title}', 'allfeedback' ),
 			$vars
 		);
 
 		$body = $this->mailer->interpolate(
 			implode( "\n\n", [
-				__( 'A survey has just been activated and is now collecting responses.', 'all-feedback' ),
-				sprintf( __( 'Survey: %s', 'all-feedback' ), '{survey_title}' ),
-				sprintf( __( 'Activated at: %s', 'all-feedback' ), '{activated_at}' ),
-				sprintf( __( 'Site: %s', 'all-feedback' ), '{site_name}' ),
+				__( 'A survey has just been activated and is now collecting responses.', 'allfeedback' ),
+				/* translators: %s: survey title */
+				sprintf( __( 'Survey: %s', 'allfeedback' ), '{survey_title}' ),
+				/* translators: %s: activation date and time */
+				sprintf( __( 'Activated at: %s', 'allfeedback' ), '{activated_at}' ),
+				/* translators: %s: site name */
+				sprintf( __( 'Site: %s', 'allfeedback' ), '{site_name}' ),
 			] ),
 			$vars
 		);

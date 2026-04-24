@@ -8,7 +8,7 @@
  * Version:     1.0.0
  * Requires at least: 6.5
  * Requires PHP: 8.2
- * Text Domain: all-feedback
+ * Text Domain: allfeedback
  * Domain Path: /languages
  * WordPress Available: yes
  * Requires License: no

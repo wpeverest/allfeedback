@@ -89,7 +89,7 @@ class FrontendServiceProvider implements ServiceProvider {
 			[
 				[
 					'slug'  => 'all-feedback',
-					'title' => __( 'All Feedback', 'all-feedback' ),
+					'title' => __( 'All Feedback', 'allfeedback' ),
 					'icon'  => null,
 				],
 			],

@@ -356,8 +356,7 @@ class Logger {
 
 		foreach ( $files as $file ) {
 			if ( is_file( $file ) && filemtime( $file ) < $cutoff ) {
-				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_unlink
-				unlink( $file );
+				wp_delete_file( $file );
 			}
 		}
 	}

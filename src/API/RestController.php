@@ -96,10 +96,10 @@ abstract class RestController {
 		$message = $resource
 			? sprintf(
 				/* translators: %s: Resource name */
-				__( '%s not found.', 'all-feedback' ),
+				__( '%s not found.', 'allfeedback' ),
 				$resource
 			)
-			: __( 'Resource not found.', 'all-feedback' );
+			: __( 'Resource not found.', 'allfeedback' );
 
 		return $this->errorResponse( $message, 404 );
 	}
@@ -113,7 +113,7 @@ abstract class RestController {
 	protected function forbiddenResponse(): \WP_Error {
 		return new \WP_Error(
 			'allfeedback_forbidden',
-			__( 'You do not have permission to perform this action.', 'all-feedback' ),
+			__( 'You do not have permission to perform this action.', 'allfeedback' ),
 			[ 'status' => 403 ]
 		);
 	}
@@ -127,7 +127,7 @@ abstract class RestController {
 	 */
 	protected function exceptionToResponse( \Throwable $e ): \WP_Error {
 		if ( $e instanceof NotFoundException ) {
-			return $this->errorResponse( $e->getMessage() ?: __( 'Resource not found.', 'all-feedback' ), 404 );
+			return $this->errorResponse( $e->getMessage() ?: __( 'Resource not found.', 'allfeedback' ), 404 );
 		}
 
 		if ( $e instanceof ValidationException ) {
@@ -141,7 +141,7 @@ abstract class RestController {
 			);
 		}
 
-		return $this->errorResponse( __( 'An unexpected error occurred.', 'all-feedback' ), 500 );
+		return $this->errorResponse( __( 'An unexpected error occurred.', 'allfeedback' ), 500 );
 	}
 
 	/**
@@ -332,14 +332,14 @@ abstract class RestController {
 	protected function paginationArgs( int $defaultPerPage = 20, int $maxPerPage = 100 ): array {
 		return [
 			'page'     => $this->argInteger(
-				description: __( 'Current page of the collection (1-based).', 'all-feedback' ),
+				description: __( 'Current page of the collection (1-based).', 'allfeedback' ),
 				min:         1,
 				default:     1,
 			),
 			'per_page' => $this->argInteger(
 				description: sprintf(
 					/* translators: %d: maximum items per page */
-					__( 'Maximum results per page (max %d).', 'all-feedback' ),
+					__( 'Maximum results per page (max %d).', 'allfeedback' ),
 					$maxPerPage
 				),
 				min:         1,
@@ -359,7 +359,7 @@ abstract class RestController {
 	protected function idArg( string $description = '' ): array {
 		return [
 			'id' => [
-				'description'       => $description ?: __( 'Unique identifier for the resource.', 'all-feedback' ),
+				'description'       => $description ?: __( 'Unique identifier for the resource.', 'allfeedback' ),
 				'type'              => 'integer',
 				'required'          => true,
 				'minimum'           => 1,

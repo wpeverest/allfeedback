@@ -49,17 +49,21 @@ class NewResponseAdminNotification {
 
 		$vars    = $this->buildVars( $context );
 		$subject = $this->mailer->interpolate(
-			__( 'New response received for: {survey_title}', 'all-feedback' ),
+			__( 'New response received for: {survey_title}', 'allfeedback' ),
 			$vars
 		);
 
 		$body = $this->mailer->interpolate(
 			implode( "\n\n", [
-				__( 'A new response has been submitted for your survey.', 'all-feedback' ),
-				sprintf( __( 'Survey: %s', 'all-feedback' ), '{survey_title}' ),
-				sprintf( __( 'Response ID: %s', 'all-feedback' ), '{response_id}' ),
-				sprintf( __( 'Submitted at: %s', 'all-feedback' ), '{submitted_at}' ),
-				sprintf( __( 'Site: %s', 'all-feedback' ), '{site_name}' ),
+				__( 'A new response has been submitted for your survey.', 'allfeedback' ),
+				/* translators: %s: survey title */
+				sprintf( __( 'Survey: %s', 'allfeedback' ), '{survey_title}' ),
+				/* translators: %s: response ID */
+				sprintf( __( 'Response ID: %s', 'allfeedback' ), '{response_id}' ),
+				/* translators: %s: submission date and time */
+				sprintf( __( 'Submitted at: %s', 'allfeedback' ), '{submitted_at}' ),
+				/* translators: %s: site name */
+				sprintf( __( 'Site: %s', 'allfeedback' ), '{site_name}' ),
 			] ),
 			$vars
 		);

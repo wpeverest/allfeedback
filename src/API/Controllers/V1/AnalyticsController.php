@@ -85,7 +85,7 @@ class AnalyticsController extends RestController {
 		$userId    = get_current_user_id() ?: null;
 
 		if ( $sessionId === '' ) {
-			return $this->errorResponse( __( 'session_id is required.', 'all-feedback' ), 400 );
+			return $this->errorResponse( __( 'session_id is required.', 'allfeedback' ), 400 );
 		}
 
 		if ( ! $this->checkAnalyticsRateLimit( $sessionId ) ) {
@@ -144,17 +144,17 @@ class AnalyticsController extends RestController {
 	private function eventArgs(): array {
 		return [
 			'event'      => $this->argEnum(
-				description: __( 'Analytics event type.', 'all-feedback' ),
+				description: __( 'Analytics event type.', 'allfeedback' ),
 				values:      [ 'viewed', 'started', 'abandoned', 'heartbeat' ],
 				required:    true,
 			),
 			'session_id' => $this->argString(
-				description: __( 'Client-generated session UUID (v4).', 'all-feedback' ),
+				description: __( 'Client-generated session UUID (v4).', 'allfeedback' ),
 				required:    true,
 				maxLength:   36,
 			),
 			'guest_id'   => $this->argString(
-				description: __( 'Persistent guest visitor token from localStorage.', 'all-feedback' ),
+				description: __( 'Persistent guest visitor token from localStorage.', 'allfeedback' ),
 				maxLength:   36,
 			),
 		];

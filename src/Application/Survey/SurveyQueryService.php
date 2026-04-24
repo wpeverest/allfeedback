@@ -38,7 +38,7 @@ class SurveyQueryService {
 		$survey = $this->repository->findById( $id );
 
 		if ( $survey === null ) {
-			throw NotFoundException::forResource( esc_html__( 'Survey', 'all-feedback' ), $id );
+			throw NotFoundException::forResource( esc_html__( 'Survey', 'allfeedback' ), $id );
 		}
 
 		return $survey;

@@ -47,7 +47,7 @@ class SubmitResponseService {
 		$survey = $this->surveyRepository->findById( $dto->surveyId );
 
 		if ( $survey === null ) {
-			throw NotFoundException::forResource( esc_html__( 'Survey', 'all-feedback' ), $dto->surveyId );
+			throw NotFoundException::forResource( esc_html__( 'Survey', 'allfeedback' ), $dto->surveyId );
 		}
 
 		$context = new ResponseContext( dto: $dto, survey: $survey );

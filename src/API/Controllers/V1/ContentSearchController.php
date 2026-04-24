@@ -118,25 +118,25 @@ class ContentSearchController extends RestController {
 			'type'       => 'object',
 			'properties' => [
 				'id'    => [
-					'description' => __( 'WordPress post/page ID.', 'all-feedback' ),
+					'description' => __( 'WordPress post/page ID.', 'allfeedback' ),
 					'type'        => 'integer',
 					'context'     => [ 'view' ],
 					'readonly'    => true,
 				],
 				'title' => [
-					'description' => __( 'Decoded post title.', 'all-feedback' ),
+					'description' => __( 'Decoded post title.', 'allfeedback' ),
 					'type'        => 'string',
 					'context'     => [ 'view' ],
 					'readonly'    => true,
 				],
 				'type'  => [
-					'description' => __( 'WordPress post type slug.', 'all-feedback' ),
+					'description' => __( 'WordPress post type slug.', 'allfeedback' ),
 					'type'        => 'string',
 					'context'     => [ 'view' ],
 					'readonly'    => true,
 				],
 				'url'   => [
-					'description' => __( 'Permalink of the page or post.', 'all-feedback' ),
+					'description' => __( 'Permalink of the page or post.', 'allfeedback' ),
 					'type'        => 'string',
 					'context'     => [ 'view' ],
 					'readonly'    => true,
@@ -199,11 +199,11 @@ class ContentSearchController extends RestController {
 			$this->paginationArgs( defaultPerPage: 20, maxPerPage: 50 ),
 			[
 				'search'    => $this->argString(
-					description: __( 'Keyword to filter pages/posts by title.', 'all-feedback' ),
+					description: __( 'Keyword to filter pages/posts by title.', 'allfeedback' ),
 					default:     '',
 				),
 				'post_type' => $this->argString(
-					description: __( 'Comma-separated post type slugs to include. Defaults to all allowed types.', 'all-feedback' ),
+					description: __( 'Comma-separated post type slugs to include. Defaults to all allowed types.', 'allfeedback' ),
 					default:     '',
 				),
 			]

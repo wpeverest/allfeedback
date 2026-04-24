@@ -32,7 +32,7 @@ final class ResponseScore {
 			throw new \InvalidArgumentException(
 				sprintf(
 					/* translators: %s: the supplied score type */
-					esc_html__( 'Invalid score type: %s. Expected one of: nps, csat, ces.', 'all-feedback' ),
+					esc_html__( 'Invalid score type: %s. Expected one of: nps, csat, ces.', 'allfeedback' ),
 					esc_html( $type )
 				)
 			);

@@ -466,7 +466,7 @@ class FormAnalyticsController extends RestController {
 	private function listFormsArgs(): array {
 		return [
 			'status' => $this->argEnum(
-				description: __( 'Filter by survey status.', 'all-feedback' ),
+				description: __( 'Filter by survey status.', 'allfeedback' ),
 				values:      [ 'draft', 'published', 'archived', 'trashed' ],
 			),
 		];

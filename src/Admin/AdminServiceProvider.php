@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AllFeedback\Admin;
 
+defined( 'ABSPATH' ) || exit;
+
 use AllFeedback\Core\Constants;
 use AllFeedback\Core\Container;
 use AllFeedback\Core\ServiceProvider;
@@ -106,8 +108,8 @@ class AdminServiceProvider implements ServiceProvider {
 		);
 
 		add_menu_page(
-			page_title: __( 'All Feedback', 'all-feedback' ),
-			menu_title: __( 'AllFeedback', 'all-feedback' ),
+			page_title: __( 'All Feedback', 'allfeedback' ),
+			menu_title: __( 'AllFeedback', 'allfeedback' ),
 			capability: 'manage_options',
 			menu_slug:  self::MENU_SLUG,
 			callback:   $mountPoint,
@@ -117,8 +119,8 @@ class AdminServiceProvider implements ServiceProvider {
 
 		add_submenu_page(
 			parent_slug: self::MENU_SLUG,
-			page_title:  __( 'Analytics', 'all-feedback' ),
-			menu_title:  __( 'Analytics', 'all-feedback' ),
+			page_title:  __( 'Analytics', 'allfeedback' ),
+			menu_title:  __( 'Analytics', 'allfeedback' ),
 			capability:  'manage_options',
 			menu_slug:   self::MENU_SLUG . '#/analytics',
 			callback:    $mountPoint,
@@ -126,15 +128,15 @@ class AdminServiceProvider implements ServiceProvider {
 
 		add_submenu_page(
 			parent_slug: self::MENU_SLUG,
-			page_title:  __( 'All Forms', 'all-feedback' ),
-			menu_title:  __( 'All Forms', 'all-feedback' ),
+			page_title:  __( 'All Forms', 'allfeedback' ),
+			menu_title:  __( 'All Forms', 'allfeedback' ),
 			capability:  'manage_options',
 			menu_slug:   self::MENU_SLUG . '#/forms',
 			callback:    $mountPoint,
 		);
 
 		$unreadCount    = $this->responseRepository->countUnread();
-		$responsesTitle = __( 'Responses', 'all-feedback' );
+		$responsesTitle = __( 'Responses', 'allfeedback' );
 
 		if ( $unreadCount > 0 ) {
 			$responsesTitle .= sprintf(
@@ -145,7 +147,7 @@ class AdminServiceProvider implements ServiceProvider {
 
 		add_submenu_page(
 			parent_slug: self::MENU_SLUG,
-			page_title:  __( 'Responses', 'all-feedback' ),
+			page_title:  __( 'Responses', 'allfeedback' ),
 			menu_title:  $responsesTitle,
 			capability:  'manage_options',
 			menu_slug:   self::MENU_SLUG . '#/responses',
@@ -154,8 +156,8 @@ class AdminServiceProvider implements ServiceProvider {
 
 		add_submenu_page(
 			parent_slug: self::MENU_SLUG,
-			page_title:  __( 'Settings', 'all-feedback' ),
-			menu_title:  __( 'Settings', 'all-feedback' ),
+			page_title:  __( 'Settings', 'allfeedback' ),
+			menu_title:  __( 'Settings', 'allfeedback' ),
 			capability:  'manage_options',
 			menu_slug:   self::MENU_SLUG . '#/settings',
 			callback:    $mountPoint,
@@ -163,8 +165,8 @@ class AdminServiceProvider implements ServiceProvider {
 
 		add_submenu_page(
 			parent_slug: self::MENU_SLUG,
-			page_title:  __( 'Tools', 'all-feedback' ),
-			menu_title:  __( 'Tools', 'all-feedback' ),
+			page_title:  __( 'Tools', 'allfeedback' ),
+			menu_title:  __( 'Tools', 'allfeedback' ),
 			capability:  'manage_options',
 			menu_slug:   self::MENU_SLUG . '#/tools',
 			callback:    $mountPoint,
@@ -172,8 +174,8 @@ class AdminServiceProvider implements ServiceProvider {
 
 		add_submenu_page(
 			parent_slug: self::MENU_SLUG,
-			page_title:  __( 'About', 'all-feedback' ),
-			menu_title:  __( 'About', 'all-feedback' ),
+			page_title:  __( 'About', 'allfeedback' ),
+			menu_title:  __( 'About', 'allfeedback' ),
 			capability:  'manage_options',
 			menu_slug:   self::MENU_SLUG . '#/about',
 			callback:    $mountPoint,

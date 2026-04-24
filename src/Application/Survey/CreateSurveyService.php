@@ -38,7 +38,7 @@ class CreateSurveyService {
 	public function execute( SurveyDTO $dto, int $userId ): Survey {
 		if ( trim( $dto->title ) === '' ) {
 			throw ValidationException::withErrors(
-				[ 'title' => esc_html__( 'Survey title is required.', 'all-feedback' ) ]
+				[ 'title' => esc_html__( 'Survey title is required.', 'allfeedback' ) ]
 			);
 		}
 

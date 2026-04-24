@@ -123,11 +123,11 @@ final class Plugin {
 			wp_die(
 				sprintf(
 					/* translators: 1: Minimum PHP version, 2: Current PHP version */
-					esc_html__( 'All Feedback requires PHP %1$s or higher. You are running PHP %2$s.', 'all-feedback' ),
+					esc_html__( 'All Feedback requires PHP %1$s or higher. You are running PHP %2$s.', 'allfeedback' ),
 					esc_html( Constants::MIN_PHP_VERSION ),
 					esc_html( PHP_VERSION )
 				),
-				esc_html__( 'Activation Error', 'all-feedback' ),
+				esc_html__( 'Activation Error', 'allfeedback' ),
 				[ 'back_link' => true ]
 			);
 		}
@@ -137,11 +137,11 @@ final class Plugin {
 			wp_die(
 				sprintf(
 					/* translators: 1: Minimum WP version, 2: Current WP version */
-					esc_html__( 'All Feedback requires WordPress %1$s or higher. You are running WordPress %2$s.', 'all-feedback' ),
+					esc_html__( 'All Feedback requires WordPress %1$s or higher. You are running WordPress %2$s.', 'allfeedback' ),
 					esc_html( Constants::MIN_WP_VERSION ),
 					esc_html( $wp_version )
 				),
-				esc_html__( 'Activation Error', 'all-feedback' ),
+				esc_html__( 'Activation Error', 'allfeedback' ),
 				[ 'back_link' => true ]
 			);
 		}

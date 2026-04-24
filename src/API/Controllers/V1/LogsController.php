@@ -75,17 +75,17 @@ class LogsController extends RestController {
 						$this->paginationArgs( 20, 100 ),
 						[
 							'orderby' => $this->argEnum(
-								__( 'Sort log files by attribute.', 'all-feedback' ),
+								__( 'Sort log files by attribute.', 'allfeedback' ),
 								[ 'date', 'name', 'size' ],
 								default: 'date',
 							),
 							'order'   => $this->argEnum(
-								__( 'Sort direction.', 'all-feedback' ),
+								__( 'Sort direction.', 'allfeedback' ),
 								[ 'asc', 'desc' ],
 								default: 'desc',
 							),
 							'search'  => $this->argString(
-								__( 'Filter log files by filename.', 'all-feedback' ),
+								__( 'Filter log files by filename.', 'allfeedback' ),
 								default: '',
 							),
 						]
@@ -104,7 +104,7 @@ class LogsController extends RestController {
 					'permission_callback' => [ $this, 'adminPermission' ],
 					'args'                => [
 						'ids' => [
-							'description'       => __( 'Array of log file IDs to delete.', 'all-feedback' ),
+							'description'       => __( 'Array of log file IDs to delete.', 'allfeedback' ),
 							'type'              => 'array',
 							'items'             => [ 'type' => 'string' ],
 							'required'          => true,
@@ -122,7 +122,7 @@ class LogsController extends RestController {
 			[
 				'args' => [
 					'id' => [
-						'description'       => __( 'Log file ID (filename stem without .log extension).', 'all-feedback' ),
+						'description'       => __( 'Log file ID (filename stem without .log extension).', 'allfeedback' ),
 						'type'              => 'string',
 						'required'          => true,
 						'sanitize_callback' => 'sanitize_file_name',
@@ -207,7 +207,7 @@ class LogsController extends RestController {
 		$file = $this->resolveFile( (string) $request->get_param( 'id' ) );
 
 		if ( $file === null ) {
-			return $this->notFoundResponse( __( 'Log file', 'all-feedback' ) );
+			return $this->notFoundResponse( __( 'Log file', 'allfeedback' ) );
 		}
 
 		$item            = $this->prepareItem( $file );
@@ -231,12 +231,12 @@ class LogsController extends RestController {
 		$file = $this->resolveFile( $id );
 
 		if ( $file === null ) {
-			return $this->notFoundResponse( __( 'Log file', 'all-feedback' ) );
+			return $this->notFoundResponse( __( 'Log file', 'allfeedback' ) );
 		}
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_unlink
-		if ( ! unlink( $file ) ) {
-			return $this->errorResponse( __( 'Failed to delete log file.', 'all-feedback' ), 500 );
+		wp_delete_file( $file );
+		if ( file_exists( $file ) ) {
+			return $this->errorResponse( __( 'Failed to delete log file.', 'allfeedback' ), 500 );
 		}
 
 		return $this->successResponse( [ 'deleted' => true, 'id' => $id ] );
@@ -259,7 +259,7 @@ class LogsController extends RestController {
 		$ids = $request->get_param( 'ids' );
 
 		if ( empty( $ids ) || ! is_array( $ids ) ) {
-			return $this->errorResponse( __( 'No log IDs provided.', 'all-feedback' ), 422 );
+			return $this->errorResponse( __( 'No log IDs provided.', 'allfeedback' ), 422 );
 		}
 
 		$deleted = [];
@@ -275,8 +275,8 @@ class LogsController extends RestController {
 				continue;
 			}
 
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_unlink
-			if ( unlink( $file ) ) {
+			wp_delete_file( $file );
+			if ( ! file_exists( $file ) ) {
 				$deleted[] = $id;
 			} else {
 				$failed[] = $id;

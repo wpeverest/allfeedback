@@ -29,7 +29,7 @@ final class Constants {
 	 * @var string
 	 * @since 1.0.0
 	 */
-	public const TEXT_DOMAIN = 'all-feedback';
+	public const TEXT_DOMAIN = 'allfeedback';
 
 	/**
 	 * Minimum PHP version required to activate.

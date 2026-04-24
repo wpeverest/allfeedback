@@ -30,7 +30,7 @@ class NotFoundException extends AllFeedbackException {
 		return new static(
 			sprintf(
 				/* translators: 1: Resource name 2: Resource ID */
-				__( '%1$s with ID %2$d could not be found.', 'all-feedback' ),
+				__( '%1$s with ID %2$d could not be found.', 'allfeedback' ),
 				$resource,
 				$id
 			)

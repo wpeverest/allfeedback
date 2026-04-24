@@ -111,21 +111,21 @@ class SubmitController extends RestController {
 				'Submission rejected: invalid nonce.',
 				[ 'survey_id' => (int) $request->get_param( 'id' ) ]
 			);
-			return $this->errorResponse( __( 'Invalid or expired nonce.', 'all-feedback' ), 403 );
+			return $this->errorResponse( __( 'Invalid or expired nonce.', 'allfeedback' ), 403 );
 		}
 
 		[ $ipHash, $rawIp ] = $this->resolveIp();
 
 		if ( ! $this->checkRateLimit( $ipHash ) ) {
 			$this->logger->warning( 'Submission rejected: rate limit exceeded.', [ 'survey_id' => (int) $request->get_param( 'id' ) ] );
-			return $this->errorResponse( __( 'Too many submissions. Please wait before trying again.', 'all-feedback' ), 429 );
+			return $this->errorResponse( __( 'Too many submissions. Please wait before trying again.', 'allfeedback' ), 429 );
 		}
 
 		$surveyId = (int) $request->get_param( 'id' );
 		$survey   = $this->surveyRepository->findById( $surveyId );
 
 		if ( $survey === null ) {
-			return $this->notFoundResponse( __( 'Survey', 'all-feedback' ) );
+			return $this->notFoundResponse( __( 'Survey', 'allfeedback' ) );
 		}
 
 		$isDraft        = $survey->getStatus()->value === 'draft';
@@ -136,12 +136,12 @@ class SubmitController extends RestController {
 				'Submission rejected: survey not published.',
 				[ 'survey_id' => $surveyId, 'status' => $survey->getStatus()->value ]
 			);
-			return $this->errorResponse( __( 'This survey is not currently accepting responses.', 'all-feedback' ), 403 );
+			return $this->errorResponse( __( 'This survey is not currently accepting responses.', 'allfeedback' ), 403 );
 		}
 
 		if ( ! (bool) apply_filters( 'allfeedback_allow_response_submission', true, $surveyId, $survey, $request ) ) {
 			$this->logger->warning( 'Submission blocked by filter.', [ 'survey_id' => $surveyId ] );
-			return $this->errorResponse( __( 'Response submission is not allowed.', 'all-feedback' ), 403 );
+			return $this->errorResponse( __( 'Response submission is not allowed.', 'allfeedback' ), 403 );
 		}
 
 		$disableUserDetails = (bool) $this->settingsManager->get( 'advanced.privacy.disable_user_details' );
@@ -153,7 +153,7 @@ class SubmitController extends RestController {
 			if ( $userId > 0 ) {
 				if ( $this->responseRepository->existsByUserId( $surveyId, $userId, $duplicateWindowHours ) ) {
 					$this->logger->debug( 'Duplicate submission blocked (user_id).', [ 'survey_id' => $surveyId, 'user_id' => $userId ] );
-					return $this->errorResponse( __( 'A response from this user has already been recorded.', 'all-feedback' ), 409 );
+					return $this->errorResponse( __( 'A response from this user has already been recorded.', 'allfeedback' ), 409 );
 				}
 			} else {
 				$visitorToken = sanitize_text_field( (string) ( $request->get_param( 'visitor_token' ) ?? '' ) );
@@ -161,12 +161,12 @@ class SubmitController extends RestController {
 				if ( $visitorToken !== '' ) {
 					if ( $this->responseRepository->existsByGuestToken( $surveyId, $visitorToken, $duplicateWindowHours ) ) {
 						$this->logger->debug( 'Duplicate submission blocked (guest_token).', [ 'survey_id' => $surveyId ] );
-						return $this->errorResponse( __( 'A response from this visitor has already been recorded.', 'all-feedback' ), 409 );
+						return $this->errorResponse( __( 'A response from this visitor has already been recorded.', 'allfeedback' ), 409 );
 					}
 				} elseif ( $ipHash !== '' ) {
 					if ( $this->responseRepository->existsByIpHash( $surveyId, $ipHash, $duplicateWindowHours ) ) {
 						$this->logger->debug( 'Duplicate submission blocked (ip_hash).', [ 'survey_id' => $surveyId ] );
-						return $this->errorResponse( __( 'A response from this visitor has already been recorded.', 'all-feedback' ), 409 );
+						return $this->errorResponse( __( 'A response from this visitor has already been recorded.', 'allfeedback' ), 409 );
 					}
 				}
 			}
@@ -311,38 +311,38 @@ class SubmitController extends RestController {
 	private function submitArgs(): array {
 		return [
 			'nonce'         => $this->argString(
-				description: __( 'WordPress nonce for submission authentication (action: allfeedback_submit).', 'all-feedback' ),
+				description: __( 'WordPress nonce for submission authentication (action: allfeedback_submit).', 'allfeedback' ),
 				required:    true,
 			),
 			'response_data' => [
-				'description'       => __( 'Field answers keyed by field ID.', 'all-feedback' ),
+				'description'       => __( 'Field answers keyed by field ID.', 'allfeedback' ),
 				'type'              => 'object',
 				'required'          => true,
 				'validate_callback' => 'rest_validate_request_arg',
 			],
 			'score'         => $this->argInteger(
-				description: __( 'Numeric score for NPS, CSAT, CES, or star-rating fields.', 'all-feedback' ),
+				description: __( 'Numeric score for NPS, CSAT, CES, or star-rating fields.', 'allfeedback' ),
 				min:         0,
 				max:         100,
 			),
 			'page_url'      => $this->argString(
-				description: __( 'URL of the page where the survey was displayed.', 'all-feedback' ),
+				description: __( 'URL of the page where the survey was displayed.', 'allfeedback' ),
 				maxLength:   2083,
 			),
 			'device_type'   => $this->argEnum(
-				description: __( 'Visitor device type at submission time.', 'all-feedback' ),
+				description: __( 'Visitor device type at submission time.', 'allfeedback' ),
 				values:      [ 'desktop', 'tablet', 'mobile' ],
 			),
 			'consent_given' => $this->argBoolean(
-				description: __( 'Whether the visitor gave GDPR data-processing consent.', 'all-feedback' ),
+				description: __( 'Whether the visitor gave GDPR data-processing consent.', 'allfeedback' ),
 				default:     false,
 			),
 			'visitor_token' => $this->argString(
-				description: __( 'Persistent guest visitor UUID (v4) for duplicate detection.', 'all-feedback' ),
+				description: __( 'Persistent guest visitor UUID (v4) for duplicate detection.', 'allfeedback' ),
 				maxLength:   36,
 			),
 			'session_id'    => $this->argString(
-				description: __( 'Analytics session UUID (v4) generated on widget open.', 'all-feedback' ),
+				description: __( 'Analytics session UUID (v4) generated on widget open.', 'allfeedback' ),
 				maxLength:   36,
 			),
 		];

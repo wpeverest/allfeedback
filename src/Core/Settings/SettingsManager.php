@@ -400,99 +400,99 @@ class SettingsManager {
 	public function getSchema(): array {
 		$schema = [
 			'general'  => [
-				'description' => __( 'General settings (widget appearance and behaviour).', 'all-feedback' ),
+				'description' => __( 'General settings (widget appearance and behaviour).', 'allfeedback' ),
 				'sections'    => [
 					'widget' => [
-						'description' => __( 'Widget appearance and display settings.', 'all-feedback' ),
+						'description' => __( 'Widget appearance and display settings.', 'allfeedback' ),
 						'properties'  => [
 							'color'            => [
 								'type'        => 'string',
 								'default'     => self::DEFAULTS['general']['widget']['color'],
-								'description' => __( 'Primary accent colour for the survey widget (hex string, e.g. #6366F1).', 'all-feedback' ),
+								'description' => __( 'Primary accent colour for the survey widget (hex string, e.g. #6366F1).', 'allfeedback' ),
 							],
 							'position'         => [
 								'type'        => 'string',
 								'default'     => self::DEFAULTS['general']['widget']['position'],
 								'enum'        => self::ENUMS['general']['widget']['position'],
-								'description' => __( 'Trigger button position. One of: bottom-right, bottom-left, side-tab.', 'all-feedback' ),
+								'description' => __( 'Trigger button position. One of: bottom-right, bottom-left, side-tab.', 'allfeedback' ),
 							],
 							'trigger'          => [
 								'type'        => 'string',
 								'default'     => self::DEFAULTS['general']['widget']['trigger'],
 								'enum'        => self::ENUMS['general']['widget']['trigger'],
-								'description' => __( 'How the widget surfaces to visitors: auto | scroll | exit-intent | manual.', 'all-feedback' ),
+								'description' => __( 'How the widget surfaces to visitors: auto | scroll | exit-intent | manual.', 'allfeedback' ),
 							],
 							'delay'            => [
 								'type'        => 'integer',
 								'default'     => self::DEFAULTS['general']['widget']['delay'],
 								'minimum'     => 0,
 								'maximum'     => 3600,
-								'description' => __( 'Seconds before auto-showing the widget (trigger = auto only).', 'all-feedback' ),
+								'description' => __( 'Seconds before auto-showing the widget (trigger = auto only).', 'allfeedback' ),
 							],
 							'scroll_threshold' => [
 								'type'        => 'integer',
 								'default'     => self::DEFAULTS['general']['widget']['scroll_threshold'],
 								'minimum'     => 0,
 								'maximum'     => 100,
-								'description' => __( 'Page percentage scrolled before the widget appears (trigger = scroll only).', 'all-feedback' ),
+								'description' => __( 'Page percentage scrolled before the widget appears (trigger = scroll only).', 'allfeedback' ),
 							],
 							'show_on_mobile'   => [
 								'type'        => 'boolean',
 								'default'     => self::DEFAULTS['general']['widget']['show_on_mobile'],
-								'description' => __( 'Render the survey widget on mobile viewports.', 'all-feedback' ),
+								'description' => __( 'Render the survey widget on mobile viewports.', 'allfeedback' ),
 							],
 						],
 					],
 				],
 			],
 			'advanced' => [
-				'description' => __( 'Advanced settings (privacy, logging, and plugin management).', 'all-feedback' ),
+				'description' => __( 'Advanced settings (privacy, logging, and plugin management).', 'allfeedback' ),
 				'sections'    => [
 					'privacy' => [
-						'description' => __( 'Visitor privacy and data-collection settings.', 'all-feedback' ),
+						'description' => __( 'Visitor privacy and data-collection settings.', 'allfeedback' ),
 						'properties'  => [
 							'disable_user_details' => [
 								'type'        => 'boolean',
 								'default'     => self::DEFAULTS['advanced']['privacy']['disable_user_details'],
-								'description' => __( 'Disable storing the visitor IP address and User-Agent on all surveys. Also disables duplicate-submission detection.', 'all-feedback' ),
+								'description' => __( 'Disable storing the visitor IP address and User-Agent on all surveys. Also disables duplicate-submission detection.', 'allfeedback' ),
 							],
 						],
 					],
 					'logging' => [
-						'description' => __( 'Plugin event logging settings.', 'all-feedback' ),
+						'description' => __( 'Plugin event logging settings.', 'allfeedback' ),
 						'properties'  => [
 							'enabled'        => [
 								'type'        => 'boolean',
 								'default'     => self::DEFAULTS['advanced']['logging']['enabled'],
-								'description' => __( 'Master switch for plugin event logging.', 'all-feedback' ),
+								'description' => __( 'Master switch for plugin event logging.', 'allfeedback' ),
 							],
 							'level'          => [
 								'type'        => 'string',
 								'default'     => self::DEFAULTS['advanced']['logging']['level'],
 								'enum'        => self::ENUMS['advanced']['logging']['level'],
-								'description' => __( 'Minimum severity to record. error = errors only; debug = all events.', 'all-feedback' ),
+								'description' => __( 'Minimum severity to record. error = errors only; debug = all events.', 'allfeedback' ),
 							],
 							'retention_days' => [
 								'type'        => 'integer',
 								'default'     => self::DEFAULTS['advanced']['logging']['retention_days'],
 								'minimum'     => 1,
 								'maximum'     => 365,
-								'description' => __( 'Days before log entries are automatically purged (1–365).', 'all-feedback' ),
+								'description' => __( 'Days before log entries are automatically purged (1–365).', 'allfeedback' ),
 							],
 						],
 					],
 					'plugin'  => [
-						'description' => __( 'Plugin lifecycle and usage-tracking settings.', 'all-feedback' ),
+						'description' => __( 'Plugin lifecycle and usage-tracking settings.', 'allfeedback' ),
 						'properties'  => [
 							'delete_on_uninstall'  => [
 								'type'        => 'boolean',
 								'default'     => self::DEFAULTS['advanced']['plugin']['delete_on_uninstall'],
-								'description' => __( 'Permanently delete all surveys, responses, and settings on uninstall. Irreversible.', 'all-feedback' ),
+								'description' => __( 'Permanently delete all surveys, responses, and settings on uninstall. Irreversible.', 'allfeedback' ),
 							],
 							'allow_usage_tracking' => [
 								'type'        => 'boolean',
 								'default'     => self::DEFAULTS['advanced']['plugin']['allow_usage_tracking'],
-								'description' => __( 'Share anonymised usage statistics with the AllFeedback team. No personal data is transmitted.', 'all-feedback' ),
+								'description' => __( 'Share anonymised usage statistics with the AllFeedback team. No personal data is transmitted.', 'allfeedback' ),
 							],
 						],
 					],

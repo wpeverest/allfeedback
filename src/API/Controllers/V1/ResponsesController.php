@@ -76,10 +76,10 @@ class ResponsesController extends RestController {
 						$this->paginationArgs( defaultPerPage: 20, maxPerPage: 100 ),
 						[
 							'date_from' => $this->argString(
-								description: __( 'Filter responses on or after this date (Y-m-d).', 'all-feedback' ),
+								description: __( 'Filter responses on or after this date (Y-m-d).', 'allfeedback' ),
 							),
 							'date_to'   => $this->argString(
-								description: __( 'Filter responses on or before this date (Y-m-d).', 'all-feedback' ),
+								description: __( 'Filter responses on or before this date (Y-m-d).', 'allfeedback' ),
 							),
 						]
 					),
@@ -96,7 +96,7 @@ class ResponsesController extends RestController {
 				'permission_callback' => [ $this, 'adminPermission' ],
 				'args'                => [
 					'ids' => [
-						'description' => __( 'Array of response IDs to permanently delete.', 'all-feedback' ),
+						'description' => __( 'Array of response IDs to permanently delete.', 'allfeedback' ),
 						'type'        => 'array',
 						'required'    => true,
 						'items'       => [
@@ -154,10 +154,10 @@ class ResponsesController extends RestController {
 						$this->paginationArgs( defaultPerPage: 20, maxPerPage: 100 ),
 						[
 							'date_from' => $this->argString(
-								description: __( 'Filter responses on or after this date (Y-m-d).', 'all-feedback' ),
+								description: __( 'Filter responses on or after this date (Y-m-d).', 'allfeedback' ),
 							),
 							'date_to'   => $this->argString(
-								description: __( 'Filter responses on or before this date (Y-m-d).', 'all-feedback' ),
+								description: __( 'Filter responses on or before this date (Y-m-d).', 'allfeedback' ),
 							),
 						]
 					),
@@ -177,7 +177,7 @@ class ResponsesController extends RestController {
 					$this->idArg(),
 					[
 						'ids' => [
-							'description' => __( 'Array of response IDs to permanently delete.', 'all-feedback' ),
+							'description' => __( 'Array of response IDs to permanently delete.', 'allfeedback' ),
 							'type'        => 'array',
 							'required'    => true,
 							'items'       => [
@@ -213,12 +213,12 @@ class ResponsesController extends RestController {
 						[
 							'rid'           => $this->ridArg(),
 							'response_data' => [
-								'description' => __( 'Field answers keyed by field ID.', 'all-feedback' ),
+								'description' => __( 'Field answers keyed by field ID.', 'allfeedback' ),
 								'type'        => [ 'object', 'array', 'null' ],
 								'required'    => false,
 							],
 							'is_read'       => [
-								'description' => __( 'Whether the response has been read by an admin.', 'all-feedback' ),
+								'description' => __( 'Whether the response has been read by an admin.', 'allfeedback' ),
 								'type'        => 'boolean',
 								'required'    => false,
 							],
@@ -286,7 +286,7 @@ class ResponsesController extends RestController {
 		$ids = array_values( array_filter( array_map( 'absint', (array) ( $request->get_param( 'ids' ) ?? [] ) ) ) );
 
 		if ( empty( $ids ) ) {
-			return $this->errorResponse( __( 'No response IDs provided.', 'all-feedback' ), 422 );
+			return $this->errorResponse( __( 'No response IDs provided.', 'allfeedback' ), 422 );
 		}
 
 		$deleted = 0;
@@ -377,7 +377,7 @@ class ResponsesController extends RestController {
 		$survey = $this->surveyRepository->findById( $surveyId );
 
 		if ( $survey === null ) {
-			return $this->notFoundResponse( __( 'Survey', 'all-feedback' ) );
+			return $this->notFoundResponse( __( 'Survey', 'allfeedback' ) );
 		}
 
 		if ( $survey->getStatus()->isTrashed() ) {
@@ -434,7 +434,7 @@ class ResponsesController extends RestController {
 		$response = $this->responseRepository->findById( $responseId );
 
 		if ( $response === null || $response->getSurveyId() !== $surveyId ) {
-			return $this->notFoundResponse( __( 'Response', 'all-feedback' ) );
+			return $this->notFoundResponse( __( 'Response', 'allfeedback' ) );
 		}
 
 		return $this->successResponse( $this->prepareResponse( $response ) );
@@ -457,7 +457,7 @@ class ResponsesController extends RestController {
 		$response = $this->responseRepository->findById( $responseId );
 
 		if ( $response === null || $response->getSurveyId() !== $surveyId ) {
-			return $this->notFoundResponse( __( 'Response', 'all-feedback' ) );
+			return $this->notFoundResponse( __( 'Response', 'allfeedback' ) );
 		}
 
 		$updatePayload = [];
@@ -471,7 +471,7 @@ class ResponsesController extends RestController {
 			$responseDataJson = wp_json_encode( $rawData );
 
 			if ( $responseDataJson === false ) {
-				return $this->errorResponse( __( 'Invalid response_data: could not encode as JSON.', 'all-feedback' ), 400 );
+				return $this->errorResponse( __( 'Invalid response_data: could not encode as JSON.', 'allfeedback' ), 400 );
 			}
 
 			$updatePayload['response_data'] = $responseDataJson;
@@ -491,7 +491,7 @@ class ResponsesController extends RestController {
 				'Response update failed at DB layer.',
 				[ 'response_id' => $responseId, 'survey_id' => $surveyId, 'user_id' => get_current_user_id() ]
 			);
-			return $this->errorResponse( __( 'Failed to update the response.', 'all-feedback' ), 500 );
+			return $this->errorResponse( __( 'Failed to update the response.', 'allfeedback' ), 500 );
 		}
 
 		$this->logger->info(
@@ -502,7 +502,7 @@ class ResponsesController extends RestController {
 		$updated = $this->responseRepository->findById( $responseId );
 
 		if ( $updated === null ) {
-			return $this->errorResponse( __( 'Response not found after update.', 'all-feedback' ), 500 );
+			return $this->errorResponse( __( 'Response not found after update.', 'allfeedback' ), 500 );
 		}
 
 		return $this->successResponse( $this->prepareResponse( $updated ) );
@@ -523,11 +523,11 @@ class ResponsesController extends RestController {
 		$ids      = array_values( array_filter( array_map( 'absint', (array) ( $request->get_param( 'ids' ) ?? [] ) ) ) );
 
 		if ( empty( $ids ) ) {
-			return $this->errorResponse( __( 'No response IDs provided.', 'all-feedback' ), 422 );
+			return $this->errorResponse( __( 'No response IDs provided.', 'allfeedback' ), 422 );
 		}
 
 		if ( $this->surveyRepository->findById( $surveyId ) === null ) {
-			return $this->notFoundResponse( __( 'Survey', 'all-feedback' ) );
+			return $this->notFoundResponse( __( 'Survey', 'allfeedback' ) );
 		}
 
 		$deleted = 0;
@@ -584,7 +584,7 @@ class ResponsesController extends RestController {
 		$response = $this->responseRepository->findById( $responseId );
 
 		if ( $response === null || $response->getSurveyId() !== $surveyId ) {
-			return $this->notFoundResponse( __( 'Response', 'all-feedback' ) );
+			return $this->notFoundResponse( __( 'Response', 'allfeedback' ) );
 		}
 
 		if ( ! $this->responseRepository->delete( $responseId ) ) {
@@ -592,7 +592,7 @@ class ResponsesController extends RestController {
 				'Response deletion failed at DB layer.',
 				[ 'response_id' => $responseId, 'survey_id' => $surveyId, 'user_id' => get_current_user_id() ]
 			);
-			return $this->errorResponse( __( 'Failed to delete the response.', 'all-feedback' ), 500 );
+			return $this->errorResponse( __( 'Failed to delete the response.', 'allfeedback' ), 500 );
 		}
 
 		$this->surveyRepository->decrementResponseCount( $surveyId );
@@ -618,50 +618,50 @@ class ResponsesController extends RestController {
 			'type'       => 'object',
 			'properties' => [
 				'id'            => [
-					'description' => __( 'Unique identifier.', 'all-feedback' ),
+					'description' => __( 'Unique identifier.', 'allfeedback' ),
 					'type'        => 'integer',
 					'context'     => [ 'view' ],
 					'readonly'    => true,
 				],
 				'survey_id'     => [
-					'description' => __( 'Parent survey identifier.', 'all-feedback' ),
+					'description' => __( 'Parent survey identifier.', 'allfeedback' ),
 					'type'        => 'integer',
 					'context'     => [ 'view' ],
 					'readonly'    => true,
 				],
 				'response_data' => [
-					'description' => __( 'Field answers keyed by field ID.', 'all-feedback' ),
+					'description' => __( 'Field answers keyed by field ID.', 'allfeedback' ),
 					'type'        => [ 'object', 'null' ],
 					'context'     => [ 'view' ],
 				],
 				'score'         => [
-					'description' => __( 'Numeric score for NPS, CSAT, or CES fields.', 'all-feedback' ),
+					'description' => __( 'Numeric score for NPS, CSAT, or CES fields.', 'allfeedback' ),
 					'type'        => [ 'number', 'null' ],
 					'context'     => [ 'view' ],
 				],
 				'page_url'      => [
-					'description' => __( 'URL of the page where the survey was displayed.', 'all-feedback' ),
+					'description' => __( 'URL of the page where the survey was displayed.', 'allfeedback' ),
 					'type'        => [ 'string', 'null' ],
 					'context'     => [ 'view' ],
 				],
 				'device_type'   => [
-					'description' => __( 'Visitor device type.', 'all-feedback' ),
+					'description' => __( 'Visitor device type.', 'allfeedback' ),
 					'type'        => [ 'string', 'null' ],
 					'context'     => [ 'view' ],
 				],
 				'user_id'       => [
-					'description' => __( 'WordPress user ID (null for anonymous submissions).', 'all-feedback' ),
+					'description' => __( 'WordPress user ID (null for anonymous submissions).', 'allfeedback' ),
 					'type'        => [ 'integer', 'null' ],
 					'context'     => [ 'view' ],
 					'readonly'    => true,
 				],
 				'is_read'       => [
-					'description' => __( 'Whether an admin has read this response.', 'all-feedback' ),
+					'description' => __( 'Whether an admin has read this response.', 'allfeedback' ),
 					'type'        => 'boolean',
 					'context'     => [ 'view' ],
 				],
 				'created_at'    => [
-					'description' => __( 'Submission timestamp (MySQL datetime).', 'all-feedback' ),
+					'description' => __( 'Submission timestamp (MySQL datetime).', 'allfeedback' ),
 					'type'        => 'string',
 					'context'     => [ 'view' ],
 					'readonly'    => true,
@@ -702,7 +702,7 @@ class ResponsesController extends RestController {
 	 */
 	private function ridArg(): array {
 		return [
-			'description'       => __( 'Unique identifier of the response.', 'all-feedback' ),
+			'description'       => __( 'Unique identifier of the response.', 'allfeedback' ),
 			'type'              => 'integer',
 			'required'          => true,
 			'minimum'           => 1,
@@ -719,7 +719,7 @@ class ResponsesController extends RestController {
 	 */
 	private function idsArg(): array {
 		return [
-			'description' => __( 'Array of response IDs to operate on.', 'all-feedback' ),
+			'description' => __( 'Array of response IDs to operate on.', 'allfeedback' ),
 			'type'        => 'array',
 			'required'    => true,
 			'items'       => [
@@ -745,7 +745,7 @@ class ResponsesController extends RestController {
 		$ids = array_values( array_filter( array_map( 'absint', (array) ( $request->get_param( 'ids' ) ?? [] ) ) ) );
 
 		if ( empty( $ids ) ) {
-			return $this->errorResponse( __( 'No response IDs provided.', 'all-feedback' ), 422 );
+			return $this->errorResponse( __( 'No response IDs provided.', 'allfeedback' ), 422 );
 		}
 
 		$failed  = $this->responseRepository->bulkUpdateReadStatus( $ids, $isRead );

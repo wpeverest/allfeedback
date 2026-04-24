@@ -50,7 +50,7 @@ class SurveyAnalyticsService {
 		$survey = $this->surveyRepository->findById( $surveyId );
 
 		if ( $survey === null ) {
-			throw NotFoundException::forResource( esc_html__( 'Survey', 'all-feedback' ), $surveyId );
+			throw NotFoundException::forResource( esc_html__( 'Survey', 'allfeedback' ), $surveyId );
 		}
 
 		$stats    = $this->responseRepository->aggregateScoreStats( $surveyId );

@@ -62,7 +62,7 @@ class SurveyStateController extends RestController {
 					$this->idArg(),
 					[
 						'action' => [
-							'description'       => __( 'State mutation to record.', 'all-feedback' ),
+							'description'       => __( 'State mutation to record.', 'allfeedback' ),
 							'type'              => 'string',
 							'required'          => true,
 							'enum'              => [ 'impression', 'dismiss', 'submit' ],
@@ -91,7 +91,7 @@ class SurveyStateController extends RestController {
 		$survey = $this->surveyRepository->findById( $surveyId );
 
 		if ( $survey === null || ! $survey->getStatus()->isPublished() ) {
-			return $this->notFoundResponse( __( 'Survey', 'all-feedback' ) );
+			return $this->notFoundResponse( __( 'Survey', 'allfeedback' ) );
 		}
 
 		match ( $action ) {

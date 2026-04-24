@@ -32,7 +32,7 @@ class ValidateConsentIfRequired {
 
 		if ( $consentRequired && ! $context->dto->consentGiven ) {
 			throw ValidationException::withErrors(
-				[ 'consent_given' => esc_html__( 'You must provide consent to submit a response to this survey.', 'all-feedback' ) ]
+				[ 'consent_given' => esc_html__( 'You must provide consent to submit a response to this survey.', 'allfeedback' ) ]
 			);
 		}
 

@@ -30,14 +30,14 @@ class ValidateResponseData {
 
 		if ( empty( $data ) ) {
 			throw ValidationException::withErrors(
-				[ 'response_data' => esc_html__( 'Response data cannot be empty.', 'all-feedback' ) ]
+				[ 'response_data' => esc_html__( 'Response data cannot be empty.', 'allfeedback' ) ]
 			);
 		}
 
 		$maxKeys = max( 1, (int) apply_filters( 'allfeedback_response_max_keys', 100 ) );
 		if ( count( $data ) > $maxKeys ) {
 			throw ValidationException::withErrors(
-				[ 'response_data' => esc_html__( 'Response data contains too many fields.', 'all-feedback' ) ]
+				[ 'response_data' => esc_html__( 'Response data contains too many fields.', 'allfeedback' ) ]
 			);
 		}
 
@@ -47,7 +47,7 @@ class ValidateResponseData {
 			function ( $value ) use ( $maxLength ): void {
 				if ( is_string( $value ) && mb_strlen( $value ) > $maxLength ) {
 					throw ValidationException::withErrors(
-						[ 'response_data' => esc_html__( 'A response value exceeds the maximum allowed length.', 'all-feedback' ) ]
+						[ 'response_data' => esc_html__( 'A response value exceeds the maximum allowed length.', 'allfeedback' ) ]
 					);
 				}
 			}
