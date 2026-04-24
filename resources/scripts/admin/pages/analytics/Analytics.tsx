@@ -1,3 +1,13 @@
+import type { FormAnalyticsDetail, FormAnalyticsListItem } from '@/admin/api/analytics';
+import type { SurveyResponse } from '@/admin/api/surveys';
+import { analyticsFormDetailQuery, analyticsFormsQuery, analyticsOverviewQuery } from '@/admin/queries/analytics';
+import { allResponsesQuery } from '@/admin/queries/surveys';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { Link } from '@tanstack/react-router';
+import { __ } from '@wordpress/i18n';
 import {
 	ArcElement,
 	CategoryScale,
@@ -8,28 +18,17 @@ import {
 	PointElement,
 	Tooltip,
 } from 'chart.js';
-import type { FormAnalyticsDetail, FormAnalyticsListItem } from '@/admin/api/analytics';
-import type { SurveyResponse } from '@/admin/api/surveys';
-import { analyticsFormDetailQuery, analyticsFormsQuery, analyticsOverviewQuery } from '@/admin/queries/analytics';
-import { allResponsesQuery } from '@/admin/queries/surveys';
-import { EmptyState } from '@/components/ui/empty-state';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Skeleton } from '@/components/ui/skeleton';
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { Link } from '@tanstack/react-router';
 import { formatDistanceToNow, parseISO } from 'date-fns';
-import { __ } from '@wordpress/i18n';
 import { AlertCircle, BarChart2, CheckCircle2, Clock, FileText, MessageSquare, Monitor, MousePointerClick, Play, Smartphone, Star, Tablet, XCircle } from 'lucide-react';
-import { Doughnut, Line } from 'react-chartjs-2';
-import { useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
+import { useMemo, useState } from 'react';
+import { Doughnut, Line } from 'react-chartjs-2';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ArcElement, Filler, Tooltip);
 
 type DonutData  = { total: number; promoters: number; passives: number; detractors: number; score: number };
 type AreaChartData = { labels: string[]; values: number[] };
 
-// Groups daily {date, count} entries into weekly buckets keyed by ISO Monday date.
 function groupByWeek(entries: { date: string; count: number }[]): AreaChartData {
 	const map = new Map<string, number>();
 	for (const { date, count } of entries) {
@@ -125,7 +124,7 @@ function KPICard({
 			onMouseEnter={() => setHovered(true)}
 			onMouseLeave={() => setHovered(false)}
 			style={{
-				background: 'var(--card)', borderRadius: 'var(--radius-xl)',
+				background: 'var(--card)', borderRadius: 'var(--radius-2xl)',
 				boxShadow:  hovered ? 'var(--shadow-card-hover)' : 'var(--shadow-card)',
 				padding: '18px 20px 16px', transition: 'box-shadow 220ms ease',
 			}}>
@@ -141,12 +140,12 @@ function KPICard({
 				</div>
 				<span style={{
 					fontSize: 'var(--text-xs)', textTransform: 'uppercase',
-					letterSpacing: '0.05em', fontWeight: 500, color: 'var(--muted-foreground)',
+					letterSpacing: '0.06em', fontWeight: 600, color: 'var(--muted-foreground)',
 				}}>{label}</span>
 			</div>
 
 			<div style={{ marginTop: 14, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
-				{loading ? <Skeleton style={{ height: 32, width: 80, borderRadius: 6 }} /> : (
+				{loading ? <Skeleton style={{ height: 28, width: 80, borderRadius: 6 }} /> : (
 					<div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
 						<span style={{
 							fontSize: 'var(--text-xl)', fontWeight: 600, letterSpacing: '-0.02em',
@@ -157,11 +156,13 @@ function KPICard({
 						)}
 					</div>
 				)}
-				{sparkData && sparkData.length >= 2 && (
+				{loading && sparkColor ? (
+					<Skeleton style={{ width: 108, height: 34, borderRadius: 6, flexShrink: 0 }} />
+				) : (!loading && sparkData && sparkData.length >= 2) ? (
 					<div style={{ marginBottom: 2, flexShrink: 0 }}>
 						<Sparkline data={sparkData} color={sparkColor ?? 'var(--primary)'} />
 					</div>
-				)}
+				) : null}
 			</div>
 
 			<div style={{ marginTop: 10 }}>
@@ -243,13 +244,15 @@ function AreaChartCard({ chartData, loading, totalInPeriod }: {
 	};
 
 	return (
-		<div style={{ background: 'var(--card)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-card)', padding: '20px 22px', minWidth: 0, overflow: 'hidden' }}>
+		<div style={{ background: 'var(--card)', borderRadius: 'var(--radius-2xl)', boxShadow: 'var(--shadow-card)', padding: '20px 22px', minWidth: 0, overflow: 'hidden' }}>
 			<div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 4 }}>
 				<div>
 					<h3 style={{ fontSize: 'var(--text-md)', fontWeight: 600, letterSpacing: '-0.01em', color: 'var(--foreground)', margin: 0 }}>
 						{__('Responses over time', 'all-feedback')}
 					</h3>
-					{!loading && (
+					{loading ? (
+						<Skeleton style={{ height: 13, width: 140, borderRadius: 4, marginTop: 5 }} />
+					) : (
 						<p style={{ marginTop: 2, fontSize: 'var(--text-xs)', color: 'var(--muted-foreground)' }}>
 							<span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--foreground)', fontWeight: 600 }}>
 								{totalInPeriod.toLocaleString()}
@@ -315,7 +318,7 @@ function NpsDistributionCard({ nps, scoreDist, loading }: {
 	const BAR_H = 100;
 
 	return (
-		<div style={{ background: 'var(--card)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-card)', padding: '20px 22px', display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
+		<div style={{ background: 'var(--card)', borderRadius: 'var(--radius-2xl)', boxShadow: 'var(--shadow-card)', padding: '20px 22px', display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
 			<div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12, gap: 8 }}>
 				<div>
 					<h3 style={{ fontSize: 'var(--text-md)', fontWeight: 600, letterSpacing: '-0.01em', color: 'var(--foreground)', margin: 0 }}>
@@ -325,7 +328,12 @@ function NpsDistributionCard({ nps, scoreDist, loading }: {
 						{__('0–6 detractors · 7–8 passives · 9–10 promoters', 'all-feedback')}
 					</p>
 				</div>
-				{!loading && total > 0 && (
+				{loading ? (
+					<div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5, flexShrink: 0 }}>
+						<Skeleton style={{ height: 28, width: 52, borderRadius: 6 }} />
+						<Skeleton style={{ height: 10, width: 28, borderRadius: 4 }} />
+					</div>
+				) : total > 0 ? (
 					<div style={{ textAlign: 'right', flexShrink: 0 }}>
 						<div style={{
 							fontSize: 'var(--text-xl)', fontWeight: 700, letterSpacing: '-0.02em',
@@ -338,7 +346,7 @@ function NpsDistributionCard({ nps, scoreDist, loading }: {
 							NPS
 						</div>
 					</div>
-				)}
+				) : null}
 			</div>
 
 			{loading ? (
@@ -442,7 +450,7 @@ function SessionMetricsCard({ sm, loading }: { sm: FormAnalyticsDetail['session_
 	];
 
 	return (
-		<div style={{ background: 'var(--card)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-card)', overflow: 'hidden' }}>
+		<div style={{ background: 'var(--card)', borderRadius: 'var(--radius-2xl)', boxShadow: 'var(--shadow-card)', overflow: 'hidden' }}>
 			<div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
 				<h3 style={{ fontSize: 'var(--text-md)', fontWeight: 600, letterSpacing: '-0.01em', color: 'var(--foreground)', margin: 0 }}>
 					{__('Session breakdown', 'all-feedback')}
@@ -574,7 +582,7 @@ function DeviceDistributionCard({ breakdown, loading }: {
 	const rows  = deviceConfig.map(d => ({ ...d, count: breakdown[d.key] ?? 0 }));
 
 	return (
-		<div style={{ background: 'var(--card)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-card)', overflow: 'hidden' }}>
+		<div style={{ background: 'var(--card)', borderRadius: 'var(--radius-2xl)', boxShadow: 'var(--shadow-card)', overflow: 'hidden' }}>
 			<div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
 				<h3 style={{ fontSize: 'var(--text-md)', fontWeight: 600, letterSpacing: '-0.01em', color: 'var(--foreground)', margin: 0 }}>
 					{__('Device distribution', 'all-feedback')}
@@ -674,12 +682,18 @@ function ResponseRow({ r, formTitle, idx }: { r: SurveyResponse; formTitle: stri
 	})();
 
 	return (
-		<div style={{
-			padding: '14px 20px', display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: 14,
-			borderBottom: '1px solid var(--border)', transition: 'background 140ms', cursor: 'pointer',
-		}}
-		onMouseEnter={e => (e.currentTarget.style.background = 'oklch(0.985 0.004 247)')}
-		onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+		<Link
+			to="/responses/$responseId"
+			params={{ responseId: String(r.id) }}
+			search={{ surveyId: r.survey_id, edit: false }}
+			style={{
+				display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: 14,
+				padding: '14px 20px', borderBottom: '1px solid var(--border)',
+				transition: 'background 140ms', cursor: 'pointer',
+				textDecoration: 'none', color: 'inherit',
+			}}
+			onMouseEnter={e => (e.currentTarget.style.background = 'var(--muted)')}
+			onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
 			<svg width="32" height="32" viewBox="0 0 32 32" style={{ flexShrink: 0, marginTop: 2 }}>
 				<defs>
 					<linearGradient id={gradId} x1="0" y1="0" x2="1" y2="1">
@@ -734,7 +748,7 @@ function ResponseRow({ r, formTitle, idx }: { r: SurveyResponse; formTitle: stri
 			}}>
 				{timeAgo}
 			</div>
-		</div>
+		</Link>
 	);
 }
 
@@ -750,19 +764,23 @@ function RecentResponsesCard({ responses, forms, loading }: {
 	}, [forms]);
 
 	return (
-		<div style={{ background: 'var(--card)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-card)', overflow: 'hidden' }}>
+		<div style={{ background: 'var(--card)', borderRadius: 'var(--radius-2xl)', boxShadow: 'var(--shadow-card)', overflow: 'hidden' }}>
 			<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
 				<div>
 					<h3 style={{ fontSize: 'var(--text-md)', fontWeight: 600, letterSpacing: '-0.01em', color: 'var(--foreground)', margin: 0 }}>
 						{__('Recent responses', 'all-feedback')}
 					</h3>
-					<p style={{ marginTop: 2, fontSize: 'var(--text-xs)', color: 'var(--muted-foreground)' }}>
-						{responses.length} {__('shown · sorted by newest', 'all-feedback')}
-					</p>
+					{loading ? (
+						<Skeleton style={{ height: 12, width: 120, borderRadius: 4, marginTop: 5 }} />
+					) : (
+						<p style={{ marginTop: 2, fontSize: 'var(--text-xs)', color: 'var(--muted-foreground)' }}>
+							{responses.length} {__('shown · sorted by newest', 'all-feedback')}
+						</p>
+					)}
 				</div>
 				<Link
-					to="/responses/"
-					search={{}}
+					to="/responses"
+					search={{ surveyId: undefined }}
 					className="inline-flex items-center gap-1.5 rounded-lg border border-border/70 bg-white px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
 				>
 					{__('View all', 'all-feedback')}
@@ -813,40 +831,69 @@ const Analytics = () => {
 			const sm    = detailData.session_metrics;
 			const rm    = detailData.response_metrics;
 			const isNps = rm.survey_type === 'NPS';
+
+			// Derive total-responses WoW from responses_over_time (date strings are YYYY-MM-DD sortable).
+			let totalChange: number | null = null;
+			const rot = rm.responses_over_time;
+			if (rot) {
+				const today       = new Date();
+				const toISO       = (d: Date) => d.toISOString().slice(0, 10);
+				const twStart     = new Date(today); twStart.setDate(today.getDate() - 6);
+				const lwStart     = new Date(today); lwStart.setDate(today.getDate() - 13);
+				const lwEnd       = new Date(today); lwEnd.setDate(today.getDate() - 7);
+				const twStr       = toISO(twStart);
+				const lwStartStr  = toISO(lwStart);
+				const lwEndStr    = toISO(lwEnd);
+				let thisWeek = 0, lastWeek = 0;
+				for (const [date, count] of Object.entries(rot)) {
+					if (date >= twStr)                              thisWeek += count;
+					else if (date >= lwStartStr && date <= lwEndStr) lastWeek += count;
+				}
+				if (lastWeek > 0) totalChange = Math.round((thisWeek - lastWeek) / lastWeek * 1000) / 10;
+			}
+
 			return {
 				totalResponses:    rm.total_responses,
-				totalChange:       null as number | null,
+				totalChange,
 				completionRate:    sm.completion_rate,
-				completionChange:  null as number | null,
+				completionChange:  sm.completion_rate_change,
 				thirdKind:         (isNps ? 'nps' : 'time') as 'nps' | 'time' | 'abandonment',
 				thirdValue:        isNps ? rm.nps_score.score : sm.avg_completion_time,
 				thirdChange:       null as number | null,
 				fourthValue:       sm.abandonment_rate,
 				fourthIsFormView:  true,
 				fourthNewThisWeek: null as number | null,
+				fourthChange:      sm.abandonment_rate_change,
 			};
 		}
 		const s = overviewData?.stats;
 		return {
-			totalResponses:    s?.total_feedback.value  ?? totals?.total_responses ?? 0,
+			totalResponses:    s?.total_feedback.value   ?? totals?.total_responses ?? 0,
 			totalChange:       s?.total_feedback.change  ?? null,
-			completionRate:    s?.completion_rate.value ?? null,
+			completionRate:    s?.completion_rate.value  ?? null,
 			completionChange:  s?.completion_rate.change ?? null,
 			thirdKind:         'abandonment' as 'nps' | 'time' | 'abandonment',
-			thirdValue:        s?.abandonment_rate?.value ?? null,
+			thirdValue:        s?.abandonment_rate?.value  ?? null,
 			thirdChange:       s?.abandonment_rate?.change ?? null,
 			fourthValue:       s?.active_surveys.value ?? forms.filter(f => f.status === 'published').length,
 			fourthIsFormView:  false,
 			fourthNewThisWeek: s?.active_surveys.new_this_week ?? null,
+			fourthChange:      null as number | null,
 		};
 	}, [isFormView, detailData, overviewData, totals, forms]);
 
 	const sparkBase = useMemo(() => {
 		if (isFormView && detailData?.response_metrics.responses_over_time) {
-			return Object.values(detailData.response_metrics.responses_over_time).slice(-14);
+			return Object.values(detailData.response_metrics.responses_over_time)
+				.slice()
+				.slice(-14);
 		}
-		return forms.slice(0, 14).map(f => f.response_metrics.total_responses);
-	}, [isFormView, detailData, forms]);
+		return (overviewData?.chart ?? [])
+			.slice()
+			.sort((a, b) => a.date.localeCompare(b.date))
+			.slice(-14)
+			.map(d => d.count);
+	}, [isFormView, detailData, overviewData]);
 
 	const chartData: AreaChartData = useMemo(() => {
 		if (isFormView && detailData?.response_metrics.responses_over_time) {
@@ -880,7 +927,7 @@ const Analytics = () => {
 	if (isError) {
 		return (
 			<div style={{ padding: '20px 32px' }}>
-				<div style={{ background: 'var(--card)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-card)' }}>
+				<div style={{ background: 'var(--card)', borderRadius: 'var(--radius-2xl)', boxShadow: 'var(--shadow-card)' }}>
 					<EmptyState icon={AlertCircle} title={__('Failed to load analytics', 'all-feedback')} description={__('Something went wrong. Please try refreshing the page.', 'all-feedback')} />
 				</div>
 			</div>
@@ -890,7 +937,7 @@ const Analytics = () => {
 	if (!listLoading && forms.length === 0) {
 		return (
 			<div style={{ padding: '20px 32px' }}>
-				<div style={{ background: 'var(--card)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-card)' }}>
+				<div style={{ background: 'var(--card)', borderRadius: 'var(--radius-2xl)', boxShadow: 'var(--shadow-card)' }}>
 					<EmptyState icon={BarChart2} title={__('No data yet', 'all-feedback')} description={__('Analytics will appear here once your forms start receiving responses.', 'all-feedback')} />
 				</div>
 			</div>
@@ -922,8 +969,6 @@ const Analytics = () => {
 					unit="%"
 					deltaValue={kpi.completionChange}
 					deltaLabel={kpi.completionChange !== null ? __('vs. last week', 'all-feedback') : __('of sessions submitted', 'all-feedback')}
-					sparkData={sparkBase.map(v => Math.min(100, v * 0.6 + 40))}
-					sparkColor="oklch(0.55 0.18 210)"
 					loading={loading}
 				/>
 				{kpi.thirdKind === 'nps' ? (
@@ -936,8 +981,6 @@ const Analytics = () => {
 						unit="pts"
 						deltaValue={null}
 						deltaLabel={__('−100 to +100', 'all-feedback')}
-						sparkData={sparkBase.map(v => Math.min(10, v * 0.04 + 6))}
-						sparkColor="oklch(0.75 0.155 78)"
 						loading={loading}
 					/>
 				) : kpi.thirdKind === 'time' ? (
@@ -947,8 +990,6 @@ const Analytics = () => {
 						value={loading ? '—' : formatSeconds(kpi.thirdValue)}
 						deltaValue={null}
 						deltaLabel={__('avg. completion time', 'all-feedback')}
-						sparkData={sparkBase.map(v => Math.min(10, v * 0.04 + 6))}
-						sparkColor="oklch(0.75 0.155 78)"
 						loading={loading}
 					/>
 				) : (
@@ -959,8 +1000,6 @@ const Analytics = () => {
 						unit="%"
 						deltaValue={kpi.thirdChange}
 						deltaLabel={kpi.thirdChange !== null ? __('vs. last week', 'all-feedback') : __('of started sessions', 'all-feedback')}
-						sparkData={sparkBase.map(v => Math.max(0, 100 - Math.min(100, v * 0.6 + 40)))}
-						sparkColor="oklch(0.577 0.245 27)"
 						loading={loading}
 					/>
 				)}
@@ -970,10 +1009,8 @@ const Analytics = () => {
 						label={__('Abandonment rate', 'all-feedback')}
 						value={loading ? '—' : kpi.fourthValue !== null ? kpi.fourthValue.toFixed(1) : '—'}
 						unit="%"
-						deltaValue={null}
-						deltaLabel={__('of started sessions', 'all-feedback')}
-						sparkData={sparkBase.map(v => Math.max(0, 100 - Math.min(100, v * 0.6 + 40)))}
-						sparkColor="oklch(0.577 0.245 27)"
+						deltaValue={kpi.fourthChange}
+						deltaLabel={kpi.fourthChange !== null ? __('vs. last week', 'all-feedback') : __('of started sessions', 'all-feedback')}
 						loading={loading}
 					/>
 				) : (
@@ -985,8 +1022,6 @@ const Analytics = () => {
 						deltaLabel={kpi.fourthNewThisWeek !== null && kpi.fourthNewThisWeek > 0
 							? `+${kpi.fourthNewThisWeek} ${__('new this week', 'all-feedback')}`
 							: __('published', 'all-feedback')}
-						sparkData={Array.from({ length: Math.min(14, (kpi.fourthValue ?? 0) + 4) }, (_, i) => i + 1)}
-						sparkColor="oklch(0.62 0.14 155)"
 						loading={listLoading}
 					/>
 				)}

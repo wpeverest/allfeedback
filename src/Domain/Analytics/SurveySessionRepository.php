@@ -83,4 +83,21 @@ interface SurveySessionRepository {
 	 * @since  1.0.0
 	 */
 	public function getOverviewSessionStats(): array;
+
+	/**
+	 * Return full session analytics for one survey with week-over-week windows in one query.
+	 *
+	 * Returns the same base metrics as getAnalytics() plus this-week/last-week slices
+	 * for both completion rate and abandonment rate, enabling the controller to compute
+	 * WoW percentage changes without a second query.
+	 *
+	 * Keys: total_views, total_starts, total_submissions, avg_completion_time,
+	 *       completion_rate, this_week_completion_rate, last_week_completion_rate,
+	 *       abandonment_rate, this_week_abandonment_rate, last_week_abandonment_rate.
+	 *
+	 * @param  int $surveyId Survey primary key.
+	 * @return array<string, int|float|null>
+	 * @since  1.0.0
+	 */
+	public function getFormSessionStatsWithWoW( int $surveyId ): array;
 }

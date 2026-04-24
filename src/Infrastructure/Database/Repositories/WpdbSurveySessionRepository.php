@@ -369,6 +369,118 @@ class WpdbSurveySessionRepository implements SurveySessionRepository {
 	}
 
 	/**
+	 * Return full session analytics for one survey with WoW windows in one conditional-aggregation query.
+	 *
+	 * @param  int $surveyId Survey primary key.
+	 * @return array<string, int|float|null>
+	 * @since  1.0.0
+	 */
+	public function getFormSessionStatsWithWoW( int $surveyId ): array {
+		global $wpdb;
+
+		$t = self::ABANDON_TIMEOUT_MINUTES;
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT
+					COUNT(*)                                                                                    AS total_views,
+					SUM(started_at   IS NOT NULL)                                                               AS total_starts,
+					SUM(submitted_at IS NOT NULL)                                                               AS total_submissions,
+					ROUND(
+						AVG(
+							CASE
+								WHEN started_at IS NOT NULL AND submitted_at IS NOT NULL
+								THEN TIMESTAMPDIFF(SECOND, started_at, submitted_at)
+							END
+						)
+					, 0)                                                                                        AS avg_completion_time,
+					ROUND(
+						SUM(submitted_at IS NOT NULL)
+						/ NULLIF(SUM(started_at IS NOT NULL), 0) * 100
+					, 2)                                                                                        AS completion_rate,
+					ROUND(
+						SUM(submitted_at IS NOT NULL AND DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL 6 DAY))
+						/ NULLIF(SUM(started_at IS NOT NULL AND DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)), 0) * 100
+					, 2)                                                                                        AS this_week_completion_rate,
+					ROUND(
+						SUM(submitted_at IS NOT NULL
+						    AND DATE(created_at) BETWEEN DATE_SUB(CURDATE(), INTERVAL 13 DAY)
+						                             AND DATE_SUB(CURDATE(), INTERVAL 7 DAY))
+						/ NULLIF(SUM(started_at IS NOT NULL
+						             AND DATE(created_at) BETWEEN DATE_SUB(CURDATE(), INTERVAL 13 DAY)
+						                                      AND DATE_SUB(CURDATE(), INTERVAL 7 DAY)), 0) * 100
+					, 2)                                                                                        AS last_week_completion_rate,
+					ROUND(
+						SUM(
+							abandoned_at IS NOT NULL
+							OR (started_at IS NOT NULL AND submitted_at IS NULL
+							    AND last_active_at < DATE_SUB(NOW(), INTERVAL %d MINUTE))
+						)
+						/ NULLIF(SUM(started_at IS NOT NULL), 0) * 100
+					, 2)                                                                                        AS abandonment_rate,
+					ROUND(
+						SUM(
+							DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+							AND (
+								abandoned_at IS NOT NULL
+								OR (started_at IS NOT NULL AND submitted_at IS NULL
+								    AND last_active_at < DATE_SUB(NOW(), INTERVAL %d MINUTE))
+							)
+						)
+						/ NULLIF(SUM(started_at IS NOT NULL AND DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)), 0) * 100
+					, 2)                                                                                        AS this_week_abandonment_rate,
+					ROUND(
+						SUM(
+							DATE(created_at) BETWEEN DATE_SUB(CURDATE(), INTERVAL 13 DAY)
+							                     AND DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+							AND (
+								abandoned_at IS NOT NULL
+								OR (started_at IS NOT NULL AND submitted_at IS NULL
+								    AND last_active_at < DATE_SUB(NOW(), INTERVAL %d MINUTE))
+							)
+						)
+						/ NULLIF(SUM(started_at IS NOT NULL
+						             AND DATE(created_at) BETWEEN DATE_SUB(CURDATE(), INTERVAL 13 DAY)
+						                                      AND DATE_SUB(CURDATE(), INTERVAL 7 DAY)), 0) * 100
+					, 2)                                                                                        AS last_week_abandonment_rate
+				FROM `{$this->table}`
+				WHERE survey_id = %d",
+				$t, $t, $t, $surveyId
+			),
+			ARRAY_A
+		);
+
+		if ( ! $row ) {
+			return [
+				'total_views'                => 0,
+				'total_starts'               => 0,
+				'total_submissions'          => 0,
+				'avg_completion_time'        => null,
+				'completion_rate'            => null,
+				'this_week_completion_rate'  => null,
+				'last_week_completion_rate'  => null,
+				'abandonment_rate'           => null,
+				'this_week_abandonment_rate' => null,
+				'last_week_abandonment_rate' => null,
+			];
+		}
+
+		return [
+			'total_views'                => (int) $row['total_views'],
+			'total_starts'               => (int) $row['total_starts'],
+			'total_submissions'          => (int) $row['total_submissions'],
+			'avg_completion_time'        => $row['avg_completion_time']        !== null ? (int)   $row['avg_completion_time']        : null,
+			'completion_rate'            => $row['completion_rate']            !== null ? (float) $row['completion_rate']            : null,
+			'this_week_completion_rate'  => $row['this_week_completion_rate']  !== null ? (float) $row['this_week_completion_rate']  : null,
+			'last_week_completion_rate'  => $row['last_week_completion_rate']  !== null ? (float) $row['last_week_completion_rate']  : null,
+			'abandonment_rate'           => $row['abandonment_rate']           !== null ? (float) $row['abandonment_rate']           : null,
+			'this_week_abandonment_rate' => $row['this_week_abandonment_rate'] !== null ? (float) $row['this_week_abandonment_rate'] : null,
+			'last_week_abandonment_rate' => $row['last_week_abandonment_rate'] !== null ? (float) $row['last_week_abandonment_rate'] : null,
+		];
+	}
+
+	/**
 	 * Return aggregate analytics for a survey using timestamps as source of truth.
 	 * Abandonment includes explicit closes AND timed-out started sessions.
 	 *

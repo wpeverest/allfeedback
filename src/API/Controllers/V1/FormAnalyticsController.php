@@ -249,11 +249,11 @@ class FormAnalyticsController extends RestController {
 			return $this->exceptionToResponse( $e );
 		}
 
-		$survey         = $this->surveyRepository->findById( $surveyId );
-		$sessionMetrics = $this->sessionRepository->getAnalytics( $surveyId );
+		$survey  = $this->surveyRepository->findById( $surveyId );
+		$session = $this->sessionRepository->getFormSessionStatsWithWoW( $surveyId );
 
 		return $this->successResponse( [
-			'survey'           => [
+			'survey'          => [
 				'id'             => $survey->getId(),
 				'title'          => $survey->getTitle(),
 				'description'    => $survey->getDescription(),
@@ -262,7 +262,16 @@ class FormAnalyticsController extends RestController {
 				'created_at'     => $survey->getCreatedAt()->format( 'Y-m-d H:i:s' ),
 				'updated_at'     => $survey->getUpdatedAt()?->format( 'Y-m-d H:i:s' ),
 			],
-			'session_metrics'  => $sessionMetrics,
+			'session_metrics' => [
+				'total_views'              => $session['total_views'],
+				'total_starts'             => $session['total_starts'],
+				'total_submissions'        => $session['total_submissions'],
+				'completion_rate'          => $session['completion_rate'],
+				'completion_rate_change'   => $this->weekOverWeekChange( $session['this_week_completion_rate'], $session['last_week_completion_rate'] ),
+				'abandonment_rate'         => $session['abandonment_rate'],
+				'abandonment_rate_change'  => $this->weekOverWeekChange( $session['this_week_abandonment_rate'], $session['last_week_abandonment_rate'] ),
+				'avg_completion_time'      => $session['avg_completion_time'],
+			],
 			'response_metrics' => $responseMetrics,
 		] );
 	}

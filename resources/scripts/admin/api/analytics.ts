@@ -2,12 +2,14 @@ import { request, toQuery } from './client';
 import type { PaginationParams } from './client';
 
 export type SessionMetrics = {
-	total_views:          number;
-	total_starts:         number;
-	total_submissions:    number;
-	completion_rate:      number | null;
-	abandonment_rate:     number | null;
-	avg_completion_time:  number | null;
+	total_views:             number;
+	total_starts:            number;
+	total_submissions:       number;
+	completion_rate:         number | null;
+	completion_rate_change:  number | null;
+	abandonment_rate:        number | null;
+	abandonment_rate_change: number | null;
+	avg_completion_time:     number | null;
 };
 
 export type NpsScore = {
