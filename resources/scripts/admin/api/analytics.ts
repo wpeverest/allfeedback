@@ -80,10 +80,11 @@ export type FormAnalyticsDetail = {
 
 export type AnalyticsOverview = {
 	stats: {
-		total_feedback:  { value: number; change: number | null };
-		completion_rate: { value: number; change: number | null };
-		avg_rating:      { value: number | null; change: number | null };
-		active_surveys:  { value: number; new_this_week: number; change: number | null };
+		total_feedback:   { value: number;        change: number | null };
+		completion_rate:  { value: number | null;  change: number | null };
+		abandonment_rate: { value: number | null;  change: number | null };
+		avg_rating:       { value: number | null;  change: number | null };
+		active_surveys:   { value: number; new_this_week: number; change: number | null };
 	};
 	chart: { date: string; count: number }[];
 	total_in_period: number;

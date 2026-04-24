@@ -316,13 +316,29 @@ function NpsDistributionCard({ nps, scoreDist, loading }: {
 
 	return (
 		<div style={{ background: 'var(--card)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-card)', padding: '20px 22px', display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
-			<div style={{ marginBottom: 12 }}>
-				<h3 style={{ fontSize: 'var(--text-md)', fontWeight: 600, letterSpacing: '-0.01em', color: 'var(--foreground)', margin: 0 }}>
-					{__('NPS distribution', 'all-feedback')}
-				</h3>
-				<p style={{ marginTop: 2, fontSize: 'var(--text-xs)', color: 'var(--muted-foreground)' }}>
-					{__('0–6 detractors · 7–8 passives · 9–10 promoters', 'all-feedback')}
-				</p>
+			<div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12, gap: 8 }}>
+				<div>
+					<h3 style={{ fontSize: 'var(--text-md)', fontWeight: 600, letterSpacing: '-0.01em', color: 'var(--foreground)', margin: 0 }}>
+						{__('NPS distribution', 'all-feedback')}
+					</h3>
+					<p style={{ marginTop: 2, fontSize: 'var(--text-xs)', color: 'var(--muted-foreground)' }}>
+						{__('0–6 detractors · 7–8 passives · 9–10 promoters', 'all-feedback')}
+					</p>
+				</div>
+				{!loading && total > 0 && (
+					<div style={{ textAlign: 'right', flexShrink: 0 }}>
+						<div style={{
+							fontSize: 'var(--text-xl)', fontWeight: 700, letterSpacing: '-0.02em',
+							fontVariantNumeric: 'tabular-nums',
+							color: nps.score >= 50 ? 'var(--success)' : nps.score >= 0 ? 'var(--warning)' : 'var(--destructive)',
+						}}>
+							{nps.score >= 0 ? `+${nps.score.toFixed(0)}` : nps.score.toFixed(0)}
+						</div>
+						<div style={{ fontSize: 'var(--text-2xs)', color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 500 }}>
+							NPS
+						</div>
+					</div>
+				)}
 			</div>
 
 			{loading ? (
@@ -794,25 +810,36 @@ const Analytics = () => {
 
 	const kpi = useMemo(() => {
 		if (isFormView && detailData) {
-			const sm = detailData.session_metrics;
-			const rm = detailData.response_metrics;
+			const sm    = detailData.session_metrics;
+			const rm    = detailData.response_metrics;
+			const isNps = rm.survey_type === 'NPS';
 			return {
-				totalResponses: rm.total_responses,
-				completionRate: sm.completion_rate,
-				avgScore:       rm.average_score,
-				activeForms:    forms.filter(f => f.status === 'published').length,
+				totalResponses:    rm.total_responses,
+				totalChange:       null as number | null,
+				completionRate:    sm.completion_rate,
+				completionChange:  null as number | null,
+				thirdKind:         (isNps ? 'nps' : 'time') as 'nps' | 'time' | 'abandonment',
+				thirdValue:        isNps ? rm.nps_score.score : sm.avg_completion_time,
+				thirdChange:       null as number | null,
+				fourthValue:       sm.abandonment_rate,
+				fourthIsFormView:  true,
+				fourthNewThisWeek: null as number | null,
 			};
 		}
-		const totalResponses = totals?.total_responses ?? forms.reduce((s, f) => s + f.response_metrics.total_responses, 0);
-		const avgCompletion  = forms.length > 0 ? forms.reduce((s, f) => s + (f.session_metrics.completion_rate ?? 0), 0) / forms.length : null;
-		const scored         = forms.filter(f => f.response_metrics.average_score !== null);
+		const s = overviewData?.stats;
 		return {
-			totalResponses,
-			completionRate: avgCompletion,
-			avgScore:       scored.length > 0 ? scored.reduce((s, f) => s + (f.response_metrics.average_score ?? 0), 0) / scored.length : null,
-			activeForms:    forms.filter(f => f.status === 'published').length,
+			totalResponses:    s?.total_feedback.value  ?? totals?.total_responses ?? 0,
+			totalChange:       s?.total_feedback.change  ?? null,
+			completionRate:    s?.completion_rate.value ?? null,
+			completionChange:  s?.completion_rate.change ?? null,
+			thirdKind:         'abandonment' as 'nps' | 'time' | 'abandonment',
+			thirdValue:        s?.abandonment_rate?.value ?? null,
+			thirdChange:       s?.abandonment_rate?.change ?? null,
+			fourthValue:       s?.active_surveys.value ?? forms.filter(f => f.status === 'published').length,
+			fourthIsFormView:  false,
+			fourthNewThisWeek: s?.active_surveys.new_this_week ?? null,
 		};
-	}, [isFormView, detailData, totals, forms]);
+	}, [isFormView, detailData, overviewData, totals, forms]);
 
 	const sparkBase = useMemo(() => {
 		if (isFormView && detailData?.response_metrics.responses_over_time) {
@@ -881,8 +908,8 @@ const Analytics = () => {
 					icon={MessageSquare}
 					label={__('Total feedback', 'all-feedback')}
 					value={loading ? '—' : kpi.totalResponses.toLocaleString()}
-					deltaValue={null}
-					deltaLabel={__('vs. prev. period', 'all-feedback')}
+					deltaValue={kpi.totalChange}
+					deltaLabel={kpi.totalChange !== null ? __('vs. last week', 'all-feedback') : __('total responses', 'all-feedback')}
 					sparkData={sparkBase}
 					sparkColor="var(--primary)"
 					iconBrand
@@ -891,35 +918,78 @@ const Analytics = () => {
 				<KPICard
 					icon={CheckCircle2}
 					label={__('Completion rate', 'all-feedback')}
-					value={loading ? '—' : kpi.completionRate !== null && kpi.completionRate !== undefined ? kpi.completionRate.toFixed(1) : '—'}
+					value={loading ? '—' : kpi.completionRate !== null ? kpi.completionRate.toFixed(1) : '—'}
 					unit="%"
-					deltaValue={null}
-					deltaLabel={__('vs. prev. period', 'all-feedback')}
+					deltaValue={kpi.completionChange}
+					deltaLabel={kpi.completionChange !== null ? __('vs. last week', 'all-feedback') : __('of sessions submitted', 'all-feedback')}
 					sparkData={sparkBase.map(v => Math.min(100, v * 0.6 + 40))}
 					sparkColor="oklch(0.55 0.18 210)"
 					loading={loading}
 				/>
-				<KPICard
-					icon={Star}
-					label={__('Avg. rating', 'all-feedback')}
-					value={loading ? '—' : kpi.avgScore !== null && kpi.avgScore !== undefined ? kpi.avgScore.toFixed(1) : '—'}
-					unit="/ 10"
-					deltaValue={null}
-					deltaLabel={__('vs. prev. period', 'all-feedback')}
-					sparkData={sparkBase.map(v => Math.min(10, v * 0.04 + 6))}
-					sparkColor="oklch(0.75 0.155 78)"
-					loading={loading}
-				/>
-				<KPICard
-					icon={FileText}
-					label={__('Active forms', 'all-feedback')}
-					value={listLoading ? '—' : kpi.activeForms.toString()}
-					deltaValue={null}
-					deltaLabel={__('published', 'all-feedback')}
-					sparkData={Array.from({ length: Math.min(14, kpi.activeForms + 4) }, (_, i) => i + 1)}
-					sparkColor="oklch(0.62 0.14 155)"
-					loading={listLoading}
-				/>
+				{kpi.thirdKind === 'nps' ? (
+					<KPICard
+						icon={Star}
+						label={__('NPS score', 'all-feedback')}
+						value={loading ? '—' : kpi.thirdValue !== null
+							? (kpi.thirdValue >= 0 ? `+${kpi.thirdValue.toFixed(0)}` : kpi.thirdValue.toFixed(0))
+							: '—'}
+						unit="pts"
+						deltaValue={null}
+						deltaLabel={__('−100 to +100', 'all-feedback')}
+						sparkData={sparkBase.map(v => Math.min(10, v * 0.04 + 6))}
+						sparkColor="oklch(0.75 0.155 78)"
+						loading={loading}
+					/>
+				) : kpi.thirdKind === 'time' ? (
+					<KPICard
+						icon={Clock}
+						label={__('Avg. time', 'all-feedback')}
+						value={loading ? '—' : formatSeconds(kpi.thirdValue)}
+						deltaValue={null}
+						deltaLabel={__('avg. completion time', 'all-feedback')}
+						sparkData={sparkBase.map(v => Math.min(10, v * 0.04 + 6))}
+						sparkColor="oklch(0.75 0.155 78)"
+						loading={loading}
+					/>
+				) : (
+					<KPICard
+						icon={XCircle}
+						label={__('Abandonment rate', 'all-feedback')}
+						value={loading ? '—' : kpi.thirdValue !== null ? kpi.thirdValue.toFixed(1) : '—'}
+						unit="%"
+						deltaValue={kpi.thirdChange}
+						deltaLabel={kpi.thirdChange !== null ? __('vs. last week', 'all-feedback') : __('of started sessions', 'all-feedback')}
+						sparkData={sparkBase.map(v => Math.max(0, 100 - Math.min(100, v * 0.6 + 40)))}
+						sparkColor="oklch(0.577 0.245 27)"
+						loading={loading}
+					/>
+				)}
+				{kpi.fourthIsFormView ? (
+					<KPICard
+						icon={XCircle}
+						label={__('Abandonment rate', 'all-feedback')}
+						value={loading ? '—' : kpi.fourthValue !== null ? kpi.fourthValue.toFixed(1) : '—'}
+						unit="%"
+						deltaValue={null}
+						deltaLabel={__('of started sessions', 'all-feedback')}
+						sparkData={sparkBase.map(v => Math.max(0, 100 - Math.min(100, v * 0.6 + 40)))}
+						sparkColor="oklch(0.577 0.245 27)"
+						loading={loading}
+					/>
+				) : (
+					<KPICard
+						icon={FileText}
+						label={__('Active surveys', 'all-feedback')}
+						value={listLoading ? '—' : String(kpi.fourthValue ?? 0)}
+						deltaValue={null}
+						deltaLabel={kpi.fourthNewThisWeek !== null && kpi.fourthNewThisWeek > 0
+							? `+${kpi.fourthNewThisWeek} ${__('new this week', 'all-feedback')}`
+							: __('published', 'all-feedback')}
+						sparkData={Array.from({ length: Math.min(14, (kpi.fourthValue ?? 0) + 4) }, (_, i) => i + 1)}
+						sparkColor="oklch(0.62 0.14 155)"
+						loading={listLoading}
+					/>
+				)}
 			</div>
 
 			{/* Chart row — NPS gets 70/30 split, everything else is full width */}
