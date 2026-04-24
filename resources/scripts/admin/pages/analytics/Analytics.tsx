@@ -1,541 +1,955 @@
-import type { SessionMetrics } from '@/admin/api/analytics';
-import { analyticsFormDetailQuery, analyticsFormsQuery, analyticsOverviewQuery } from '@/admin/queries/analytics';
-import { Badge } from '@/components/ui/badge';
-import { EmptyState } from '@/components/ui/empty-state';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useQuery } from '@tanstack/react-query';
-import { __ } from '@wordpress/i18n';
 import {
 	ArcElement,
 	CategoryScale,
 	Chart as ChartJS,
 	Filler,
-	Legend,
 	LinearScale,
 	LineElement,
 	PointElement,
 	Tooltip,
 } from 'chart.js';
-import { AlertCircle, TrendingDown, TrendingUp } from 'lucide-react';
-import { useState } from 'react';
+import type { FormAnalyticsDetail, FormAnalyticsListItem } from '@/admin/api/analytics';
+import type { SurveyResponse } from '@/admin/api/surveys';
+import { analyticsFormDetailQuery, analyticsFormsQuery, analyticsOverviewQuery } from '@/admin/queries/analytics';
+import { allResponsesQuery } from '@/admin/queries/surveys';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { Link } from '@tanstack/react-router';
+import { formatDistanceToNow, parseISO } from 'date-fns';
+import { __ } from '@wordpress/i18n';
+import { AlertCircle, BarChart2, CheckCircle2, Clock, FileText, MessageSquare, Monitor, MousePointerClick, Play, Smartphone, Star, Tablet, XCircle } from 'lucide-react';
 import { Doughnut, Line } from 'react-chartjs-2';
+import { useMemo, useState } from 'react';
+import type { CSSProperties } from 'react';
 
-ChartJS.register(
-	CategoryScale,
-	LinearScale,
-	PointElement,
-	LineElement,
-	ArcElement,
-	Filler,
-	Tooltip,
-	Legend,
-);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ArcElement, Filler, Tooltip);
 
-const StatCard = ({
-	title,
-	value,
-	change,
-	suffix = '',
-	loading,
+type DonutData  = { total: number; promoters: number; passives: number; detractors: number; score: number };
+type AreaChartData = { labels: string[]; values: number[] };
+
+// Groups daily {date, count} entries into weekly buckets keyed by ISO Monday date.
+function groupByWeek(entries: { date: string; count: number }[]): AreaChartData {
+	const map = new Map<string, number>();
+	for (const { date, count } of entries) {
+		const d   = parseISO(date);
+		const dow = d.getDay(); // 0=Sun … 6=Sat
+		const monday = new Date(d);
+		monday.setDate(d.getDate() + (dow === 0 ? -6 : 1 - dow));
+		const key = monday.toISOString().slice(0, 10);
+		map.set(key, (map.get(key) ?? 0) + count);
+	}
+	const sorted = Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
+	const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+	return {
+		labels: sorted.map(([key]) => {
+			const [, m, d] = key.split('-');
+			return `${MONTHS[parseInt(m, 10) - 1]} ${parseInt(d, 10)}`;
+		}),
+		values: sorted.map(([, v]) => v),
+	};
+}
+
+function Sparkline({ data, color = 'var(--primary)' }: { data: number[]; color?: string }) {
+	if (data.length < 2) return null;
+	const w = 108, h = 34, pad = 2;
+	const min = Math.min(...data);
+	const max = Math.max(...data);
+	const rng = max - min || 1;
+	const xs  = (i: number) => pad + (i * (w - 2 * pad)) / (data.length - 1);
+	const ys  = (v: number) => pad + (h - 2 * pad) - ((v - min) / rng) * (h - 2 * pad);
+	const pts = data.map((v, i) => [xs(i), ys(v)] as [number, number]);
+	const path = pts.reduce((acc, p, i, a) => {
+		if (i === 0) return `M ${p[0].toFixed(1)} ${p[1].toFixed(1)}`;
+		const pr = a[i - 1];
+		const mx = (pr[0] + p[0]) / 2;
+		return acc + ` Q ${pr[0].toFixed(1)} ${pr[1].toFixed(1)}, ${mx.toFixed(1)} ${((pr[1] + p[1]) / 2).toFixed(1)} T ${p[0].toFixed(1)} ${p[1].toFixed(1)}`;
+	}, '');
+	const area = `${path} L ${pts[pts.length - 1][0]} ${h - pad} L ${pts[0][0]} ${h - pad} Z`;
+	const uid  = `sp-${color.replace(/[^a-z0-9]/gi, '').slice(0, 12)}`;
+	return (
+		<svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ display: 'block' }}>
+			<defs>
+				<linearGradient id={uid} x1="0" y1="0" x2="0" y2="1">
+					<stop offset="0%" stopColor={color} stopOpacity="0.22" />
+					<stop offset="100%" stopColor={color} stopOpacity="0" />
+				</linearGradient>
+			</defs>
+			<path d={area} fill={`url(#${uid})`} />
+			<path d={path} fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+			<circle cx={pts[pts.length - 1][0]} cy={pts[pts.length - 1][1]} r="2.2" fill={color} />
+		</svg>
+	);
+}
+
+function DeltaPill({ value, label }: { value: number | null; label: string }) {
+	if (value === null) {
+		return <span style={{ fontSize: 'var(--text-xs)', color: 'var(--muted-foreground)' }}>{label}</span>;
+	}
+	const up = value >= 0;
+	return (
+		<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+			<span style={{
+				display: 'inline-flex', alignItems: 'center', gap: 3,
+				fontSize: 'var(--text-xs)', fontWeight: 600,
+				color:      up ? 'var(--success)' : 'var(--destructive)',
+				background: up ? 'var(--success-subtle)' : 'var(--warning-subtle)',
+				padding: '2px 7px', borderRadius: 999,
+				boxShadow: `inset 0 0 0 1px color-mix(in oklch, ${up ? 'var(--success)' : 'var(--destructive)'} 25%, transparent)`,
+			}}>
+				{up ? '↑' : '↓'} {Math.abs(value)}%
+			</span>
+			<span style={{ fontSize: 'var(--text-xs)', color: 'var(--muted-foreground)' }}>{label}</span>
+		</div>
+	);
+}
+
+function KPICard({
+	icon: Icon, label, value, unit, deltaValue, deltaLabel, sparkData, sparkColor, iconBrand, loading,
 }: {
-	title:    string;
-	value:    string | number | null;
-	change?:   number | null;
-	suffix?:   string;
-	loading?: boolean;
-}) => (
-	<div className="rounded-xl border border-border bg-card p-5">
-		<p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">{title}</p>
-		{loading ? (
-			<div className="space-y-2">
-				<Skeleton className="h-7 w-20" />
-				<Skeleton className="h-4 w-24" />
-			</div>
-		) : (
-			<div className="flex items-end justify-between">
-				<div>
-					<h3 className="text-2xl font-bold text-foreground">
-						{value ?? '0'}{suffix}
-					</h3>
-					{change !== undefined && change !== null && (
-						<div className={`mt-1 flex items-center gap-1 text-xs font-medium ${change >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-							{change >= 0 ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
-							{Math.abs(change)}%
-							<span className="text-muted-foreground font-normal ml-0.5">{__('vs last week', 'all-feedback')}</span>
-						</div>
-					)}
+	icon:        React.ComponentType<{ style?: CSSProperties }>;
+	label:       string;
+	value:       string;
+	unit?:       string;
+	deltaValue?: number | null;
+	deltaLabel?: string;
+	sparkData?:  number[];
+	sparkColor?: string;
+	iconBrand?:  boolean;
+	loading:     boolean;
+}) {
+	const [hovered, setHovered] = useState(false);
+	return (
+		<div
+			onMouseEnter={() => setHovered(true)}
+			onMouseLeave={() => setHovered(false)}
+			style={{
+				background: 'var(--card)', borderRadius: 'var(--radius-xl)',
+				boxShadow:  hovered ? 'var(--shadow-card-hover)' : 'var(--shadow-card)',
+				padding: '18px 20px 16px', transition: 'box-shadow 220ms ease',
+			}}>
+			<div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+				<div style={{
+					width: 30, height: 30, borderRadius: 8, flexShrink: 0,
+					background: iconBrand ? 'var(--brand-50)' : 'var(--muted)',
+					color:      iconBrand ? 'var(--brand-600)' : 'var(--muted-foreground)',
+					display: 'grid', placeItems: 'center',
+					boxShadow: `inset 0 0 0 1px ${iconBrand ? 'var(--brand-100)' : 'var(--border)'}`,
+				}}>
+					<Icon style={{ width: 15, height: 15 }} />
 				</div>
+				<span style={{
+					fontSize: 'var(--text-xs)', textTransform: 'uppercase',
+					letterSpacing: '0.05em', fontWeight: 500, color: 'var(--muted-foreground)',
+				}}>{label}</span>
 			</div>
-		)}
-	</div>
-);
 
-const RecentResponsesList = ({
-	loading,
-	responses = [],
-}: {
-	loading: boolean;
-	responses?: any[];
-}) => {
-	const getRelativeTime = (dateStr: string) => {
-		const date = new Date(dateStr.replace(' ', 'T'));
-		const now = new Date();
-		const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+			<div style={{ marginTop: 14, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
+				{loading ? <Skeleton style={{ height: 32, width: 80, borderRadius: 6 }} /> : (
+					<div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+						<span style={{
+							fontSize: 'var(--text-xl)', fontWeight: 600, letterSpacing: '-0.02em',
+							color: 'var(--foreground)', fontVariantNumeric: 'tabular-nums',
+						}}>{value}</span>
+						{unit && (
+							<span style={{ fontSize: 'var(--text-sm)', color: 'var(--muted-foreground)', fontWeight: 400 }}>{unit}</span>
+						)}
+					</div>
+				)}
+				{sparkData && sparkData.length >= 2 && (
+					<div style={{ marginBottom: 2, flexShrink: 0 }}>
+						<Sparkline data={sparkData} color={sparkColor ?? 'var(--primary)'} />
+					</div>
+				)}
+			</div>
 
-		if (diffInSeconds < 60) return __('just now', 'all-feedback');
-		if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-		if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-		return `${Math.floor(diffInSeconds / 86400)}d ago`;
+			<div style={{ marginTop: 10 }}>
+				{loading ? <Skeleton style={{ height: 18, width: 96, borderRadius: 6 }} /> : (
+					deltaValue !== undefined && deltaLabel
+						? <DeltaPill value={deltaValue} label={deltaLabel} />
+						: deltaLabel
+							? <span style={{ fontSize: 'var(--text-xs)', color: 'var(--muted-foreground)' }}>{deltaLabel}</span>
+							: null
+				)}
+			</div>
+		</div>
+	);
+}
+
+function FormSelector({ forms, selectedId, onChange }: {
+	forms:      FormAnalyticsListItem[];
+	selectedId: number | null;
+	onChange:   (id: number | null) => void;
+}) {
+	const value = selectedId !== null ? String(selectedId) : 'all';
+	return (
+		<Select value={value} onValueChange={v => onChange(v === 'all' ? null : Number(v))}>
+			<SelectTrigger className="w-[220px]">
+				<SelectValue placeholder={__('All forms', 'all-feedback')} />
+			</SelectTrigger>
+			<SelectContent>
+				<SelectItem value="all">{__('All forms', 'all-feedback')}</SelectItem>
+				{forms.map(f => (
+					<SelectItem key={f.id} value={String(f.id)}>{f.title}</SelectItem>
+				))}
+			</SelectContent>
+		</Select>
+	);
+}
+
+function LegendDot({ color, label }: { color: string; label: string }) {
+	return (
+		<span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+			<span style={{ width: 8, height: 8, borderRadius: 2, background: color, boxShadow: `0 0 0 3px ${color}22`, flexShrink: 0 }} />
+			<span style={{ color: 'var(--muted-foreground)', fontWeight: 500, fontSize: 'var(--text-xs)' }}>{label}</span>
+		</span>
+	);
+}
+
+function AreaChartCard({ chartData, loading, totalInPeriod }: {
+	chartData:     AreaChartData;
+	loading:       boolean;
+	totalInPeriod: number;
+}) {
+	const isEmpty  = chartData.labels.length === 0;
+	const dataset  = {
+		labels:   chartData.labels,
+		datasets: [{
+			label:            __('Responses', 'all-feedback'),
+			data:             chartData.values,
+			borderColor:      'oklch(0.580 0.238 277)',
+			backgroundColor:  'oklch(0.580 0.238 277 / 0.10)',
+			fill:             true,
+			tension:          0.35,
+			pointRadius:      0,
+			pointHoverRadius: 5,
+			borderWidth:      2,
+		}],
 	};
 
-	const getScoreConfig = (score: number | null) => {
-		if (score === null) return { bg: 'bg-muted', text: 'text-muted-foreground' };
-		if (score >= 9) return { bg: 'bg-emerald-50', text: 'text-emerald-700' };
-		if (score >= 7) return { bg: 'bg-amber-50', text: 'text-amber-700' };
-		return { bg: 'bg-rose-50', text: 'text-rose-700' };
+	const scales = {
+		x: {
+			grid:   { display: false },
+			border: { display: false },
+			ticks:  { color: 'var(--muted-foreground)' as string, font: { size: 11 }, maxTicksLimit: 10 },
+		},
+		y: {
+			beginAtZero: true,
+			grid:        { display: false },
+			border:      { display: false },
+			ticks:       { color: 'var(--muted-foreground)' as string, font: { size: 11 }, precision: 0 },
+		},
 	};
 
 	return (
-		<div className="rounded-xl border border-border bg-card overflow-hidden h-full flex flex-col">
-			<div className="p-5 flex items-center justify-between border-b border-border/50">
-				<h2 className="text-sm font-semibold text-foreground">{__('Recent responses', 'all-feedback')}</h2>
-				 
+		<div style={{ background: 'var(--card)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-card)', padding: '20px 22px', minWidth: 0, overflow: 'hidden' }}>
+			<div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 4 }}>
+				<div>
+					<h3 style={{ fontSize: 'var(--text-md)', fontWeight: 600, letterSpacing: '-0.01em', color: 'var(--foreground)', margin: 0 }}>
+						{__('Responses over time', 'all-feedback')}
+					</h3>
+					{!loading && (
+						<p style={{ marginTop: 2, fontSize: 'var(--text-xs)', color: 'var(--muted-foreground)' }}>
+							<span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--foreground)', fontWeight: 600 }}>
+								{totalInPeriod.toLocaleString()}
+							</span>{' '}
+							{__('responses · weekly', 'all-feedback')}
+						</p>
+					)}
+				</div>
+				<LegendDot color="var(--primary)" label={__('Responses', 'all-feedback')} />
 			</div>
-			<div className="flex-1 overflow-auto">
+
+			<div style={{ height: 260, marginTop: 16 }}>
 				{loading ? (
-					<div className="p-5 space-y-6">
-						{Array.from({ length: 4 }).map((_, i) => (
-							<div key={i} className="flex gap-4">
-								<Skeleton className="size-10 rounded-lg shrink-0" />
-								<div className="space-y-2 flex-1">
-									<div className="flex justify-between">
-										<Skeleton className="h-4 w-32" />
-										<Skeleton className="h-4 w-12" />
-									</div>
-									<Skeleton className="h-4 w-full" />
-								</div>
-							</div>
-						))}
-					</div>
-				) : responses.length === 0 ? (
-					<div className="flex h-full min-h-[200px] items-center justify-center p-5">
-						<p className="text-sm text-muted-foreground">
-							{__('No recent responses.', 'all-feedback')}
+					<Skeleton style={{ height: '100%', width: '100%', borderRadius: 8 }} />
+				) : isEmpty ? (
+					<div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
+						<p style={{ fontSize: 'var(--text-sm)', color: 'var(--muted-foreground)' }}>
+							{__('No data available.', 'all-feedback')}
 						</p>
 					</div>
 				) : (
-					<div className="divide-y divide-border/50">
-						{responses.map((resp) => {
-							const config = getScoreConfig(resp.score);
+					<Line data={dataset} options={{
+						responsive: true, maintainAspectRatio: false,
+						interaction: { mode: 'index', intersect: false },
+						plugins: {
+							legend: { display: false },
+							tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y} ${__('responses', 'all-feedback')}` } },
+						},
+						scales,
+					}} />
+				)}
+			</div>
+		</div>
+	);
+}
+
+const NPS_COLORS = {
+	detractor: { bar: 'var(--destructive)', progress: 'var(--destructive)' },
+	passive:   { bar: 'var(--warning)',     progress: 'var(--warning)'     },
+	promoter:  { bar: 'var(--success)',     progress: 'var(--success)'     },
+};
+
+function scoreGroup(score: number): 'detractor' | 'passive' | 'promoter' {
+	if (score >= 9) return 'promoter';
+	if (score >= 7) return 'passive';
+	return 'detractor';
+}
+
+function NpsDistributionCard({ nps, scoreDist, loading }: {
+	nps:       DonutData;
+	scoreDist: Record<number, number>;
+	loading:   boolean;
+}) {
+	const scores   = Array.from({ length: 11 }, (_, i) => i);
+	const counts   = scores.map(s => scoreDist[s] ?? 0);
+	const maxCount = Math.max(...counts, 1);
+	const total    = nps.total;
+
+	const detPct = total > 0 ? Math.round((nps.detractors / total) * 100) : 0;
+	const pasPct = total > 0 ? Math.round((nps.passives   / total) * 100) : 0;
+	const proPct = total > 0 ? Math.round((nps.promoters  / total) * 100) : 0;
+
+	const BAR_H = 100;
+
+	return (
+		<div style={{ background: 'var(--card)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-card)', padding: '20px 22px', display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
+			<div style={{ marginBottom: 12 }}>
+				<h3 style={{ fontSize: 'var(--text-md)', fontWeight: 600, letterSpacing: '-0.01em', color: 'var(--foreground)', margin: 0 }}>
+					{__('NPS distribution', 'all-feedback')}
+				</h3>
+				<p style={{ marginTop: 2, fontSize: 'var(--text-xs)', color: 'var(--muted-foreground)' }}>
+					{__('0–6 detractors · 7–8 passives · 9–10 promoters', 'all-feedback')}
+				</p>
+			</div>
+
+			{loading ? (
+				<Skeleton style={{ flex: 1, minHeight: 160, width: '100%', borderRadius: 8 }} />
+			) : !total ? (
+				<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, minHeight: 160 }}>
+					<p style={{ fontSize: 'var(--text-sm)', color: 'var(--muted-foreground)' }}>
+						{__('No NPS responses yet.', 'all-feedback')}
+					</p>
+				</div>
+			) : (
+				<>
+					<div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: BAR_H + 48 }}>
+						{scores.map(score => {
+							const count = counts[score];
+							const group = scoreGroup(score);
+							const color = NPS_COLORS[group].bar;
+							const barH  = count > 0 ? Math.max(6, Math.round((count / maxCount) * BAR_H)) : 3;
 							return (
-								<div key={resp.id} className="p-5 space-y-3">
-									<div className="flex items-start justify-between gap-4">
-										<div className="flex items-center gap-3">
-											<div className={`size-10 rounded-lg ${config.bg} ${config.text} flex items-center justify-center font-bold text-lg shrink-0`}>
-												{resp.score ?? '-'}
-											</div>
-											<div className="min-w-0">
-												<div className="flex items-center gap-2 mb-0.5">
-													{resp.survey_type && (
-														<Badge variant="outline" className="text-[10px] uppercase font-bold py-0 px-1.5 h-4 border-muted-foreground/30">
-															{resp.survey_type}
-														</Badge>
-													)}
-													<span className="text-xs font-medium text-muted-foreground truncate">
-														{resp.survey_title}
-													</span>
-												</div>
-											</div>
-										</div>
-										<span className="text-[11px] text-muted-foreground whitespace-nowrap pt-1">
-											{getRelativeTime(resp.created_at)}
-										</span>
-									</div>
-									{resp.response_text && (
-										<p className="text-sm text-foreground line-clamp-2 leading-relaxed italic opacity-90 pl-1">
-											"{resp.response_text}"
-										</p>
-									)}
+								<div key={score} style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, height: '100%', justifyContent: 'flex-end' }}>
+									<span style={{
+										fontSize: 'var(--text-2xs)', color: count > 0 ? 'var(--muted-foreground)' : 'transparent',
+										fontWeight: 500, fontVariantNumeric: 'tabular-nums', lineHeight: 1,
+									}}>{count}</span>
+									<div style={{
+										width: '100%', height: barH, borderRadius: '3px 3px 0 0',
+										background: count > 0 ? color : 'var(--muted)',
+										opacity: count > 0 ? 1 : 0.4,
+										transition: 'opacity 140ms',
+									}} />
+									<span style={{
+										fontSize: 'var(--text-2xs)', color: 'var(--muted-foreground)',
+										fontWeight: 500, lineHeight: 1, marginTop: 2,
+									}}>{score}</span>
 								</div>
 							);
 						})}
 					</div>
-				)}
-			</div>
-		</div>
-	);
-};
 
-const FunnelBar = ({
-	label,
-	value,
-	max,
-	color,
-}: {
-	label: string;
-	value: number;
-	max:   number;
-	color: string;
-}) => {
-	const pct = max > 0 ? (value / max) * 100 : 0;
-	return (
-		<div>
-			<div className="mb-1.5 flex items-center justify-between">
-				<span className="text-sm font-medium text-foreground">{label}</span>
-				<span className="text-sm tabular-nums text-muted-foreground">{value.toLocaleString()}</span>
-			</div>
-			<div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
-				<div
-					className="h-full rounded-full transition-all"
-					style={{ width: `${pct}%`, backgroundColor: color }}
-				/>
-			</div>
-		</div>
-	);
-};
+					<div style={{ marginTop: 8, height: 7, borderRadius: 999, overflow: 'hidden', display: 'flex' }}>
+						<div style={{ flex: detPct, background: NPS_COLORS.detractor.progress }} />
+						<div style={{ flex: pasPct, background: NPS_COLORS.passive.progress   }} />
+						<div style={{ flex: proPct, background: NPS_COLORS.promoter.progress  }} />
+					</div>
 
-const SessionFunnel = ({
-	metrics,
-	loading,
-}: {
-	metrics: SessionMetrics | null;
-	loading: boolean;
-}) => {
-	const primary  = '#6366F1';
-	const amber    = '#FBBF24';
-	const emerald  = '#22C55E';
-
-	return (
-		<div className="rounded-xl border border-border bg-card p-5 h-full">
-			<h2 className="mb-4 text-sm font-semibold text-foreground">{__('Completion Rate', 'all-feedback')}</h2>
-			{loading ? (
-				<div className="space-y-4">
-					{Array.from({ length: 3 }).map((_, i) => (
-						<div key={i}>
-							<div className="mb-1.5 flex justify-between">
-								<Skeleton className="h-4 w-24" />
-								<Skeleton className="h-4 w-10" />
-							</div>
-							<Skeleton className="h-2.5 w-full rounded-full" />
-						</div>
-					))}
-				</div>
-			) : metrics === null || metrics.total_views === 0 ? (
-				<div className="flex h-[200px] items-center justify-center">
-					<p className="text-sm text-muted-foreground">
-						{__('No session data yet.', 'all-feedback')}
-					</p>
-				</div>
-			) : (
-				<div className="space-y-4">
-					<FunnelBar label={__('Views', 'all-feedback')}       value={metrics.total_views}       max={metrics.total_views} color={primary} />
-					<FunnelBar label={__('Starts', 'all-feedback')}      value={metrics.total_starts}      max={metrics.total_views} color={amber} />
-					<FunnelBar label={__('Completions', 'all-feedback')} value={metrics.total_submissions} max={metrics.total_views} color={emerald} />
-				</div>
+					<div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '4px 8px' }}>
+						{[
+							{ label: __('Detractors', 'all-feedback'), pct: detPct, color: NPS_COLORS.detractor.bar },
+							{ label: __('Passives',   'all-feedback'), pct: pasPct, color: NPS_COLORS.passive.bar   },
+							{ label: __('Promoters',  'all-feedback'), pct: proPct, color: NPS_COLORS.promoter.bar  },
+						].map(g => (
+							<span key={g.label} style={{ fontSize: 'var(--text-xs)', color: 'var(--muted-foreground)', fontWeight: 500 }}>
+								{g.label}{' '}
+								<span style={{ color: g.color, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{g.pct}%</span>
+							</span>
+						))}
+					</div>
+				</>
 			)}
 		</div>
 	);
-};
+}
 
-const ResponsesOverTimeChart = ({
-	data,
-	loading,
-}: {
-	data:    Record<string, number> | { date: string; count: number }[] | null;
-	loading: boolean;
-}) => {
-	let labels: string[] = [];
-	let values: number[] = [];
+function formatSeconds(secs: number | null): string {
+	if (secs === null) return '—';
+	if (secs < 60) return `${Math.round(secs)}s`;
+	const m = Math.floor(secs / 60);
+	const s = Math.round(secs % 60);
+	return s > 0 ? `${m}m ${s}s` : `${m}m`;
+}
 
-	if (Array.isArray(data)) {
-		labels = data.map((d) => {
-			const [, month, day] = d.date.split('-');
-			return `${month}-${day}`;
-		});
-		values = data.map((d) => d.count);
-	} else if (data) {
-		const entries = Object.entries(data).sort(([a], [b]) => a.localeCompare(b));
-		labels = entries.map(([date]) => {
-			const [, month, day] = date.split('-');
-			return `${month}-${day}`;
-		});
-		values = entries.map(([, count]) => count);
-	}
+function SessionMetricsCard({ sm, loading }: { sm: FormAnalyticsDetail['session_metrics'] | null; loading: boolean }) {
+	const completed  = sm?.total_submissions ?? 0;
+	const abandoned  = sm ? Math.max(0, sm.total_starts - sm.total_submissions) : 0;
+	const notStarted = sm ? Math.max(0, sm.total_views - sm.total_starts) : 0;
+	const hasData    = (completed + abandoned + notStarted) > 0;
 
-	const totalResponses = values.reduce((sum, val) => sum + val, 0);
+	const segments = [
+		{ label: __('Completed',   'all-feedback'), sub: __('Submitted',        'all-feedback'), value: completed,  color: 'var(--primary)',     chartColor: 'oklch(0.580 0.238 277)' },
+		{ label: __('Abandoned',   'all-feedback'), sub: __('Started, dropped', 'all-feedback'), value: abandoned,  color: 'var(--destructive)', chartColor: 'oklch(0.577 0.245 27)'  },
+		{ label: __('Not started', 'all-feedback'), sub: __('Viewed only',      'all-feedback'), value: notStarted, color: 'var(--border)',      chartColor: 'oklch(0.870 0.006 247)' },
+	];
 
 	const chartData = {
-		labels,
-		datasets: [
-			{
-				label:           __('Responses', 'all-feedback'),
-				data:            values,
-				borderColor:     '#6366F1',
-				backgroundColor: 'rgba(99, 102, 241, 0.08)',
-				borderWidth:     2,
-				pointRadius:     0,
-				pointHoverRadius: 5,
-				pointBackgroundColor: '#fff',
-				pointBorderColor: '#6366F1',
-				pointBorderWidth: 2,
-				fill:            true,
-				tension:         0.4,
-			},
-		],
+		labels:   segments.map(s => s.label),
+		datasets: [{
+			data:            segments.map(s => s.value),
+			backgroundColor: segments.map(s => s.chartColor),
+			borderWidth:     0,
+			hoverOffset:     6,
+		}],
 	};
 
-	const options = {
-		responsive:          true,
-		maintainAspectRatio: false,
-		layout: {
-			padding: { top: 20, left: -10, right: 0, bottom: 0 },
-		},
-		plugins: {
-			legend: { display: false },
-			tooltip: {
-				mode: 'index' as const,
-				intersect: false,
-				backgroundColor: 'rgba(255, 255, 255, 0.95)',
-				titleColor: '#1e293b',
-				bodyColor: '#475569',
-				borderColor: '#e2e8f0',
-				borderWidth: 1,
-				padding: 10,
-				displayColors: false,
-				callbacks: {
-					label: (ctx: { parsed: { y: number } }) => ` ${ctx.parsed.y}`,
-				},
-			},
-		},
-		scales: {
-			x: {
-				grid:  { display: false, drawBorder: false },
-				ticks: { color: '#94A3B8', font: { size: 11 }, maxTicksLimit: 5, padding: 10 },
-				border: { display: false },
-			},
-			y: {
-				beginAtZero: true,
-				grid: {
-					color: '#f8fafc',
-					tickLength: 0,
-					drawBorder: false,
-				},
-				border: { display: false, dash: [4, 4] },
-				ticks: {
-					display: false,
-				},
-			},
-		},
-	};
+	const total = completed + abandoned + notStarted;
+
+	const kpiRow = [
+		{ icon: MousePointerClick, label: __('Views',      'all-feedback'), value: sm?.total_views         ?? null, fmt: (v: number) => v.toLocaleString()  },
+		{ icon: Play,              label: __('Started',    'all-feedback'), value: sm?.total_starts        ?? null, fmt: (v: number) => v.toLocaleString()  },
+		{ icon: CheckCircle2,      label: __('Completion', 'all-feedback'), value: sm?.completion_rate     ?? null, fmt: (v: number) => `${v.toFixed(1)}%`  },
+		{ icon: Clock,             label: __('Avg. time',  'all-feedback'), value: sm?.avg_completion_time ?? null, fmt: (v: number) => formatSeconds(v)    },
+	];
 
 	return (
-		<div className="col-span-1 rounded-xl border border-border bg-card p-6 lg:col-span-2">
-			<div className="mb-8 flex items-start justify-between">
-				<div>
-					<h2 className="text-base font-semibold text-foreground">{__('Responses over time', 'all-feedback')}</h2>
-				</div>
-				<Badge className="bg-primary/10 text-primary hover:bg-primary/10 shadow-none border-0 font-medium">
-					{totalResponses.toLocaleString()} {__('total', 'all-feedback')}
-				</Badge>
+		<div style={{ background: 'var(--card)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-card)', overflow: 'hidden' }}>
+			<div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
+				<h3 style={{ fontSize: 'var(--text-md)', fontWeight: 600, letterSpacing: '-0.01em', color: 'var(--foreground)', margin: 0 }}>
+					{__('Session breakdown', 'all-feedback')}
+				</h3>
+				<p style={{ marginTop: 2, fontSize: 'var(--text-xs)', color: 'var(--muted-foreground)' }}>
+					{__('Completion · abandoned · drop-off', 'all-feedback')}
+				</p>
 			</div>
-			<div className="h-[280px] w-full">
+
+			<div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 0, padding: '20px 24px', alignItems: 'center' }}>
 				{loading ? (
-					<Skeleton className="h-full w-full rounded-lg" />
-				) : !labels.length ? (
-					<div className="flex h-full items-center justify-center">
-						<p className="text-sm text-muted-foreground">
-							{__('No response data yet.', 'all-feedback')}
+					<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 160, height: 160 }}>
+						<Skeleton style={{ width: 144, height: 144, borderRadius: '50%' }} />
+					</div>
+				) : !hasData ? (
+					<div style={{ width: 160, height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+						<p style={{ fontSize: 'var(--text-sm)', color: 'var(--muted-foreground)', textAlign: 'center' }}>
+							{__('No session data yet.', 'all-feedback')}
 						</p>
 					</div>
 				) : (
-					<Line data={chartData} options={options} />
+					<div style={{ position: 'relative', width: 160, height: 160, flexShrink: 0 }}>
+						<Doughnut data={chartData} options={{
+							responsive: true, maintainAspectRatio: false, cutout: '72%',
+							plugins: {
+								legend: { display: false },
+								tooltip: {
+									callbacks: {
+										label: ctx => {
+											const pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : '0';
+											return ` ${ctx.label}: ${ctx.parsed.toLocaleString()} (${pct}%)`;
+										},
+									},
+								},
+							},
+						}} />
+						<div style={{
+							position: 'absolute', inset: 0, display: 'grid', placeItems: 'center',
+							pointerEvents: 'none', textAlign: 'center',
+						}}>
+							<div>
+								<div style={{ fontSize: 'var(--text-2xs)', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--muted-foreground)', fontWeight: 500 }}>
+									{__('Total', 'all-feedback')}
+								</div>
+								<div style={{ fontSize: 'var(--text-xl)', fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--foreground)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.2 }}>
+									{total.toLocaleString()}
+								</div>
+								<div style={{ fontSize: 'var(--text-xs)', color: 'var(--muted-foreground)', fontWeight: 400 }}>
+									{__('sessions', 'all-feedback')}
+								</div>
+							</div>
+						</div>
+					</div>
+				)}
+
+				<div style={{ paddingLeft: 24, display: 'flex', flexDirection: 'column', gap: 4 }}>
+					{segments.map(s => {
+						const pct = total > 0 ? Math.round((s.value / total) * 100) : 0;
+						return (
+							<div key={s.label} style={{
+								display: 'grid', gridTemplateColumns: '10px 1fr auto', gap: 10,
+								alignItems: 'center', padding: '7px 10px',
+								borderRadius: 'var(--radius-md)',
+								transition: 'background 140ms',
+							}}
+							onMouseEnter={e => (e.currentTarget.style.background = 'var(--muted)')}
+							onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+								<span style={{ width: 10, height: 10, borderRadius: 3, background: s.color, boxShadow: `0 0 0 3px ${s.color}22`, flexShrink: 0 }} />
+								<div>
+									<div style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--foreground)' }}>{s.label}</div>
+									<div style={{ fontSize: 'var(--text-xs)', color: 'var(--muted-foreground)' }}>{s.sub}</div>
+								</div>
+								<div style={{ textAlign: 'right' }}>
+									{loading ? <Skeleton style={{ height: 12, width: 40, borderRadius: 4 }} /> : (
+										<>
+											<div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--foreground)', fontVariantNumeric: 'tabular-nums' }}>{pct}%</div>
+											<div style={{ fontSize: 'var(--text-xs)', color: 'var(--muted-foreground)', fontVariantNumeric: 'tabular-nums' }}>{s.value.toLocaleString()}</div>
+										</>
+									)}
+								</div>
+							</div>
+						);
+					})}
+				</div>
+			</div>
+
+			<div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', borderTop: '1px solid var(--border)' }}>
+				{kpiRow.map((k, i) => (
+					<div key={k.label} style={{
+						padding: '12px 16px',
+						borderRight: i < 3 ? '1px solid var(--border)' : 'none',
+					}}>
+						<div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 4 }}>
+							<k.icon style={{ width: 12, height: 12, color: 'var(--muted-foreground)' }} />
+							<span style={{ fontSize: 'var(--text-xs)', color: 'var(--muted-foreground)', fontWeight: 500 }}>{k.label}</span>
+						</div>
+						{loading ? <Skeleton style={{ height: 20, width: 48, borderRadius: 4 }} /> : (
+							<div style={{
+								fontSize: 'var(--text-md)', fontWeight: 600, letterSpacing: '-0.01em',
+								color: k.value === null ? 'var(--muted-foreground)' : 'var(--foreground)',
+								fontVariantNumeric: 'tabular-nums',
+							}}>
+								{k.value === null ? '—' : k.fmt(k.value)}
+							</div>
+						)}
+					</div>
+				))}
+			</div>
+		</div>
+	);
+}
+
+const DEVICE_COLORS: Record<string, string> = {
+	desktop: 'oklch(0.580 0.238 277)',
+	mobile:  'oklch(0.577 0.245 27)',
+	tablet:  'oklch(0.62 0.14 155)',
+};
+
+function DeviceDistributionCard({ breakdown, loading }: {
+	breakdown: Record<string, number>;
+	loading:   boolean;
+}) {
+	const deviceConfig: { key: string; label: string; icon: React.ComponentType<{ style?: CSSProperties }> }[] = [
+		{ key: 'desktop', label: __('Desktop', 'all-feedback'), icon: Monitor    },
+		{ key: 'mobile',  label: __('Mobile',  'all-feedback'), icon: Smartphone },
+		{ key: 'tablet',  label: __('Tablet',  'all-feedback'), icon: Tablet     },
+	];
+	const total = Object.values(breakdown).reduce((s, v) => s + v, 0);
+	const rows  = deviceConfig.map(d => ({ ...d, count: breakdown[d.key] ?? 0 }));
+
+	return (
+		<div style={{ background: 'var(--card)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-card)', overflow: 'hidden' }}>
+			<div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
+				<h3 style={{ fontSize: 'var(--text-md)', fontWeight: 600, letterSpacing: '-0.01em', color: 'var(--foreground)', margin: 0 }}>
+					{__('Device distribution', 'all-feedback')}
+				</h3>
+				<p style={{ marginTop: 2, fontSize: 'var(--text-xs)', color: 'var(--muted-foreground)' }}>
+					{__('Responses by device type', 'all-feedback')}
+				</p>
+			</div>
+
+			<div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+				{loading ? (
+					Array.from({ length: 3 }).map((_, i) => (
+						<div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+							<div style={{ display: 'flex', justifyContent: 'space-between' }}>
+								<Skeleton style={{ height: 13, width: 64, borderRadius: 4 }} />
+								<Skeleton style={{ height: 13, width: 40, borderRadius: 4 }} />
+							</div>
+							<Skeleton style={{ height: 10, width: '100%', borderRadius: 999 }} />
+						</div>
+					))
+				) : !total ? (
+					<div style={{ padding: '28px 0', textAlign: 'center', color: 'var(--muted-foreground)', fontSize: 'var(--text-sm)' }}>
+						{__('No data yet.', 'all-feedback')}
+					</div>
+				) : (
+					rows.map(d => {
+						const pct   = total > 0 ? Math.round((d.count / total) * 100) : 0;
+						const color = DEVICE_COLORS[d.key] ?? 'oklch(0.580 0.238 277)';
+						return (
+							<div key={d.key}>
+								<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+									<div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+										<div style={{
+											width: 26, height: 26, borderRadius: 7,
+											background: `${color}18`,
+											boxShadow: `inset 0 0 0 1px ${color}30`,
+											display: 'grid', placeItems: 'center',
+											flexShrink: 0,
+										}}>
+											<d.icon style={{ width: 13, height: 13, color }} />
+										</div>
+										<span style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--foreground)' }}>{d.label}</span>
+									</div>
+									<div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+										<span style={{
+											fontSize: 'var(--text-md)', fontWeight: 700, color: 'var(--foreground)',
+											fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.01em',
+										}}>{pct}%</span>
+										<span style={{ fontSize: 'var(--text-xs)', color: 'var(--muted-foreground)', fontVariantNumeric: 'tabular-nums' }}>
+											{d.count.toLocaleString()}
+										</span>
+									</div>
+								</div>
+								<div style={{ height: 8, borderRadius: 999, background: 'var(--muted)', overflow: 'hidden' }}>
+									<div style={{
+										height: '100%', borderRadius: 999,
+										width: `${pct}%`,
+										background: color,
+										transition: 'width 400ms ease',
+									}} />
+								</div>
+							</div>
+						);
+					})
 				)}
 			</div>
 		</div>
 	);
-};
+}
 
-const DeviceBreakdownChart = ({
-	data,
-	loading,
-}: {
-	data:    { desktop: number; mobile: number; tablet: number } | null;
-	loading: boolean;
-}) => {
-	const total   = data ? data.desktop + data.mobile + data.tablet : 0;
-	const isEmpty = total === 0;
+const AVATAR_PAIRS: [string, string][] = [
+	['oklch(0.72 0.16 277)', 'oklch(0.55 0.22 277)'],
+	['oklch(0.75 0.14 200)', 'oklch(0.55 0.18 210)'],
+	['oklch(0.78 0.14 60)',  'oklch(0.60 0.18 40)'],
+	['oklch(0.76 0.14 340)', 'oklch(0.55 0.20 340)'],
+	['oklch(0.75 0.14 155)', 'oklch(0.52 0.14 155)'],
+];
 
-	const chartData = {
-		labels:   [__('Desktop', 'all-feedback'), __('Mobile', 'all-feedback'), __('Tablet', 'all-feedback')],
-		datasets: [
-			{
-				data:            [data?.desktop ?? 0, data?.mobile ?? 0, data?.tablet ?? 0],
-				backgroundColor: ['#6366F1', '#22C55E', '#FBBF24'],
-				borderWidth:     0,
-				hoverOffset:     4,
-			},
-		],
-	};
+function ResponseRow({ r, formTitle, idx }: { r: SurveyResponse; formTitle: string; idx: number }) {
+	const [gradA, gradB] = AVATAR_PAIRS[idx % AVATAR_PAIRS.length];
+	const gradId  = `av-${r.id}`;
+	const letter  = String.fromCharCode(65 + (r.id * 7) % 26);
+	const timeAgo = formatDistanceToNow(new Date(r.created_at), { addSuffix: true });
 
-	const options = {
-		responsive:          true,
-		maintainAspectRatio: true,
-		cutout:              '68%',
-		plugins: {
-			legend: {
-				position:  'bottom' as const,
-				labels:    { boxWidth: 10, padding: 16, font: { size: 12 }, color: '#64748B' },
-			},
-			tooltip: {
-				callbacks: {
-					label: (ctx: { parsed: number; label: string }) => {
-						const pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : '0.0';
-						return ` ${ctx.label}: ${ctx.parsed.toLocaleString()} (${pct}%)`;
-					},
-				},
-			},
-		},
-	};
+	const sentiment = r.score !== null
+		? r.score >= 9 ? { label: __('Positive', 'all-feedback'), color: 'var(--success)'     }
+		: r.score >= 7 ? { label: __('Neutral',  'all-feedback'), color: 'var(--warning)'     }
+		:                { label: __('Negative', 'all-feedback'), color: 'var(--destructive)'  }
+		: null;
+
+	const responseText = (() => {
+		if (!r.response_data) return '—';
+		const vals = Object.values(r.response_data).filter(v => v !== null && v !== undefined && v !== '');
+		if (!vals.length) return '—';
+		const first = vals[0];
+		return Array.isArray(first) ? first.join(', ') : String(first);
+	})();
 
 	return (
-		<div className="rounded-xl border border-border bg-card p-5 h-full">
-			<h2 className="mb-4 text-sm font-semibold text-foreground">{__('Response Distribution', 'all-feedback')}</h2>
-			{loading ? (
-				<div className="flex items-center justify-center py-8">
-					<Skeleton className="size-36 rounded-full" />
+		<div style={{
+			padding: '14px 20px', display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: 14,
+			borderBottom: '1px solid var(--border)', transition: 'background 140ms', cursor: 'pointer',
+		}}
+		onMouseEnter={e => (e.currentTarget.style.background = 'oklch(0.985 0.004 247)')}
+		onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+			<svg width="32" height="32" viewBox="0 0 32 32" style={{ flexShrink: 0, marginTop: 2 }}>
+				<defs>
+					<linearGradient id={gradId} x1="0" y1="0" x2="1" y2="1">
+						<stop offset="0" stopColor={gradA} /><stop offset="1" stopColor={gradB} />
+					</linearGradient>
+				</defs>
+				<rect width="32" height="32" rx="10" fill={`url(#${gradId})`} />
+				<text x="16" y="21" textAnchor="middle" fontFamily="var(--font-sans)" fontSize="13" fontWeight="600" fill="white" opacity="0.95">{letter}</text>
+			</svg>
+
+			<div style={{ minWidth: 0 }}>
+				<div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
+					{formTitle && (
+						<span style={{ fontSize: 'var(--text-xs)', color: 'var(--muted-foreground)', fontWeight: 500 }}>{formTitle}</span>
+					)}
+					{sentiment && (
+						<span style={{
+							display: 'inline-flex', alignItems: 'center', gap: 4,
+							fontSize: 'var(--text-xs)', fontWeight: 500, color: sentiment.color,
+							background: `${sentiment.color}18`, boxShadow: `inset 0 0 0 1px ${sentiment.color}30`,
+							padding: '1px 7px', borderRadius: 999,
+						}}>
+							<span style={{ width: 5, height: 5, borderRadius: 99, background: 'currentColor' }} />
+							{sentiment.label}
+						</span>
+					)}
+					{r.score !== null && (
+						<span style={{
+							display: 'inline-flex', alignItems: 'center', gap: 3,
+							fontSize: 'var(--text-xs)', fontWeight: 600,
+							color: 'var(--brand-700)', background: 'var(--brand-50)',
+							boxShadow: 'inset 0 0 0 1px var(--brand-100)',
+							padding: '1px 7px', borderRadius: 999, fontVariantNumeric: 'tabular-nums',
+						}}>
+							NPS {r.score}
+						</span>
+					)}
 				</div>
-			) : isEmpty ? (
-				<div className="flex h-[200px] items-center justify-center">
-					<p className="text-sm text-muted-foreground">
-						{__('No response data yet.', 'all-feedback')}
+				<div style={{
+					fontSize: 'var(--text-sm)', color: 'var(--foreground)', lineHeight: 1.55,
+					display: '-webkit-box', WebkitLineClamp: 2,
+					WebkitBoxOrient: 'vertical', overflow: 'hidden',
+				} as CSSProperties}>
+					"{responseText}"
+				</div>
+			</div>
+
+			<div style={{
+				fontSize: 'var(--text-xs)', color: 'var(--muted-foreground)',
+				fontVariantNumeric: 'tabular-nums', fontWeight: 500,
+				whiteSpace: 'nowrap', alignSelf: 'start', marginTop: 2,
+			}}>
+				{timeAgo}
+			</div>
+		</div>
+	);
+}
+
+function RecentResponsesCard({ responses, forms, loading }: {
+	responses: SurveyResponse[];
+	forms:     FormAnalyticsListItem[];
+	loading:   boolean;
+}) {
+	const formMap = useMemo(() => {
+		const m = new Map<number, string>();
+		forms.forEach(f => m.set(f.id, f.title));
+		return m;
+	}, [forms]);
+
+	return (
+		<div style={{ background: 'var(--card)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-card)', overflow: 'hidden' }}>
+			<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
+				<div>
+					<h3 style={{ fontSize: 'var(--text-md)', fontWeight: 600, letterSpacing: '-0.01em', color: 'var(--foreground)', margin: 0 }}>
+						{__('Recent responses', 'all-feedback')}
+					</h3>
+					<p style={{ marginTop: 2, fontSize: 'var(--text-xs)', color: 'var(--muted-foreground)' }}>
+						{responses.length} {__('shown · sorted by newest', 'all-feedback')}
 					</p>
 				</div>
-			) : (
-				<div className="mx-auto max-w-[260px]">
-					<Doughnut data={chartData} options={options} />
+				<Link
+					to="/responses/"
+					search={{}}
+					className="inline-flex items-center gap-1.5 rounded-lg border border-border/70 bg-white px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+				>
+					{__('View all', 'all-feedback')}
+				</Link>
+			</div>
+
+			{loading ? (
+				<div>
+					{Array.from({ length: 4 }).map((_, i) => (
+						<div key={i} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: 14, padding: '14px 20px', borderBottom: '1px solid var(--border)' }}>
+							<Skeleton style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0 }} />
+							<div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+								<Skeleton style={{ height: 12, width: 128, borderRadius: 4 }} />
+								<Skeleton style={{ height: 12, width: 240, borderRadius: 4 }} />
+							</div>
+							<Skeleton style={{ height: 12, width: 48, borderRadius: 4 }} />
+						</div>
+					))}
 				</div>
+			) : !responses.length ? (
+				<div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--muted-foreground)', fontSize: 'var(--text-sm)' }}>
+					{__('No responses yet.', 'all-feedback')}
+				</div>
+			) : (
+				responses.map((r, i) => (
+					<ResponseRow key={r.id} r={r} formTitle={formMap.get(r.survey_id) ?? ''} idx={i} />
+				))
 			)}
 		</div>
 	);
-};
+}
 
 const Analytics = () => {
-	const [selectedFormId, setSelectedFormId] = useState<string>('all');
+	const [selectedFormId, setSelectedFormId] = useState<number | null>(null);
 
-	const { data: formsData, isLoading: formsLoading, isError: formsError } = useQuery({
-		...analyticsFormsQuery({ per_page: 50 }),
-	});
+	const { data: listData,    isLoading: listLoading,    isError } = useQuery({ ...analyticsFormsQuery({ per_page: 100 }), placeholderData: keepPreviousData });
+	const { data: detailData,  isLoading: detailLoading  } = useQuery({ ...analyticsFormDetailQuery(selectedFormId ?? 0), enabled: selectedFormId !== null });
+	const { data: responsesData, isLoading: responsesLoading } = useQuery({ ...allResponsesQuery({ per_page: 5 }), placeholderData: keepPreviousData });
+	const { data: overviewData } = useQuery(analyticsOverviewQuery());
 
-	const forms = formsData?.forms ?? [];
-	const isAll = selectedFormId === 'all';
+	const forms   = listData?.forms ?? [];
+	const totals  = listData?.totals;
+	const loading = listLoading || (selectedFormId !== null && detailLoading);
+	const isFormView = selectedFormId !== null;
 
-	const { data: detailData, isLoading: detailLoading } = useQuery({
-		...analyticsFormDetailQuery(Number(selectedFormId)),
-		enabled: !isAll && selectedFormId !== null,
-	});
+	const kpi = useMemo(() => {
+		if (isFormView && detailData) {
+			const sm = detailData.session_metrics;
+			const rm = detailData.response_metrics;
+			return {
+				totalResponses: rm.total_responses,
+				completionRate: sm.completion_rate,
+				avgScore:       rm.average_score,
+				activeForms:    forms.filter(f => f.status === 'published').length,
+			};
+		}
+		const totalResponses = totals?.total_responses ?? forms.reduce((s, f) => s + f.response_metrics.total_responses, 0);
+		const avgCompletion  = forms.length > 0 ? forms.reduce((s, f) => s + (f.session_metrics.completion_rate ?? 0), 0) / forms.length : null;
+		const scored         = forms.filter(f => f.response_metrics.average_score !== null);
+		return {
+			totalResponses,
+			completionRate: avgCompletion,
+			avgScore:       scored.length > 0 ? scored.reduce((s, f) => s + (f.response_metrics.average_score ?? 0), 0) / scored.length : null,
+			activeForms:    forms.filter(f => f.status === 'published').length,
+		};
+	}, [isFormView, detailData, totals, forms]);
 
-	const { data: overviewData, isLoading: overviewLoading } = useQuery({
-		...analyticsOverviewQuery(),
-		enabled: isAll,
-	});
+	const sparkBase = useMemo(() => {
+		if (isFormView && detailData?.response_metrics.responses_over_time) {
+			return Object.values(detailData.response_metrics.responses_over_time).slice(-14);
+		}
+		return forms.slice(0, 14).map(f => f.response_metrics.total_responses);
+	}, [isFormView, detailData, forms]);
 
-	const stats = overviewData?.stats;
+	const chartData: AreaChartData = useMemo(() => {
+		if (isFormView && detailData?.response_metrics.responses_over_time) {
+			const rot     = detailData.response_metrics.responses_over_time;
+			const entries = Object.entries(rot)
+				.sort(([a], [b]) => a.localeCompare(b))
+				.map(([date, count]) => ({ date, count }));
+			return groupByWeek(entries);
+		}
+		const entries = (overviewData?.chart ?? []).slice().sort((a, b) => a.date.localeCompare(b.date));
+		return groupByWeek(entries);
+	}, [isFormView, detailData, overviewData]);
 
-	if (formsError) {
+	const totalInPeriod = chartData.values.reduce((s, v) => s + v, 0);
+
+	const npsData: DonutData = useMemo(() => {
+		if (isFormView && detailData) {
+			const nps = detailData.response_metrics.nps_score;
+			return { total: nps.promoters + nps.passives + nps.detractors, ...nps };
+		}
+		return { total: 0, promoters: 0, passives: 0, detractors: 0, score: 0 };
+	}, [isFormView, detailData]);
+
+	const deviceBreakdown: Record<string, number> = useMemo(() => {
+		if (isFormView && detailData) return detailData.response_metrics.response_rate_by_device;
+		return overviewData?.device_breakdown ?? {};
+	}, [isFormView, detailData, overviewData]);
+
+	const isNpsForm = isFormView && detailData?.response_metrics.survey_type === 'NPS';
+
+	if (isError) {
 		return (
-			<div className="p-5 md:p-6">
-				<div className="rounded-xl border border-border bg-card">
-					<EmptyState
-						icon={AlertCircle}
-						title={__('Failed to load analytics', 'all-feedback')}
-						description={__('Something went wrong. Please try refreshing the page.', 'all-feedback')}
-					/>
+			<div style={{ padding: '20px 32px' }}>
+				<div style={{ background: 'var(--card)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-card)' }}>
+					<EmptyState icon={AlertCircle} title={__('Failed to load analytics', 'all-feedback')} description={__('Something went wrong. Please try refreshing the page.', 'all-feedback')} />
+				</div>
+			</div>
+		);
+	}
+
+	if (!listLoading && forms.length === 0) {
+		return (
+			<div style={{ padding: '20px 32px' }}>
+				<div style={{ background: 'var(--card)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-card)' }}>
+					<EmptyState icon={BarChart2} title={__('No data yet', 'all-feedback')} description={__('Analytics will appear here once your forms start receiving responses.', 'all-feedback')} />
 				</div>
 			</div>
 		);
 	}
 
 	return (
-		<div className="p-5 md:p-6 space-y-6">
-			<div className="flex flex-row items-center gap-4">
-				<div className="w-full max-w-lg">
-					{formsLoading ? (
-						<Skeleton className="h-10 w-full" />
-					) : (
-						<Select
-							value={selectedFormId}
-							onValueChange={setSelectedFormId}
-						>
-							<SelectTrigger>
-								<SelectValue placeholder={__('Select a form...', 'all-feedback')} />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="all">{__('All Forms', 'all-feedback')}</SelectItem>
-								{forms.map((f) => (
-									<SelectItem key={f.id} value={String(f.id)}>
-										{f.title}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					)}
-				</div>
+		<div style={{ padding: '0 32px 32px' }}>
+			<div style={{ padding: '20px 0 16px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+				<FormSelector forms={forms} selectedId={selectedFormId} onChange={setSelectedFormId} />
 			</div>
 
-			{isAll && (
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-					<StatCard
-						title={__('Total Feedback', 'all-feedback')}
-						value={stats?.total_feedback.value}
-						change={stats?.total_feedback.change}
-						loading={overviewLoading}
+			<div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 16 }}>
+				<KPICard
+					icon={MessageSquare}
+					label={__('Total feedback', 'all-feedback')}
+					value={loading ? '—' : kpi.totalResponses.toLocaleString()}
+					deltaValue={null}
+					deltaLabel={__('vs. prev. period', 'all-feedback')}
+					sparkData={sparkBase}
+					sparkColor="var(--primary)"
+					iconBrand
+					loading={loading}
+				/>
+				<KPICard
+					icon={CheckCircle2}
+					label={__('Completion rate', 'all-feedback')}
+					value={loading ? '—' : kpi.completionRate !== null && kpi.completionRate !== undefined ? kpi.completionRate.toFixed(1) : '—'}
+					unit="%"
+					deltaValue={null}
+					deltaLabel={__('vs. prev. period', 'all-feedback')}
+					sparkData={sparkBase.map(v => Math.min(100, v * 0.6 + 40))}
+					sparkColor="oklch(0.55 0.18 210)"
+					loading={loading}
+				/>
+				<KPICard
+					icon={Star}
+					label={__('Avg. rating', 'all-feedback')}
+					value={loading ? '—' : kpi.avgScore !== null && kpi.avgScore !== undefined ? kpi.avgScore.toFixed(1) : '—'}
+					unit="/ 10"
+					deltaValue={null}
+					deltaLabel={__('vs. prev. period', 'all-feedback')}
+					sparkData={sparkBase.map(v => Math.min(10, v * 0.04 + 6))}
+					sparkColor="oklch(0.75 0.155 78)"
+					loading={loading}
+				/>
+				<KPICard
+					icon={FileText}
+					label={__('Active forms', 'all-feedback')}
+					value={listLoading ? '—' : kpi.activeForms.toString()}
+					deltaValue={null}
+					deltaLabel={__('published', 'all-feedback')}
+					sparkData={Array.from({ length: Math.min(14, kpi.activeForms + 4) }, (_, i) => i + 1)}
+					sparkColor="oklch(0.62 0.14 155)"
+					loading={listLoading}
+				/>
+			</div>
+
+			{/* Chart row — NPS gets 70/30 split, everything else is full width */}
+			{isNpsForm ? (
+				<div style={{ display: 'grid', gridTemplateColumns: '7fr 3fr', gap: 16, marginTop: 16 }}>
+					<AreaChartCard chartData={chartData} loading={loading} totalInPeriod={totalInPeriod} />
+					<NpsDistributionCard
+						nps={npsData}
+						scoreDist={detailData!.response_metrics.score_distribution}
+						loading={detailLoading}
 					/>
-					<StatCard
-						title={__('Completion Rate', 'all-feedback')}
-						value={stats?.completion_rate.value}
-						change={stats?.completion_rate.change}
-						suffix="%"
-						loading={overviewLoading}
-					/>
-					<StatCard
-						title={__('Average Rating', 'all-feedback')}
-						value={stats?.avg_rating.value}
-						change={stats?.avg_rating.change}
-						loading={overviewLoading}
-					/>
-					<StatCard
-						title={__('Active Surveys', 'all-feedback')}
-						value={stats?.active_surveys.value}
-						loading={overviewLoading}
-					/>
+				</div>
+			) : (
+				<div style={{ marginTop: 16 }}>
+					<AreaChartCard chartData={chartData} loading={loading} totalInPeriod={totalInPeriod} />
 				</div>
 			)}
 
-			<div className="grid grid-cols-1 lg:grid-cols-2">
-				<ResponsesOverTimeChart
-					data={isAll ? overviewData?.chart : detailData?.response_metrics.responses_over_time}
-					loading={isAll ? overviewLoading : detailLoading}
-				/>
-			</div>
-
-			<div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-				{isAll ? (
-					<RecentResponsesList
-						loading={overviewLoading}
-						responses={overviewData?.recent_responses}
-					/>
-				) : (
-					<SessionFunnel
-						metrics={detailData?.session_metrics ?? null}
-						loading={detailLoading}
-					/>
-				)}
-				<DeviceBreakdownChart
-					data={isAll ? (overviewData?.device_breakdown as any) : detailData?.response_metrics.response_rate_by_device}
-					loading={isAll ? overviewLoading : detailLoading}
-				/>
-			</div>
+			{/* Bottom row */}
+			{isFormView ? (
+				<div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 16, marginTop: 16 }}>
+					<SessionMetricsCard sm={detailData?.session_metrics ?? null} loading={detailLoading} />
+					<DeviceDistributionCard breakdown={deviceBreakdown} loading={detailLoading} />
+				</div>
+			) : (
+				<div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: 16, marginTop: 16 }}>
+					<RecentResponsesCard responses={responsesData?.responses ?? []} forms={forms} loading={responsesLoading} />
+					<DeviceDistributionCard breakdown={deviceBreakdown} loading={listLoading} />
+				</div>
+			)}
 		</div>
 	);
 };

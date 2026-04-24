@@ -46,6 +46,28 @@ class SurveyAnalyticsService {
 	 * @throws NotFoundException When no survey exists for the given ID.
 	 * @since  1.0.0
 	 */
+	/**
+	 * Extract the primary survey type (NPS/CSAT/CES) from a form schema.
+	 *
+	 * @param  array<mixed> $formSchema Decoded form_schema array.
+	 * @return string|null  'NPS', 'CSAT', 'CES', or null.
+	 * @since  1.0.0
+	 */
+	private function extractSurveyType( array $formSchema ): ?string {
+		$primaryTypes = [ 'nps', 'csat', 'ces' ];
+
+		foreach ( (array) ( $formSchema['sections'] ?? [] ) as $section ) {
+			foreach ( (array) ( $section['fields'] ?? [] ) as $field ) {
+				$type = strtolower( (string) ( $field['type'] ?? '' ) );
+				if ( in_array( $type, $primaryTypes, true ) ) {
+					return strtoupper( $type );
+				}
+			}
+		}
+
+		return null;
+	}
+
 	public function getAnalytics( int $surveyId ): array {
 		$survey = $this->surveyRepository->findById( $surveyId );
 
@@ -53,9 +75,10 @@ class SurveyAnalyticsService {
 			throw NotFoundException::forResource( esc_html__( 'Survey', 'allfeedback' ), $surveyId );
 		}
 
-		$stats    = $this->responseRepository->aggregateScoreStats( $surveyId );
-		$byDevice = $this->responseRepository->countByDevice( $surveyId );
-		$overTime = $this->responseRepository->countByDate( $surveyId );
+		$stats          = $this->responseRepository->aggregateScoreStats( $surveyId );
+		$byDevice       = $this->responseRepository->countByDevice( $surveyId );
+		$overTime       = $this->responseRepository->countByDate( $surveyId );
+		$scoreDistrib   = $this->responseRepository->countByScore( $surveyId );
 
 		$total      = $stats['total'];
 		$scoreCount = $stats['score_count'];
@@ -68,6 +91,8 @@ class SurveyAnalyticsService {
 			? round( ( ( $stats['promoters'] - $stats['detractors'] ) / $total ) * 100, 2 )
 			: 0.0;
 
+		$surveyType = $this->extractSurveyType( $survey->getFormSchema() );
+
 		return [
 			'total_responses'         => $total,
 			'average_score'           => $averageScore,
@@ -77,6 +102,8 @@ class SurveyAnalyticsService {
 				'passives'   => $stats['passives'],
 				'detractors' => $stats['detractors'],
 			],
+			'score_distribution'      => $scoreDistrib,
+			'survey_type'             => $surveyType,
 			'response_rate_by_device' => $byDevice,
 			'responses_over_time'     => $overTime,
 		];

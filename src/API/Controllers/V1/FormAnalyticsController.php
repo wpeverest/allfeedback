@@ -189,7 +189,7 @@ class FormAnalyticsController extends RestController {
 			return $this->successResponse( [
 				'forms'      => [],
 				'pagination' => $this->buildPagination( $total, $page, $perPage ),
-				'total_forms' => 0,
+				'totals'     => [ 'total_forms' => 0, 'total_responses' => 0, 'total_views' => 0 ],
 			] );
 		}
 
@@ -215,10 +215,17 @@ class FormAnalyticsController extends RestController {
 			$surveys
 		);
 
+		$totalResponses = (int) array_sum( array_column( $responseMetrics, 'total' ) );
+		$totalViews     = (int) array_sum( array_column( $sessionMetrics, 'total_views' ) );
+
 		return $this->successResponse( [
-			'forms'       => $forms,
-			'pagination'  => $this->buildPagination( $total, $page, $perPage ),
-			'total_forms' => $total,
+			'forms'      => $forms,
+			'pagination' => $this->buildPagination( $total, $page, $perPage ),
+			'totals'     => [
+				'total_forms'     => $total,
+				'total_responses' => $totalResponses,
+				'total_views'     => $totalViews,
+			],
 		] );
 	}
 

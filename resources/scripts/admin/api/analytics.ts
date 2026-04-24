@@ -24,6 +24,8 @@ export type FormResponseMetricsSummary = {
 };
 
 export type FormResponseMetricsDetail = FormResponseMetricsSummary & {
+	score_distribution:      Record<number, number>;
+	survey_type:             'NPS' | 'CSAT' | 'CES' | null;
 	response_rate_by_device: {
 		desktop: number;
 		mobile:  number;

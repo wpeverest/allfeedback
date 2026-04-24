@@ -175,6 +175,18 @@ interface ResponseRepository {
 	public function aggregateScoreStats( int $surveyId ): array;
 
 	/**
+	 * Count scored responses grouped by integer score (0–10) for a survey.
+	 *
+	 * Only rows where `score IS NOT NULL AND score BETWEEN 0 AND 10` are counted.
+	 * Scores with zero responses are omitted from the result.
+	 *
+	 * @param  int $surveyId Survey primary key.
+	 * @return array<int, int> score => count
+	 * @since  1.0.0
+	 */
+	public function countByScore( int $surveyId ): array;
+
+	/**
 	 * Count responses grouped by device_type for a survey using SQL.
 	 *
 	 * @param  int $surveyId Survey primary key.

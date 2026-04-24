@@ -536,6 +536,36 @@ class WpdbResponseRepository implements ResponseRepository {
 	}
 
 	/**
+	 * Count scored responses grouped by integer score (0–10) for a survey.
+	 *
+	 * @param  int $surveyId Survey primary key.
+	 * @return array<int, int> score => count (only scores with at least one response)
+	 * @since  1.0.0
+	 */
+	public function countByScore( int $surveyId ): array {
+		global $wpdb;
+
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT CAST(score AS UNSIGNED) AS s, COUNT(*) AS cnt
+				 FROM {$this->table}
+				 WHERE survey_id = %d AND score IS NOT NULL AND score BETWEEN 0 AND 10
+				 GROUP BY s
+				 ORDER BY s ASC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$surveyId
+			),
+			ARRAY_A
+		) ?: [];
+
+		$result = [];
+		foreach ( $rows as $row ) {
+			$result[ (int) $row['s'] ] = (int) $row['cnt'];
+		}
+
+		return $result;
+	}
+
+	/**
 	 * Count responses grouped by device_type for a survey using SQL.
 	 *
 	 * @param  int $surveyId Survey primary key.
