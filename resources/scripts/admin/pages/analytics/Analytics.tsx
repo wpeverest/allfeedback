@@ -1,5 +1,5 @@
 import type { SessionMetrics } from '@/admin/api/analytics';
-import { analyticsFormDetailQuery, analyticsFormsQuery } from '@/admin/queries/analytics';
+import { analyticsFormDetailQuery, analyticsFormsQuery, analyticsOverviewQuery } from '@/admin/queries/analytics';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -17,7 +17,7 @@ import {
 	PointElement,
 	Tooltip,
 } from 'chart.js';
-import { AlertCircle, BarChart2 } from 'lucide-react';
+import { AlertCircle, TrendingDown, TrendingUp } from 'lucide-react';
 import { useState } from 'react';
 import { Doughnut, Line } from 'react-chartjs-2';
 
@@ -31,6 +31,141 @@ ChartJS.register(
 	Tooltip,
 	Legend,
 );
+
+const StatCard = ({
+	title,
+	value,
+	change,
+	suffix = '',
+	loading,
+}: {
+	title:    string;
+	value:    string | number | null;
+	change?:   number | null;
+	suffix?:   string;
+	loading?: boolean;
+}) => (
+	<div className="rounded-xl border border-border bg-card p-5">
+		<p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">{title}</p>
+		{loading ? (
+			<div className="space-y-2">
+				<Skeleton className="h-7 w-20" />
+				<Skeleton className="h-4 w-24" />
+			</div>
+		) : (
+			<div className="flex items-end justify-between">
+				<div>
+					<h3 className="text-2xl font-bold text-foreground">
+						{value ?? '0'}{suffix}
+					</h3>
+					{change !== undefined && change !== null && (
+						<div className={`mt-1 flex items-center gap-1 text-xs font-medium ${change >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+							{change >= 0 ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
+							{Math.abs(change)}%
+							<span className="text-muted-foreground font-normal ml-0.5">{__('vs last week', 'all-feedback')}</span>
+						</div>
+					)}
+				</div>
+			</div>
+		)}
+	</div>
+);
+
+const RecentResponsesList = ({
+	loading,
+	responses = [],
+}: {
+	loading: boolean;
+	responses?: any[];
+}) => {
+	const getRelativeTime = (dateStr: string) => {
+		const date = new Date(dateStr.replace(' ', 'T'));
+		const now = new Date();
+		const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+		if (diffInSeconds < 60) return __('just now', 'all-feedback');
+		if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+		if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+		return `${Math.floor(diffInSeconds / 86400)}d ago`;
+	};
+
+	const getScoreConfig = (score: number | null) => {
+		if (score === null) return { bg: 'bg-muted', text: 'text-muted-foreground' };
+		if (score >= 9) return { bg: 'bg-emerald-50', text: 'text-emerald-700' };
+		if (score >= 7) return { bg: 'bg-amber-50', text: 'text-amber-700' };
+		return { bg: 'bg-rose-50', text: 'text-rose-700' };
+	};
+
+	return (
+		<div className="rounded-xl border border-border bg-card overflow-hidden h-full flex flex-col">
+			<div className="p-5 flex items-center justify-between border-b border-border/50">
+				<h2 className="text-sm font-semibold text-foreground">{__('Recent responses', 'all-feedback')}</h2>
+				 
+			</div>
+			<div className="flex-1 overflow-auto">
+				{loading ? (
+					<div className="p-5 space-y-6">
+						{Array.from({ length: 4 }).map((_, i) => (
+							<div key={i} className="flex gap-4">
+								<Skeleton className="size-10 rounded-lg shrink-0" />
+								<div className="space-y-2 flex-1">
+									<div className="flex justify-between">
+										<Skeleton className="h-4 w-32" />
+										<Skeleton className="h-4 w-12" />
+									</div>
+									<Skeleton className="h-4 w-full" />
+								</div>
+							</div>
+						))}
+					</div>
+				) : responses.length === 0 ? (
+					<div className="flex h-full min-h-[200px] items-center justify-center p-5">
+						<p className="text-sm text-muted-foreground">
+							{__('No recent responses.', 'all-feedback')}
+						</p>
+					</div>
+				) : (
+					<div className="divide-y divide-border/50">
+						{responses.map((resp) => {
+							const config = getScoreConfig(resp.score);
+							return (
+								<div key={resp.id} className="p-5 space-y-3">
+									<div className="flex items-start justify-between gap-4">
+										<div className="flex items-center gap-3">
+											<div className={`size-10 rounded-lg ${config.bg} ${config.text} flex items-center justify-center font-bold text-lg shrink-0`}>
+												{resp.score ?? '-'}
+											</div>
+											<div className="min-w-0">
+												<div className="flex items-center gap-2 mb-0.5">
+													{resp.survey_type && (
+														<Badge variant="outline" className="text-[10px] uppercase font-bold py-0 px-1.5 h-4 border-muted-foreground/30">
+															{resp.survey_type}
+														</Badge>
+													)}
+													<span className="text-xs font-medium text-muted-foreground truncate">
+														{resp.survey_title}
+													</span>
+												</div>
+											</div>
+										</div>
+										<span className="text-[11px] text-muted-foreground whitespace-nowrap pt-1">
+											{getRelativeTime(resp.created_at)}
+										</span>
+									</div>
+									{resp.response_text && (
+										<p className="text-sm text-foreground line-clamp-2 leading-relaxed italic opacity-90 pl-1">
+											"{resp.response_text}"
+										</p>
+									)}
+								</div>
+							);
+						})}
+					</div>
+				)}
+			</div>
+		</div>
+	);
+};
 
 const FunnelBar = ({
 	label,
@@ -107,15 +242,27 @@ const ResponsesOverTimeChart = ({
 	data,
 	loading,
 }: {
-	data:    Record<string, number> | null;
+	data:    Record<string, number> | { date: string; count: number }[] | null;
 	loading: boolean;
 }) => {
-	const entries = data ? Object.entries(data).sort(([a], [b]) => a.localeCompare(b)) : [];
-	const labels  = entries.map(([date]) => {
-		const [, month, day] = date.split('-');
-		return `${month}-${day}`;
-	});
-	const values = entries.map(([, count]) => count);
+	let labels: string[] = [];
+	let values: number[] = [];
+
+	if (Array.isArray(data)) {
+		labels = data.map((d) => {
+			const [, month, day] = d.date.split('-');
+			return `${month}-${day}`;
+		});
+		values = data.map((d) => d.count);
+	} else if (data) {
+		const entries = Object.entries(data).sort(([a], [b]) => a.localeCompare(b));
+		labels = entries.map(([date]) => {
+			const [, month, day] = date.split('-');
+			return `${month}-${day}`;
+		});
+		values = entries.map(([, count]) => count);
+	}
+
 	const totalResponses = values.reduce((sum, val) => sum + val, 0);
 
 	const chartData = {
@@ -195,7 +342,7 @@ const ResponsesOverTimeChart = ({
 			<div className="h-[280px] w-full">
 				{loading ? (
 					<Skeleton className="h-full w-full rounded-lg" />
-				) : !entries.length ? (
+				) : !labels.length ? (
 					<div className="flex h-full items-center justify-center">
 						<p className="text-sm text-muted-foreground">
 							{__('No response data yet.', 'all-feedback')}
@@ -281,7 +428,6 @@ const Analytics = () => {
 	});
 
 	const forms = formsData?.forms ?? [];
-
 	const isAll = selectedFormId === 'all';
 
 	const { data: detailData, isLoading: detailLoading } = useQuery({
@@ -289,32 +435,12 @@ const Analytics = () => {
 		enabled: !isAll && selectedFormId !== null,
 	});
 
-	let sm: SessionMetrics | null = null;
-	let rm = null;
+	const { data: overviewData, isLoading: overviewLoading } = useQuery({
+		...analyticsOverviewQuery(),
+		enabled: isAll,
+	});
 
-	if (isAll) {
-		if (forms.length > 0) {
-			let totalViews = 0;
-			let totalStarts = 0;
-			let totalSubs = 0;
-			forms.forEach((f) => {
-				totalViews += f.session_metrics.total_views || 0;
-				totalStarts += f.session_metrics.total_starts || 0;
-				totalSubs += f.session_metrics.total_submissions || 0;
-			});
-			sm = {
-				total_views: totalViews,
-				total_starts: totalStarts,
-				total_submissions: totalSubs,
-				completion_rate: totalViews > 0 ? (totalSubs / totalViews) * 100 : 0,
-				abandonment_rate: totalViews > 0 ? ((totalStarts - totalSubs) / totalViews) * 100 : 0,
-				avg_completion_time: null,
-			};
-		}
-	} else {
-		sm = detailData?.session_metrics ?? null;
-		rm = detailData?.response_metrics ?? null;
-	}
+	const stats = overviewData?.stats;
 
 	if (formsError) {
 		return (
@@ -357,12 +483,58 @@ const Analytics = () => {
 				</div>
 			</div>
 
+			{isAll && (
+				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+					<StatCard
+						title={__('Total Feedback', 'all-feedback')}
+						value={stats?.total_feedback.value}
+						change={stats?.total_feedback.change}
+						loading={overviewLoading}
+					/>
+					<StatCard
+						title={__('Completion Rate', 'all-feedback')}
+						value={stats?.completion_rate.value}
+						change={stats?.completion_rate.change}
+						suffix="%"
+						loading={overviewLoading}
+					/>
+					<StatCard
+						title={__('Average Rating', 'all-feedback')}
+						value={stats?.avg_rating.value}
+						change={stats?.avg_rating.change}
+						loading={overviewLoading}
+					/>
+					<StatCard
+						title={__('Active Surveys', 'all-feedback')}
+						value={stats?.active_surveys.value}
+						loading={overviewLoading}
+					/>
+				</div>
+			)}
+
 			<div className="grid grid-cols-1 lg:grid-cols-2">
-				<ResponsesOverTimeChart data={rm?.responses_over_time ?? null} loading={isAll ? false : detailLoading} />
+				<ResponsesOverTimeChart
+					data={isAll ? overviewData?.chart : detailData?.response_metrics.responses_over_time}
+					loading={isAll ? overviewLoading : detailLoading}
+				/>
 			</div>
+
 			<div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-				<SessionFunnel metrics={sm} loading={isAll ? formsLoading : detailLoading} />
-				<DeviceBreakdownChart data={rm?.response_rate_by_device ?? null} loading={isAll ? false : detailLoading} />
+				{isAll ? (
+					<RecentResponsesList
+						loading={overviewLoading}
+						responses={overviewData?.recent_responses}
+					/>
+				) : (
+					<SessionFunnel
+						metrics={detailData?.session_metrics ?? null}
+						loading={detailLoading}
+					/>
+				)}
+				<DeviceBreakdownChart
+					data={isAll ? (overviewData?.device_breakdown as any) : detailData?.response_metrics.response_rate_by_device}
+					loading={isAll ? overviewLoading : detailLoading}
+				/>
 			</div>
 		</div>
 	);

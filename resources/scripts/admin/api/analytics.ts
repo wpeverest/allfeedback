@@ -76,10 +76,39 @@ export type FormAnalyticsDetail = {
 	response_metrics: FormResponseMetricsDetail;
 };
 
+export type AnalyticsOverview = {
+	stats: {
+		total_feedback:  { value: number; change: number | null };
+		completion_rate: { value: number; change: number | null };
+		avg_rating:      { value: number | null; change: number | null };
+		active_surveys:  { value: number; new_this_week: number; change: number | null };
+	};
+	chart: { date: string; count: number }[];
+	total_in_period: number;
+	recent_responses: {
+		id:            number;
+		survey_id:     number;
+		survey_title:  string;
+		survey_type:   string | null;
+		score:         number | null;
+		response_text: string | null;
+		created_at:    string;
+	}[];
+	device_breakdown: {
+		desktop?: number;
+		mobile?:  number;
+		tablet?:  number;
+		unknown?: number;
+	};
+};
+
 export const analyticsApi = {
 	listForms: (params?: FormAnalyticsListParams) =>
 		request<FormAnalyticsListResponse>('/analytics/forms' + toQuery(params)),
 
 	getFormAnalytics: (id: number) =>
 		request<FormAnalyticsDetail>(`/analytics/forms/${id}`),
+
+	getOverview: () =>
+		request<AnalyticsOverview>('/analytics/overview'),
 };

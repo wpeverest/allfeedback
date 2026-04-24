@@ -10,3 +10,8 @@ export const analyticsFormDetailQuery = (id: number) => ({
 	queryKey: ['analytics', 'forms', id] as const,
 	queryFn:  () => analyticsApi.getFormAnalytics(id),
 });
+
+export const analyticsOverviewQuery = () => ({
+	queryKey: ['analytics', 'overview'] as const,
+	queryFn:  () => analyticsApi.getOverview(),
+});
