@@ -1,8 +1,9 @@
 <?php
 
-declare(strict_types=1);
 
 namespace AllFeedback\Traits;
+
+defined( 'ABSPATH' ) || exit;
 
 /**
  * Thin wrappers around WordPress action/filter functions.

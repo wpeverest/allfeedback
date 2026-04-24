@@ -45,11 +45,8 @@ class ResponseManager {
 	public function find( int $id ): ?object {
 		global $wpdb;
 
-		$table = $this->table();
-
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$row = $wpdb->get_row(
-			$wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d LIMIT 1", $id ) // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->prepare( 'SELECT * FROM %i WHERE id = %d LIMIT 1', $this->table(), $id )
 		);
 
 		return $row ?: null;
@@ -77,15 +74,14 @@ class ResponseManager {
 
 		[ $where, $values ] = $this->buildWhere( $surveyId, $dateFrom, $dateTo );
 
-		$table    = $this->table();
 		$values[] = $perPage;
 		$values[] = $offset;
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT * FROM {$table} {$where} ORDER BY created_at DESC LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$values
+				"SELECT * FROM %i {$where} ORDER BY created_at DESC LIMIT %d OFFSET %d",
+				$this->table(),
+				...$values
 			)
 		);
 
@@ -106,13 +102,11 @@ class ResponseManager {
 
 		[ $where, $values ] = $this->buildWhere( $surveyId, $dateFrom, $dateTo );
 
-		$table = $this->table();
-
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		return (int) $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$table} {$where}", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$values
+				"SELECT COUNT(*) FROM %i {$where}",
+				$this->table(),
+				...$values
 			)
 		);
 	}
@@ -137,15 +131,14 @@ class ResponseManager {
 
 		[ $where, $values ] = $this->buildWhereAll( $dateFrom, $dateTo );
 
-		$table    = $this->table();
 		$values[] = $perPage;
 		$values[] = $offset;
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT * FROM {$table} {$where} ORDER BY created_at DESC LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$values
+				"SELECT * FROM %i {$where} ORDER BY created_at DESC LIMIT %d OFFSET %d",
+				$this->table(),
+				...$values
 			)
 		);
 
@@ -165,18 +158,17 @@ class ResponseManager {
 
 		[ $where, $values ] = $this->buildWhereAll( $dateFrom, $dateTo );
 
-		$table = $this->table();
-
 		if ( empty( $values ) ) {
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table} {$where}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			return (int) $wpdb->get_var(
+				$wpdb->prepare( "SELECT COUNT(*) FROM %i {$where}", $this->table() )
+			);
 		}
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		return (int) $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$table} {$where}", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$values
+				"SELECT COUNT(*) FROM %i {$where}",
+				$this->table(),
+				...$values
 			)
 		);
 	}
@@ -280,25 +272,23 @@ class ResponseManager {
 	public function isDuplicate( int $surveyId, string $ipHash, int $windowHours = 0 ): bool {
 		global $wpdb;
 
-		$table = $this->table();
-
 		if ( $windowHours > 0 ) {
 			$cutoff = gmdate( 'Y-m-d H:i:s', time() - ( $windowHours * HOUR_IN_SECONDS ) );
 
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$exists = $wpdb->get_var(
 				$wpdb->prepare(
-					"SELECT id FROM {$table} WHERE survey_id = %d AND ip_hash = %s AND created_at >= %s LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					'SELECT id FROM %i WHERE survey_id = %d AND ip_hash = %s AND created_at >= %s LIMIT 1',
+					$this->table(),
 					$surveyId,
 					$ipHash,
 					$cutoff
 				)
 			);
 		} else {
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$exists = $wpdb->get_var(
 				$wpdb->prepare(
-					"SELECT id FROM {$table} WHERE survey_id = %d AND ip_hash = %s LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					'SELECT id FROM %i WHERE survey_id = %d AND ip_hash = %s LIMIT 1',
+					$this->table(),
 					$surveyId,
 					$ipHash
 				)

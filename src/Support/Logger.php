@@ -221,7 +221,7 @@ class Logger {
 			file_put_contents( $index, "<?php\n// Silence is golden.\n" );
 		}
 
-		return is_writable( $dir );
+		return wp_is_writable( $dir );
 	}
 
 	/**
