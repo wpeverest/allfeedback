@@ -1,104 +1,119 @@
 import chalk from 'chalk';
 import { spawn } from 'child_process';
-import { existsSync, readdirSync } from 'fs';
 import { dest, parallel, series, src } from 'gulp';
 import zip from 'gulp-zip';
-import os from 'os';
 import path from 'path';
 
-const PLUGIN_SLUG = 'all-feedback';
-const BUILD_DIR   = `build/${PLUGIN_SLUG}`;
+const PLUGIN_SLUG = 'allfeedback';
+const BUILD_DIR = `build/${PLUGIN_SLUG}`;
 
-function resolveLocalWpPhpBin() {
-    const base = path.join(os.homedir(), 'Library', 'Application Support', 'Local', 'lightning-services');
-    if (!existsSync(base)) return null;
+function exec(command) {
+	console.log(`Executing: ${command}`);
 
-    const bin = readdirSync(base)
-        .filter((d) => /^php-8\.[2-9]/.test(d))
-        .sort()
-        .reverse()
-        .map((d) => path.join(base, d, 'bin', 'darwin-arm64', 'bin'))
-        .find((b) => existsSync(path.join(b, 'php')));
+	return new Promise((resolve, reject) => {
+		const parts = command.split(' ');
+		const cmd = parts[0];
+		const args = parts.slice(1);
+		const child = spawn(cmd, args, {
+			shell: true,
+			stdio: 'pipe',
+		});
 
-    return bin ?? null;
-}
+		child.stdout.on('data', (data) => {
+			console.log(chalk.green(data.toString().trim()));
+		});
 
-const localWpPhpBin = resolveLocalWpPhpBin();
-const spawnEnv = localWpPhpBin
-    ? { ...process.env, PATH: `${localWpPhpBin}:${process.env.PATH}` }
-    : process.env;
+		child.stderr.on('data', (data) => {
+			console.error(chalk.red(data.toString().trim()));
+		});
 
-if (localWpPhpBin) {
-    console.log(chalk.dim(`Using LocalWP PHP: ${localWpPhpBin}`));
-}
+		child.on('close', (code) => {
+			if (code === 0) {
+				console.log(
+					chalk.green(`✓ Command completed successfully: ${command}`),
+				);
+				resolve();
+			} else {
+				console.error(
+					chalk.red(`✗ Command failed with exit code ${code}: ${command}`),
+				);
+				reject(new Error(`Command failed with exit code ${code}`));
+			}
+		});
 
-function exec(command, env = spawnEnv) {
-    console.log(chalk.cyan(`▶ ${command}`));
-
-    return new Promise((resolve, reject) => {
-        const [cmd, ...args] = command.split(' ');
-        const child = spawn(cmd, args, { shell: true, stdio: 'pipe', env });
-
-        child.stdout.on('data', (d) => console.log(chalk.green(d.toString().trim())));
-        child.stderr.on('data', (d) => console.error(chalk.red(d.toString().trim())));
-
-        child.on('close', (code) => {
-            if (code === 0) {
-                console.log(chalk.green(`✓ ${command}`));
-                resolve();
-            } else {
-                console.error(chalk.red(`✗ Exit ${code}: ${command}`));
-                reject(new Error(`Command failed: ${command}`));
-            }
-        });
-
-        child.on('error', (err) => {
-            console.error(chalk.red(`✗ Failed to start: ${command}`));
-            reject(err);
-        });
-    });
+		child.on('error', (err) => {
+			console.error(chalk.red(`✗ Failed to start command: ${command}`));
+			console.error(chalk.red(err));
+			reject(err);
+		});
+	});
 }
 
 const FILES = {
-    'src/**/*':        `${BUILD_DIR}/src`,
-    'config/**/*':     `${BUILD_DIR}/config`,
-    'database/**/*':   `${BUILD_DIR}/database`,
-    'languages/**/*':  `${BUILD_DIR}/languages`,
-    'resources/scripts/blocks/**/block.json': `${BUILD_DIR}/resources/scripts/blocks`,
-    [`${PLUGIN_SLUG}.php`]: BUILD_DIR,
-    'uninstall.php':   BUILD_DIR,
-    'readme.txt':      BUILD_DIR,
-    'composer.json':   BUILD_DIR,
-    'composer.lock':   BUILD_DIR,
+	'src/**/*': `${BUILD_DIR}/src`,
+	'config/**/*': `${BUILD_DIR}/config`,
+	'database/**/*': `${BUILD_DIR}/database`,
+	'templates/**/*': `${BUILD_DIR}/templates`,
+	'resources/build/**/*.{js,css,php}': `${BUILD_DIR}/resources/build`,
+	'resources/scripts/**/*': `${BUILD_DIR}/resources/scripts`,
+	'resources/styles/**/*': `${BUILD_DIR}/resources/styles`,
+	'resources/data/**/*': `${BUILD_DIR}/resources/data`,
+	'assets/**/*': `${BUILD_DIR}/assets`,
+	'languages/**/*': `${BUILD_DIR}/languages`,
+	'allcoach.php': BUILD_DIR,
+	'uninstall.php': BUILD_DIR,
+	'readme.txt': BUILD_DIR,
+	'changelog.txt': BUILD_DIR,
+	'composer.json': BUILD_DIR,
+	'composer.lock': BUILD_DIR,
 };
 
 const copyTasks = Object.entries(FILES).map(([source, destination]) => {
-    const taskName = `copy:${path.basename(source.replace('/**/*', ''))}`;
-    const task     = () => src(source, { encoding: false }).pipe(dest(destination));
-    task.displayName = taskName;
-    return task;
+	const taskName = `copy:${path.basename(source.replace('/**/*', '').replace('/**/*.{js,css,php}', ''))}`;
+	const copyTask = function () {
+		return src(source, { encoding: false }).pipe(dest(destination));
+	};
+	copyTask.displayName = taskName;
+	return copyTask;
 });
 
-export const release = series(
-    function clean()    { return exec('rm -rf build/ release/'); },
-    function build() {
-        return exec('pnpm build', {
-            ...spawnEnv,
-            OUTPUT_PATH: `${BUILD_DIR}/resources/build`,
-        });
-    },
-    function makePot()  { return exec('pnpm make-pot'); },
-    parallel(...copyTasks),
-    function composer() {
-        return exec(`cd ${BUILD_DIR} && composer install --no-dev --optimize-autoloader`);
-    },
-    function compress() {
-        return src(
-            ['./build/**/*', '!./build/**/*.map', '!./build/**/composer.lock', '!./build/**/*.sh'],
-            { encoding: false },
-        )
-            .pipe(zip(`${PLUGIN_SLUG}.zip`))
-            .pipe(dest('./release/'));
-    },
-    function cleanup()  { return exec('rm -rf build/'); },
+const release = series(
+	function clean() {
+		return exec('rm -rf build/ release/');
+	},
+	function build() {
+		return exec('pnpm build');
+	},
+	function makePot() {
+		return exec('pnpm make-pot');
+	},
+	parallel(...copyTasks),
+	function composer() {
+		return exec(
+			`cd ${BUILD_DIR} && composer install --no-dev --optimize-autoloader`,
+		);
+	},
+	function compress() {
+		return src(
+			[
+				'./build/**/*',
+				'!./build/**/composer.lock',
+				'!./build/**/*.sh',
+				'!./build/**/*.bat',
+				'!./build/**/bin/carbon',
+				'!./build/**/',
+				'!./build/**/$programId.edit.tsx',
+			],
+			{
+				encoding: false,
+			},
+		)
+			.pipe(zip(`${PLUGIN_SLUG}.zip`))
+			.pipe(dest('./release/'));
+	},
+	function afterBuild() {
+		return exec('rm -rf build/');
+	},
 );
+
+export { release };
