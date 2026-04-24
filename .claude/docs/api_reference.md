@@ -465,11 +465,7 @@ Return a paginated list of all forms with per-form session and response metrics.
     "page": 1,
     "per_page": 20
   },
-  "totals": {
-    "total_forms": 5,
-    "total_responses": 750,
-    "total_views": 2500
-  }
+  "total_forms": 5
 }
 ```
 
