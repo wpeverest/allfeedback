@@ -2,7 +2,7 @@
 Contributors:      themegrill
 Tags:              feedback, surveys, nps, csat, ces
 Requires at least: 6.5
-Tested up to:      6.7
+Tested up to:      6.9
 Requires PHP:      8.2
 Stable tag:        1.0.0
 License:           GPLv3 or later
