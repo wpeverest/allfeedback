@@ -373,6 +373,7 @@ Return the global "all forms" summary — stat cards with week-over-week deltas,
   "stats": {
     "total_feedback":  { "value": 2847,  "change": 12.4 },
     "completion_rate": { "value": 87.3,  "change": 3.1  },
+    "abandonment_rate": { "value": 12.7, "change": -2.4 },
     "avg_rating":      { "value": 4.4,   "change": 2.8  },
     "active_surveys":  { "value": 12, "new_this_week": 2, "change": 16.7 }
   },
@@ -407,6 +408,7 @@ Return the global "all forms" summary — stat cards with week-over-week deltas,
 |-------|-------|
 | `stats.*.change` | Week-over-week % change (this 7 days vs previous 7 days). `null` when baseline is zero or no data. |
 | `stats.active_surveys.change` | % of active surveys that are new this week (not a WoW delta). |
+| `stats.abandonment_rate.value` | % of started sessions that were abandoned (explicit closes + timed-out sessions > 30 min inactive). `null` when no started sessions exist. |
 | `chart` | Always 30 entries (today − 29 → today). Days with no responses have `count: 0`. |
 | `total_in_period` | Sum of all `chart[*].count` values. |
 | `recent_responses[*].survey_type` | `"NPS"`, `"CSAT"`, `"CES"`, or `null` (plain text survey). Derived from the first primary field in `form_schema`. |

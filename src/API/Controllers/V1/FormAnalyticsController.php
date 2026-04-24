@@ -137,6 +137,10 @@ class FormAnalyticsController extends RestController {
 					'value'  => $sessionStats['completion_rate'],
 					'change' => $this->weekOverWeekChange( $sessionStats['this_week_completion_rate'], $sessionStats['last_week_completion_rate'] ),
 				],
+				'abandonment_rate' => [
+					'value'  => $sessionStats['abandonment_rate'],
+					'change' => $this->weekOverWeekChange( $sessionStats['this_week_abandonment_rate'], $sessionStats['last_week_abandonment_rate'] ),
+				],
 				'avg_rating' => [
 					'value'  => $responseStats['avg_score'],
 					'change' => $this->weekOverWeekChange( $responseStats['this_week_avg_score'], $responseStats['last_week_avg_score'] ),

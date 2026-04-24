@@ -135,6 +135,8 @@ class WpdbSurveySessionRepository implements SurveySessionRepository {
 	public function getOverviewSessionStats(): array {
 		global $wpdb;
 
+		$t = self::ABANDON_TIMEOUT_MINUTES;
+
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$row = $wpdb->get_row(
 			$wpdb->prepare(
@@ -154,21 +156,57 @@ class WpdbSurveySessionRepository implements SurveySessionRepository {
 						/ NULLIF(SUM(started_at IS NOT NULL
 						             AND DATE(created_at) BETWEEN DATE_SUB(CURDATE(), INTERVAL 13 DAY)
 						                                      AND DATE_SUB(CURDATE(), INTERVAL 7 DAY)), 0) * 100
-					, 2)                                                                                    AS last_week_completion_rate
+					, 2)                                                                                    AS last_week_completion_rate,
+					ROUND(
+						SUM(
+							abandoned_at IS NOT NULL
+							OR (started_at IS NOT NULL AND submitted_at IS NULL
+							    AND last_active_at < DATE_SUB(NOW(), INTERVAL %d MINUTE))
+						)
+						/ NULLIF(SUM(started_at IS NOT NULL), 0) * 100
+					, 2)                                                                                    AS abandonment_rate,
+					ROUND(
+						SUM(
+							DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+							AND (
+								abandoned_at IS NOT NULL
+								OR (started_at IS NOT NULL AND submitted_at IS NULL
+								    AND last_active_at < DATE_SUB(NOW(), INTERVAL %d MINUTE))
+							)
+						)
+						/ NULLIF(SUM(started_at IS NOT NULL AND DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)), 0) * 100
+					, 2)                                                                                    AS this_week_abandonment_rate,
+					ROUND(
+						SUM(
+							DATE(created_at) BETWEEN DATE_SUB(CURDATE(), INTERVAL 13 DAY)
+							                     AND DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+							AND (
+								abandoned_at IS NOT NULL
+								OR (started_at IS NOT NULL AND submitted_at IS NULL
+								    AND last_active_at < DATE_SUB(NOW(), INTERVAL %d MINUTE))
+							)
+						)
+						/ NULLIF(SUM(started_at IS NOT NULL
+						             AND DATE(created_at) BETWEEN DATE_SUB(CURDATE(), INTERVAL 13 DAY)
+						                                      AND DATE_SUB(CURDATE(), INTERVAL 7 DAY)), 0) * 100
+					, 2)                                                                                    AS last_week_abandonment_rate
 				FROM `{$this->table}`
 				WHERE abandoned_at IS NOT NULL
 				   OR started_at   IS NOT NULL
 				   OR submitted_at IS NOT NULL
 				   OR last_active_at < DATE_SUB(NOW(), INTERVAL %d MINUTE)",
-				self::ABANDON_TIMEOUT_MINUTES
+				$t, $t, $t, $t
 			),
 			ARRAY_A
 		);
 
 		return [
-			'completion_rate'           => isset( $row['completion_rate'] )           ? (float) $row['completion_rate']           : null,
-			'this_week_completion_rate' => isset( $row['this_week_completion_rate'] ) ? (float) $row['this_week_completion_rate'] : null,
-			'last_week_completion_rate' => isset( $row['last_week_completion_rate'] ) ? (float) $row['last_week_completion_rate'] : null,
+			'completion_rate'             => isset( $row['completion_rate'] )             ? (float) $row['completion_rate']             : null,
+			'this_week_completion_rate'   => isset( $row['this_week_completion_rate'] )   ? (float) $row['this_week_completion_rate']   : null,
+			'last_week_completion_rate'   => isset( $row['last_week_completion_rate'] )   ? (float) $row['last_week_completion_rate']   : null,
+			'abandonment_rate'            => isset( $row['abandonment_rate'] )            ? (float) $row['abandonment_rate']            : null,
+			'this_week_abandonment_rate'  => isset( $row['this_week_abandonment_rate'] )  ? (float) $row['this_week_abandonment_rate']  : null,
+			'last_week_abandonment_rate'  => isset( $row['last_week_abandonment_rate'] )  ? (float) $row['last_week_abandonment_rate']  : null,
 		];
 	}
 

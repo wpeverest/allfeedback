@@ -71,15 +71,15 @@ interface SurveySessionRepository {
 	public function getGlobalAnalytics( ?string $dateFrom = null, ?string $dateTo = null ): array;
 
 	/**
-	 * Return completion-rate stats for the overview panel in one query.
+	 * Return completion-rate and abandonment-rate stats for the overview panel in one query.
 	 *
-	 * Uses conditional aggregation to compute the global, this-week, and last-week
-	 * completion rates in a single SQL pass instead of three separate calls.
+	 * Uses conditional aggregation to compute global, this-week, and last-week values
+	 * for both completion and abandonment in a single SQL pass.
 	 *
-	 * Keys: completion_rate, this_week_completion_rate, last_week_completion_rate.
-	 * "This week" = last 7 days; "last week" = 7–13 days ago.
+	 * Keys: completion_rate, this_week_completion_rate, last_week_completion_rate,
+	 *       abandonment_rate, this_week_abandonment_rate, last_week_abandonment_rate.
 	 *
-	 * @return array{completion_rate: float|null, this_week_completion_rate: float|null, last_week_completion_rate: float|null}
+	 * @return array{completion_rate: float|null, this_week_completion_rate: float|null, last_week_completion_rate: float|null, abandonment_rate: float|null, this_week_abandonment_rate: float|null, last_week_abandonment_rate: float|null}
 	 * @since  1.0.0
 	 */
 	public function getOverviewSessionStats(): array;
