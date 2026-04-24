@@ -105,7 +105,7 @@ function DeltaPill({ value, label }: { value: number | null; label: string }) {
 }
 
 function KPICard({
-	icon: Icon, label, value, unit, deltaValue, deltaLabel, sparkData, sparkColor, iconBrand, loading,
+	icon: Icon, label, value, unit, deltaValue, deltaLabel, sparkData, sparkColor, iconColor, loading,
 }: {
 	icon:        React.ComponentType<{ style?: CSSProperties }>;
 	label:       string;
@@ -115,7 +115,7 @@ function KPICard({
 	deltaLabel?: string;
 	sparkData?:  number[];
 	sparkColor?: string;
-	iconBrand?:  boolean;
+	iconColor?:  string;
 	loading:     boolean;
 }) {
 	const [hovered, setHovered] = useState(false);
@@ -131,10 +131,10 @@ function KPICard({
 			<div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
 				<div style={{
 					width: 30, height: 30, borderRadius: 8, flexShrink: 0,
-					background: iconBrand ? 'var(--brand-50)' : 'var(--muted)',
-					color:      iconBrand ? 'var(--brand-600)' : 'var(--muted-foreground)',
+					background: iconColor ? `${iconColor}18` : 'var(--muted)',
+					color:      iconColor ? iconColor       : 'var(--muted-foreground)',
 					display: 'grid', placeItems: 'center',
-					boxShadow: `inset 0 0 0 1px ${iconBrand ? 'var(--brand-100)' : 'var(--border)'}`,
+					boxShadow: `inset 0 0 0 1px ${iconColor ? `${iconColor}30` : 'var(--border)'}`,
 				}}>
 					<Icon style={{ width: 15, height: 15 }} />
 				</div>
@@ -425,9 +425,9 @@ function SessionMetricsCard({ sm, loading }: { sm: FormAnalyticsDetail['session_
 	const hasData    = (completed + abandoned + notStarted) > 0;
 
 	const segments = [
-		{ label: __('Completed',   'all-feedback'), sub: __('Submitted',        'all-feedback'), value: completed,  color: 'var(--primary)',     chartColor: 'oklch(0.580 0.238 277)' },
-		{ label: __('Abandoned',   'all-feedback'), sub: __('Started, dropped', 'all-feedback'), value: abandoned,  color: 'var(--destructive)', chartColor: 'oklch(0.577 0.245 27)'  },
-		{ label: __('Not started', 'all-feedback'), sub: __('Viewed only',      'all-feedback'), value: notStarted, color: 'var(--border)',      chartColor: 'oklch(0.870 0.006 247)' },
+		{ label: __('Completed',   'all-feedback'), sub: __('Submitted',        'all-feedback'), value: completed,  color: 'oklch(0.580 0.238 277)', chartColor: 'oklch(0.580 0.238 277)' },
+		{ label: __('Abandoned',   'all-feedback'), sub: __('Started, dropped', 'all-feedback'), value: abandoned,  color: 'oklch(0.577 0.245 27)',  chartColor: 'oklch(0.577 0.245 27)'  },
+		{ label: __('Not started', 'all-feedback'), sub: __('Viewed only',      'all-feedback'), value: notStarted, color: 'oklch(0.72 0.008 247)',  chartColor: 'oklch(0.870 0.006 247)' },
 	];
 
 	const chartData = {
@@ -443,10 +443,10 @@ function SessionMetricsCard({ sm, loading }: { sm: FormAnalyticsDetail['session_
 	const total = completed + abandoned + notStarted;
 
 	const kpiRow = [
-		{ icon: MousePointerClick, label: __('Views',      'all-feedback'), value: sm?.total_views         ?? null, fmt: (v: number) => v.toLocaleString()  },
-		{ icon: Play,              label: __('Started',    'all-feedback'), value: sm?.total_starts        ?? null, fmt: (v: number) => v.toLocaleString()  },
-		{ icon: CheckCircle2,      label: __('Completion', 'all-feedback'), value: sm?.completion_rate     ?? null, fmt: (v: number) => `${v.toFixed(1)}%`  },
-		{ icon: Clock,             label: __('Avg. time',  'all-feedback'), value: sm?.avg_completion_time ?? null, fmt: (v: number) => formatSeconds(v)    },
+		{ icon: MousePointerClick, label: __('Views',      'all-feedback'), value: sm?.total_views         ?? null, fmt: (v: number) => v.toLocaleString(), color: 'oklch(0.580 0.238 277)' },
+		{ icon: Play,              label: __('Started',    'all-feedback'), value: sm?.total_starts        ?? null, fmt: (v: number) => v.toLocaleString(), color: 'oklch(0.75 0.18 75)'    },
+		{ icon: CheckCircle2,      label: __('Completion', 'all-feedback'), value: sm?.completion_rate     ?? null, fmt: (v: number) => `${v.toFixed(1)}%`, color: 'oklch(0.527 0.154 150)' },
+		{ icon: Clock,             label: __('Avg. time',  'all-feedback'), value: sm?.avg_completion_time ?? null, fmt: (v: number) => formatSeconds(v),   color: 'oklch(0.60 0.18 220)'   },
 	];
 
 	return (
@@ -540,11 +540,18 @@ function SessionMetricsCard({ sm, loading }: { sm: FormAnalyticsDetail['session_
 			<div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', borderTop: '1px solid var(--border)' }}>
 				{kpiRow.map((k, i) => (
 					<div key={k.label} style={{
-						padding: '12px 16px',
+						padding: '14px 16px',
 						borderRight: i < 3 ? '1px solid var(--border)' : 'none',
 					}}>
-						<div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 4 }}>
-							<k.icon style={{ width: 12, height: 12, color: 'var(--muted-foreground)' }} />
+						<div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 7 }}>
+							<div style={{
+								width: 22, height: 22, borderRadius: 6, flexShrink: 0,
+								background: `${k.color}18`,
+								boxShadow: `inset 0 0 0 1px ${k.color}30`,
+								display: 'grid', placeItems: 'center',
+							}}>
+								<k.icon style={{ width: 11, height: 11, color: k.color }} />
+							</div>
 							<span style={{ fontSize: 'var(--text-xs)', color: 'var(--muted-foreground)', fontWeight: 500 }}>{k.label}</span>
 						</div>
 						{loading ? <Skeleton style={{ height: 20, width: 48, borderRadius: 4 }} /> : (
@@ -963,7 +970,7 @@ const Analytics = () => {
 					deltaLabel={kpi.totalChange !== null ? __('vs. last week', 'all-feedback') : __('total responses', 'all-feedback')}
 					sparkData={sparkBase}
 					sparkColor="var(--primary)"
-					iconBrand
+					iconColor="oklch(0.580 0.238 277)"
 					loading={loading}
 				/>
 				<KPICard
@@ -973,6 +980,7 @@ const Analytics = () => {
 					unit="%"
 					deltaValue={kpi.completionChange}
 					deltaLabel={kpi.completionChange !== null ? __('vs. last week', 'all-feedback') : __('of sessions submitted', 'all-feedback')}
+					iconColor="oklch(0.527 0.154 150)"
 					loading={loading}
 				/>
 				{kpi.thirdKind === 'nps' ? (
@@ -985,6 +993,7 @@ const Analytics = () => {
 						unit="pts"
 						deltaValue={null}
 						deltaLabel={__('−100 to +100', 'all-feedback')}
+						iconColor="oklch(0.75 0.18 75)"
 						loading={loading}
 					/>
 				) : kpi.thirdKind === 'time' ? (
@@ -994,6 +1003,7 @@ const Analytics = () => {
 						value={loading ? '—' : formatSeconds(kpi.thirdValue)}
 						deltaValue={null}
 						deltaLabel={__('avg. completion time', 'all-feedback')}
+						iconColor="oklch(0.60 0.18 220)"
 						loading={loading}
 					/>
 				) : (
@@ -1004,6 +1014,7 @@ const Analytics = () => {
 						unit="%"
 						deltaValue={kpi.thirdChange}
 						deltaLabel={kpi.thirdChange !== null ? __('vs. last week', 'all-feedback') : __('of started sessions', 'all-feedback')}
+						iconColor="oklch(0.577 0.245 27)"
 						loading={loading}
 					/>
 				)}
@@ -1015,6 +1026,7 @@ const Analytics = () => {
 						unit="%"
 						deltaValue={kpi.fourthChange}
 						deltaLabel={kpi.fourthChange !== null ? __('vs. last week', 'all-feedback') : __('of started sessions', 'all-feedback')}
+						iconColor="oklch(0.577 0.245 27)"
 						loading={loading}
 					/>
 				) : (
@@ -1026,6 +1038,7 @@ const Analytics = () => {
 						deltaLabel={kpi.fourthNewThisWeek !== null && kpi.fourthNewThisWeek > 0
 							? `+${kpi.fourthNewThisWeek} ${__('new this week', 'all-feedback')}`
 							: __('published', 'all-feedback')}
+						iconColor="oklch(0.60 0.14 280)"
 						loading={listLoading}
 					/>
 				)}
