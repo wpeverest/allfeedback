@@ -816,15 +816,18 @@ function RecentResponsesCard({ responses, forms, loading }: {
 const Analytics = () => {
 	const [selectedFormId, setSelectedFormId] = useState<number | null>(null);
 
-	const { data: listData,    isLoading: listLoading,    isError } = useQuery({ ...analyticsFormsQuery({ per_page: 100 }), placeholderData: keepPreviousData });
-	const { data: detailData,  isLoading: detailLoading  } = useQuery({ ...analyticsFormDetailQuery(selectedFormId ?? 0), enabled: selectedFormId !== null });
+	const { data: listData,    isLoading: listLoading,    isFetching: listFetching,    isError } = useQuery({ ...analyticsFormsQuery({ per_page: 100 }), placeholderData: keepPreviousData });
+	const { data: detailData,  isLoading: detailLoading,  isFetching: detailFetching  } = useQuery({ ...analyticsFormDetailQuery(selectedFormId ?? 0), enabled: selectedFormId !== null, placeholderData: keepPreviousData });
 	const { data: responsesData, isLoading: responsesLoading } = useQuery({ ...allResponsesQuery({ per_page: 5 }), placeholderData: keepPreviousData });
-	const { data: overviewData } = useQuery(analyticsOverviewQuery());
+	const { data: overviewData, isLoading: overviewLoading, isFetching: overviewFetching } = useQuery({ ...analyticsOverviewQuery(), placeholderData: keepPreviousData });
 
 	const forms   = listData?.forms ?? [];
 	const totals  = listData?.totals;
 	const loading = listLoading || (selectedFormId !== null && detailLoading);
 	const isFormView = selectedFormId !== null;
+	const isRefetching = isFormView
+		? (detailFetching && !detailLoading)
+		: (listFetching && !listLoading) || (overviewFetching && !overviewLoading);
 
 	const kpi = useMemo(() => {
 		if (isFormView && detailData) {
@@ -950,6 +953,7 @@ const Analytics = () => {
 				<FormSelector forms={forms} selectedId={selectedFormId} onChange={setSelectedFormId} />
 			</div>
 
+			<div style={{ transition: 'opacity 200ms ease', ...(isRefetching && { opacity: 0.5, pointerEvents: 'none' }) }}>
 			<div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 16 }}>
 				<KPICard
 					icon={MessageSquare}
@@ -1055,6 +1059,7 @@ const Analytics = () => {
 					<DeviceDistributionCard breakdown={deviceBreakdown} loading={listLoading} />
 				</div>
 			)}
+			</div>
 		</div>
 	);
 };
