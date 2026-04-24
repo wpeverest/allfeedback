@@ -364,6 +364,57 @@ Return aggregate session metrics for a single survey. Admin only.
 
 ---
 
+### `GET /analytics/overview`
+Return the global "all forms" summary — stat cards with week-over-week deltas, a 30-day response chart, enriched recent responses, and device breakdown. Admin only. All aggregation runs in SQL.
+
+**Response**
+```json
+{
+  "stats": {
+    "total_feedback":  { "value": 2847,  "change": 12.4 },
+    "completion_rate": { "value": 87.3,  "change": 3.1  },
+    "avg_rating":      { "value": 4.4,   "change": 2.8  },
+    "active_surveys":  { "value": 12, "new_this_week": 2, "change": 16.7 }
+  },
+  "chart": [
+    { "date": "2026-03-25", "count": 52 },
+    { "date": "2026-03-26", "count": 38 }
+  ],
+  "total_in_period": 3189,
+  "recent_responses": [
+    {
+      "id": 42,
+      "survey_id": 3,
+      "survey_title": "Post-purchase NPS",
+      "survey_type": "NPS",
+      "score": 10,
+      "response_text": "Fastest support I've ever gotten from a plugin. Refreshing.",
+      "created_at": "2026-04-24 11:00:00"
+    }
+  ],
+  "device_breakdown": {
+    "desktop": 1500,
+    "mobile": 900,
+    "tablet": 400,
+    "unknown": 47
+  }
+}
+```
+
+**Field notes**
+
+| Field | Notes |
+|-------|-------|
+| `stats.*.change` | Week-over-week % change (this 7 days vs previous 7 days). `null` when baseline is zero or no data. |
+| `stats.active_surveys.change` | % of active surveys that are new this week (not a WoW delta). |
+| `chart` | Always 30 entries (today − 29 → today). Days with no responses have `count: 0`. |
+| `total_in_period` | Sum of all `chart[*].count` values. |
+| `recent_responses[*].survey_type` | `"NPS"`, `"CSAT"`, `"CES"`, or `null` (plain text survey). Derived from the first primary field in `form_schema`. |
+| `recent_responses[*].score` | Raw numeric score as stored (NPS: 0–10, CSAT: 1–5, etc). `null` if no scored field. |
+| `device_breakdown` | Keys are `desktop`, `mobile`, `tablet`, or `unknown`. Only keys with at least one response are returned. |
+
+---
+
 ### `GET /analytics/forms`
 Return a paginated list of all forms with per-form session and response metrics. Admin only. Uses bulk SQL aggregation — **2 queries regardless of page size**, not N+1.
 
@@ -761,6 +812,7 @@ Permanently delete a single log file.
 | POST | `/surveys/{id}/analytics/event` | Public† | Track session lifecycle event |
 | GET | `/surveys/{id}/analytics` | Admin | Session metrics for one survey |
 | GET | `/surveys/{id}/state` | Auth | Display state for logged-in user |
+| GET | `/analytics/overview` | Admin | Global stats, chart, recent responses, device breakdown |
 | GET | `/analytics/forms` | Admin | All forms with session + response metrics |
 | GET | `/analytics/forms/{id}` | Admin | Full analytics for a single form |
 | GET | `/responses` | Admin | List all responses (all surveys) |

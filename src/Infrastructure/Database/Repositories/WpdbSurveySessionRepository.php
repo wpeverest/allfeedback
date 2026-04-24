@@ -125,6 +125,139 @@ class WpdbSurveySessionRepository implements SurveySessionRepository {
 	}
 
 	/**
+	 * Return completion-rate stats for the overview panel in one conditional-aggregation query.
+	 *
+	 * Replaces three getGlobalAnalytics() calls (global + two WoW windows) with a single pass.
+	 *
+	 * @return array{completion_rate: float|null, this_week_completion_rate: float|null, last_week_completion_rate: float|null}
+	 * @since  1.0.0
+	 */
+	public function getOverviewSessionStats(): array {
+		global $wpdb;
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT
+					ROUND(
+						SUM(submitted_at IS NOT NULL)
+						/ NULLIF(SUM(started_at IS NOT NULL), 0) * 100
+					, 2)                                                                                    AS completion_rate,
+					ROUND(
+						SUM(submitted_at IS NOT NULL AND DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL 6 DAY))
+						/ NULLIF(SUM(started_at IS NOT NULL AND DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)), 0) * 100
+					, 2)                                                                                    AS this_week_completion_rate,
+					ROUND(
+						SUM(submitted_at IS NOT NULL
+						    AND DATE(created_at) BETWEEN DATE_SUB(CURDATE(), INTERVAL 13 DAY)
+						                             AND DATE_SUB(CURDATE(), INTERVAL 7 DAY))
+						/ NULLIF(SUM(started_at IS NOT NULL
+						             AND DATE(created_at) BETWEEN DATE_SUB(CURDATE(), INTERVAL 13 DAY)
+						                                      AND DATE_SUB(CURDATE(), INTERVAL 7 DAY)), 0) * 100
+					, 2)                                                                                    AS last_week_completion_rate
+				FROM `{$this->table}`
+				WHERE abandoned_at IS NOT NULL
+				   OR started_at   IS NOT NULL
+				   OR submitted_at IS NOT NULL
+				   OR last_active_at < DATE_SUB(NOW(), INTERVAL %d MINUTE)",
+				self::ABANDON_TIMEOUT_MINUTES
+			),
+			ARRAY_A
+		);
+
+		return [
+			'completion_rate'           => isset( $row['completion_rate'] )           ? (float) $row['completion_rate']           : null,
+			'this_week_completion_rate' => isset( $row['this_week_completion_rate'] ) ? (float) $row['this_week_completion_rate'] : null,
+			'last_week_completion_rate' => isset( $row['last_week_completion_rate'] ) ? (float) $row['last_week_completion_rate'] : null,
+		];
+	}
+
+	/**
+	 * Return aggregate session metrics across every survey, optionally filtered by date range.
+	 *
+	 * @param  string|null $dateFrom Optional start date Y-m-d.
+	 * @param  string|null $dateTo   Optional end date Y-m-d.
+	 * @return array<string, int|float|null>
+	 * @since  1.0.0
+	 */
+	public function getGlobalAnalytics( ?string $dateFrom = null, ?string $dateTo = null ): array {
+		global $wpdb;
+
+		$timeout = self::ABANDON_TIMEOUT_MINUTES;
+		$where   = [];
+		$params  = [ $timeout ];
+
+		if ( $dateFrom !== null ) {
+			$where[]  = 'DATE(created_at) >= %s';
+			$params[] = $dateFrom;
+		}
+
+		if ( $dateTo !== null ) {
+			$where[]  = 'DATE(created_at) <= %s';
+			$params[] = $dateTo;
+		}
+
+		$whereClause = $where !== [] ? 'AND ' . implode( ' AND ', $where ) : '';
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT
+					COUNT(*)                                                                     AS total_views,
+					SUM(started_at   IS NOT NULL)                                                AS total_starts,
+					SUM(submitted_at IS NOT NULL)                                                AS total_submissions,
+					ROUND(
+						SUM(submitted_at IS NOT NULL)
+						/ NULLIF( SUM(started_at IS NOT NULL), 0 ) * 100
+					, 2)                                                                         AS completion_rate,
+					ROUND(
+						SUM(
+							abandoned_at IS NOT NULL
+							OR (
+								started_at   IS NOT NULL
+								AND submitted_at IS NULL
+								AND last_active_at < DATE_SUB(NOW(), INTERVAL %d MINUTE)
+							)
+						)
+						/ NULLIF( SUM(started_at IS NOT NULL), 0 ) * 100
+					, 2)                                                                         AS abandonment_rate,
+					ROUND(
+						AVG(
+							CASE
+								WHEN started_at IS NOT NULL AND submitted_at IS NOT NULL
+								THEN TIMESTAMPDIFF(SECOND, started_at, submitted_at)
+							END
+						)
+					, 0)                                                                         AS avg_completion_time
+				FROM `{$this->table}`
+				WHERE 1=1 {$whereClause}",
+				...$params
+			),
+			ARRAY_A
+		);
+
+		if ( ! $row ) {
+			return [
+				'total_views'         => 0,
+				'total_starts'        => 0,
+				'total_submissions'   => 0,
+				'completion_rate'     => null,
+				'abandonment_rate'    => null,
+				'avg_completion_time' => null,
+			];
+		}
+
+		return [
+			'total_views'         => (int) $row['total_views'],
+			'total_starts'        => (int) $row['total_starts'],
+			'total_submissions'   => (int) $row['total_submissions'],
+			'completion_rate'     => $row['completion_rate']     !== null ? (float) $row['completion_rate']     : null,
+			'abandonment_rate'    => $row['abandonment_rate']    !== null ? (float) $row['abandonment_rate']    : null,
+			'avg_completion_time' => $row['avg_completion_time'] !== null ? (int)   $row['avg_completion_time'] : null,
+		];
+	}
+
+	/**
 	 * Return session analytics for multiple surveys in a single query, keyed by survey_id.
 	 *
 	 * @param  int[] $surveyIds Survey primary keys.

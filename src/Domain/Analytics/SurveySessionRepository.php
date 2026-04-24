@@ -56,4 +56,31 @@ interface SurveySessionRepository {
 	 * @since  1.0.0
 	 */
 	public function getAnalyticsForAllSurveys( array $surveyIds ): array;
+
+	/**
+	 * Return aggregate session metrics across every survey, optionally filtered by date range.
+	 *
+	 * Keys: total_views, total_starts, total_submissions,
+	 *       completion_rate, abandonment_rate, avg_completion_time.
+	 *
+	 * @param  string|null $dateFrom Optional start date Y-m-d (filters on session created_at).
+	 * @param  string|null $dateTo   Optional end date Y-m-d.
+	 * @return array<string, int|float|null>
+	 * @since  1.0.0
+	 */
+	public function getGlobalAnalytics( ?string $dateFrom = null, ?string $dateTo = null ): array;
+
+	/**
+	 * Return completion-rate stats for the overview panel in one query.
+	 *
+	 * Uses conditional aggregation to compute the global, this-week, and last-week
+	 * completion rates in a single SQL pass instead of three separate calls.
+	 *
+	 * Keys: completion_rate, this_week_completion_rate, last_week_completion_rate.
+	 * "This week" = last 7 days; "last week" = 7–13 days ago.
+	 *
+	 * @return array{completion_rate: float|null, this_week_completion_rate: float|null, last_week_completion_rate: float|null}
+	 * @since  1.0.0
+	 */
+	public function getOverviewSessionStats(): array;
 }

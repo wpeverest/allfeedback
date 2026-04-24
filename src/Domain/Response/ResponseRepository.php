@@ -203,4 +203,59 @@ interface ResponseRepository {
 	 * @since  1.0.0
 	 */
 	public function aggregateScoreStatsForAllSurveys( array $surveyIds ): array;
+
+	/**
+	 * Return all stats needed for the "all forms" overview panel in one query.
+	 *
+	 * Uses conditional aggregation so the overview endpoint fires one query
+	 * instead of six (total count, two WoW windows, three score-stats calls).
+	 *
+	 * Keys: total_feedback, this_week_count, last_week_count,
+	 *       avg_score, this_week_avg_score, last_week_avg_score.
+	 * "This week" = last 7 days; "last week" = 7–13 days ago.
+	 *
+	 * @return array{total_feedback: int, this_week_count: int, last_week_count: int, avg_score: float|null, this_week_avg_score: float|null, last_week_avg_score: float|null}
+	 * @since  1.0.0
+	 */
+	public function getOverviewStats(): array;
+
+	/**
+	 * Count all responses that fall within a date range (inclusive).
+	 *
+	 * @param  string $dateFrom Start date Y-m-d.
+	 * @param  string $dateTo   End date Y-m-d.
+	 * @return int
+	 * @since  1.0.0
+	 */
+	public function countAllInDateRange( string $dateFrom, string $dateTo ): int;
+
+	/**
+	 * Aggregate score statistics across every survey, optionally filtered by date range.
+	 *
+	 * Returns: total, score_count, score_sum, avg_score, promoters, passives, detractors.
+	 *
+	 * @param  string|null $dateFrom Optional start date Y-m-d.
+	 * @param  string|null $dateTo   Optional end date Y-m-d.
+	 * @return array{total: int, score_count: int, score_sum: float, avg_score: float|null, promoters: int, passives: int, detractors: int}
+	 * @since  1.0.0
+	 */
+	public function getGlobalScoreStats( ?string $dateFrom = null, ?string $dateTo = null ): array;
+
+	/**
+	 * Count responses grouped by device_type across every survey.
+	 *
+	 * @return array<string, int> device_type => count
+	 * @since  1.0.0
+	 */
+	public function countByDeviceGlobal(): array;
+
+	/**
+	 * Count responses grouped by date (Y-m-d) across every survey within a date range.
+	 *
+	 * @param  string $dateFrom Start date Y-m-d.
+	 * @param  string $dateTo   End date Y-m-d.
+	 * @return array<string, int> date => count (sorted ascending)
+	 * @since  1.0.0
+	 */
+	public function countByDateGlobal( string $dateFrom, string $dateTo ): array;
 }

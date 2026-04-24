@@ -79,4 +79,26 @@ interface SurveyRepository {
 	 * @since  1.0.0
 	 */
 	public function decrementResponseCount( int $id ): void;
+
+	/**
+	 * Retrieve multiple surveys by their primary keys in a single query.
+	 *
+	 * Returns an array keyed by survey ID so callers can do O(1) lookups.
+	 * IDs that do not exist in the database are silently omitted.
+	 *
+	 * @param  int[] $ids Survey primary keys.
+	 * @return array<int, Survey>
+	 * @since  1.0.0
+	 */
+	public function findByIds( array $ids ): array;
+
+	/**
+	 * Count published surveys and how many were created within the last 7 days, in one query.
+	 *
+	 * Returns: total (all published), new_this_week (published AND created in last 7 days).
+	 *
+	 * @return array{total: int, new_this_week: int}
+	 * @since  1.0.0
+	 */
+	public function countPublishedWithNewCount(): array;
 }

@@ -20,13 +20,14 @@ use AllFeedback\Domain\Shared\QueryFilter;
 final class SurveyFilter extends QueryFilter {
 
 	/**
-	 * @param  SurveyStatus|null $status    Restrict results to this lifecycle status.
-	 * @param  int|null          $createdBy Restrict results to surveys by this user ID.
-	 * @param  int               $page      1-based page number.
-	 * @param  int               $perPage   Results per page.
-	 * @param  string|null       $search    Optional full-text search string.
-	 * @param  string            $orderBy   Column to order by. Default 'date'.
-	 * @param  string            $order     Sort direction: ASC | DESC.
+	 * @param  SurveyStatus|null $status       Restrict results to this lifecycle status.
+	 * @param  int|null          $createdBy    Restrict results to surveys by this user ID.
+	 * @param  int               $page         1-based page number.
+	 * @param  int               $perPage      Results per page.
+	 * @param  string|null       $search       Optional full-text search string.
+	 * @param  string            $orderBy      Column to order by. Default 'date'.
+	 * @param  string            $order        Sort direction: ASC | DESC.
+	 * @param  string|null       $createdAfter Only include surveys created on or after this date (Y-m-d).
 	 * @since  1.0.0
 	 */
 	public function __construct(
@@ -37,6 +38,7 @@ final class SurveyFilter extends QueryFilter {
 		?string $search = null,
 		string $orderBy = 'date',
 		string $order = 'DESC',
+		public readonly ?string $createdAfter = null,
 	) {
 		parent::__construct( $page, $perPage, $search, $orderBy, $order );
 	}

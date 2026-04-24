@@ -178,6 +178,68 @@ class WpdbSurveyRepository implements SurveyRepository {
 	}
 
 	/**
+	 * Retrieve multiple surveys by their primary keys in one query, keyed by survey ID.
+	 *
+	 * @param  int[] $ids Survey primary keys.
+	 * @return array<int, Survey>
+	 * @since  1.0.0
+	 */
+	public function findByIds( array $ids ): array {
+		if ( empty( $ids ) ) {
+			return [];
+		}
+
+		global $wpdb;
+
+		$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT * FROM `{$this->table}` WHERE id IN ({$placeholders})", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				...$ids
+			),
+			ARRAY_A
+		) ?: [];
+
+		$result = [];
+		foreach ( $rows as $row ) {
+			$survey                  = $this->hydrate( $row );
+			$result[ $survey->getId() ] = $survey;
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Count published surveys and how many were created in the last 7 days, in one query.
+	 *
+	 * @return array{total: int, new_this_week: int}
+	 * @since  1.0.0
+	 */
+	public function countPublishedWithNewCount(): array {
+		global $wpdb;
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT
+					COUNT(*)                                                              AS total,
+					SUM(DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL 6 DAY))         AS new_this_week
+				FROM `{$this->table}`
+				WHERE status = %s",
+				SurveyStatus::Published->value
+			),
+			ARRAY_A
+		);
+
+		return [
+			'total'         => (int) ( $row['total']         ?? 0 ),
+			'new_this_week' => (int) ( $row['new_this_week'] ?? 0 ),
+		];
+	}
+
+	/**
 	 * Insert a new Survey row and return the reconstituted instance with its assigned id.
 	 *
 	 * @param  Survey $survey The new aggregate to insert.
@@ -316,6 +378,11 @@ class WpdbSurveyRepository implements SurveyRepository {
 		if ( $filter->search !== null && $filter->search !== '' ) {
 			$where[]  = 'title LIKE %s';
 			$params[] = '%' . $wpdb->esc_like( $filter->search ) . '%';
+		}
+
+		if ( $filter->createdAfter !== null && $filter->createdAfter !== '' ) {
+			$where[]  = 'DATE(created_at) >= %s';
+			$params[] = $filter->createdAfter;
 		}
 
 		return [ $where, $params ];
