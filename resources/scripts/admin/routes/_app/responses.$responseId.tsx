@@ -41,10 +41,14 @@ const ResponseDetailPending = () => (
 );
 
 export const Route = createFileRoute('/_app/responses/$responseId')({
-	validateSearch: (search: Record<string, unknown>) => ({
-		surveyId: search.surveyId !== undefined ? Number(search.surveyId) : 0,
-		edit:     search.edit === true || search.edit === 'true',
-	}),
+	validateSearch: (search: Record<string, unknown>) => {
+		const rawId = search.surveyId;
+		const id    = rawId !== undefined && rawId !== null ? Number(rawId) : undefined;
+		return {
+			surveyId: id !== undefined && Number.isFinite(id) && id > 0 ? id : 0,
+			edit:     search.edit === true || search.edit === 'true',
+		};
+	},
 	loaderDeps: ({ search }) => ({ surveyId: search.surveyId }),
 	loader: ({ context: { queryClient }, params: { responseId }, deps: { surveyId } }) =>
 		Promise.all([

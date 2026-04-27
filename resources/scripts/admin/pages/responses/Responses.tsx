@@ -55,9 +55,9 @@ const SkeletonRow = ({ showForm }: { showForm: boolean }) => (
 const Responses = () => {
 	const navigate    = useNavigate();
 	const queryClient = useQueryClient();
-	const { surveyId: initialSurveyId } = useSearch({ from: '/_app/responses/' });
+	const { surveyId } = useSearch({ from: '/_app/responses/' });
 
-	const [selectedSurveyId, setSelectedSurveyId] = useState<number | null>(initialSurveyId ?? null);
+	const selectedSurveyId = surveyId ?? null;
 	const [search,           setSearch]           = useState('');
 	const [page,             setPage]             = useState(1);
 	const [perPage,          setPerPage]          = useState(10);
@@ -286,7 +286,7 @@ const Responses = () => {
 				<Select
 					value={selectedSurveyId !== null ? String(selectedSurveyId) : 'all'}
 					onValueChange={(v) => {
-						setSelectedSurveyId(v === 'all' ? null : Number(v));
+						void navigate({ search: { surveyId: v === 'all' ? undefined : Number(v) } });
 						setPage(1);
 						setChecked([]);
 					}}
@@ -391,7 +391,7 @@ const Responses = () => {
 									<tr
 										key={response.id}
 										className={cn(
-											'border-b border-border last:border-0 transition-colors',
+											'border-b border-border last:border-b-0 transition-colors',
 											!response.is_read && !isSelected
 												? 'border-l-[3px] border-l-primary/50'
 												: 'border-l-[3px] border-l-transparent',
@@ -439,7 +439,7 @@ const Responses = () => {
 													type="button"
 													className="group/form flex min-w-0 items-start gap-1 text-left"
 													onClick={() => {
-														setSelectedSurveyId(response.survey_id);
+														void navigate({ search: { surveyId: response.survey_id } });
 														setPage(1);
 														setChecked([]);
 													}}
