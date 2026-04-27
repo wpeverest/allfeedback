@@ -898,7 +898,7 @@ const Analytics = () => {
 
 	if (isError) {
 		return (
-			<div style={{ padding: '20px 32px' }}>
+			<div className="px-4 py-5 sm:px-6 lg:px-8">
 				<div style={{ background: 'var(--card)', borderRadius: 'var(--radius-2xl)', boxShadow: 'var(--shadow-card)' }}>
 					<EmptyState icon={AlertCircle} title={__('Failed to load analytics', 'all-feedback')} description={__('Something went wrong. Please try refreshing the page.', 'all-feedback')} />
 				</div>
@@ -908,7 +908,7 @@ const Analytics = () => {
 
 	if (!listLoading && forms.length === 0) {
 		return (
-			<div style={{ padding: '20px 32px' }}>
+			<div className="px-4 py-5 sm:px-6 lg:px-8">
 				<div style={{ background: 'var(--card)', borderRadius: 'var(--radius-2xl)', boxShadow: 'var(--shadow-card)' }}>
 					<EmptyState icon={BarChart2} title={__('No data yet', 'all-feedback')} description={__('Analytics will appear here once your forms start receiving responses.', 'all-feedback')} />
 				</div>
@@ -917,13 +917,13 @@ const Analytics = () => {
 	}
 
 	return (
-		<div style={{ padding: '0 32px 32px' }}>
+		<div className="px-4 pb-8 sm:px-6 lg:px-8">
 			<div style={{ padding: '20px 0 16px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
 				<FormSelector forms={forms} selectedId={selectedFormId} onChange={setSelectedFormId} />
 			</div>
 
 			<div style={{ transition: 'opacity 200ms ease', ...(isRefetching && { opacity: 0.5, pointerEvents: 'none' }) }}>
-			<div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 16 }}>
+			<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
 				<KPICard
 					icon={MessageSquare}
 					label={__('Total feedback', 'all-feedback')}
@@ -995,7 +995,7 @@ const Analytics = () => {
 
 			{/* Chart row — NPS gets 70/30 split, everything else is full width */}
 			{isNpsForm ? (
-				<div style={{ display: 'grid', gridTemplateColumns: '7fr 3fr', gap: 16, marginTop: 16 }}>
+				<div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-[7fr_3fr]">
 					<AreaChartCard chartData={chartData} loading={loading} totalInPeriod={totalInPeriod} />
 					<NpsDistributionCard
 						nps={npsData}
@@ -1011,12 +1011,12 @@ const Analytics = () => {
 
 			{/* Bottom row */}
 			{isFormView ? (
-				<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 16 }}>
+				<div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
 					<SessionMetricsCard sm={detailData?.session_metrics ?? null} loading={detailLoading} />
 					<DeviceDistributionCard breakdown={deviceBreakdown} loading={detailLoading} />
 				</div>
 			) : (
-				<div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: 16, marginTop: 16 }}>
+				<div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
 					<RecentResponsesCard responses={responsesData?.responses ?? []} forms={forms} loading={responsesLoading} />
 					<DeviceDistributionCard breakdown={deviceBreakdown} loading={listLoading} />
 				</div>

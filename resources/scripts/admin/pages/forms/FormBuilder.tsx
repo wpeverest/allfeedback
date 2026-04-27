@@ -270,7 +270,14 @@ const FormBuilder = () => {
 	const [settingsScrolled,  setSettingsScrolled]  = useState(false);
 	const [settingsProgress,  setSettingsProgress]  = useState(0);
 	const [previewDevice,   setPreviewDevice]   = useState<PreviewDevice>('desktop');
-	const [previewWidth,    setPreviewWidth]    = useState(() => Math.round(window.innerWidth * 0.45));
+	const [previewWidth,    setPreviewWidth]    = useState(() => {
+		const saved = localStorage.getItem('allfb_preview_width');
+		if (saved) {
+			const n = parseInt(saved, 10);
+			if (!isNaN(n) && n >= 280) return Math.min(n, Math.round(window.innerWidth * 0.72));
+		}
+		return Math.round(window.innerWidth * 0.30);
+	});
 	const [publishMenuOpen,   setPublishMenuOpen]   = useState(false);
 	const [shortcutsOpen,     setShortcutsOpen]     = useState(false);
 
@@ -417,7 +424,9 @@ const FormBuilder = () => {
 
 			const onMove = (ev: MouseEvent) => {
 				const delta = startX - ev.clientX;
-				setPreviewWidth(Math.max(280, Math.min(Math.round(window.innerWidth * 0.72), startWidth + delta)));
+				const next  = Math.max(280, Math.min(Math.round(window.innerWidth * 0.72), startWidth + delta));
+				setPreviewWidth(next);
+				localStorage.setItem('allfb_preview_width', String(next));
 			};
 			const onUp = () => {
 				document.removeEventListener('mousemove', onMove);
@@ -772,12 +781,12 @@ const FormBuilder = () => {
 				</div>
 
 				<div
-					className="group relative flex w-3 shrink-0 cursor-col-resize items-center justify-center border-x border-border bg-white transition-colors hover:bg-muted/40"
+					className="group relative flex w-4 shrink-0 cursor-col-resize items-center justify-center"
 					onMouseDown={startResize}
 				>
-					<div className="flex items-center gap-[3px] opacity-20 transition-opacity group-hover:opacity-60">
-						<div className="h-6 w-[2px] rounded-full bg-foreground" />
-						<div className="h-6 w-[2px] rounded-full bg-foreground" />
+					<div className="h-full w-0.5 bg-border transition-colors group-hover:bg-primary/50" />
+					<div className="absolute flex h-7 w-5 cursor-col-resize items-center justify-center rounded-full border border-border bg-background shadow-sm transition-colors group-hover:border-primary/40 group-hover:bg-primary/5">
+						<div className="h-3.5 w-0.5 rounded-full bg-foreground/35 transition-colors group-hover:bg-primary/60" />
 					</div>
 				</div>
 

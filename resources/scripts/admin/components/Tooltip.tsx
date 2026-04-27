@@ -20,7 +20,7 @@ export function Tooltip({ content, children, side = 'top', sideOffset = 6 }: Pro
 					<RadixTooltip.Content
 						side={side}
 						sideOffset={sideOffset}
-						className="z-[100000] max-w-[280px] rounded-lg bg-foreground px-3 py-2 text-xs leading-relaxed text-background shadow-lg"
+						className="z-[100000] max-w-[280px] rounded-lg bg-foreground px-3 py-2 text-base leading-relaxed text-background shadow-lg"
 					>
 						{content}
 						<RadixTooltip.Arrow className="fill-foreground" />
