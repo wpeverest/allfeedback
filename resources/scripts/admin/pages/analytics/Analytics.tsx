@@ -118,15 +118,12 @@ function KPICard({
 	iconColor?:  string;
 	loading:     boolean;
 }) {
-	const [hovered, setHovered] = useState(false);
 	return (
 		<div
-			onMouseEnter={() => setHovered(true)}
-			onMouseLeave={() => setHovered(false)}
 			style={{
 				background: 'var(--card)', borderRadius: 'var(--radius-2xl)',
-				boxShadow:  hovered ? 'var(--shadow-card-hover)' : 'var(--shadow-card)',
-				padding: '18px 20px 16px', transition: 'box-shadow 220ms ease',
+				boxShadow:  'var(--shadow-card)',
+				padding: '18px 20px 16px',
 			}}>
 			<div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
 				<div style={{
