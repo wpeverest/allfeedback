@@ -19,7 +19,7 @@ import {
 	Tooltip,
 } from 'chart.js';
 import { formatDistanceToNow, parseISO } from 'date-fns';
-import { AlertCircle, BarChart2, CheckCircle2, Clock, FileText, MessageSquare, Monitor, MousePointerClick, Play, Smartphone, Star, Tablet, XCircle } from 'lucide-react';
+import { AlertCircle, BarChart2, CheckCircle2, Clock, FileText, MessageSquare, Monitor, MousePointerClick, Play, Smartphone, Tablet, XCircle } from 'lucide-react';
 import type { CSSProperties } from 'react';
 import { useMemo, useState } from 'react';
 import { Doughnut, Line } from 'react-chartjs-2';
@@ -295,62 +295,61 @@ const NPS_COLORS = {
 	promoter:  { bar: 'var(--success)',     progress: 'var(--success)'     },
 };
 
-function scoreGroup(score: number): 'detractor' | 'passive' | 'promoter' {
-	if (score >= 9) return 'promoter';
-	if (score >= 7) return 'passive';
-	return 'detractor';
-}
 
 function NpsDistributionCard({ nps, scoreDist, loading }: {
 	nps:       DonutData;
 	scoreDist: Record<number, number>;
 	loading:   boolean;
 }) {
-	const scores   = Array.from({ length: 11 }, (_, i) => i);
-	const counts   = scores.map(s => scoreDist[s] ?? 0);
-	const maxCount = Math.max(...counts, 1);
-	const total    = nps.total;
-
+	const total  = nps.total;
 	const detPct = total > 0 ? Math.round((nps.detractors / total) * 100) : 0;
 	const pasPct = total > 0 ? Math.round((nps.passives   / total) * 100) : 0;
 	const proPct = total > 0 ? Math.round((nps.promoters  / total) * 100) : 0;
 
-	const BAR_H = 100;
+	const GX = 110, GY = 90, R_OUT = 78, R_IN = 72, GAP = 1.8;
+	const gPolar = (deg: number, r: number) => {
+		const rad = (deg * Math.PI) / 180;
+		return { x: GX + r * Math.cos(rad), y: GY - r * Math.sin(rad) };
+	};
+	const gArc = (from: number, to: number): string => {
+		const large = (from - to) > 180 ? 1 : 0;
+		const o1 = gPolar(from, R_OUT), o2 = gPolar(to, R_OUT);
+		const i2 = gPolar(to, R_IN),   i1 = gPolar(from, R_IN);
+		return `M ${o1.x.toFixed(2)} ${o1.y.toFixed(2)} A ${R_OUT} ${R_OUT} 0 ${large} 1 ${o2.x.toFixed(2)} ${o2.y.toFixed(2)} L ${i2.x.toFixed(2)} ${i2.y.toFixed(2)} A ${R_IN} ${R_IN} 0 ${large} 0 ${i1.x.toFixed(2)} ${i1.y.toFixed(2)} Z`;
+	};
+	const clampedScore  = total > 0 ? Math.max(-100, Math.min(100, nps.score)) : 0;
+	const needleAngle   = 180 - ((clampedScore + 100) / 200) * 180;
+	const needleTip     = gPolar(needleAngle, R_IN - 2);
+	const perpRad       = ((needleAngle + 90) * Math.PI) / 180;
+	const nSide1        = { x: GX + 1.4 * Math.cos(perpRad), y: GY - 1.4 * Math.sin(perpRad) };
+	const nSide2        = { x: GX - 1.4 * Math.cos(perpRad), y: GY + 1.4 * Math.sin(perpRad) };
+	const scoreColor    = nps.score >= 50 ? 'var(--success)' : nps.score >= 0 ? 'var(--warning)' : 'var(--destructive)';
+	const rLabel0       = gPolar(90,  R_OUT + 6);
+	const rLabelL       = gPolar(180, R_OUT + 6);
+	const rLabelR       = gPolar(0,   R_OUT + 6);
 
 	return (
 		<div style={{ background: 'var(--card)', borderRadius: 'var(--radius-2xl)', boxShadow: 'var(--shadow-card)', padding: '20px 22px', display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
-			<div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12, gap: 8 }}>
-				<div>
-					<h3 style={{ fontSize: 'var(--text-md)', fontWeight: 600, letterSpacing: '-0.01em', color: 'var(--foreground)', margin: 0 }}>
-						{__('NPS distribution', 'all-feedback')}
-					</h3>
-					<p style={{ marginTop: 2, fontSize: 'var(--text-xs)', color: 'var(--muted-foreground)' }}>
-						{__('0–6 detractors · 7–8 passives · 9–10 promoters', 'all-feedback')}
-					</p>
-				</div>
-				{loading ? (
-					<div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5, flexShrink: 0 }}>
-						<Skeleton style={{ height: 28, width: 52, borderRadius: 6 }} />
-						<Skeleton style={{ height: 10, width: 28, borderRadius: 4 }} />
-					</div>
-				) : total > 0 ? (
-					<div style={{ textAlign: 'right', flexShrink: 0 }}>
-						<div style={{
-							fontSize: 'var(--text-xl)', fontWeight: 700, letterSpacing: '-0.02em',
-							fontVariantNumeric: 'tabular-nums',
-							color: nps.score >= 50 ? 'var(--success)' : nps.score >= 0 ? 'var(--warning)' : 'var(--destructive)',
-						}}>
-							{nps.score >= 0 ? `+${nps.score.toFixed(0)}` : nps.score.toFixed(0)}
-						</div>
-						<div style={{ fontSize: 'var(--text-2xs)', color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 500 }}>
-							NPS
-						</div>
-					</div>
-				) : null}
+			<div style={{ marginBottom: 12 }}>
+				<h3 style={{ fontSize: 'var(--text-md)', fontWeight: 600, letterSpacing: '-0.01em', color: 'var(--foreground)', margin: 0 }}>
+					{__('NPS distribution', 'all-feedback')}
+				</h3>
+				<p style={{ marginTop: 2, fontSize: 'var(--text-xs)', color: 'var(--muted-foreground)' }}>
+					{__('0–6 detractors · 7–8 passives · 9–10 promoters', 'all-feedback')}
+				</p>
 			</div>
 
 			{loading ? (
-				<Skeleton style={{ flex: 1, minHeight: 160, width: '100%', borderRadius: 8 }} />
+				<div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+					<Skeleton style={{ height: 108, width: '100%', borderRadius: 8 }} />
+					<Skeleton style={{ height: 10, width: 160, borderRadius: 4, alignSelf: 'center' }} />
+					<Skeleton style={{ height: 7,  width: '100%', borderRadius: 999 }} />
+					<div style={{ display: 'flex', justifyContent: 'space-between' }}>
+						<Skeleton style={{ height: 12, width: 72, borderRadius: 4 }} />
+						<Skeleton style={{ height: 12, width: 60, borderRadius: 4 }} />
+						<Skeleton style={{ height: 12, width: 72, borderRadius: 4 }} />
+					</div>
+				</div>
 			) : !total ? (
 				<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, minHeight: 160 }}>
 					<p style={{ fontSize: 'var(--text-sm)', color: 'var(--muted-foreground)' }}>
@@ -359,34 +358,32 @@ function NpsDistributionCard({ nps, scoreDist, loading }: {
 				</div>
 			) : (
 				<>
-					<div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: BAR_H + 48 }}>
-						{scores.map(score => {
-							const count = counts[score];
-							const group = scoreGroup(score);
-							const color = NPS_COLORS[group].bar;
-							const barH  = count > 0 ? Math.max(6, Math.round((count / maxCount) * BAR_H)) : 3;
-							return (
-								<div key={score} style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, height: '100%', justifyContent: 'flex-end' }}>
-									<span style={{
-										fontSize: 'var(--text-2xs)', color: count > 0 ? 'var(--muted-foreground)' : 'transparent',
-										fontWeight: 500, fontVariantNumeric: 'tabular-nums', lineHeight: 1,
-									}}>{count}</span>
-									<div style={{
-										width: '100%', height: barH, borderRadius: '3px 3px 0 0',
-										background: count > 0 ? color : 'var(--muted)',
-										opacity: count > 0 ? 1 : 0.4,
-										transition: 'opacity 140ms',
-									}} />
-									<span style={{
-										fontSize: 'var(--text-2xs)', color: 'var(--muted-foreground)',
-										fontWeight: 500, lineHeight: 1, marginTop: 2,
-									}}>{score}</span>
-								</div>
-							);
-						})}
-					</div>
+					<svg viewBox="0 0 220 122" width="100%" style={{ display: 'block', overflow: 'visible' }}>
+						<path d={gArc(180, 90 + GAP)}      fill="var(--destructive)" opacity="0.82" />
+						<path d={gArc(90 - GAP, 45 + GAP)} fill="var(--warning)"     opacity="0.82" />
+						<path d={gArc(45 - GAP, 0)}        fill="var(--success)"     opacity="0.82" />
+						<text x={rLabelL.x - 2} y={rLabelL.y + 3} textAnchor="end"   fontSize="7" fill="var(--muted-foreground)" opacity="0.5">−100</text>
+						<text x={rLabel0.x}     y={rLabel0.y - 2} textAnchor="middle" fontSize="7" fill="var(--muted-foreground)" opacity="0.5">0</text>
+						<text x={rLabelR.x + 2} y={rLabelR.y + 3} textAnchor="start"  fontSize="7" fill="var(--muted-foreground)" opacity="0.5">+100</text>
+						<path
+							d={`M ${needleTip.x.toFixed(2)} ${needleTip.y.toFixed(2)} L ${nSide1.x.toFixed(2)} ${nSide1.y.toFixed(2)} L ${nSide2.x.toFixed(2)} ${nSide2.y.toFixed(2)} Z`}
+							fill={scoreColor}
+						/>
+						<circle cx={GX} cy={GY} r="2.8" fill="var(--card)" stroke={scoreColor} strokeWidth="1.5" />
+						<text
+							x={GX} y={GY + 18}
+							textAnchor="middle" fontSize="11" fontWeight="600"
+							fill={scoreColor}
+							style={{ fontVariantNumeric: 'tabular-nums' }}
+						>
+							{nps.score >= 0 ? `+${nps.score.toFixed(0)}` : nps.score.toFixed(0)}
+						</text>
+					</svg>
+					<p style={{ textAlign: 'center', fontSize: 'var(--text-2xs)', color: 'var(--muted-foreground)', margin: '-2px 0 8px', letterSpacing: '0.01em' }}>
+						{__('Promoters % – Detractors %', 'all-feedback')}
+					</p>
 
-					<div style={{ marginTop: 8, height: 7, borderRadius: 999, overflow: 'hidden', display: 'flex' }}>
+					<div style={{ height: 7, borderRadius: 999, overflow: 'hidden', display: 'flex' }}>
 						<div style={{ flex: detPct, background: NPS_COLORS.detractor.progress }} />
 						<div style={{ flex: pasPct, background: NPS_COLORS.passive.progress   }} />
 						<div style={{ flex: proPct, background: NPS_COLORS.promoter.progress  }} />
@@ -506,13 +503,13 @@ function SessionMetricsCard({ sm, loading }: { sm: FormAnalyticsDetail['session_
 					</div>
 				)}
 
-				<div style={{ paddingLeft: 24, display: 'flex', flexDirection: 'column', gap: 4 }}>
+				<div style={{ paddingLeft: 16, display: 'flex', flexDirection: 'column', gap: 2 }}>
 					{segments.map(s => {
 						const pct = total > 0 ? Math.round((s.value / total) * 100) : 0;
 						return (
 							<div key={s.label} style={{
-								display: 'grid', gridTemplateColumns: '10px 1fr auto', gap: 10,
-								alignItems: 'center', padding: '7px 10px',
+								display: 'grid', gridTemplateColumns: '10px 1fr auto', gap: 8,
+								alignItems: 'center', padding: '5px 8px',
 								borderRadius: 'var(--radius-md)',
 								transition: 'background 140ms',
 							}}
@@ -840,7 +837,6 @@ const Analytics = () => {
 		if (isFormView && detailData) {
 			const sm    = detailData.session_metrics;
 			const rm    = detailData.response_metrics;
-			const isNps = rm.survey_type === 'NPS';
 
 			// Derive total-responses WoW from responses_over_time (date strings are YYYY-MM-DD sortable).
 			let totalChange: number | null = null;
@@ -867,8 +863,8 @@ const Analytics = () => {
 				totalChange,
 				completionRate:    sm.completion_rate,
 				completionChange:  sm.completion_rate_change,
-				thirdKind:         (isNps ? 'nps' : 'time') as 'nps' | 'time' | 'abandonment',
-				thirdValue:        isNps ? rm.nps_score.score : sm.avg_completion_time,
+				thirdKind:         'time' as 'nps' | 'time' | 'abandonment',
+				thirdValue:        sm.avg_completion_time,
 				thirdChange:       null as number | null,
 				fourthValue:       sm.abandonment_rate,
 				fourthIsFormView:  true,
@@ -983,20 +979,7 @@ const Analytics = () => {
 					iconColor="oklch(0.527 0.154 150)"
 					loading={loading}
 				/>
-				{kpi.thirdKind === 'nps' ? (
-					<KPICard
-						icon={Star}
-						label={__('NPS score', 'all-feedback')}
-						value={loading ? '—' : kpi.thirdValue !== null
-							? (kpi.thirdValue >= 0 ? `+${kpi.thirdValue.toFixed(0)}` : kpi.thirdValue.toFixed(0))
-							: '—'}
-						unit="pts"
-						deltaValue={null}
-						deltaLabel={__('−100 to +100', 'all-feedback')}
-						iconColor="oklch(0.75 0.18 75)"
-						loading={loading}
-					/>
-				) : kpi.thirdKind === 'time' ? (
+				{kpi.thirdKind === 'time' ? (
 					<KPICard
 						icon={Clock}
 						label={__('Avg. time', 'all-feedback')}
@@ -1062,7 +1045,7 @@ const Analytics = () => {
 
 			{/* Bottom row */}
 			{isFormView ? (
-				<div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 16, marginTop: 16 }}>
+				<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 16 }}>
 					<SessionMetricsCard sm={detailData?.session_metrics ?? null} loading={detailLoading} />
 					<DeviceDistributionCard breakdown={deviceBreakdown} loading={detailLoading} />
 				</div>
