@@ -167,4 +167,36 @@ class Container {
 	public function isCompiled(): bool {
 		return $this->compiled;
 	}
+
+	/**
+	 * Delete the entire compiled-container cache directory.
+	 *
+	 * Safe to call on activation and after plugin upgrades so a stale compiled
+	 * container is never loaded when DI bindings change between releases.
+	 *
+	 * @return void
+	 * @since  1.0.0
+	 */
+	public static function purgeCache(): void {
+		$dir = WP_CONTENT_DIR . '/cache/allfeedback/';
+
+		if ( ! is_dir( $dir ) ) {
+			return;
+		}
+
+		$iterator = new \RecursiveIteratorIterator(
+			new \RecursiveDirectoryIterator( $dir, \RecursiveDirectoryIterator::SKIP_DOTS ),
+			\RecursiveIteratorIterator::CHILD_FIRST
+		);
+
+		foreach ( $iterator as $file ) {
+			if ( $file->isDir() ) {
+				rmdir( $file->getPathname() );
+			} else {
+				unlink( $file->getPathname() );
+			}
+		}
+
+		rmdir( $dir );
+	}
 }

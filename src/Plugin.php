@@ -106,6 +106,8 @@ final class Plugin {
 
 		$this->booted = true;
 
+		add_action( 'upgrader_process_complete', [ $this, 'onUpgradeComplete' ], 10, 2 );
+
 		$this->maybeFlushRewriteRules();
 
 		$this->doAction( 'allfeedback:booted' );
@@ -147,6 +149,8 @@ final class Plugin {
 				[ 'back_link' => true ]
 			);
 		}
+
+		Container::purgeCache();
 
 		$this->doAction( 'allfeedback:activated' );
 
@@ -194,6 +198,25 @@ final class Plugin {
 	 */
 	public function getModuleLoader(): ModuleLoader {
 		return $this->moduleLoader;
+	}
+
+	/**
+	 * Purge the compiled DI-container cache when this plugin is updated via
+	 * the WordPress admin so the next request rebuilds it from fresh bindings.
+	 *
+	 * @param  \WP_Upgrader         $upgrader  Upgrader instance (unused).
+	 * @param  array<string, mixed> $hookExtra Data about what was upgraded.
+	 * @return void
+	 * @since  1.0.0
+	 */
+	public function onUpgradeComplete( \WP_Upgrader $upgrader, array $hookExtra ): void {
+		if (
+			( $hookExtra['action'] ?? '' ) === 'update' &&
+			( $hookExtra['type'] ?? '' ) === 'plugin' &&
+			in_array( plugin_basename( AF_PLUGIN_FILE ), (array) ( $hookExtra['plugins'] ?? [] ), true )
+		) {
+			Container::purgeCache();
+		}
 	}
 
 	/**
