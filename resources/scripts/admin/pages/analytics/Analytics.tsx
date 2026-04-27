@@ -21,7 +21,7 @@ import {
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { AlertCircle, BarChart2, CheckCircle2, Clock, FileText, MessageSquare, Monitor, Smartphone, Tablet, XCircle } from 'lucide-react';
 import type { CSSProperties } from 'react';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Doughnut, Line } from 'react-chartjs-2';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ArcElement, Filler, Tooltip);
@@ -780,13 +780,10 @@ function RecentResponsesCard({ responses, forms, loading }: {
 }
 
 const Analytics = () => {
-	const { formId: initialFormId } = useSearch({ from: '/_app/analytics/' });
+	const { formId } = useSearch({ from: '/_app/analytics/' });
 	const navigate = useNavigate();
-	const [selectedFormId, setSelectedFormIdState] = useState<number | null>(
-		initialFormId !== undefined && Number.isFinite(initialFormId) ? initialFormId : null,
-	);
+	const selectedFormId = formId ?? null;
 	const setSelectedFormId = (id: number | null) => {
-		setSelectedFormIdState(id);
 		void navigate({ to: '/analytics/', search: id !== null ? { formId: id } : {} });
 	};
 
@@ -797,10 +794,10 @@ const Analytics = () => {
 
 	const forms   = listData?.forms ?? [];
 	const totals  = listData?.totals;
-	const loading = listLoading || (selectedFormId !== null && detailLoading);
 	const isFormView = selectedFormId !== null;
+	const loading = listLoading;
 	const isRefetching = isFormView
-		? (detailFetching && !detailLoading)
+		? detailFetching
 		: (listFetching && !listLoading) || (overviewFetching && !overviewLoading);
 
 	const kpi = useMemo(() => {
@@ -808,7 +805,6 @@ const Analytics = () => {
 			const sm    = detailData.session_metrics;
 			const rm    = detailData.response_metrics;
 
-			// Derive total-responses WoW from responses_over_time (date strings are YYYY-MM-DD sortable).
 			let totalChange: number | null = null;
 			const rot = rm.responses_over_time;
 			if (rot) {
