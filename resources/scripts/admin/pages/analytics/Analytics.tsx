@@ -430,7 +430,7 @@ function SessionMetricsCard({ sm, loading }: { sm: FormAnalyticsDetail['session_
 			data:            segments.map(s => s.value),
 			backgroundColor: segments.map(s => s.chartColor),
 			borderWidth:     0,
-			hoverOffset:     6,
+			hoverOffset:     0,
 		}],
 	};
 
