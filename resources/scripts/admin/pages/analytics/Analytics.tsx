@@ -6,7 +6,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { __ } from '@wordpress/i18n';
 import {
 	ArcElement,
@@ -783,14 +783,11 @@ function RecentResponsesCard({ responses, forms, loading }: {
 }
 
 const Analytics = () => {
+	const { formId: initialFormId } = useSearch({ from: '/_app/analytics/' });
 	const navigate = useNavigate();
-	const [selectedFormId, setSelectedFormIdState] = useState<number | null>(() => {
-		const hash  = window.location.hash;
-		const qIdx  = hash.indexOf('?');
-		if (qIdx === -1) return null;
-		const id = Number(new URLSearchParams(hash.slice(qIdx + 1)).get('formId'));
-		return Number.isFinite(id) && id > 0 ? id : null;
-	});
+	const [selectedFormId, setSelectedFormIdState] = useState<number | null>(
+		initialFormId !== undefined && Number.isFinite(initialFormId) ? initialFormId : null,
+	);
 	const setSelectedFormId = (id: number | null) => {
 		setSelectedFormIdState(id);
 		void navigate({ to: '/analytics/', search: id !== null ? { formId: id } : {} });
