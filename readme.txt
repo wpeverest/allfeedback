@@ -26,9 +26,7 @@ Features include:
 == Installation ==
 
 1. Upload the plugin folder to `/wp-content/plugins/`.
-2. Run `composer install` inside the plugin folder.
-3. Run `pnpm install && pnpm build` to compile assets.
-4. Activate the plugin through **Plugins → Installed Plugins**.
+2. Activate the plugin through **Plugins → Installed Plugins**.
 
 == Frequently Asked Questions ==
 

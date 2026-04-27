@@ -9,7 +9,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Value object representing a numeric survey score and its measurement type.
  *
- * Supports NPS (0–10), CSAT (1–5), and CES (1–7) score types.
+ * Supports NPS (0–10) score type.
  *
  * @package AllFeedback\Domain\Response
  * @since   1.0.0
@@ -18,21 +18,19 @@ final class ResponseScore {
 
 	/**
 	 * @param  float  $score Numeric score value.
-	 * @param  string $type  Score type: nps | csat | ces.
-	 * @throws \InvalidArgumentException When the type is not one of nps, csat, or ces.
+	 * @param  string $type  Score type: nps.
+	 * @throws \InvalidArgumentException When the type is not nps.
 	 * @since  1.0.0
 	 */
 	public function __construct(
 		private readonly float $score,
 		private readonly string $type,
 	) {
-		$valid = [ 'nps', 'csat', 'ces' ];
-
-		if ( ! in_array( $type, $valid, true ) ) {
+		if ( 'nps' !== $type ) {
 			throw new \InvalidArgumentException(
 				sprintf(
 					/* translators: %s: the supplied score type */
-					esc_html__( 'Invalid score type: %s. Expected one of: nps, csat, ces.', 'allfeedback' ),
+					esc_html__( 'Invalid score type: %s. Expected: nps.', 'allfeedback' ),
 					esc_html( $type )
 				)
 			);
@@ -50,7 +48,7 @@ final class ResponseScore {
 	}
 
 	/**
-	 * Return the score type identifier: nps | csat | ces.
+	 * Return the score type identifier: nps.
 	 *
 	 * @return string
 	 * @since  1.0.0

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AllFeedback\Core;
 
+defined( 'ABSPATH' ) || exit;
+
 /**
  * Central store for plugin-wide constants and path/URL helpers.
  *

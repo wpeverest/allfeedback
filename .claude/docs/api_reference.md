@@ -675,7 +675,7 @@ Return the complete three-level settings object merged with defaults. Every page
   "advanced": {
     "privacy": { "disable_user_details": false },
     "logging": { "enabled": false, "level": "error", "retention_days": 30 },
-    "plugin":  { "delete_on_uninstall": false, "allow_usage_tracking": true }
+    "plugin":  { "delete_on_uninstall": false }
   }
 }
 ```

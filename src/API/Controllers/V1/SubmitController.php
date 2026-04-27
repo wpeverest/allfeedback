@@ -321,7 +321,7 @@ class SubmitController extends RestController {
 				'validate_callback' => 'rest_validate_request_arg',
 			],
 			'score'         => $this->argInteger(
-				description: __( 'Numeric score for NPS, CSAT, CES, or star-rating fields.', 'allfeedback' ),
+				description: __( 'Numeric score for NPS or star-rating fields.', 'allfeedback' ),
 				min:         0,
 				max:         100,
 			),

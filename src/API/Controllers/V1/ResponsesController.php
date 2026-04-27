@@ -635,7 +635,7 @@ class ResponsesController extends RestController {
 					'context'     => [ 'view' ],
 				],
 				'score'         => [
-					'description' => __( 'Numeric score for NPS, CSAT, or CES fields.', 'allfeedback' ),
+					'description' => __( 'Numeric score for NPS fields.', 'allfeedback' ),
 					'type'        => [ 'number', 'null' ],
 					'context'     => [ 'view' ],
 				],

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AllFeedback\Support;
 
+defined( 'ABSPATH' ) || exit;
+
 use AllFeedback\Core\Constants;
 
 /**

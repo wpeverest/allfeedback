@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AllFeedback\Core;
 
+defined( 'ABSPATH' ) || exit;
+
 /**
  * Creates and removes any custom WordPress user roles the plugin needs.
  *

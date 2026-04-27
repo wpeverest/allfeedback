@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AllFeedback\Traits;
 
+defined( 'ABSPATH' ) || exit;
+
 /**
  * Provides a thread-safe, single-instance pattern.
  *

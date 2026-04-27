@@ -12,7 +12,7 @@ use DateTimeImmutable;
 /**
  * Survey aggregate root.
  *
- * Represents a single NPS / CSAT / CES survey definition including its form
+ * Represents a single NPS survey definition including its form
  * schema, display settings, targeting rules, lifecycle status, and aggregate
  * response count.
  *

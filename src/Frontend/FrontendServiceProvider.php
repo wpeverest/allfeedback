@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AllFeedback\Frontend;
 
+defined( 'ABSPATH' ) || exit;
+
 use AllFeedback\API\Controllers\V1\SubmitController;
 use AllFeedback\Application\Survey\SurveyStateService;
 use AllFeedback\Core\Container;

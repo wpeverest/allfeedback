@@ -13,8 +13,7 @@
   "require": {
     "php": ">=8.2",
     "php-di/php-di": "^7.0",
-    "woocommerce/action-scheduler": "^3.9",
-	"themegrill/themegrill-sdk": "^1.0"
+    "woocommerce/action-scheduler": "^3.9"
   },
   "require-dev": {
     "squizlabs/php_codesniffer": "^3.11",

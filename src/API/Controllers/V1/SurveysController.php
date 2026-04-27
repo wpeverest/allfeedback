@@ -45,7 +45,7 @@ class SurveysController extends RestController {
 	 * @since 1.0.0
 	 */
 	private const FIELD_TYPES = [
-		'nps', 'csat', 'ces',
+		'nps',
 		'short_text', 'long_text',
 		'radio', 'checkboxes', 'dropdown',
 		'star_rating', 'scale',

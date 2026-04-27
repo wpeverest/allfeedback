@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AllFeedback\Core\Features;
 
+defined( 'ABSPATH' ) || exit;
+
 use AllFeedback\Traits\Hooks;
 
 /**

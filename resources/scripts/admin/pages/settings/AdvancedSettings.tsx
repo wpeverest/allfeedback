@@ -93,7 +93,6 @@ const DEFAULT_VALUES = {
 	disable_user_details: false,
 	logging_enabled:      false,
 	delete_on_uninstall:  false,
-	allow_usage_tracking: true,
 };
 
 const FORM_KEY = 'advanced';
@@ -110,14 +109,12 @@ const AdvancedSettings = () => {
 			disable_user_details: stagedAdv.privacy?.disable_user_details ?? DEFAULT_VALUES.disable_user_details,
 			logging_enabled:      stagedAdv.logging?.enabled              ?? DEFAULT_VALUES.logging_enabled,
 			delete_on_uninstall:  stagedAdv.plugin?.delete_on_uninstall   ?? DEFAULT_VALUES.delete_on_uninstall,
-			allow_usage_tracking: stagedAdv.plugin?.allow_usage_tracking  ?? DEFAULT_VALUES.allow_usage_tracking,
 		  }
 		: data
 			? {
 				disable_user_details: data.advanced.privacy.disable_user_details ?? DEFAULT_VALUES.disable_user_details,
 				logging_enabled:      data.advanced.logging.enabled              ?? DEFAULT_VALUES.logging_enabled,
 				delete_on_uninstall:  data.advanced.plugin.delete_on_uninstall   ?? DEFAULT_VALUES.delete_on_uninstall,
-				allow_usage_tracking: data.advanced.plugin.allow_usage_tracking  ?? DEFAULT_VALUES.allow_usage_tracking,
 			  }
 			: DEFAULT_VALUES;
 
@@ -143,7 +140,6 @@ const AdvancedSettings = () => {
 			disable_user_details: data.advanced.privacy.disable_user_details ?? DEFAULT_VALUES.disable_user_details,
 			logging_enabled:      data.advanced.logging.enabled              ?? DEFAULT_VALUES.logging_enabled,
 			delete_on_uninstall:  data.advanced.plugin.delete_on_uninstall   ?? DEFAULT_VALUES.delete_on_uninstall,
-			allow_usage_tracking: data.advanced.plugin.allow_usage_tracking  ?? DEFAULT_VALUES.allow_usage_tracking,
 		}, { keepDefaultValues: true });
 	}, [data]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -157,15 +153,14 @@ const AdvancedSettings = () => {
 		if (
 			values.disable_user_details === (srv?.privacy.disable_user_details ?? DEFAULT_VALUES.disable_user_details) &&
 			values.logging_enabled      === (srv?.logging.enabled              ?? DEFAULT_VALUES.logging_enabled) &&
-			values.delete_on_uninstall  === (srv?.plugin.delete_on_uninstall   ?? DEFAULT_VALUES.delete_on_uninstall) &&
-			values.allow_usage_tracking === (srv?.plugin.allow_usage_tracking  ?? DEFAULT_VALUES.allow_usage_tracking)
+			values.delete_on_uninstall  === (srv?.plugin.delete_on_uninstall   ?? DEFAULT_VALUES.delete_on_uninstall)
 		) return;
 		setDirty(FORM_KEY, true);
 		setPatch(FORM_KEY, {
 			advanced: {
 				privacy: { disable_user_details: values.disable_user_details },
 				logging: { enabled: values.logging_enabled },
-				plugin:  { delete_on_uninstall: values.delete_on_uninstall, allow_usage_tracking: values.allow_usage_tracking },
+				plugin:  { delete_on_uninstall: values.delete_on_uninstall },
 			},
 		} as Record<string, unknown>);
 	}, [values, isDirty]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -221,12 +216,6 @@ const AdvancedSettings = () => {
 						<Switch
 							checked={values.delete_on_uninstall}
 							onCheckedChange={(v) => form.setFieldValue('delete_on_uninstall', v)}
-						/>
-					</Row>
-					<Row label={__('Allow usage tracking', 'all-feedback')}>
-						<Switch
-							checked={values.allow_usage_tracking}
-							onCheckedChange={(v) => form.setFieldValue('allow_usage_tracking', v)}
 						/>
 					</Row>
 				</div>

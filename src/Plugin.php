@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AllFeedback;
 
+defined( 'ABSPATH' ) || exit;
+
 use AllFeedback\CLI\MigrateCommand;
 use AllFeedback\Core\AppServiceProvider;
 use AllFeedback\Core\Constants;
