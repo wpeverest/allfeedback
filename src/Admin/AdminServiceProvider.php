@@ -172,15 +172,6 @@ class AdminServiceProvider implements ServiceProvider {
 			callback:    $mountPoint,
 		);
 
-		add_submenu_page(
-			parent_slug: self::MENU_SLUG,
-			page_title:  __( 'About', 'allfeedback' ),
-			menu_title:  __( 'About', 'allfeedback' ),
-			capability:  'manage_options',
-			menu_slug:   self::MENU_SLUG . '#/about',
-			callback:    $mountPoint,
-		);
-
 		remove_submenu_page( self::MENU_SLUG, self::MENU_SLUG );
 	}
 

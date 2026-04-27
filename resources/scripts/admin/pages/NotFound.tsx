@@ -62,7 +62,7 @@ const NotFound = ( {
 
 				<div className="mt-8 flex w-full max-w-[200px] flex-col gap-2.5">
 					<Button asChild className="w-full !text-white">
-						<Link to="/about/">{ __( 'Go to About', 'all-feedback' ) }</Link>
+						<Link to="/forms/">{ __( 'Go to Forms', 'all-feedback' ) }</Link>
 					</Button>
 					{ showFormsLink && (
 						<Button variant="outline" asChild className="w-full">
