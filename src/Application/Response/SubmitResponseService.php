@@ -47,7 +47,7 @@ class SubmitResponseService {
 		$survey = $this->surveyRepository->findById( $dto->surveyId );
 
 		if ( $survey === null ) {
-			throw NotFoundException::forResource( esc_html__( 'Survey', 'allfeedback' ), $dto->surveyId );
+			throw NotFoundException::forResource( esc_html__( 'Survey', 'allfeedback' ), $dto->surveyId ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- surveyId is a typed int
 		}
 
 		$context = new ResponseContext( dto: $dto, survey: $survey );

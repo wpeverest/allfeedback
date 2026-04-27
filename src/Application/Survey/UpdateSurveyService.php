@@ -42,7 +42,7 @@ class UpdateSurveyService {
 		$survey = $this->repository->findById( $id );
 
 		if ( $survey === null ) {
-			throw NotFoundException::forResource( esc_html__( 'Survey', 'allfeedback' ), $id );
+			throw NotFoundException::forResource( esc_html__( 'Survey', 'allfeedback' ), $id ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- $id is a typed int
 		}
 
 		$previousStatus = $survey->getStatus();

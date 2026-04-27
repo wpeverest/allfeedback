@@ -30,9 +30,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 // Absolute path to the main plugin file — mirrors EVF_PLUGIN_FILE convention.
 define( 'AF_PLUGIN_FILE', __FILE__ );
 
-$autoloader = __DIR__ . '/vendor/autoload.php';
+$af_autoloader = __DIR__ . '/vendor/autoload.php';
 
-if ( ! file_exists( $autoloader ) ) {
+if ( ! file_exists( $af_autoloader ) ) {
 	add_action(
 		'admin_notices',
 		function () {
@@ -45,7 +45,7 @@ if ( ! file_exists( $autoloader ) ) {
 	return;
 }
 
-require_once $autoloader;
+require_once $af_autoloader;
 
 // ------------------------------------------------------------------
 // Bootstrap

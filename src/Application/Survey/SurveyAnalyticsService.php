@@ -72,7 +72,7 @@ class SurveyAnalyticsService {
 		$survey = $this->surveyRepository->findById( $surveyId );
 
 		if ( $survey === null ) {
-			throw NotFoundException::forResource( esc_html__( 'Survey', 'allfeedback' ), $surveyId );
+			throw NotFoundException::forResource( esc_html__( 'Survey', 'allfeedback' ), $surveyId ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- $surveyId is a typed int
 		}
 
 		$stats          = $this->responseRepository->aggregateScoreStats( $surveyId );
