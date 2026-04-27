@@ -376,7 +376,7 @@ function NpsDistributionCard({ nps, scoreDist, loading }: {
 							{nps.score >= 0 ? `+${nps.score.toFixed(0)}` : nps.score.toFixed(0)}
 						</text>
 					</svg>
-					<p style={{ textAlign: 'center', fontSize: 'var(--text-2xs)', color: 'var(--muted-foreground)', margin: '-2px 0 8px', letterSpacing: '0.01em' }}>
+					<p style={{ textAlign: 'center', fontSize: 'var(--text-sm)', color: 'var(--muted-foreground)', margin: '-2px 0 8px', letterSpacing: '0.01em' }}>
 						{__('Promoters % – Detractors %', 'all-feedback')}
 					</p>
 
