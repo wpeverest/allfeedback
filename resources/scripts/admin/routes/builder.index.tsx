@@ -2,6 +2,15 @@
 import { surveyQuery } from '@/admin/queries/surveys';
 import { createFileRoute, lazyRouteComponent, notFound } from '@tanstack/react-router';
 
+const getInitialPreviewWidth = () => {
+	const saved = localStorage.getItem('allfb_preview_width');
+	if (saved) {
+		const n = parseInt(saved, 10);
+		if (!isNaN(n) && n >= 280) return Math.min(n, Math.round(window.innerWidth * 0.72));
+	}
+	return Math.round(window.innerWidth * 0.30);
+};
+
 const BuilderPending = () => (
 	<div className="allfb-builder fixed inset-0 z-[99999] flex flex-col bg-background">
 		<header className="flex h-[68px] shrink-0 items-center justify-between border-b border-border bg-white px-6">
@@ -34,7 +43,7 @@ const BuilderPending = () => (
 					))}
 				</div>
 
-				<div className="flex flex-1 flex-col gap-4 overflow-y-auto bg-background p-5">
+				<div className="flex flex-1 flex-col gap-4 overflow-y-auto bg-background p-7">
 					{[1, 2].map((n) => (
 						<div key={n} className="overflow-hidden rounded-2xl border border-border/60 bg-white">
 							<div className="flex items-center gap-3 border-b border-border/50 bg-white px-5 py-4">
@@ -50,9 +59,14 @@ const BuilderPending = () => (
 				</div>
 			</div>
 
-			<div className="w-3 shrink-0 border-x border-border bg-white" />
+			<div className="relative flex w-0.5 shrink-0 items-center justify-center">
+				<div className="h-full w-0.5 bg-border" />
+				<div className="absolute flex h-7 w-5 items-center justify-center rounded-full border border-border bg-background shadow-sm">
+					<div className="h-3.5 w-0.5 rounded-full bg-foreground/35" />
+				</div>
+			</div>
 
-			<div className="w-[45vw] shrink-0 bg-background p-5">
+			<div className="shrink-0 bg-background px-7 pb-6 pt-7" style={{ width: getInitialPreviewWidth() }}>
 				<div className="h-full animate-pulse rounded-2xl bg-muted/60" />
 			</div>
 		</div>

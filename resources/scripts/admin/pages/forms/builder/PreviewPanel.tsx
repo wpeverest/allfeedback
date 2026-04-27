@@ -521,7 +521,7 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 			{viewMode === 'page' ? (
 
 				<div className="flex flex-1 flex-col overflow-hidden bg-background">
-					<div className="flex flex-1 items-start justify-center overflow-hidden px-6 pb-6 pt-7">
+					<div className="flex flex-1 items-start justify-center overflow-hidden px-7 pb-6 pt-7">
 						<div
 							className="flex h-full flex-col overflow-hidden rounded-xl border border-border/60 bg-white shadow-md"
 							style={{ width: pageMaxW ? `min(${pageMaxW}, 100%)` : '100%' }}
@@ -692,7 +692,7 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 					</div>
 			) : (
 
-				<div className="flex flex-1 items-center justify-center overflow-hidden bg-background/50 p-8">
+				<div className="flex flex-1 items-center justify-center overflow-hidden bg-background/50 px-7 py-8">
 					<div style={{ width: `min(${maxW}, 100%)` }}>
 						<WidgetBody
 							{...sharedWidgetProps}
