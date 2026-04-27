@@ -13,7 +13,6 @@ export class ErrorBoundary extends Component<Props, State> {
 	}
 
 	componentDidCatch(error: Error, info: ErrorInfo) {
-
 		console.error('[RMB]', error, info.componentStack);
 	}
 
@@ -28,18 +27,19 @@ export class ErrorBoundary extends Component<Props, State> {
 							<AlertTriangle className="size-5 text-red-500" />
 						</div>
 						<h2 className="mb-1 text-center text-[15px] font-semibold text-gray-900">
-							{__('Something went wrong', 'all-feedback')}
+							{__('Something went wrong', 'allfeedback')}
 						</h2>
 						<p className="mb-4 text-center text-[13px] text-gray-400">
-							{error.message || __('An unexpected error occurred.', 'all-feedback')}
+							{error.message ||
+								__('An unexpected error occurred.', 'allfeedback')}
 						</p>
 						<div className="flex justify-center">
 							<button
-								className="inline-flex cursor-pointer items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-[13px] font-medium text-primary-foreground hover:opacity-90"
+								className="bg-primary text-primary-foreground inline-flex cursor-pointer items-center gap-1.5 rounded-md px-4 py-2 text-[13px] font-medium hover:opacity-90"
 								onClick={() => this.setState({ error: null })}
 							>
 								<RefreshCw className="size-3.5" />
-								{__('Try again', 'all-feedback')}
+								{__('Try again', 'allfeedback')}
 							</button>
 						</div>
 					</div>

@@ -14,7 +14,7 @@ use AllFeedback\Support\Logger;
  *
  * REST controller for plugin log file management.
  *
- * Routes (under all-feedback/v1):
+ * Routes (under allfeedback/v1):
  *   GET    /logs              → index()        : paginated list of log files
  *   GET    /logs/{id}        → show()         : single log file with full content
  *   DELETE /logs/delete      → bulkDelete()   : bulk-delete multiple log files
@@ -144,7 +144,7 @@ class LogsController extends RestController {
 	}
 
 	/**
-	 * GET /all-feedback/v1/logs
+	 * GET /allfeedback/v1/logs
 	 *
 	 * Return a paginated, filterable list of log files.
 	 * Each item includes metadata but not the raw log content.
@@ -195,7 +195,7 @@ class LogsController extends RestController {
 	}
 
 	/**
-	 * GET /all-feedback/v1/logs/{id}
+	 * GET /allfeedback/v1/logs/{id}
 	 *
 	 * Return metadata and the full content of a single log file.
 	 *
@@ -218,7 +218,7 @@ class LogsController extends RestController {
 	}
 
 	/**
-	 * DELETE /all-feedback/v1/logs/{id}
+	 * DELETE /allfeedback/v1/logs/{id}
 	 *
 	 * Permanently delete a single log file.
 	 *
@@ -243,7 +243,7 @@ class LogsController extends RestController {
 	}
 
 	/**
-	 * DELETE /all-feedback/v1/logs/delete
+	 * DELETE /allfeedback/v1/logs/delete
 	 *
 	 * Bulk-delete multiple log files in a single request.
 	 *

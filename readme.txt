@@ -1,6 +1,6 @@
 === All Feedback ===
 Contributors:      themegrill
-Tags:              feedback, surveys, nps, csat, ces
+Tags:              feedback, nps, forms
 Requires at least: 6.5
 Tested up to:      6.9
 Requires PHP:      8.2
@@ -8,42 +8,47 @@ Stable tag:        1.0.0
 License:           GPLv3 or later
 License URI:       https://www.gnu.org/licenses/gpl-3.0.html
 
-WordPress-native NPS, CSAT, and CES feedback surveys stored in your own database.
+Collect customer feedback with customizable feedback forms. All responses stored in your own WordPress database.
 
 == Description ==
 
-All Feedback helps you collect customer feedback without sending data to an external SaaS.
+All Feedback lets you create and publish feedback forms directly from your WordPress admin. All responses are stored in your own database — no third-party accounts, no data leaving your server.
 
 Features include:
 
-* WordPress-native survey management
-* NPS, CSAT, and CES workflows
-* React-based admin experience
-* REST API controllers for admin and frontend flows
-* Database migrations for plugin data
-* Frontend assets for survey rendering
+* Build feedback forms with multiple field types: text, radio, checkboxes, star rating, scale, and NPS
+* Responses stored entirely in your own WordPress database
+* Embed feedback forms in posts and pages via a Gutenberg block
+* View responses and analytics inside WordPress
+* Email notifications for new responses
 
 == Installation ==
 
 1. Upload the plugin folder to `/wp-content/plugins/`.
 2. Activate the plugin through **Plugins → Installed Plugins**.
+3. Go to **All Feedback** in your admin menu to create your first feedback form.
 
 == Frequently Asked Questions ==
 
-= How do I add a new REST API endpoint? =
+= Where is my feedback data stored? =
 
-Create a controller in `src/API/Controllers/V1/`, add it to the controller list
-in `ApiServiceProvider::registerRoutes()`, and bind it in `config/services.php`.
+All responses are stored in your own WordPress database. No data is sent to any external service.
 
-= How do I register a module? =
+= Does this plugin require an account or subscription? =
 
-Extend `AbstractModule`, set `$id`, `$name`, and `$description`, then register
-it via the `allfeedback:modules:register` filter.
+No. All Feedback is entirely self-hosted and does not require any external account.
 
-= How do I enable development mode? =
+= What types of feedback forms does this plugin support? =
 
-Define `ALLFEEDBACK_ENV` as `development` in `wp-config.php`. If the constant
-is missing or set to any other value, the plugin stays in production mode.
+You can build feedback forms with text fields, radio buttons, checkboxes, star ratings, numeric scales, and NPS (0–10) questions. Mix and match field types within a single form.
+
+= Can I embed a feedback form in a page or post? =
+
+Yes. Use the All Feedback block in the Gutenberg editor to embed any published feedback form.
+
+== Source Code ==
+
+The TypeScript and PostCSS source files are included in the `resources/scripts/` folder inside the plugin zip.
 
 == Changelog ==
 

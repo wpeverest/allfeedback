@@ -20,7 +20,7 @@ return [
 	'version'     => Constants::VERSION,
 	'slug'        => 'allfeedback',
 	'text_domain' => Constants::TEXT_DOMAIN,
-	'namespace'   => 'all-feedback/v1', // REST API namespace
+	'namespace'   => 'allfeedback/v1', // REST API namespace
 
 	// ------------------------------------------------------------------
 	// File-system paths (absolute)

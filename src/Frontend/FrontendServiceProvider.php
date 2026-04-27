@@ -232,7 +232,7 @@ class FrontendServiceProvider implements ServiceProvider {
 			'allfeedback:frontend:script_data',
 			[
 				'siteUrl'     => home_url( '/' ),
-				'restUrl'     => rest_url( 'all-feedback/v1/' ),
+				'restUrl'     => rest_url( 'allfeedback/v1/' ),
 				'nonce'       => wp_create_nonce( 'wp_rest' ),
 				'submitNonce' => wp_create_nonce( SubmitController::NONCE_ACTION ),
 				'version'     => \AllFeedback\Core\Constants::VERSION,

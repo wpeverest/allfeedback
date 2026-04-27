@@ -13,7 +13,7 @@ use AllFeedback\Domain\Analytics\SurveySessionRepository;
 /**
  * REST controller for survey session analytics.
  *
- * Routes (under `all-feedback/v1`):
+ * Routes (under `allfeedback/v1`):
  *   `POST /surveys/{id}/analytics/event` — public; track a single session event.
  *   `GET  /surveys/{id}/analytics`       — admin; return aggregate metrics.
  *

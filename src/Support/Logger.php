@@ -20,7 +20,7 @@ use AllFeedback\Core\Settings\SettingsManager;
  *
  * The directory is created on plugin activation (CoreServiceProvider).
  * Direct file access is blocked by .htaccess (deny from all) and index.php.
- * Log content is served exclusively through GET /all-feedback/v1/logs/{id}.
+ * Log content is served exclusively through GET /allfeedback/v1/logs/{id}.
  *
  * ── Settings ──────────────────────────────────────────────────────────────
  *

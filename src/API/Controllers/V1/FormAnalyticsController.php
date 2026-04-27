@@ -21,7 +21,7 @@ use AllFeedback\Domain\Survey\SurveyStatus;
 /**
  * REST controller for form-level analytics summaries.
  *
- * Routes (under `all-feedback/v1`):
+ * Routes (under `allfeedback/v1`):
  *   `GET /analytics/overview`   — admin; global stats for "all forms" dashboard view.
  *   `GET /analytics/forms`      — admin; summary metrics for every form.
  *   `GET /analytics/forms/{id}` — admin; full analytics for a single form.

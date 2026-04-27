@@ -115,14 +115,14 @@ const PROGRESS_OPTIONS: {
 	label: string;
 	Preview: (props: { active: boolean }) => React.ReactElement;
 }[] = [
-	{ value: 'dots', label: __('Dots', 'all-feedback'), Preview: DotsPreview },
+	{ value: 'dots', label: __('Dots', 'allfeedback'), Preview: DotsPreview },
 	{
 		value: 'numbers',
-		label: __('Numbers', 'all-feedback'),
+		label: __('Numbers', 'allfeedback'),
 		Preview: NumbersPreview,
 	},
-	{ value: 'bar', label: __('Bar', 'all-feedback'), Preview: BarPreview },
-	{ value: 'none', label: __('None', 'all-feedback'), Preview: NonePreview },
+	{ value: 'bar', label: __('Bar', 'allfeedback'), Preview: BarPreview },
+	{ value: 'none', label: __('None', 'allfeedback'), Preview: NonePreview },
 ];
 
 const ICON_OPTIONS: {
@@ -132,21 +132,21 @@ const ICON_OPTIONS: {
 }[] = [
 	{
 		value: 'message',
-		label: __('Message', 'all-feedback'),
+		label: __('Message', 'allfeedback'),
 		Icon: MessageSquare,
 	},
-	{ value: 'chat', label: __('Chat', 'all-feedback'), Icon: MessageCircle },
+	{ value: 'chat', label: __('Chat', 'allfeedback'), Icon: MessageCircle },
 	{
 		value: 'typing',
-		label: __('Typing', 'all-feedback'),
+		label: __('Typing', 'allfeedback'),
 		Icon: TypingBubbleIcon,
 	},
 	{
 		value: 'comment',
-		label: __('Comment', 'all-feedback'),
+		label: __('Comment', 'allfeedback'),
 		Icon: CommentBubbleIcon,
 	},
-	{ value: 'mail', label: __('Mail', 'all-feedback'), Icon: Mail },
+	{ value: 'mail', label: __('Mail', 'allfeedback'), Icon: Mail },
 ];
 
 const POSITION_OPTIONS: {
@@ -156,7 +156,7 @@ const POSITION_OPTIONS: {
 }[] = [
 	{
 		value: '',
-		label: __('Default', 'all-feedback'),
+		label: __('Default', 'allfeedback'),
 		Icon: () => (
 			<svg
 				viewBox="0 0 16 16"
@@ -179,7 +179,7 @@ const POSITION_OPTIONS: {
 	},
 	{
 		value: 'bottom-right',
-		label: __('Bottom right', 'all-feedback'),
+		label: __('Bottom right', 'allfeedback'),
 		Icon: () => (
 			<svg
 				viewBox="0 0 16 16"
@@ -202,7 +202,7 @@ const POSITION_OPTIONS: {
 	},
 	{
 		value: 'bottom-left',
-		label: __('Bottom left', 'all-feedback'),
+		label: __('Bottom left', 'allfeedback'),
 		Icon: () => (
 			<svg
 				viewBox="0 0 16 16"
@@ -225,7 +225,7 @@ const POSITION_OPTIONS: {
 	},
 	{
 		value: 'side-tab',
-		label: __('Side tab', 'all-feedback'),
+		label: __('Side tab', 'allfeedback'),
 		Icon: () => (
 			<svg
 				viewBox="0 0 16 16"
@@ -282,7 +282,7 @@ const StylingPanel = ({
 	return (
 		<div className="bg-background flex-1 overflow-y-auto p-5">
 			<div className="w-full space-y-4">
-				<Card title={__('Widget Position', 'all-feedback')}>
+				<Card title={__('Widget Position', 'allfeedback')}>
 					<div className="flex flex-wrap gap-1.5">
 						{POSITION_OPTIONS.map(({ value, label, Icon }) => {
 							const isActive = settings.widgetPosition === value;
@@ -303,7 +303,7 @@ const StylingPanel = ({
 				</Card>
 
 				{isMultiStep && (
-					<Card title={__('Progress Indicator', 'all-feedback')}>
+					<Card title={__('Progress Indicator', 'allfeedback')}>
 						<div className="flex flex-wrap gap-1.5">
 							{PROGRESS_OPTIONS.map(({ value, label, Preview }) => {
 								const isActive = settings.progressIndicator === value;
@@ -329,7 +329,7 @@ const StylingPanel = ({
 					</Card>
 				)}
 
-				<Card title={__('Trigger Icon', 'all-feedback')}>
+				<Card title={__('Trigger Icon', 'allfeedback')}>
 					<div className="flex flex-wrap gap-1.5">
 						{ICON_OPTIONS.map(({ value, label, Icon }) => {
 							const isActive = settings.triggerIcon === value;

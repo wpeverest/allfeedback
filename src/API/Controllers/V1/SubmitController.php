@@ -22,7 +22,7 @@ use AllFeedback\Support\Logger;
  *
  * Handles the public-facing survey submission endpoint.
  *
- * Route registered (under all-feedback/v1):
+ * Route registered (under allfeedback/v1):
  *   POST /surveys/{id}/submit → handle() : public widget submission
  *
  * Intentionally separate from ResponsesController (admin read/delete) to
@@ -95,7 +95,7 @@ class SubmitController extends RestController {
 	}
 
 	/**
-	 * POST /all-feedback/v1/surveys/{id}/submit
+	 * POST /allfeedback/v1/surveys/{id}/submit
 	 *
 	 * Accept and persist a public widget submission.
 	 *

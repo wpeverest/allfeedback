@@ -64,7 +64,7 @@ const FILES = {
     'config/**/*':     `${BUILD_DIR}/config`,
     'database/**/*':   `${BUILD_DIR}/database`,
     'languages/**/*':  `${BUILD_DIR}/languages`,
-    'resources/scripts/blocks/**/block.json': `${BUILD_DIR}/resources/scripts/blocks`,
+    'resources/scripts/**/*': `${BUILD_DIR}/resources/scripts`,
     [`${PLUGIN_SLUG}.php`]: BUILD_DIR,
     'uninstall.php':   BUILD_DIR,
     'readme.txt':      BUILD_DIR,

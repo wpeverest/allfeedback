@@ -2,7 +2,7 @@
 /**
  * Plugin Name: All Feedback
  * Plugin URI:  https://allfeedback.com
- * Description: WordPress-native NPS, CSAT, and CES feedback surveys. All data stored in your database. No external accounts required.
+ * Description: Collect customer feedback with customizable feedback forms. All responses are stored in your own WordPress database — no external accounts required.
  * Author:      Themegrill
  * Author URI:  https://themegrill.com
  * Version:     1.0.0

@@ -1,8 +1,8 @@
 ﻿import { Button } from '@/components/ui/button';
 import { __ } from '@wordpress/i18n';
 import { Plus } from 'lucide-react';
+import { useCallback, useState } from 'react';
 import EmptyCanvasIllustration from './EmptyCanvasIllustration';
-import { useCallback, useRef, useState } from 'react';
 import SectionCard from './SectionCard';
 import type { FormSection } from './types';
 
@@ -13,12 +13,20 @@ interface BuilderCanvasProps {
 	onActiveSectionChange?: (sectionIndex: number) => void;
 }
 
-interface FieldPos { sectionIdx: number; fieldIdx: number }
+interface FieldPos {
+	sectionIdx: number;
+	fieldIdx: number;
+}
 
-const BuilderCanvas = ({ sections, onSectionsChange, onScrollChange, onActiveSectionChange }: BuilderCanvasProps) => {
+const BuilderCanvas = ({
+	sections,
+	onSectionsChange,
+	onScrollChange,
+	onActiveSectionChange,
+}: BuilderCanvasProps) => {
 	const [sectionDragIdx, setSectionDragIdx] = useState<number | null>(null);
 	const [sectionDropIdx, setSectionDropIdx] = useState<number | null>(null);
-	const [newSectionId,   setNewSectionId]   = useState<string | null>(null);
+	const [newSectionId, setNewSectionId] = useState<string | null>(null);
 
 	const [fieldDrag, setFieldDrag] = useState<FieldPos | null>(null);
 	const [fieldDrop, setFieldDrop] = useState<FieldPos | null>(null);
@@ -53,7 +61,7 @@ const BuilderCanvas = ({ sections, onSectionsChange, onScrollChange, onActiveSec
 		(idx: number) => {
 			const copy: FormSection = {
 				...sections[idx],
-				id:     `section-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+				id: `section-${Date.now()}-${Math.random().toString(36).slice(2)}`,
 				fields: sections[idx].fields.map((f) => ({
 					...f,
 					id: `field-${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -108,11 +116,20 @@ const BuilderCanvas = ({ sections, onSectionsChange, onScrollChange, onActiveSec
 		setFieldDrop(null);
 	};
 
-	const handleFieldDrop = (targetSectionIdx: number, targetFieldIdx: number) => {
-		if (!fieldDrag) { setFieldDrag(null); setFieldDrop(null); return; }
+	const handleFieldDrop = (
+		targetSectionIdx: number,
+		targetFieldIdx: number,
+	) => {
+		if (!fieldDrag) {
+			setFieldDrag(null);
+			setFieldDrop(null);
+			return;
+		}
 		const { sectionIdx: fromSec, fieldIdx: fromField } = fieldDrag;
 		if (fromSec === targetSectionIdx && fromField === targetFieldIdx) {
-			setFieldDrag(null); setFieldDrop(null); return;
+			setFieldDrag(null);
+			setFieldDrop(null);
+			return;
 		}
 		const next = sections.map((s) => ({ ...s, fields: [...s.fields] }));
 		const [removed] = next[fromSec].fields.splice(fromField, 1);
@@ -124,12 +141,12 @@ const BuilderCanvas = ({ sections, onSectionsChange, onScrollChange, onActiveSec
 
 	if (sections.length === 0) {
 		return (
-			<div className="flex flex-1 items-center justify-center bg-background">
+			<div className="bg-background flex flex-1 items-center justify-center">
 				<div className="flex flex-col items-center">
 					<EmptyCanvasIllustration />
 					<Button onClick={addSection} className="-mt-1">
 						<Plus className="size-4" />
-						{__('Add a Section', 'all-feedback')}
+						{__('Add a Section', 'allfeedback')}
 					</Button>
 				</div>
 			</div>
@@ -139,14 +156,18 @@ const BuilderCanvas = ({ sections, onSectionsChange, onScrollChange, onActiveSec
 	const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
 		const el = e.currentTarget;
 		const scrolled = el.scrollTop > 0;
-		const progress = el.scrollHeight <= el.clientHeight
-			? 0
-			: el.scrollTop / (el.scrollHeight - el.clientHeight);
+		const progress =
+			el.scrollHeight <= el.clientHeight
+				? 0
+				: el.scrollTop / (el.scrollHeight - el.clientHeight);
 		onScrollChange?.(scrolled, progress);
 	};
 
 	return (
-		<div className="flex-1 overflow-y-auto bg-background p-5" onScroll={handleScroll}>
+		<div
+			className="bg-background flex-1 overflow-y-auto p-5"
+			onScroll={handleScroll}
+		>
 			<div
 				className="w-full space-y-4"
 				onDragLeave={(e) => {
@@ -183,9 +204,14 @@ const BuilderCanvas = ({ sections, onSectionsChange, onScrollChange, onActiveSec
 				))}
 
 				<div className="flex justify-center py-2">
-					<Button size="sm" variant="outline" onClick={addSection} className="border-dashed">
+					<Button
+						size="sm"
+						variant="outline"
+						onClick={addSection}
+						className="border-dashed"
+					>
 						<Plus className="size-3.5" />
-						{__('Add Section', 'all-feedback')}
+						{__('Add Section', 'allfeedback')}
 					</Button>
 				</div>
 			</div>

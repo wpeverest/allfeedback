@@ -1,7 +1,8 @@
 {
-  "name": "themegrill/all-feedback",
-  "description": "WordPress-native NPS, CSAT, and CES feedback surveys",
+  "name": "themegrill/allfeedback",
+  "description": "WordPress feedback plugin with local data storage",
   "type": "wordpress-plugin",
+  "license": "GPL-3.0-or-later",
   "autoload": {
     "psr-4": {
       "AllFeedback\\": "src/"

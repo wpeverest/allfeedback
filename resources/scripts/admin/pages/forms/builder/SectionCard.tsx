@@ -1,15 +1,27 @@
-﻿import { Button } from '@/components/ui/button';
-import { Tooltip } from '@/admin/components/Tooltip';
+﻿import { Tooltip } from '@/admin/components/Tooltip';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { __ } from '@wordpress/i18n';
-import { Check, ChevronDown, Copy, GripVertical, Pencil, Plus, Trash2, X } from 'lucide-react';
+import {
+	Check,
+	ChevronDown,
+	Copy,
+	GripVertical,
+	Pencil,
+	Plus,
+	Trash2,
+	X,
+} from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import FieldEditor from './FieldEditor';
 import FieldTypeMenu from './FieldTypeMenu';
 import { FIELD_TYPES } from './fieldTypes';
 import type { FieldType, FormField, FormSection } from './types';
 
-interface FieldPos { sectionIdx: number; fieldIdx: number }
+interface FieldPos {
+	sectionIdx: number;
+	fieldIdx: number;
+}
 
 interface SectionCardProps {
 	section: FormSection;
@@ -29,10 +41,10 @@ interface SectionCardProps {
 	onDragEnd: () => void;
 	onDrop: (e: React.DragEvent, index: number) => void;
 	onFieldDragStart: (sectionIdx: number, fieldIdx: number) => void;
-	onFieldDragOver:  (sectionIdx: number, fieldIdx: number) => void;
+	onFieldDragOver: (sectionIdx: number, fieldIdx: number) => void;
 	onFieldDragLeave: () => void;
-	onFieldDragEnd:   () => void;
-	onFieldDrop:      (sectionIdx: number, fieldIdx: number) => void;
+	onFieldDragEnd: () => void;
+	onFieldDrop: (sectionIdx: number, fieldIdx: number) => void;
 }
 
 const SectionCard = ({
@@ -57,15 +69,15 @@ const SectionCard = ({
 	onFieldDragEnd,
 	onFieldDrop,
 }: SectionCardProps) => {
-	const [isCollapsed,    setIsCollapsed]    = useState(false);
-	const [menuOpen,       setMenuOpen]       = useState(false);
-	const [newFieldId,     setNewFieldId]     = useState<string | null>(null);
+	const [isCollapsed, setIsCollapsed] = useState(false);
+	const [menuOpen, setMenuOpen] = useState(false);
+	const [newFieldId, setNewFieldId] = useState<string | null>(null);
 	const addFieldBtnRef = useRef<HTMLButtonElement>(null);
-	const cardRef        = useRef<HTMLDivElement>(null);
+	const cardRef = useRef<HTMLDivElement>(null);
 
 	const [isEditingTitle, setIsEditingTitle] = useState(false);
-	const titleSnapshotRef                    = useRef('');
-	const titleInputRef                       = useRef<HTMLInputElement>(null);
+	const titleSnapshotRef = useRef('');
+	const titleInputRef = useRef<HTMLInputElement>(null);
 
 	useEffect(() => {
 		if (isEditingTitle) {
@@ -76,7 +88,6 @@ const SectionCard = ({
 
 	useEffect(() => {
 		if (autoFocus) startEditingTitle();
-
 	}, []);
 
 	const startEditingTitle = () => {
@@ -99,7 +110,7 @@ const SectionCard = ({
 	};
 
 	const toggleMenu = () => setMenuOpen((v) => !v);
-	const closeMenu  = () => setMenuOpen(false);
+	const closeMenu = () => setMenuOpen(false);
 
 	const addField = useCallback(
 		(type: FieldType) => {
@@ -110,8 +121,12 @@ const SectionCard = ({
 				type,
 				label: typeConfig.defaultLabel,
 				required: false,
-				...(type === 'radio' || type === 'checkboxes' ? { options: ['Option 1', 'Option 2', 'Option 3'] } : {}),
-				...(type === 'short_text' || type === 'long_text' ? { placeholder: '' } : {}),
+				...(type === 'radio' || type === 'checkboxes'
+					? { options: ['Option 1', 'Option 2', 'Option 3'] }
+					: {}),
+				...(type === 'short_text' || type === 'long_text'
+					? { placeholder: '' }
+					: {}),
 			};
 			onSectionChange({ ...section, fields: [...section.fields, newField] });
 			setNewFieldId(id);
@@ -155,11 +170,17 @@ const SectionCard = ({
 		<div
 			ref={cardRef}
 			onPointerDown={() => onSectionFocus?.()}
-			onDragOver={(e) => { e.preventDefault(); onDragOver(e, index); }}
-			onDrop={(e) => { e.preventDefault(); onDrop(e, index); }}
+			onDragOver={(e) => {
+				e.preventDefault();
+				onDragOver(e, index);
+			}}
+			onDrop={(e) => {
+				e.preventDefault();
+				onDrop(e, index);
+			}}
 			className={cn(
 				'overflow-hidden rounded-2xl border bg-white transition-all duration-150',
-				isDragging && 'opacity-40 scale-[0.98]',
+				isDragging && 'scale-[0.98] opacity-40',
 				isDragOver && !isDragging
 					? 'border-primary/40 shadow-[0_0_0_3px_hsl(var(--primary)/0.08)]'
 					: 'border-border/60',
@@ -169,57 +190,68 @@ const SectionCard = ({
 				draggable
 				onDragStart={(e) => {
 					e.stopPropagation();
-					const el = cardRef.current ?? e.currentTarget as HTMLElement;
+					const el = cardRef.current ?? (e.currentTarget as HTMLElement);
 					const clone = el.cloneNode(true) as HTMLElement;
 					Object.assign(clone.style, {
-						position: 'fixed', top: '-9999px', left: '-9999px',
+						position: 'fixed',
+						top: '-9999px',
+						left: '-9999px',
 						width: `${el.offsetWidth}px`,
 						transform: 'rotate(1deg) scale(1.01)',
-						boxShadow: '0 20px 40px rgba(0,0,0,0.15), 0 6px 12px rgba(0,0,0,0.08)',
-						borderRadius: '16px', overflow: 'hidden', pointerEvents: 'none',
+						boxShadow:
+							'0 20px 40px rgba(0,0,0,0.15), 0 6px 12px rgba(0,0,0,0.08)',
+						borderRadius: '16px',
+						overflow: 'hidden',
+						pointerEvents: 'none',
 					});
 					document.body.appendChild(clone);
 					e.dataTransfer.setDragImage(clone, el.offsetWidth / 2, 40);
 					requestAnimationFrame(() => document.body.removeChild(clone));
 					onDragStart(index);
 				}}
-				onDragEnd={(e) => { e.stopPropagation(); onDragEnd(); }}
+				onDragEnd={(e) => {
+					e.stopPropagation();
+					onDragEnd();
+				}}
 				onClick={() => setIsCollapsed((v) => !v)}
-				className="flex cursor-pointer items-center border-b border-border/50 bg-white px-5 py-3.5 transition-colors hover:bg-muted/20"
+				className="border-border/50 hover:bg-muted/20 flex cursor-pointer items-center border-b bg-white px-5 py-3.5 transition-colors"
 			>
 				<div className="flex flex-1 items-center gap-2">
-					<Tooltip content={__('Drag to reorder', 'all-feedback')}>
-						<span className="cursor-grab text-muted-foreground/40 transition-colors hover:text-muted-foreground/70 active:cursor-grabbing">
+					<Tooltip content={__('Drag to reorder', 'allfeedback')}>
+						<span className="text-muted-foreground/40 hover:text-muted-foreground/70 cursor-grab transition-colors active:cursor-grabbing">
 							<GripVertical className="size-4 shrink-0" />
 						</span>
 					</Tooltip>
 
 					{isEditingTitle ? (
 						<div
-						className="flex items-center gap-1.5"
-						onClick={(e) => e.stopPropagation()}
-						onBlur={(e) => {
-							if (!e.currentTarget.contains(e.relatedTarget as Node)) commitTitle();
-						}}
-					>
+							className="flex items-center gap-1.5"
+							onClick={(e) => e.stopPropagation()}
+							onBlur={(e) => {
+								if (!e.currentTarget.contains(e.relatedTarget as Node))
+									commitTitle();
+							}}
+						>
 							<input
 								ref={titleInputRef}
 								type="text"
 								value={section.title}
-								onChange={(e) => onSectionChange({ ...section, title: e.target.value })}
+								onChange={(e) =>
+									onSectionChange({ ...section, title: e.target.value })
+								}
 								onKeyDown={(e) => {
 									if (e.key === 'Enter') commitTitle();
 									if (e.key === 'Escape') cancelTitle();
 								}}
 								onMouseDown={(e) => e.stopPropagation()}
-								className="section-title-input w-[260px] rounded-md border border-border/70 bg-transparent px-2 py-1 text-md font-semibold text-foreground outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/10"
+								className="section-title-input border-border/70 text-md text-foreground focus:border-primary/50 focus:ring-primary/10 w-[260px] rounded-md border bg-transparent px-2 py-1 font-semibold outline-none focus:ring-1"
 							/>
 							<Button
 								variant="ghost"
 								size="icon-xs"
 								onClick={commitTitle}
-								className="shrink-0 text-success hover:bg-success/10 active:bg-success/15"
-								aria-label={__('Confirm', 'all-feedback')}
+								className="text-success hover:bg-success/10 active:bg-success/15 shrink-0"
+								aria-label={__('Confirm', 'allfeedback')}
 							>
 								<Check className="size-3.5" />
 							</Button>
@@ -228,56 +260,77 @@ const SectionCard = ({
 								size="icon-xs"
 								onClick={cancelTitle}
 								className="shrink-0"
-								aria-label={__('Cancel', 'all-feedback')}
+								aria-label={__('Cancel', 'allfeedback')}
 							>
 								<X className="size-3.5" />
 							</Button>
 						</div>
 					) : (
-						<Tooltip content={__('Click to edit', 'all-feedback')}>
+						<Tooltip content={__('Click to edit', 'allfeedback')}>
 							<button
 								type="button"
-								className="section-title-btn group flex w-[260px] items-center gap-2 rounded-md border border-transparent px-2 py-1 text-left text-md font-semibold text-foreground transition-colors hover:border-border/50 hover:bg-black/[0.04]"
-								onClick={(e) => { e.stopPropagation(); startEditingTitle(); }}
+								className="section-title-btn group text-md text-foreground hover:border-border/50 flex w-[260px] items-center gap-2 rounded-md border border-transparent px-2 py-1 text-left font-semibold transition-colors hover:bg-black/[0.04]"
+								onClick={(e) => {
+									e.stopPropagation();
+									startEditingTitle();
+								}}
 								onMouseDown={(e) => e.stopPropagation()}
 							>
-								<span className="min-w-0 flex-1 truncate px-[2px] py-[4.5px]">{section.title}</span>
-								<Pencil
-									className="size-3 shrink-0 text-muted-foreground/40 opacity-0 transition-opacity group-hover:opacity-100"
-								/>
+								<span className="min-w-0 flex-1 truncate px-[2px] py-[4.5px]">
+									{section.title}
+								</span>
+								<Pencil className="text-muted-foreground/40 size-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
 							</button>
 						</Tooltip>
 					)}
 				</div>
 
-				<div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
-					<Tooltip content={isCollapsed ? __('Expand section', 'all-feedback') : __('Collapse section', 'all-feedback')}>
+				<div
+					className="flex items-center gap-0.5"
+					onClick={(e) => e.stopPropagation()}
+				>
+					<Tooltip
+						content={
+							isCollapsed
+								? __('Expand section', 'allfeedback')
+								: __('Collapse section', 'allfeedback')
+						}
+					>
 						<Button
 							variant="ghost"
 							size="icon-xs"
 							onClick={() => setIsCollapsed((v) => !v)}
-							aria-label={isCollapsed ? __('Expand section', 'all-feedback') : __('Collapse section', 'all-feedback')}
+							aria-label={
+								isCollapsed
+									? __('Expand section', 'allfeedback')
+									: __('Collapse section', 'allfeedback')
+							}
 						>
-							<ChevronDown className={cn('size-3.5 transition-transform duration-200', isCollapsed && '-rotate-90')} />
+							<ChevronDown
+								className={cn(
+									'size-3.5 transition-transform duration-200',
+									isCollapsed && '-rotate-90',
+								)}
+							/>
 						</Button>
 					</Tooltip>
-					<Tooltip content={__('Duplicate section', 'all-feedback')}>
+					<Tooltip content={__('Duplicate section', 'allfeedback')}>
 						<Button
 							variant="ghost"
 							size="icon-xs"
 							onClick={onSectionDuplicate}
-							aria-label={__('Duplicate section', 'all-feedback')}
+							aria-label={__('Duplicate section', 'allfeedback')}
 						>
 							<Copy className="size-3.5" />
 						</Button>
 					</Tooltip>
-					<Tooltip content={__('Delete section', 'all-feedback')}>
+					<Tooltip content={__('Delete section', 'allfeedback')}>
 						<Button
 							variant="ghost"
 							size="icon-xs"
 							onClick={onSectionDelete}
-							className="shrink-0 hover:bg-destructive/10 hover:text-destructive active:bg-destructive/15"
-							aria-label={__('Delete section', 'all-feedback')}
+							className="hover:bg-destructive/10 hover:text-destructive active:bg-destructive/15 shrink-0"
+							aria-label={__('Delete section', 'allfeedback')}
 						>
 							<Trash2 className="size-3.5" />
 						</Button>
@@ -285,57 +338,86 @@ const SectionCard = ({
 				</div>
 			</div>
 
-			<div className={cn('grid transition-[grid-template-rows] duration-200 ease-in-out', isCollapsed ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]')}>
-			<div className="overflow-hidden"><div className="bg-white p-5">
-				{section.fields.length > 0 && (
-					<div
-						className="mb-3 space-y-4"
-						onDragOver={(e) => e.stopPropagation()}
-						onDragLeave={(e) => {
-							if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-								onFieldDragLeave();
-							}
-						}}
-					>
-						{section.fields.map((field, fieldIdx) => (
-							<FieldEditor
-								key={field.id}
-								field={field}
-								index={fieldIdx}
-								isDragging={fieldDrag?.sectionIdx === index && fieldDrag?.fieldIdx === fieldIdx}
-								isDragOver={fieldDrop?.sectionIdx === index && fieldDrop?.fieldIdx === fieldIdx && !(fieldDrag?.sectionIdx === index && fieldDrag?.fieldIdx === fieldIdx)}
-								autoFocus={newFieldId === field.id}
-								onChange={(f) => handleFieldChange(fieldIdx, f)}
-								onDelete={() => deleteField(fieldIdx)}
-								onDuplicate={() => duplicateField(fieldIdx)}
-								onDragStart={() => onFieldDragStart(index, fieldIdx)}
-								onDragOver={(_e, _i) => onFieldDragOver(index, fieldIdx)}
-								onDragEnd={onFieldDragEnd}
-								onDrop={(_e, _i) => onFieldDrop(index, fieldIdx)}
-							/>
-						))}
-					</div>
+			<div
+				className={cn(
+					'grid transition-[grid-template-rows] duration-200 ease-in-out',
+					isCollapsed ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]',
 				)}
+			>
+				<div className="overflow-hidden">
+					<div className="bg-white p-5">
+						{section.fields.length > 0 && (
+							<div
+								className="mb-3 space-y-4"
+								onDragOver={(e) => e.stopPropagation()}
+								onDragLeave={(e) => {
+									if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+										onFieldDragLeave();
+									}
+								}}
+							>
+								{section.fields.map((field, fieldIdx) => (
+									<FieldEditor
+										key={field.id}
+										field={field}
+										index={fieldIdx}
+										isDragging={
+											fieldDrag?.sectionIdx === index &&
+											fieldDrag?.fieldIdx === fieldIdx
+										}
+										isDragOver={
+											fieldDrop?.sectionIdx === index &&
+											fieldDrop?.fieldIdx === fieldIdx &&
+											!(
+												fieldDrag?.sectionIdx === index &&
+												fieldDrag?.fieldIdx === fieldIdx
+											)
+										}
+										autoFocus={newFieldId === field.id}
+										onChange={(f) => handleFieldChange(fieldIdx, f)}
+										onDelete={() => deleteField(fieldIdx)}
+										onDuplicate={() => duplicateField(fieldIdx)}
+										onDragStart={() => onFieldDragStart(index, fieldIdx)}
+										onDragOver={(_e, _i) => onFieldDragOver(index, fieldIdx)}
+										onDragEnd={onFieldDragEnd}
+										onDrop={(_e, _i) => onFieldDrop(index, fieldIdx)}
+									/>
+								))}
+							</div>
+						)}
 
-				<div className="flex">
-					<Button
-						ref={addFieldBtnRef}
-						size="sm"
-						variant="ghost"
-						onMouseDown={(e) => e.preventDefault()}
-						onClick={toggleMenu}
-						className={cn(menuOpen && 'bg-muted/60 text-foreground')}
-					>
-						{menuOpen
-							? <><X className="size-3.5" />{__('Close', 'all-feedback')}</>
-							: <><Plus className="size-3.5" />{__('Add Field', 'all-feedback')}</>
-						}
-					</Button>
+						<div className="flex">
+							<Button
+								ref={addFieldBtnRef}
+								size="sm"
+								variant="ghost"
+								onMouseDown={(e) => e.preventDefault()}
+								onClick={toggleMenu}
+								className={cn(menuOpen && 'bg-muted/60 text-foreground')}
+							>
+								{menuOpen ? (
+									<>
+										<X className="size-3.5" />
+										{__('Close', 'allfeedback')}
+									</>
+								) : (
+									<>
+										<Plus className="size-3.5" />
+										{__('Add Field', 'allfeedback')}
+									</>
+								)}
+							</Button>
+						</div>
+					</div>
 				</div>
-			</div></div></div>
+			</div>
 
 			{menuOpen && (
-				<FieldTypeMenu triggerRef={addFieldBtnRef} onSelect={addField} onClose={closeMenu} />
+				<FieldTypeMenu
+					triggerRef={addFieldBtnRef}
+					onSelect={addField}
+					onClose={closeMenu}
+				/>
 			)}
 		</div>
 	);
