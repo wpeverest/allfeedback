@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Link, Outlet, useBlocker } from '@tanstack/react-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { __ } from '@wordpress/i18n';
-import { Loader2, Settings2, SlidersHorizontal } from 'lucide-react';
+import { Loader2, Mail, Settings2, SlidersHorizontal } from 'lucide-react';
 
 const isMac = typeof navigator !== 'undefined' && /mac/i.test(navigator.platform);
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
@@ -29,6 +29,11 @@ const NAV_ITEMS: NavItem[] = [
 		label: __('General', 'all-feedback'),
 		icon:  Settings2,
 		to:    '/settings/general',
+	},
+	{
+		label: __('Email', 'all-feedback'),
+		icon:  Mail,
+		to:    '/settings/email',
 	},
 	{
 		label: __('Advanced', 'all-feedback'),

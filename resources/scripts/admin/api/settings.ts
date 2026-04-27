@@ -11,6 +11,13 @@ export type Settings = {
 			show_on_mobile:   boolean;
 		};
 	};
+	email: {
+		delivery: {
+			to_email:   string;
+			from_name:  string;
+			from_email: string;
+		};
+	};
 	advanced: {
 		privacy: {
 			disable_user_details: boolean;
@@ -37,4 +44,7 @@ export const settingsApi = {
 
 	update: (data: DeepPartial<Settings>) =>
 		request<Settings>('/settings', { method: 'PATCH', data }),
+
+	sendTestEmail: () =>
+		request<{ sent: boolean }>('/settings/test-email', { method: 'POST' }),
 };

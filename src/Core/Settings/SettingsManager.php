@@ -95,6 +95,13 @@ class SettingsManager {
 				'show_on_mobile'   => true,
 			],
 		],
+		'email'    => [
+			'delivery' => [
+				'to_email'   => '',
+				'from_name'  => '',
+				'from_email' => '',
+			],
+		],
 		'advanced' => [
 			'privacy' => [
 				'disable_user_details' => false,
@@ -164,11 +171,17 @@ class SettingsManager {
 	 */
 	public function all(): array {
 		if ( $this->loaded === null ) {
-			$stored       = get_option( self::OPTION_KEY, [] );
+			$stored       = \get_option( self::OPTION_KEY, [] );
 			$this->loaded = is_array( $stored ) ? $stored : [];
 		}
 
-		return $this->mergeWithDefaults( $this->loaded );
+		$merged = $this->mergeWithDefaults( $this->loaded );
+
+		if ( empty( $merged['email']['delivery']['to_email'] ) ) {
+			$merged['email']['delivery']['to_email'] = (string) \get_option( 'admin_email', '' );
+		}
+
+		return $merged;
 	}
 
 	/**
@@ -234,7 +247,7 @@ class SettingsManager {
 			return $this->effectiveDefaults;
 		}
 
-		$this->effectiveDefaults = (array) apply_filters( 'allfeedback_settings_defaults', self::DEFAULTS );
+		$this->effectiveDefaults = (array) \apply_filters( 'allfeedback_settings_defaults', self::DEFAULTS );
 
 		return $this->effectiveDefaults;
 	}
@@ -347,7 +360,7 @@ class SettingsManager {
 	 * @since  1.0.0
 	 */
 	public function reset(): void {
-		delete_option( self::OPTION_KEY );
+		\delete_option( self::OPTION_KEY );
 		$this->loaded            = null;
 		$this->effectiveDefaults = null;
 
@@ -399,100 +412,125 @@ class SettingsManager {
 	 */
 	public function getSchema(): array {
 		$schema = [
+			'email'    => [
+				'description' => \__( 'Email delivery settings.', 'allfeedback' ),
+				'sections'    => [
+					'delivery' => [
+						'description' => \__( 'Outgoing email addresses and sender name.', 'allfeedback' ),
+						'properties'  => [
+							'to_email'   => [
+								'type'        => 'string',
+								'default'     => self::DEFAULTS['email']['delivery']['to_email'],
+								'description' => \__( 'Address that receives notification emails.', 'allfeedback' ),
+							],
+							'from_name'  => [
+								'type'        => 'string',
+								'default'     => self::DEFAULTS['email']['delivery']['from_name'],
+								'description' => \__( 'Sender display name shown in the email inbox.', 'allfeedback' ),
+							],
+							'from_email' => [
+								'type'        => 'string',
+								'default'     => self::DEFAULTS['email']['delivery']['from_email'],
+								'description' => \__( 'Sender address used when dispatching emails.', 'allfeedback' ),
+							],
+						],
+					],
+				],
+			],
 			'general'  => [
-				'description' => __( 'General settings (widget appearance and behaviour).', 'allfeedback' ),
+				'description' => \__( 'General settings (widget appearance and behaviour).', 'allfeedback' ),
 				'sections'    => [
 					'widget' => [
-						'description' => __( 'Widget appearance and display settings.', 'allfeedback' ),
+						'description' => \__( 'Widget appearance and display settings.', 'allfeedback' ),
 						'properties'  => [
 							'color'            => [
 								'type'        => 'string',
 								'default'     => self::DEFAULTS['general']['widget']['color'],
-								'description' => __( 'Primary accent colour for the survey widget (hex string, e.g. #6366F1).', 'allfeedback' ),
+								'description' => \__( 'Primary accent colour for the survey widget (hex string, e.g. #6366F1).', 'allfeedback' ),
 							],
 							'position'         => [
 								'type'        => 'string',
 								'default'     => self::DEFAULTS['general']['widget']['position'],
 								'enum'        => self::ENUMS['general']['widget']['position'],
-								'description' => __( 'Trigger button position. One of: bottom-right, bottom-left, side-tab.', 'allfeedback' ),
+								'description' => \__( 'Trigger button position. One of: bottom-right, bottom-left, side-tab.', 'allfeedback' ),
 							],
 							'trigger'          => [
 								'type'        => 'string',
 								'default'     => self::DEFAULTS['general']['widget']['trigger'],
 								'enum'        => self::ENUMS['general']['widget']['trigger'],
-								'description' => __( 'How the widget surfaces to visitors: auto | scroll | exit-intent | manual.', 'allfeedback' ),
+								'description' => \__( 'How the widget surfaces to visitors: auto | scroll | exit-intent | manual.', 'allfeedback' ),
 							],
 							'delay'            => [
 								'type'        => 'integer',
 								'default'     => self::DEFAULTS['general']['widget']['delay'],
 								'minimum'     => 0,
 								'maximum'     => 3600,
-								'description' => __( 'Seconds before auto-showing the widget (trigger = auto only).', 'allfeedback' ),
+								'description' => \__( 'Seconds before auto-showing the widget (trigger = auto only).', 'allfeedback' ),
 							],
 							'scroll_threshold' => [
 								'type'        => 'integer',
 								'default'     => self::DEFAULTS['general']['widget']['scroll_threshold'],
 								'minimum'     => 0,
 								'maximum'     => 100,
-								'description' => __( 'Page percentage scrolled before the widget appears (trigger = scroll only).', 'allfeedback' ),
+								'description' => \__( 'Page percentage scrolled before the widget appears (trigger = scroll only).', 'allfeedback' ),
 							],
 							'show_on_mobile'   => [
 								'type'        => 'boolean',
 								'default'     => self::DEFAULTS['general']['widget']['show_on_mobile'],
-								'description' => __( 'Render the survey widget on mobile viewports.', 'allfeedback' ),
+								'description' => \__( 'Render the survey widget on mobile viewports.', 'allfeedback' ),
 							],
 						],
 					],
 				],
 			],
 			'advanced' => [
-				'description' => __( 'Advanced settings (privacy, logging, and plugin management).', 'allfeedback' ),
+				'description' => \__( 'Advanced settings (privacy, logging, and plugin management).', 'allfeedback' ),
 				'sections'    => [
 					'privacy' => [
-						'description' => __( 'Visitor privacy and data-collection settings.', 'allfeedback' ),
+						'description' => \__( 'Visitor privacy and data-collection settings.', 'allfeedback' ),
 						'properties'  => [
 							'disable_user_details' => [
 								'type'        => 'boolean',
 								'default'     => self::DEFAULTS['advanced']['privacy']['disable_user_details'],
-								'description' => __( 'Disable storing the visitor IP address and User-Agent on all surveys. Also disables duplicate-submission detection.', 'allfeedback' ),
+								'description' => \__( 'Disable storing the visitor IP address and User-Agent on all surveys. Also disables duplicate-submission detection.', 'allfeedback' ),
 							],
 						],
 					],
 					'logging' => [
-						'description' => __( 'Plugin event logging settings.', 'allfeedback' ),
+						'description' => \__( 'Plugin event logging settings.', 'allfeedback' ),
 						'properties'  => [
 							'enabled'        => [
 								'type'        => 'boolean',
 								'default'     => self::DEFAULTS['advanced']['logging']['enabled'],
-								'description' => __( 'Master switch for plugin event logging.', 'allfeedback' ),
+								'description' => \__( 'Master switch for plugin event logging.', 'allfeedback' ),
 							],
 							'level'          => [
 								'type'        => 'string',
 								'default'     => self::DEFAULTS['advanced']['logging']['level'],
 								'enum'        => self::ENUMS['advanced']['logging']['level'],
-								'description' => __( 'Minimum severity to record. error = errors only; debug = all events.', 'allfeedback' ),
+								'description' => \__( 'Minimum severity to record. error = errors only; debug = all events.', 'allfeedback' ),
 							],
 							'retention_days' => [
 								'type'        => 'integer',
 								'default'     => self::DEFAULTS['advanced']['logging']['retention_days'],
 								'minimum'     => 1,
 								'maximum'     => 365,
-								'description' => __( 'Days before log entries are automatically purged (1–365).', 'allfeedback' ),
+								'description' => \__( 'Days before log entries are automatically purged (1–365).', 'allfeedback' ),
 							],
 						],
 					],
 					'plugin'  => [
-						'description' => __( 'Plugin lifecycle and usage-tracking settings.', 'allfeedback' ),
+						'description' => \__( 'Plugin lifecycle and usage-tracking settings.', 'allfeedback' ),
 						'properties'  => [
 							'delete_on_uninstall'  => [
 								'type'        => 'boolean',
 								'default'     => self::DEFAULTS['advanced']['plugin']['delete_on_uninstall'],
-								'description' => __( 'Permanently delete all surveys, responses, and settings on uninstall. Irreversible.', 'allfeedback' ),
+								'description' => \__( 'Permanently delete all surveys, responses, and settings on uninstall. Irreversible.', 'allfeedback' ),
 							],
 							'allow_usage_tracking' => [
 								'type'        => 'boolean',
 								'default'     => self::DEFAULTS['advanced']['plugin']['allow_usage_tracking'],
-								'description' => __( 'Share anonymised usage statistics with the AllFeedback team. No personal data is transmitted.', 'allfeedback' ),
+								'description' => \__( 'Share anonymised usage statistics with the AllFeedback team. No personal data is transmitted.', 'allfeedback' ),
 							],
 						],
 					],
@@ -500,7 +538,7 @@ class SettingsManager {
 			],
 		];
 
-		return (array) apply_filters( 'allfeedback_settings_schema', $schema );
+		return (array) \apply_filters( 'allfeedback_settings_schema', $schema );
 	}
 
 	/**
@@ -560,7 +598,7 @@ class SettingsManager {
 
 		if ( is_string( $default ) ) {
 			$sanitised = is_string( $value )
-				? sanitize_text_field( $value )
+				? \sanitize_text_field( $value )
 				: (string) $value;
 
 			if (
@@ -575,7 +613,7 @@ class SettingsManager {
 			}
 
 			if ( str_ends_with( $field, '_email' ) ) {
-				return sanitize_email( $sanitised );
+				return \sanitize_email( $sanitised );
 			}
 
 			return $sanitised;
@@ -597,7 +635,7 @@ class SettingsManager {
 	private function persist( array $settings ): void {
 		$toStore = array_intersect_key( $settings, $this->getDefaults() );
 
-		update_option( self::OPTION_KEY, $toStore, false );
+		\update_option( self::OPTION_KEY, $toStore, false );
 		$this->loaded = $toStore;
 
 		$this->doAction( 'allfeedback:settings:updated', $toStore );
