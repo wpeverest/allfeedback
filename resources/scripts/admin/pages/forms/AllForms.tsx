@@ -42,6 +42,7 @@ import {
 	ArrowUp,
 	ArrowUpDown,
 	ArrowUpRight,
+	BarChart2,
 	ChevronRight,
 	Copy,
 	Edit2,
@@ -763,6 +764,16 @@ const AllForms = () => {
 													<Edit2 className="size-3" />
 													{__('Edit', 'all-feedback')}
 												</button>
+												<Tooltip content={__('View analytics', 'all-feedback')}>
+													<button
+														type="button"
+														onClick={() => void navigate({ to: '/analytics/', search: { formId: survey.id } })}
+														style={{ border: '1.5px solid #E2E2E8' }}
+														className="flex size-7 shrink-0 items-center justify-center rounded-lg text-foreground/50 transition-colors hover:bg-muted/50 hover:text-foreground"
+													>
+														<BarChart2 className="size-3.5" />
+													</button>
+												</Tooltip>
 
 												<DropdownMenu>
 													<DropdownMenuTrigger asChild>
