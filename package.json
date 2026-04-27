@@ -1,5 +1,5 @@
 {
-  "name": "all-feedback",
+  "name": "allfeedback",
   "version": "1.0.0",
   "description": "All Feedback Plugin",
   "private": true,
@@ -11,7 +11,7 @@
     "prettier": "prettier --ignore-path .gitignore --check \"**/*.+(ts|tsx)\"",
     "format": "prettier --ignore-path .gitignore --write \"**/*.+(ts|tsx)\"",
     "prettier:fix": "prettier --write \"**/*.+(ts|tsx)\"",
-    "make-pot": "wp i18n make-pot . languages/all-feedback.pot --domain=all-feedback --include=src,all-feedback.php,uninstall.php,resources/build --exclude=resources/build/admin.js.map",
+    "make-pot": "wp i18n make-pot . languages/allfeedback.pot --domain=allfeedback --include=src,allfeedback.php,uninstall.php,resources/build --exclude=resources/build/admin.js.map",
     "release": "gulp release",
     "rename": "node bin/rename.js"
   },

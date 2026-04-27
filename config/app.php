@@ -18,7 +18,7 @@ return [
 	// ------------------------------------------------------------------
 	'name'        => 'All Feedback',
 	'version'     => Constants::VERSION,
-	'slug'        => 'all-feedback',
+	'slug'        => 'allfeedback',
 	'text_domain' => Constants::TEXT_DOMAIN,
 	'namespace'   => 'all-feedback/v1', // REST API namespace
 

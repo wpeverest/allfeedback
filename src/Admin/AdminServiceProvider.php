@@ -46,7 +46,7 @@ class AdminServiceProvider implements ServiceProvider {
 	 *
 	 * @since 1.0.0
 	 */
-	private const MENU_SLUG = 'all-feedback';
+	private const MENU_SLUG = 'allfeedback';
 
 	/**
 	 * @param  Container          $container          DI container.
@@ -89,7 +89,7 @@ class AdminServiceProvider implements ServiceProvider {
 	 * Register the top-level menu and hash-routed sub-menu pages.
 	 *
 	 * Each sub-menu slug contains the hash fragment for its React route
-	 * (e.g. `'all-feedback#/settings'`). WordPress puts the fragment in the
+	 * (e.g. `'allfeedback#/settings'`). WordPress puts the fragment in the
 	 * sidebar link `href` so clicking it navigates the SPA directly. All
 	 * callbacks output only the React mount point.
 	 *
@@ -189,7 +189,7 @@ class AdminServiceProvider implements ServiceProvider {
 		$status = get_option( 'allfeedback_wizard_status', 'not_started' );
 		if ( $status === 'pending_redirect' || $status === 'not_started' ) {
 			update_option( 'allfeedback_wizard_status', 'initiated' );
-			wp_safe_redirect( admin_url( 'admin.php?page=all-feedback#/wizard' ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=allfeedback#/wizard' ) );
 			exit;
 		}
 	}
@@ -207,7 +207,7 @@ class AdminServiceProvider implements ServiceProvider {
 	 */
 	public function suppressAdminNotices(): void {
 		$screen = get_current_screen();
-		if ( ! $screen || ! str_contains( $screen->id, 'all-feedback' ) ) {
+		if ( ! $screen || ! str_contains( $screen->id, 'allfeedback' ) ) {
 			return;
 		}
 
@@ -229,13 +229,13 @@ class AdminServiceProvider implements ServiceProvider {
 	 */
 	public function inlineMenuHighlight(): void {
 		$screen = get_current_screen();
-		if ( ! $screen || ! str_contains( $screen->id, 'all-feedback' ) ) {
+		if ( ! $screen || ! str_contains( $screen->id, 'allfeedback' ) ) {
 			return;
 		}
 		?>
 		<script>
 		(function () {
-			var MENU_ROOT = '#toplevel_page_all-feedback';
+			var MENU_ROOT = '#toplevel_page_allfeedback';
 
 			function syncHighlight() {
 				var rawHash  = window.location.hash || '#/analytics';
@@ -275,7 +275,7 @@ class AdminServiceProvider implements ServiceProvider {
 	 * @since  1.0.0
 	 */
 	public function enqueueAssets( string $hook ): void {
-		if ( ! str_contains( $hook, 'all-feedback' ) ) {
+		if ( ! str_contains( $hook, 'allfeedback' ) ) {
 			return;
 		}
 

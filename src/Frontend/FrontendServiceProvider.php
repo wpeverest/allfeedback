@@ -90,7 +90,7 @@ class FrontendServiceProvider implements ServiceProvider {
 		return array_merge(
 			[
 				[
-					'slug'  => 'all-feedback',
+					'slug'  => 'allfeedback',
 					'title' => __( 'All Feedback', 'allfeedback' ),
 					'icon'  => null,
 				],

@@ -6,7 +6,7 @@ import zip from 'gulp-zip';
 import os from 'os';
 import path from 'path';
 
-const PLUGIN_SLUG = 'all-feedback';
+const PLUGIN_SLUG = 'allfeedback';
 const BUILD_DIR   = `build/${PLUGIN_SLUG}`;
 
 function resolveLocalWpPhpBin() {

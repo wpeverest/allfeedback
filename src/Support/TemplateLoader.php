@@ -15,8 +15,8 @@ use AllFeedback\Traits\Hooks;
  * Resolves and renders template files with theme-override support.
  *
  * Search order for each template name:
- *   1. Child theme:  child-theme/all-feedback/{template-name}
- *   2. Parent theme: theme/all-feedback/{template-name}
+ *   1. Child theme:  child-theme/allfeedback/{template-name}
+ *   2. Parent theme: theme/allfeedback/{template-name}
  *   3. Plugin:       plugin/templates/{template-name}
  *
  * @package AllFeedback\Support
@@ -40,7 +40,7 @@ class TemplateLoader {
 	 * @var string
 	 * @since 1.0.0
 	 */
-	private string $templatePath = 'all-feedback';
+	private string $templatePath = 'allfeedback';
 
 	/**
 	 * @since 1.0.0
