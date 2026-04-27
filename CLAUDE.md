@@ -2,7 +2,7 @@
 
 <!-- projectId: af-b616c72a | repo: wpeverest/allfeedback -->
 
-WordPress plugin for NPS, CSAT, and CES feedback surveys. All data stored locally — no third-party services. React admin SPA + public widget.
+WordPress plugin for NPS feedback surveys. All data stored locally — no third-party services. React admin SPA + public widget.
 
 Entry: `all-feedback.php` → `src/Plugin.php`
 
@@ -52,7 +52,7 @@ composer lint:fix         # phpcbf
 | `src/Core/` | Bootstrap, DI container, service providers |
 | `src/API/Controllers/V1/` | REST controllers |
 | `src/Survey/Manager.php` | Survey table gateway |
-| `src/Infrastructure/Database/` | Migrator + Migration base |
+| `src/Infrastructure/Database/` | Migrator + Migration base + repositories |
 | `src/Modules/` | Add-on system |
 | `config/services.php` | PHP-DI bindings |
 | `database/migrations/` | Numbered migrations (`0001_*.php`) |
@@ -64,9 +64,9 @@ composer lint:fix         # phpcbf
 
 | Table | Columns of note |
 |-------|----------------|
-| `wp_af_surveys` | `form_schema` JSON, `settings` JSON, `targeting` JSON, `status`, `response_count` |
-| `wp_af_responses` | `response_data` JSON, `score`, `ip_hash`, `is_read`, `consent_given` |
-| `wp_af_migrations` | `name`, `batch`, `ran_at` — authoritative migration tracker |
+| `wp_af_surveys` | `form_schema` JSON, `settings` JSON, `styling` JSON, `status`, `conflict_reason`, `response_count` |
+| `wp_af_responses` | `response_data` JSON, `score`, `ip_hash`, `ip_address`, `guest_token`, `is_read`, `consent_given` |
+| `wp_af_survey_sessions` | `session_id`, `survey_id`, `user_id`, `guest_id`, `status`, `started_at`, `submitted_at` |
 
 ### REST API
 

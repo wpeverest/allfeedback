@@ -77,9 +77,6 @@ class MigrateCommand {
 	/**
 	 * Show the status of all discovered migrations.
 	 *
-	 * Displays whether each migration has been run, which batch it belongs to,
-	 * and when it was executed.
-	 *
 	 * ## EXAMPLES
 	 *
 	 *   wp allfeedback migrate status
@@ -125,7 +122,7 @@ class MigrateCommand {
 	 *   wp allfeedback migrate rollback
 	 *   wp allfeedback migrate rollback --step=2
 	 *
-	 * @param      array<int, string>    $args      Positional arguments (unused).
+	 * @param      array<int, string>   $args      Positional arguments (unused).
 	 * @param      array<string, mixed> $assocArgs Associative arguments; accepts `step`.
 	 * @return     void
 	 * @subcommand rollback

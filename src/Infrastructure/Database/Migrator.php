@@ -10,17 +10,13 @@ use AllFeedback\Traits\Hooks;
 // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 /**
- * Class Migrator
- *
  * Discovers, tracks, and runs database migration files.
  *
  * Migration files live in database/migrations/ and are named:
  *   NNNN_MigrationName.php  (e.g. 0001_CreateInitialTables.php)
  *
  * Ran migrations are tracked in a dedicated `wp_af_migrations` table with
- * batch numbers so groups can be rolled back together. On first run, any
- * migrations previously recorded in wp_options (_allfb_migrations) are
- * automatically imported into the new table.
+ * batch numbers so groups can be rolled back together.
  *
  * @package AllFeedback\Infrastructure\Database
  * @since   1.0.0
@@ -28,14 +24,6 @@ use AllFeedback\Traits\Hooks;
 class Migrator {
 
 	use Hooks;
-
-	/**
-	 * Legacy wp_options key — used only for one-time import on upgrade.
-	 *
-	 * @var string
-	 * @since 1.0.0
-	 */
-	private const LEGACY_OPTION_KEY = '_allfb_migrations';
 
 	/**
 	 * Absolute path to the migrations directory.
@@ -46,8 +34,6 @@ class Migrator {
 	private string $migrationsPath;
 
 	/**
-	 * Resolve the migrations directory path from the plugin root.
-	 *
 	 * @since  1.0.0
 	 */
 	public function __construct() {
@@ -56,9 +42,6 @@ class Migrator {
 
 	/**
 	 * Ensure the migrations tracking table exists.
-	 *
-	 * Safe to call on every request — uses a SHOW TABLES guard so it only
-	 * runs dbDelta() once per environment.
 	 *
 	 * @return void
 	 * @since  1.0.0
@@ -84,14 +67,10 @@ class Migrator {
 			PRIMARY KEY (id),
 			UNIQUE KEY name (name)
 		) {$collate};" );
-
-		$this->importLegacyOption();
 	}
 
 	/**
 	 * Run all pending migrations in ascending order.
-	 *
-	 * Returns the list of migration names that were run.
 	 *
 	 * @return string[]
 	 * @since  1.0.0
@@ -132,8 +111,6 @@ class Migrator {
 
 	/**
 	 * Roll back the last N batches (default: 1).
-	 *
-	 * Returns the list of migration names that were rolled back.
 	 *
 	 * @param  int $step Number of batches to roll back.
 	 * @return string[]
@@ -186,7 +163,7 @@ class Migrator {
 	/**
 	 * Roll back ALL ran migrations, then run them all again.
 	 *
-	 * @return string[] Migration names that were re-run.
+	 * @return string[]
 	 * @since  1.0.0
 	 */
 	public function refresh(): array {
@@ -234,12 +211,6 @@ class Migrator {
 	 * Clear all ran-migration records when any of the given unprefixed table
 	 * names are absent from the database.
 	 *
-	 * Call this on plugin activation before run() so that manually-deleted
-	 * tables are recreated: the tracking records are removed, which makes every
-	 * migration appear pending, and run() executes them all again.  Safe
-	 * because every migration uses existence guards (IF NOT EXISTS / SHOW
-	 * COLUMNS / indexExists) so re-running on intact tables is a no-op.
-	 *
 	 * @param  string[] $tables Unprefixed table names, e.g. ['af_surveys', 'af_responses'].
 	 * @return void
 	 * @since  1.0.0
@@ -251,7 +222,7 @@ class Migrator {
 			$full = $wpdb->prefix . $unprefixed;
 			if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $full ) ) !== $full ) {
 				$this->ensureTable();
-				$wpdb->query( 'DELETE FROM ' . $this->tableName() ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				$wpdb->query( 'DELETE FROM ' . $this->tableName() ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 				return;
 			}
 		}
@@ -271,8 +242,6 @@ class Migrator {
 
 	/**
 	 * Return the status of every discovered migration file.
-	 *
-	 * Each entry: ['name' => string, 'ran' => bool, 'batch' => int|null, 'ran_at' => string|null]
 	 *
 	 * @return array<int, array{name: string, ran: bool, batch: int|null, ran_at: string|null}>
 	 * @since  1.0.0
@@ -341,7 +310,7 @@ class Migrator {
 	}
 
 	/**
-	 * Return just the migration names that are stored in the tracking table.
+	 * Return just the migration names stored in the tracking table.
 	 *
 	 * @return string[]
 	 * @since  1.0.0
@@ -458,29 +427,5 @@ class Migrator {
 		$fqcn = 'AllFeedback\\Database\\Migrations\\' . $className;
 
 		return new $fqcn();
-	}
-
-	/**
-	 * One-time import: seed the new migrations table from the legacy wp_options
-	 * JSON array so previously-run migrations are not re-executed after the upgrade.
-	 *
-	 * Called only when the migrations table is first created.
-	 *
-	 * @return void
-	 * @since  1.0.0
-	 */
-	private function importLegacyOption(): void {
-		$legacy = get_option( self::LEGACY_OPTION_KEY, '[]' );
-		$names  = json_decode( (string) $legacy, true );
-
-		if ( ! is_array( $names ) || empty( $names ) ) {
-			return;
-		}
-
-		foreach ( $names as $name ) {
-			$this->recordRan( (string) $name, 1 );
-		}
-
-		delete_option( self::LEGACY_OPTION_KEY );
 	}
 }

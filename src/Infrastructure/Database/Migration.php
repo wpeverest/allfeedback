@@ -29,8 +29,6 @@ abstract class Migration {
 	/**
 	 * Apply the migration.
 	 *
-	 * Called by `Migrator::run()` for pending migrations.
-	 *
 	 * @return void
 	 * @since  1.0.0
 	 */
@@ -38,8 +36,6 @@ abstract class Migration {
 
 	/**
 	 * Roll back the migration.
-	 *
-	 * Called by `Migrator::rollback()` in reverse batch order.
 	 *
 	 * @return void
 	 * @since  1.0.0
@@ -61,8 +57,6 @@ abstract class Migration {
 	/**
 	 * Return the DB charset and collation clause.
 	 *
-	 * Example result: `"DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"`.
-	 *
 	 * @return string
 	 * @since  1.0.0
 	 */
@@ -73,9 +67,6 @@ abstract class Migration {
 
 	/**
 	 * Run a CREATE/ALTER TABLE statement through WordPress's `dbDelta()`.
-	 *
-	 * `dbDelta()` is smart enough to only apply changes that are not yet in
-	 * the database, so it is safe to call multiple times with the same schema.
 	 *
 	 * @param  string $sql The SQL statement(s) to execute.
 	 * @return void

@@ -27,7 +27,9 @@ global $wpdb;
 
 $allfeedback_tables = [
 	$wpdb->prefix . 'af_responses',
+	$wpdb->prefix . 'af_survey_sessions',
 	$wpdb->prefix . 'af_surveys',
+	$wpdb->prefix . 'af_migrations',
 ];
 
 foreach ( $allfeedback_tables as $allfeedback_table ) {
