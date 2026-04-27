@@ -1,12 +1,6 @@
 # All Feedback
 
-A modern, full-stack WordPress plugin starter by [Themegrill](https://themergill.com) — packed with a React 18 SPA, module system, feature flags, REST API scaffolding, and a PHP-DI container.
-
-[![GitHub](https://img.shields.io/badge/GitHub-wpeverest%2Fthemegrill--boilerplate-181717?logo=github)](https://github.com/wpeverest/themegrill-boilerplate)
-[![PHP](https://img.shields.io/badge/PHP-8.2+-777BB4?logo=php)](https://php.net)
-[![WordPress](https://img.shields.io/badge/WordPress-6.5+-21759B?logo=wordpress)](https://wordpress.org)
-[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)](https://react.dev)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)](https://typescriptlang.org)
+WordPress-native feedback survey plugin. Collect customer feedback without sending data to an external service.
 
 ---
 
@@ -22,77 +16,30 @@ A modern, full-stack WordPress plugin starter by [Themegrill](https://themergill
 
 ---
 
-## What's Included
-
-| Layer | Technology |
-|---|---|
-| Admin SPA | React 18, TypeScript 5, TanStack Router, TanStack Query |
-| Styling | Tailwind CSS v4, shadcn/ui |
-| PHP DI | PHP-DI (autowired, compiled in production) |
-| REST API | Versioned controllers, typed, DI-wired |
-| Module system | Enable/disable features with dependency resolution |
-| Feature flags | % rollout or user-ID targeting |
-| Database | Migration runner with automatic execution |
-| Build tool | Webpack via `@wordpress/scripts` + WebpackBar |
-
 ---
 
 ## Installation
 
-### 1. Clone the repository
 
-```bash
-git clone https://github.com/wpeverest/themegrill-boilerplate.git my-plugin
-cd my-plugin
-```
-
-### 2. Rename — replace all boilerplate identifiers
-
-Run the interactive setup wizard. It replaces every identifier (PHP namespace, slug, prefix, display name, author, NPM package) across all source files in one step:
-
-```bash
-node bin/rename.js
-# or
-pnpm rename
-```
-
-The wizard will ask for:
-
-| Prompt | Example |
-|---|---|
-| Plugin display name | `My Awesome Plugin` |
-| Short WP menu name | `My Plugin` |
-| Plugin slug (kebab-case) | `my-awesome-plugin` |
-| PHP namespace (PascalCase) | `MyAwesomePlugin` |
-| Author name | `My Company` |
-| Author URL | `https://mycompany.com` |
-| NPM scope | `my-vendor` |
-
-> **Important:** The PHP namespace must be PascalCase with no hyphens (e.g. `MyPlugin`, not `my-plugin`). If you leave it blank the wizard derives it automatically from your slug.
-
-After renaming, the wizard will also rename:
-- `new-plugin.php` → `your-slug.php`
-- `languages/new-plugin.pot` → `languages/your-slug.pot`
-
-### 3. Install PHP dependencies
+### Install PHP dependencies
 
 ```bash
 composer install
 ```
 
-### 4. Install JS dependencies
+### Install JS dependencies
 
 ```bash
 pnpm install
 ```
 
-### 5. Build assets
+### Build assets
 
 ```bash
 pnpm build
 ```
 
-### 6. Activate the plugin
+### Activate the plugin
 
 Place the plugin folder in `wp-content/plugins/` and activate it from the WordPress admin panel.
 
@@ -156,7 +103,7 @@ resources/build/
 ## Project Structure
 
 ```
-themegrill-boilerplate/
+plugin-name/
 ├── bin/
 │   └── rename.js                  # Setup wizard — run once after cloning
 ├── config/

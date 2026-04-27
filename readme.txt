@@ -8,20 +8,24 @@ Stable tag:        1.0.0
 License:           GPLv3 or later
 License URI:       https://www.gnu.org/licenses/gpl-3.0.html
 
-WordPress-native NPS, CSAT, and CES feedback surveys stored in your own database.
+WordPress-native feedback survey plugin. Collect customer feedback without sending data to an external service.
 
 == Description ==
-
-All Feedback helps you collect customer feedback without sending data to an external SaaS.
+ 
+Build beautiful feedback surveys with various question types, collect NPS scores, and better understand your audience — no external services required.
 
 Features include:
 
-* WordPress-native survey management
-* NPS, CSAT, and CES workflows
-* React-based admin experience
-* REST API controllers for admin and frontend flows
-* Database migrations for plugin data
-* Frontend assets for survey rendering
+* WordPress-native feedback survey management.
+* Beautiful feedback widget.
+* Custom trigger & targeting settings.
+* Feedback email notifications.
+* Detailed analytics.
+* 7+ question types.
+* NPS survey.
+* CES survey. _(coming soon)_
+* CSAT survey. _(coming soon)_
+
 
 == Installation ==
 
@@ -32,20 +36,17 @@ Features include:
 
 == Frequently Asked Questions ==
 
-= How do I add a new REST API endpoint? =
+= Is the data collected within the website? =
 
-Create a controller in `src/API/Controllers/V1/`, add it to the controller list
-in `ApiServiceProvider::registerRoutes()`, and bind it in `config/services.php`.
+Yes, all the feedback data you collect, remains safe within your own website.
 
-= How do I register a module? =
+= Where can I contribute to the plugin? =
 
-Extend `AbstractModule`, set `$id`, `$name`, and `$description`, then register
-it via the `allfeedback:modules:register` filter.
+The plugin is open source and the code is available here: https://github.com/wpeverest/allfeedback. Feel free to contribute :)
 
-= How do I enable development mode? =
+= Where do I report bugs? =
 
-Define `ALLFEEDBACK_ENV` as `development` in `wp-config.php`. If the constant
-is missing or set to any other value, the plugin stays in production mode.
+You may reach out to us within the Forums here or can reach out to us via the live chat at: https://themegrill.com/support
 
 == Changelog ==
 
