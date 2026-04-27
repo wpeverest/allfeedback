@@ -146,7 +146,7 @@ const BuilderCanvas = ({ sections, onSectionsChange, onScrollChange, onActiveSec
 	};
 
 	return (
-		<div className="flex-1 overflow-y-auto bg-background p-5" onScroll={handleScroll}>
+		<div className="flex-1 overflow-y-auto bg-background p-7" onScroll={handleScroll}>
 			<div
 				className="w-full space-y-4"
 				onDragLeave={(e) => {

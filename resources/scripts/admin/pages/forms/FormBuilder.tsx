@@ -781,11 +781,11 @@ const FormBuilder = () => {
 				</div>
 
 				<div
-					className="group relative flex w-4 shrink-0 cursor-col-resize items-center justify-center"
+					className="group relative flex w-0.5 shrink-0 cursor-col-resize items-center justify-center"
 					onMouseDown={startResize}
 				>
 					<div className="h-full w-0.5 bg-border transition-colors group-hover:bg-primary/50" />
-					<div className="absolute flex h-7 w-5 cursor-col-resize items-center justify-center rounded-full border border-border bg-background shadow-sm transition-colors group-hover:border-primary/40 group-hover:bg-primary/5">
+					<div className="absolute flex h-7 w-5 cursor-col-resize items-center justify-center rounded-full border border-border bg-background shadow-sm transition-colors group-hover:border-primary/40 group-hover:bg-primary/5" onMouseDown={startResize}>
 						<div className="h-3.5 w-0.5 rounded-full bg-foreground/35 transition-colors group-hover:bg-primary/60" />
 					</div>
 				</div>
