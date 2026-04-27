@@ -19,7 +19,7 @@ import {
 	Tooltip,
 } from 'chart.js';
 import { formatDistanceToNow, parseISO } from 'date-fns';
-import { AlertCircle, BarChart2, CheckCircle2, Clock, FileText, MessageSquare, Monitor, MousePointerClick, Play, Smartphone, Tablet, XCircle } from 'lucide-react';
+import { AlertCircle, BarChart2, CheckCircle2, Clock, FileText, MessageSquare, Monitor, Smartphone, Tablet, XCircle } from 'lucide-react';
 import type { CSSProperties } from 'react';
 import { useMemo, useState } from 'react';
 import { Doughnut, Line } from 'react-chartjs-2';
@@ -439,12 +439,6 @@ function SessionMetricsCard({ sm, loading }: { sm: FormAnalyticsDetail['session_
 
 	const total = completed + abandoned + notStarted;
 
-	const kpiRow = [
-		{ icon: MousePointerClick, label: __('Views',      'all-feedback'), value: sm?.total_views         ?? null, fmt: (v: number) => v.toLocaleString(), color: 'oklch(0.580 0.238 277)' },
-		{ icon: Play,              label: __('Started',    'all-feedback'), value: sm?.total_starts        ?? null, fmt: (v: number) => v.toLocaleString(), color: 'oklch(0.75 0.18 75)'    },
-		{ icon: CheckCircle2,      label: __('Completion', 'all-feedback'), value: sm?.completion_rate     ?? null, fmt: (v: number) => `${v.toFixed(1)}%`, color: 'oklch(0.527 0.154 150)' },
-		{ icon: Clock,             label: __('Avg. time',  'all-feedback'), value: sm?.avg_completion_time ?? null, fmt: (v: number) => formatSeconds(v),   color: 'oklch(0.60 0.18 220)'   },
-	];
 
 	return (
 		<div style={{ background: 'var(--card)', borderRadius: 'var(--radius-2xl)', boxShadow: 'var(--shadow-card)', overflow: 'hidden' }}>
@@ -457,19 +451,19 @@ function SessionMetricsCard({ sm, loading }: { sm: FormAnalyticsDetail['session_
 				</p>
 			</div>
 
-			<div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 0, padding: '20px 24px', alignItems: 'center' }}>
+			<div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 0, padding: '16px 20px', alignItems: 'center' }}>
 				{loading ? (
-					<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 160, height: 160 }}>
-						<Skeleton style={{ width: 144, height: 144, borderRadius: '50%' }} />
+					<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 184, height: 184 }}>
+						<Skeleton style={{ width: 168, height: 168, borderRadius: '50%' }} />
 					</div>
 				) : !hasData ? (
-					<div style={{ width: 160, height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+					<div style={{ width: 184, height: 184, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
 						<p style={{ fontSize: 'var(--text-sm)', color: 'var(--muted-foreground)', textAlign: 'center' }}>
 							{__('No session data yet.', 'all-feedback')}
 						</p>
 					</div>
 				) : (
-					<div style={{ position: 'relative', width: 160, height: 160, flexShrink: 0 }}>
+					<div style={{ position: 'relative', width: 184, height: 184, flexShrink: 0 }}>
 						<Doughnut data={chartData} options={{
 							responsive: true, maintainAspectRatio: false, cutout: '72%',
 							plugins: {
@@ -534,35 +528,6 @@ function SessionMetricsCard({ sm, loading }: { sm: FormAnalyticsDetail['session_
 				</div>
 			</div>
 
-			<div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', borderTop: '1px solid var(--border)' }}>
-				{kpiRow.map((k, i) => (
-					<div key={k.label} style={{
-						padding: '14px 16px',
-						borderRight: i < 3 ? '1px solid var(--border)' : 'none',
-					}}>
-						<div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 7 }}>
-							<div style={{
-								width: 22, height: 22, borderRadius: 6, flexShrink: 0,
-								background: `${k.color}18`,
-								boxShadow: `inset 0 0 0 1px ${k.color}30`,
-								display: 'grid', placeItems: 'center',
-							}}>
-								<k.icon style={{ width: 11, height: 11, color: k.color }} />
-							</div>
-							<span style={{ fontSize: 'var(--text-xs)', color: 'var(--muted-foreground)', fontWeight: 500 }}>{k.label}</span>
-						</div>
-						{loading ? <Skeleton style={{ height: 20, width: 48, borderRadius: 4 }} /> : (
-							<div style={{
-								fontSize: 'var(--text-md)', fontWeight: 600, letterSpacing: '-0.01em',
-								color: k.value === null ? 'var(--muted-foreground)' : 'var(--foreground)',
-								fontVariantNumeric: 'tabular-nums',
-							}}>
-								{k.value === null ? '—' : k.fmt(k.value)}
-							</div>
-						)}
-					</div>
-				))}
-			</div>
 		</div>
 	);
 }
