@@ -630,6 +630,9 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 												whiteSpace:     'nowrap',
 												userSelect:     'none',
 												color:          '#fff',
+												display:        'flex',
+												alignItems:     'center',
+												justifyContent: 'center',
 											}}>
 												{ settings.widgetLabel || __( 'Feedback', 'all-feedback' ) }
 											</span>
@@ -707,18 +710,17 @@ const PreviewPanel = ({ sections, settings, device, onDeviceChange, surveyId, su
 				</div>
 			)}
 
-			<div className={cn(
-				'flex shrink-0 items-center border-t border-border px-4 py-3 transition-opacity',
-				viewMode === 'widget' && 'pointer-events-none opacity-35',
-			)}>
+			<div className="flex shrink-0 items-center border-t border-border px-4 py-3">
 				<div className="flex flex-1" />
-				<div className="flex items-center gap-1">
+				<div className={cn(
+					'flex items-center gap-1 transition-opacity',
+					viewMode === 'widget' && 'pointer-events-none opacity-35',
+				)}>
 					{DEVICES.map(({ value, Icon, label }) => (
 						<Tooltip key={value} content={label}>
 							<button
 								type="button"
 								onClick={() => onDeviceChange(value)}
-								disabled={viewMode === 'widget'}
 								className={cn(
 									'flex size-8 items-center justify-center rounded-lg transition-colors',
 									device === value
