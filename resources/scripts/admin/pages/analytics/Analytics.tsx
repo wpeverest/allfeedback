@@ -40,7 +40,7 @@ import {
 	Tablet,
 } from 'lucide-react';
 import type { CSSProperties } from 'react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Doughnut, Line } from 'react-chartjs-2';
 
 ChartJS.register(
@@ -542,10 +542,52 @@ function NpsDistributionCard({
 	scoreDist: Record<number, number>;
 	loading: boolean;
 }) {
+	const [hovered, setHovered] = useState<'detractor' | 'passive' | 'promoter' | null>(null);
+	const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
+
 	const total = nps.total;
 	const detPct = total > 0 ? Math.round((nps.detractors / total) * 100) : 0;
 	const pasPct = total > 0 ? Math.round((nps.passives / total) * 100) : 0;
 	const proPct = total > 0 ? Math.round((nps.promoters / total) * 100) : 0;
+
+	const segmentInfo = {
+		detractor: {
+			label: __('Detractors', 'allfeedback'),
+			count: nps.detractors,
+			pct: total > 0 ? ((nps.detractors / total) * 100).toFixed(1) : '0.0',
+			color: NPS_COLORS.detractor.bar,
+		},
+		passive: {
+			label: __('Passives', 'allfeedback'),
+			count: nps.passives,
+			pct: total > 0 ? ((nps.passives / total) * 100).toFixed(1) : '0.0',
+			color: NPS_COLORS.passive.bar,
+		},
+		promoter: {
+			label: __('Promoters', 'allfeedback'),
+			count: nps.promoters,
+			pct: total > 0 ? ((nps.promoters / total) * 100).toFixed(1) : '0.0',
+			color: NPS_COLORS.promoter.bar,
+		},
+	};
+
+	const onEnter = (seg: 'detractor' | 'passive' | 'promoter') =>
+		(e: React.MouseEvent) => {
+			setHovered(seg);
+			setMousePos({ x: e.clientX, y: e.clientY });
+		};
+	const onMove = (seg: 'detractor' | 'passive' | 'promoter') =>
+		(e: React.MouseEvent) => {
+			setHovered(seg);
+			setMousePos({ x: e.clientX, y: e.clientY });
+		};
+	const onLeave = () => {
+		setHovered(null);
+		setMousePos(null);
+	};
+
+	const arcOpacity = (seg: 'detractor' | 'passive' | 'promoter') =>
+		hovered === null || hovered === seg ? 0.82 : 0.28;
 
 	const GX = 110,
 		GY = 90,
@@ -599,6 +641,45 @@ function NpsDistributionCard({
 				overflow: 'hidden',
 			}}
 		>
+			{/* Floating tooltip */}
+			{hovered && mousePos && (
+				<div
+					style={{
+						position: 'fixed',
+						left: mousePos.x + 14,
+						top: mousePos.y - 12,
+						zIndex: 9999,
+						pointerEvents: 'none',
+						background: 'rgba(0,0,0,0.80)',
+						color: '#fff',
+						padding: '6px 10px',
+						borderRadius: 6,
+						fontSize: '12px',
+						fontWeight: 500,
+						lineHeight: 1.5,
+						whiteSpace: 'nowrap',
+						display: 'flex',
+						alignItems: 'center',
+						gap: 7,
+					}}
+				>
+					<span
+						style={{
+							width: 10,
+							height: 10,
+							borderRadius: 2,
+							background: segmentInfo[hovered].color,
+							flexShrink: 0,
+						}}
+					/>
+					<span>
+						{segmentInfo[hovered].label}:{' '}
+						{segmentInfo[hovered].count.toLocaleString()} (
+						{segmentInfo[hovered].pct}%)
+					</span>
+				</div>
+			)}
+
 			<div style={{ marginBottom: 12 }}>
 				<h3
 					style={{
@@ -669,14 +750,30 @@ function NpsDistributionCard({
 						<path
 							d={gArc(180, 90 + GAP)}
 							fill="var(--destructive)"
-							opacity="0.82"
+							opacity={arcOpacity('detractor')}
+							style={{ cursor: 'pointer', transition: 'opacity 120ms' }}
+							onMouseEnter={onEnter('detractor')}
+							onMouseMove={onMove('detractor')}
+							onMouseLeave={onLeave}
 						/>
 						<path
 							d={gArc(90 - GAP, 45 + GAP)}
 							fill="var(--warning)"
-							opacity="0.82"
+							opacity={arcOpacity('passive')}
+							style={{ cursor: 'pointer', transition: 'opacity 120ms' }}
+							onMouseEnter={onEnter('passive')}
+							onMouseMove={onMove('passive')}
+							onMouseLeave={onLeave}
 						/>
-						<path d={gArc(45 - GAP, 0)} fill="var(--success)" opacity="0.82" />
+						<path
+							d={gArc(45 - GAP, 0)}
+							fill="var(--success)"
+							opacity={arcOpacity('promoter')}
+							style={{ cursor: 'pointer', transition: 'opacity 120ms' }}
+							onMouseEnter={onEnter('promoter')}
+							onMouseMove={onMove('promoter')}
+							onMouseLeave={onLeave}
+						/>
 						<text
 							x={rLabelL.x - 2}
 							y={rLabelL.y + 3}
@@ -749,13 +846,37 @@ function NpsDistributionCard({
 							style={{
 								flex: detPct,
 								background: NPS_COLORS.detractor.progress,
+								opacity: hovered === null || hovered === 'detractor' ? 1 : 0.3,
+								transition: 'opacity 120ms',
+								cursor: 'pointer',
 							}}
+							onMouseEnter={onEnter('detractor')}
+							onMouseMove={onMove('detractor')}
+							onMouseLeave={onLeave}
 						/>
 						<div
-							style={{ flex: pasPct, background: NPS_COLORS.passive.progress }}
+							style={{
+								flex: pasPct,
+								background: NPS_COLORS.passive.progress,
+								opacity: hovered === null || hovered === 'passive' ? 1 : 0.3,
+								transition: 'opacity 120ms',
+								cursor: 'pointer',
+							}}
+							onMouseEnter={onEnter('passive')}
+							onMouseMove={onMove('passive')}
+							onMouseLeave={onLeave}
 						/>
 						<div
-							style={{ flex: proPct, background: NPS_COLORS.promoter.progress }}
+							style={{
+								flex: proPct,
+								background: NPS_COLORS.promoter.progress,
+								opacity: hovered === null || hovered === 'promoter' ? 1 : 0.3,
+								transition: 'opacity 120ms',
+								cursor: 'pointer',
+							}}
+							onMouseEnter={onEnter('promoter')}
+							onMouseMove={onMove('promoter')}
+							onMouseLeave={onLeave}
 						/>
 					</div>
 
@@ -770,16 +891,19 @@ function NpsDistributionCard({
 					>
 						{[
 							{
+								key: 'detractor' as const,
 								label: __('Detractors', 'allfeedback'),
 								pct: detPct,
 								color: NPS_COLORS.detractor.bar,
 							},
 							{
+								key: 'passive' as const,
 								label: __('Passives', 'allfeedback'),
 								pct: pasPct,
 								color: NPS_COLORS.passive.bar,
 							},
 							{
+								key: 'promoter' as const,
 								label: __('Promoters', 'allfeedback'),
 								pct: proPct,
 								color: NPS_COLORS.promoter.bar,
@@ -791,7 +915,13 @@ function NpsDistributionCard({
 									fontSize: 'var(--text-xs)',
 									color: 'var(--muted-foreground)',
 									fontWeight: 500,
+									opacity: hovered === null || hovered === g.key ? 1 : 0.4,
+									transition: 'opacity 120ms',
+									cursor: 'pointer',
 								}}
+								onMouseEnter={onEnter(g.key)}
+								onMouseMove={onMove(g.key)}
+								onMouseLeave={onLeave}
 							>
 								{g.label}{' '}
 								<span
