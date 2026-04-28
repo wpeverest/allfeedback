@@ -1,4 +1,4 @@
-import { WIZARD_STATUS_QUERY_KEY } from '@/admin/api/wizard';
+import { WIZARD_STATUS_QUERY_KEY, wizardApi } from '@/admin/api/wizard';
 import GlobalHeader from '@/admin/components/GlobalHeader';
 import NotFound from '@/admin/pages/NotFound';
 import { Progress } from '@/components/ui/progress';
@@ -16,9 +16,13 @@ const AppNotFound = () => (
 );
 
 export const Route = createFileRoute( '/_app' )( {
-	beforeLoad: ( { context: { queryClient } } ) => {
-		const status = queryClient.getQueryData<{ status: string }>( WIZARD_STATUS_QUERY_KEY );
-		if ( ! status || status.status === 'pending_redirect' || status.status === 'not_started' ) {
+	beforeLoad: async ( { context: { queryClient } } ) => {
+		const status = await queryClient.ensureQueryData( {
+			queryKey:  WIZARD_STATUS_QUERY_KEY,
+			queryFn:   wizardApi.getStatus,
+			staleTime: Infinity,
+		} );
+		if ( status.status === 'pending_redirect' || status.status === 'not_started' ) {
 			throw redirect( { to: '/wizard' } );
 		}
 	},
