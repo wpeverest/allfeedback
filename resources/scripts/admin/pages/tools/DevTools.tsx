@@ -1,16 +1,22 @@
 import { Button } from '@/components/ui/button';
 import apiFetch from '@wordpress/api-fetch';
 import { __, sprintf } from '@wordpress/i18n';
-import { AlertTriangle, CheckCircle2, Loader2, Trash2, Wand2 } from 'lucide-react';
+import {
+	AlertTriangle,
+	CheckCircle2,
+	Loader2,
+	Trash2,
+	Wand2,
+} from 'lucide-react';
 import { useState } from 'react';
 
 type Status = 'idle' | 'seeding' | 'clearing' | 'done' | 'error';
 
 const DevTools = () => {
-	const [surveys, setSurveys]     = useState(5);
+	const [surveys, setSurveys] = useState(5);
 	const [perSurvey, setPerSurvey] = useState(500);
-	const [status, setStatus]       = useState<Status>('idle');
-	const [message, setMessage]     = useState('');
+	const [status, setStatus] = useState<Status>('idle');
+	const [message, setMessage] = useState('');
 	const [clearConfirm, setClearConfirm] = useState(false);
 
 	const seed = async () => {
@@ -20,7 +26,7 @@ const DevTools = () => {
 			const res = await apiFetch<{ data: { surveys: number; responses: number; sessions: number } }>({
 				path:   '/allfeedback/v1/dev-tools/seed',
 				method: 'POST',
-				data:   { surveys, responses_per_survey: perSurvey },
+				data: { surveys, responses_per_survey: perSurvey },
 			});
 			setStatus('done');
 			setMessage(
@@ -33,7 +39,9 @@ const DevTools = () => {
 			);
 		} catch (e: unknown) {
 			setStatus('error');
-			setMessage(e instanceof Error ? e.message : __('Seeding failed.', 'allfeedback'));
+			setMessage(
+				e instanceof Error ? e.message : __('Seeding failed.', 'allfeedback'),
+			);
 		}
 	};
 
@@ -57,7 +65,9 @@ const DevTools = () => {
 			);
 		} catch (e: unknown) {
 			setStatus('error');
-			setMessage(e instanceof Error ? e.message : __('Clear failed.', 'allfeedback'));
+			setMessage(
+				e instanceof Error ? e.message : __('Clear failed.', 'allfeedback'),
+			);
 		}
 	};
 
@@ -71,11 +81,14 @@ const DevTools = () => {
 					<AlertTriangle className="text-warning size-5" />
 				</div>
 				<div>
-					<h2 className="text-foreground text-lg font-semibold">
+					<h2 className="text-foreground !mb-2 text-lg font-semibold">
 						{__('Dev Tools — Fake Data Generator', 'allfeedback')}
 					</h2>
-					<p className="text-muted-foreground mt-0.5 text-sm">
-						{__('Only visible when WP_DEBUG is enabled. Seeded data is tracked and can be cleared in bulk.', 'allfeedback')}
+					<p className="text-muted-foreground !my-0 mt-0.5 text-sm">
+						{__(
+							'Only visible when WP_DEBUG is enabled. Seeded data is tracked and can be cleared in bulk.',
+							'allfeedback',
+						)}
 					</p>
 				</div>
 			</div>
@@ -96,7 +109,9 @@ const DevTools = () => {
 							min={1}
 							max={20}
 							value={surveys}
-							onChange={(e) => setSurveys(Math.min(20, Math.max(1, Number(e.target.value))))}
+							onChange={(e) =>
+								setSurveys(Math.min(20, Math.max(1, Number(e.target.value))))
+							}
 							disabled={busy}
 							className="border-input bg-background focus:ring-primary h-9 w-full rounded-lg border px-3 text-sm focus:ring-2 focus:outline-none disabled:opacity-50"
 						/>
@@ -116,7 +131,11 @@ const DevTools = () => {
 							max={5000}
 							step={10}
 							value={perSurvey}
-							onChange={(e) => setPerSurvey(Math.min(5000, Math.max(10, Number(e.target.value))))}
+							onChange={(e) =>
+								setPerSurvey(
+									Math.min(5000, Math.max(10, Number(e.target.value))),
+								)
+							}
 							disabled={busy}
 							className="border-input bg-background focus:ring-primary h-9 w-full rounded-lg border px-3 text-sm focus:ring-2 focus:outline-none disabled:opacity-50"
 						/>
@@ -126,7 +145,10 @@ const DevTools = () => {
 				{/* Total estimate */}
 				<p className="text-muted-foreground mt-3 text-xs">
 					{sprintf(
-						__('Will insert %d forms × %d responses = %d total records.', 'allfeedback'),
+						__(
+							'Will insert %d forms × %d responses = %d total records.',
+							'allfeedback',
+						),
 						surveys,
 						perSurvey,
 						surveys * perSurvey,
