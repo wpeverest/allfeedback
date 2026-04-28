@@ -853,21 +853,10 @@ const PreviewPanel = ({
 											}}
 											aria-label={__('Open feedback widget', 'allfeedback')}
 										>
-											<span style={{
-												writingMode:    'vertical-rl',
-												transform:      'rotate(180deg)',
-												fontSize:       '13px',
-												fontWeight:     600,
-												letterSpacing:  '0.06em',
-												whiteSpace:     'nowrap',
-												userSelect:     'none',
-												color:          '#fff',
-												display:        'flex',
-												alignItems:     'center',
-												justifyContent: 'center',
-											}}>
-												{ settings.widgetLabel || __( 'Feedback', 'allfeedback' ) }
-											</span>
+											{(() => {
+												const TriggerIcon = TRIGGER_ICON_MAP[settings.triggerIcon] ?? MessageSquare;
+												return <TriggerIcon className="size-5 text-white" />;
+											})()}
 										</button>
 									))}
 
