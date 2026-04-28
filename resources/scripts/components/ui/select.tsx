@@ -2,6 +2,7 @@ import { cn } from '@/lib/utils';
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react';
 import { Select as SelectPrimitive } from 'radix-ui';
 import * as React from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 function Select({ ...props }: React.ComponentProps<typeof SelectPrimitive.Root>) {
 	return <SelectPrimitive.Root data-slot="select" {...props} />;
@@ -53,13 +54,52 @@ function SelectContent({
 	container,
 	...props
 }: React.ComponentProps<typeof SelectPrimitive.Content> & { container?: HTMLElement | null }) {
+	const scrollRef = useRef<HTMLDivElement | null>(null);
+	const rafRef = useRef<number | null>(null);
+	const [canScrollUp, setCanScrollUp] = useState(false);
+	const [canScrollDown, setCanScrollDown] = useState(false);
+
+	const checkScroll = useCallback((el: HTMLDivElement) => {
+		setCanScrollUp(el.scrollTop > 1);
+		setCanScrollDown(el.scrollTop + el.clientHeight < el.scrollHeight - 1);
+	}, []);
+
+	// Callback ref on the scroll area — fires each time the dropdown mounts.
+	const scrollAreaRef = useCallback((el: HTMLDivElement | null) => {
+		scrollRef.current = el;
+		if (!el) return;
+		requestAnimationFrame(() => {
+			el.scrollTop = 0;
+			checkScroll(el);
+		});
+		el.addEventListener('scroll', () => checkScroll(el));
+	}, [checkScroll]);
+
+	const startScroll = (dir: 'up' | 'down') => {
+		const step = () => {
+			const el = scrollRef.current;
+			if (!el) return;
+			el.scrollTop += dir === 'down' ? 1.5 : -1.5;
+			rafRef.current = requestAnimationFrame(step);
+		};
+		rafRef.current = requestAnimationFrame(step);
+	};
+
+	const stopScroll = () => {
+		if (rafRef.current !== null) {
+			cancelAnimationFrame(rafRef.current);
+			rafRef.current = null;
+		}
+	};
+
 	return (
 		<SelectPrimitive.Portal container={container}>
 			<SelectPrimitive.Content
 				data-slot="select-content"
 				position={position}
+				style={{ maxHeight: '260px' }}
 				className={cn(
-					'relative z-50 max-h-[--radix-select-content-available-height] min-w-[8rem] overflow-hidden rounded-lg border border-border bg-white text-foreground shadow-lg',
+					'relative z-50 flex min-w-[8rem] flex-col overflow-hidden rounded-lg border border-border bg-white text-foreground shadow-lg',
 					'data-[state=open]:animate-in data-[state=closed]:animate-out',
 					'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
 					'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
@@ -69,16 +109,40 @@ function SelectContent({
 				)}
 				{...props}
 			>
-				<SelectScrollUpButton />
-				<SelectPrimitive.Viewport
-					className={cn(
-						'p-1',
-						position === 'popper' && 'w-full min-w-[var(--radix-select-trigger-width)] scroll-my-1',
-					)}
+				{canScrollUp && (
+					<div
+						className="flex h-7 shrink-0 cursor-default items-center justify-center bg-gradient-to-b from-white via-white/90 to-transparent"
+						onPointerEnter={() => startScroll('up')}
+						onPointerLeave={stopScroll}
+					>
+						<ChevronUpIcon className="size-4 text-muted-foreground" />
+					</div>
+				)}
+				{/* This div is the actual scroll container */}
+				<div
+					ref={scrollAreaRef}
+					className="min-h-0 flex-1 overflow-y-auto"
+					style={{ scrollbarWidth: 'none' }}
+					onWheel={stopScroll}
 				>
-					{children}
-				</SelectPrimitive.Viewport>
-				<SelectScrollDownButton />
+					<SelectPrimitive.Viewport
+						className={cn(
+							'p-1',
+							position === 'popper' && 'w-full min-w-[var(--radix-select-trigger-width)] scroll-my-1',
+						)}
+					>
+						{children}
+					</SelectPrimitive.Viewport>
+				</div>
+				{canScrollDown && (
+					<div
+						className="flex h-7 shrink-0 cursor-default items-center justify-center bg-gradient-to-t from-white via-white/90 to-transparent"
+						onPointerEnter={() => startScroll('down')}
+						onPointerLeave={stopScroll}
+					>
+						<ChevronDownIcon className="size-4 text-muted-foreground" />
+					</div>
+				)}
 			</SelectPrimitive.Content>
 		</SelectPrimitive.Portal>
 	);
@@ -127,30 +191,7 @@ function SelectSeparator({ className, ...props }: React.ComponentProps<typeof Se
 	);
 }
 
-function SelectScrollUpButton({ className, ...props }: React.ComponentProps<typeof SelectPrimitive.ScrollUpButton>) {
-	return (
-		<SelectPrimitive.ScrollUpButton
-			className={cn('flex cursor-default items-center justify-center py-1', className)}
-			{...props}
-		>
-			<ChevronUpIcon className="size-4" />
-		</SelectPrimitive.ScrollUpButton>
-	);
-}
-
-function SelectScrollDownButton({ className, ...props }: React.ComponentProps<typeof SelectPrimitive.ScrollDownButton>) {
-	return (
-		<SelectPrimitive.ScrollDownButton
-			className={cn('flex cursor-default items-center justify-center py-1', className)}
-			{...props}
-		>
-			<ChevronDownIcon className="size-4" />
-		</SelectPrimitive.ScrollDownButton>
-	);
-}
-
 export {
 	Select, SelectContent, SelectGroup, SelectItem, SelectLabel,
-	SelectScrollDownButton, SelectScrollUpButton, SelectSeparator,
-	SelectTrigger, SelectValue,
+	SelectSeparator, SelectTrigger, SelectValue,
 };

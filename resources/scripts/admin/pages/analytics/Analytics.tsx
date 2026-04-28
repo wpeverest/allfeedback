@@ -165,7 +165,7 @@ function DeltaPill({ value, label }: { value: number | null; label: string }) {
 	if (value === null) {
 		return (
 			<span
-				style={{ fontSize: 'var(--text-xs)', color: 'var(--muted-foreground)' }}
+				style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}
 			>
 				{label}
 			</span>
@@ -179,7 +179,7 @@ function DeltaPill({ value, label }: { value: number | null; label: string }) {
 					display: 'inline-flex',
 					alignItems: 'center',
 					gap: 3,
-					fontSize: 'var(--text-xs)',
+					fontSize: '12px',
 					fontWeight: 600,
 					color: up ? 'var(--success)' : 'var(--destructive)',
 					background: up ? 'var(--success-subtle)' : 'var(--warning-subtle)',
@@ -191,7 +191,7 @@ function DeltaPill({ value, label }: { value: number | null; label: string }) {
 				{up ? '↑' : '↓'} {Math.abs(value)}%
 			</span>
 			<span
-				style={{ fontSize: 'var(--text-xs)', color: 'var(--muted-foreground)' }}
+				style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}
 			>
 				{label}
 			</span>
@@ -245,7 +245,7 @@ function KPICard({
 				style={{
 					marginTop: 14,
 					display: 'flex',
-					alignItems: 'flex-end',
+					alignItems: 'center',
 					justifyContent: 'space-between',
 					gap: 12,
 				}}
@@ -268,7 +268,7 @@ function KPICard({
 						{unit && (
 							<span
 								style={{
-									fontSize: 'var(--text-sm)',
+									fontSize: '12px',
 									color: 'var(--muted-foreground)',
 									fontWeight: 400,
 								}}
@@ -300,7 +300,7 @@ function KPICard({
 				) : deltaLabel ? (
 					<span
 						style={{
-							fontSize: 'var(--text-xs)',
+							fontSize: '12px',
 							color: 'var(--muted-foreground)',
 						}}
 					>
@@ -359,7 +359,7 @@ function LegendDot({ color, label }: { color: string; label: string }) {
 				style={{
 					color: 'var(--muted-foreground)',
 					fontWeight: 500,
-					fontSize: 'var(--text-xs)',
+					fontSize: '12px',
 				}}
 			>
 				{label}
@@ -456,7 +456,7 @@ function AreaChartCard({
 						<p
 							style={{
 								marginTop: 2,
-								fontSize: 'var(--text-xs)',
+								fontSize: '12px',
 								color: 'var(--muted-foreground)',
 							}}
 						>
@@ -495,7 +495,7 @@ function AreaChartCard({
 					>
 						<p
 							style={{
-								fontSize: 'var(--text-sm)',
+								fontSize: '12px',
 								color: 'var(--muted-foreground)',
 							}}
 						>
@@ -695,7 +695,7 @@ function NpsDistributionCard({
 				<p
 					style={{
 						marginTop: 2,
-						fontSize: 'var(--text-xs)',
+						fontSize: '12px',
 						color: 'var(--muted-foreground)',
 					}}
 				>
@@ -733,7 +733,7 @@ function NpsDistributionCard({
 				>
 					<p
 						style={{
-							fontSize: 'var(--text-sm)',
+							fontSize: '12px',
 							color: 'var(--muted-foreground)',
 						}}
 					>
@@ -830,7 +830,7 @@ function NpsDistributionCard({
 								: nps.score.toFixed(0)}
 						</text>
 					</svg>
-					<p style={{ textAlign: 'center', fontSize: 'var(--text-sm)', color: 'var(--muted-foreground)', margin: '-2px 0 8px', letterSpacing: '0.01em' }}>
+					<p style={{ textAlign: 'center', fontSize: '12px', color: 'var(--muted-foreground)', margin: '-2px 0 8px', letterSpacing: '0.01em' }}>
 						{__('Promoters % – Detractors %', 'allfeedback')}
 					</p>
 
@@ -912,7 +912,7 @@ function NpsDistributionCard({
 							<span
 								key={g.label}
 								style={{
-									fontSize: 'var(--text-xs)',
+									fontSize: '12px',
 									color: 'var(--muted-foreground)',
 									fontWeight: 500,
 									opacity: hovered === null || hovered === g.key ? 1 : 0.4,
@@ -1031,7 +1031,7 @@ function SessionMetricsCard({
 				<p
 					style={{
 						marginTop: 2,
-						fontSize: 'var(--text-xs)',
+						fontSize: '12px',
 						color: 'var(--muted-foreground)',
 					}}
 				>
@@ -1074,7 +1074,7 @@ function SessionMetricsCard({
 					>
 						<p
 							style={{
-								fontSize: 'var(--text-sm)',
+								fontSize: '12px',
 								color: 'var(--muted-foreground)',
 								textAlign: 'center',
 							}}
@@ -1149,7 +1149,7 @@ function SessionMetricsCard({
 								</div>
 								<div
 									style={{
-										fontSize: 'var(--text-xs)',
+										fontSize: '12px',
 										color: 'var(--muted-foreground)',
 										fontWeight: 400,
 									}}
@@ -1203,7 +1203,7 @@ function SessionMetricsCard({
 								<div>
 									<div
 										style={{
-											fontSize: 'var(--text-sm)',
+											fontSize: '12px',
 											fontWeight: 500,
 											color: 'var(--foreground)',
 										}}
@@ -1212,7 +1212,7 @@ function SessionMetricsCard({
 									</div>
 									<div
 										style={{
-											fontSize: 'var(--text-xs)',
+											fontSize: '12px',
 											color: 'var(--muted-foreground)',
 										}}
 									>
@@ -1228,7 +1228,7 @@ function SessionMetricsCard({
 										<>
 											<div
 												style={{
-													fontSize: 'var(--text-sm)',
+													fontSize: '12px',
 													fontWeight: 600,
 													color: 'var(--foreground)',
 													fontVariantNumeric: 'tabular-nums',
@@ -1238,7 +1238,7 @@ function SessionMetricsCard({
 											</div>
 											<div
 												style={{
-													fontSize: 'var(--text-xs)',
+													fontSize: '12px',
 													color: 'var(--muted-foreground)',
 													fontVariantNumeric: 'tabular-nums',
 												}}
@@ -1314,7 +1314,7 @@ function DeviceDistributionCard({
 				<p
 					style={{
 						marginTop: 2,
-						fontSize: 'var(--text-xs)',
+						fontSize: '12px',
 						color: 'var(--muted-foreground)',
 					}}
 				>
@@ -1351,7 +1351,7 @@ function DeviceDistributionCard({
 							padding: '28px 0',
 							textAlign: 'center',
 							color: 'var(--muted-foreground)',
-							fontSize: 'var(--text-sm)',
+							fontSize: '12px',
 						}}
 					>
 						{__('No data yet.', 'allfeedback')}
@@ -1389,7 +1389,7 @@ function DeviceDistributionCard({
 										</div>
 										<span
 											style={{
-												fontSize: 'var(--text-sm)',
+												fontSize: '12px',
 												fontWeight: 500,
 												color: 'var(--foreground)',
 											}}
@@ -1413,7 +1413,7 @@ function DeviceDistributionCard({
 										</span>
 										<span
 											style={{
-												fontSize: 'var(--text-xs)',
+												fontSize: '12px',
 												color: 'var(--muted-foreground)',
 												fontVariantNumeric: 'tabular-nums',
 											}}
@@ -1554,7 +1554,7 @@ function ResponseRow({
 					{formTitle && (
 						<span
 							style={{
-								fontSize: 'var(--text-xs)',
+								fontSize: '12px',
 								color: 'var(--muted-foreground)',
 								fontWeight: 500,
 							}}
@@ -1611,7 +1611,7 @@ function ResponseRow({
 				<div
 					style={
 						{
-							fontSize: 'var(--text-sm)',
+							fontSize: '12px',
 							color: 'var(--foreground)',
 							lineHeight: 1.55,
 							display: '-webkit-box',
@@ -1627,7 +1627,7 @@ function ResponseRow({
 
 			<div
 				style={{
-					fontSize: 'var(--text-xs)',
+					fontSize: '12px',
 					color: 'var(--muted-foreground)',
 					fontVariantNumeric: 'tabular-nums',
 					fontWeight: 500,
@@ -1697,7 +1697,7 @@ function RecentResponsesCard({
 						<p
 							style={{
 								marginTop: 2,
-								fontSize: 'var(--text-xs)',
+								fontSize: '12px',
 								color: 'var(--muted-foreground)',
 							}}
 						>
@@ -1749,7 +1749,7 @@ function RecentResponsesCard({
 						padding: '48px 24px',
 						textAlign: 'center',
 						color: 'var(--muted-foreground)',
-						fontSize: 'var(--text-sm)',
+						fontSize: '12px',
 					}}
 				>
 					{__('No responses yet.', 'allfeedback')}
@@ -1962,8 +1962,6 @@ const Analytics = () => {
 					value={loading ? '—' : kpi.totalResponses.toLocaleString()}
 					deltaValue={kpi.totalChange}
 					deltaLabel={kpi.totalChange !== null ? __('vs. last week', 'allfeedback') : __('total responses', 'allfeedback')}
-					sparkData={sparkBase}
-					sparkColor="var(--primary)"
 					loading={loading}
 				/>
 				<KPICard

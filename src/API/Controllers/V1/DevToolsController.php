@@ -112,11 +112,11 @@ class DevToolsController extends RestController {
 		switch ( $type ) {
 			case 0: // NPS + long text
 				return [
-					'schema'      => [ 'sections' => [[
+					'schema'      => [ 'version' => '1.0', 'sections' => [[
 						'id' => 's1', 'title' => 'Feedback',
 						'fields' => [
-							[ 'id' => 'f1', 'type' => 'nps',       'label' => 'How likely are you to recommend us to a friend or colleague?', 'required' => true ],
-							[ 'id' => 'f2', 'type' => 'long_text',  'label' => 'What is the main reason for your score?', 'required' => false ],
+							[ 'id' => 'f1', 'type' => 'nps',      'label' => 'How likely are you to recommend us to a friend or colleague?', 'required' => true,  'settings' => [] ],
+							[ 'id' => 'f2', 'type' => 'long_text', 'label' => 'What is the main reason for your score?',                     'required' => false, 'settings' => [] ],
 						],
 					]]],
 					'score_range' => [ 0, 10 ],
@@ -128,11 +128,11 @@ class DevToolsController extends RestController {
 
 			case 1: // Star rating + short text
 				return [
-					'schema'      => [ 'sections' => [[
+					'schema'      => [ 'version' => '1.0', 'sections' => [[
 						'id' => 's1', 'title' => 'Rating',
 						'fields' => [
-							[ 'id' => 'f1', 'type' => 'star_rating', 'label' => 'How would you rate your overall experience?', 'required' => true, 'starRange' => 5, 'starScale' => 'star' ],
-							[ 'id' => 'f2', 'type' => 'short_text',  'label' => 'What could we improve?', 'required' => false, 'placeholder' => 'Type your answer…' ],
+							[ 'id' => 'f1', 'type' => 'star_rating', 'label' => 'How would you rate your overall experience?', 'required' => true,  'settings' => [ 'starRange' => 5, 'starScale' => 'star' ] ],
+							[ 'id' => 'f2', 'type' => 'short_text',  'label' => 'What could we improve?',                      'required' => false, 'settings' => [ 'placeholder' => 'Type your answer…' ] ],
 						],
 					]]],
 					'score_range' => [ 1, 5 ],
@@ -144,11 +144,11 @@ class DevToolsController extends RestController {
 
 			case 2: // Scale 1-10 + long text
 				return [
-					'schema'      => [ 'sections' => [[
+					'schema'      => [ 'version' => '1.0', 'sections' => [[
 						'id' => 's1', 'title' => 'Satisfaction',
 						'fields' => [
-							[ 'id' => 'f1', 'type' => 'scale',     'label' => 'How satisfied are you with our service?', 'required' => true, 'scaleMin' => 1, 'scaleMax' => 10, 'scaleLowLabel' => 'Very unsatisfied', 'scaleHighLabel' => 'Very satisfied' ],
-							[ 'id' => 'f2', 'type' => 'long_text', 'label' => 'Tell us more about your experience.', 'required' => false ],
+							[ 'id' => 'f1', 'type' => 'scale',     'label' => 'How satisfied are you with our service?',  'required' => true,  'settings' => [ 'scaleMin' => 1, 'scaleMax' => 10, 'scaleLowLabel' => 'Very unsatisfied', 'scaleHighLabel' => 'Very satisfied' ] ],
+							[ 'id' => 'f2', 'type' => 'long_text', 'label' => 'Tell us more about your experience.',       'required' => false, 'settings' => [] ],
 						],
 					]]],
 					'score_range' => [ 1, 10 ],
@@ -160,11 +160,11 @@ class DevToolsController extends RestController {
 
 			case 3: // Radio + short text
 				return [
-					'schema'      => [ 'sections' => [[
+					'schema'      => [ 'version' => '1.0', 'sections' => [[
 						'id' => 's1', 'title' => 'Quick Survey',
 						'fields' => [
-							[ 'id' => 'f1', 'type' => 'radio',      'label' => 'How did you hear about us?', 'required' => true, 'options' => [ 'Search engine', 'Social media', 'Friend or colleague', 'Advertisement', 'Other' ] ],
-							[ 'id' => 'f2', 'type' => 'short_text', 'label' => 'Any additional comments?', 'required' => false, 'placeholder' => 'Optional…' ],
+							[ 'id' => 'f1', 'type' => 'radio',      'label' => 'How did you hear about us?',   'required' => true,  'settings' => [ 'options' => [ 'Search engine', 'Social media', 'Friend or colleague', 'Advertisement', 'Other' ] ] ],
+							[ 'id' => 'f2', 'type' => 'short_text', 'label' => 'Any additional comments?',     'required' => false, 'settings' => [ 'placeholder' => 'Optional…' ] ],
 						],
 					]]],
 					'score_range' => null,
@@ -176,11 +176,11 @@ class DevToolsController extends RestController {
 
 			case 4: // Checkboxes + long text
 				return [
-					'schema'      => [ 'sections' => [[
+					'schema'      => [ 'version' => '1.0', 'sections' => [[
 						'id' => 's1', 'title' => 'Feature Survey',
 						'fields' => [
-							[ 'id' => 'f1', 'type' => 'checkboxes', 'label' => 'Which features do you use most?', 'required' => true, 'options' => [ 'Dashboard', 'Reports', 'Integrations', 'Automation', 'Support chat' ] ],
-							[ 'id' => 'f2', 'type' => 'long_text',  'label' => 'What features would you like to see next?', 'required' => false ],
+							[ 'id' => 'f1', 'type' => 'checkboxes', 'label' => 'Which features do you use most?',          'required' => true,  'settings' => [ 'options' => [ 'Dashboard', 'Reports', 'Integrations', 'Automation', 'Support chat' ] ] ],
+							[ 'id' => 'f2', 'type' => 'long_text',  'label' => 'What features would you like to see next?', 'required' => false, 'settings' => [] ],
 						],
 					]]],
 					'score_range' => null,
@@ -192,18 +192,18 @@ class DevToolsController extends RestController {
 
 			case 5: // Radio choice + NPS (multi-page)
 				return [
-					'schema'      => [ 'sections' => [
+					'schema'      => [ 'version' => '1.0', 'sections' => [
 						[
 							'id' => 's1', 'title' => 'About You',
 							'fields' => [
-								[ 'id' => 'f1', 'type' => 'radio', 'label' => 'What best describes your role?', 'required' => true, 'options' => [ 'Developer', 'Designer', 'Manager', 'Marketing', 'Other' ] ],
+								[ 'id' => 'f1', 'type' => 'radio', 'label' => 'What best describes your role?', 'required' => true, 'settings' => [ 'options' => [ 'Developer', 'Designer', 'Manager', 'Marketing', 'Other' ] ] ],
 							],
 						],
 						[
 							'id' => 's2', 'title' => 'Your Opinion',
 							'fields' => [
-								[ 'id' => 'f2', 'type' => 'nps',      'label' => 'How likely are you to recommend us?', 'required' => true ],
-								[ 'id' => 'f3', 'type' => 'long_text', 'label' => 'What would make you more likely to recommend us?', 'required' => false ],
+								[ 'id' => 'f2', 'type' => 'nps',      'label' => 'How likely are you to recommend us?',               'required' => true,  'settings' => [] ],
+								[ 'id' => 'f3', 'type' => 'long_text', 'label' => 'What would make you more likely to recommend us?',   'required' => false, 'settings' => [] ],
 							],
 						],
 					]],
@@ -217,18 +217,18 @@ class DevToolsController extends RestController {
 
 			default: // case 6: Scale + checkboxes + short text (multi-page)
 				return [
-					'schema'      => [ 'sections' => [
+					'schema'      => [ 'version' => '1.0', 'sections' => [
 						[
 							'id' => 's1', 'title' => 'Experience',
 							'fields' => [
-								[ 'id' => 'f1', 'type' => 'scale', 'label' => 'How easy was it to achieve your goal?', 'required' => true, 'scaleMin' => 1, 'scaleMax' => 7, 'scaleLowLabel' => 'Very difficult', 'scaleHighLabel' => 'Very easy' ],
+								[ 'id' => 'f1', 'type' => 'scale', 'label' => 'How easy was it to achieve your goal?', 'required' => true, 'settings' => [ 'scaleMin' => 1, 'scaleMax' => 7, 'scaleLowLabel' => 'Very difficult', 'scaleHighLabel' => 'Very easy' ] ],
 							],
 						],
 						[
 							'id' => 's2', 'title' => 'Details',
 							'fields' => [
-								[ 'id' => 'f2', 'type' => 'checkboxes', 'label' => 'What obstacles did you encounter?', 'required' => false, 'options' => [ 'Confusing UI', 'Slow performance', 'Missing features', 'Poor documentation', 'None' ] ],
-								[ 'id' => 'f3', 'type' => 'short_text', 'label' => 'Anything else to share?', 'required' => false ],
+								[ 'id' => 'f2', 'type' => 'checkboxes', 'label' => 'What obstacles did you encounter?', 'required' => false, 'settings' => [ 'options' => [ 'Confusing UI', 'Slow performance', 'Missing features', 'Poor documentation', 'None' ] ] ],
+								[ 'id' => 'f3', 'type' => 'short_text', 'label' => 'Anything else to share?',           'required' => false, 'settings' => [] ],
 							],
 						],
 					]],
