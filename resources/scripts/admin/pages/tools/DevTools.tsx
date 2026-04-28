@@ -17,7 +17,7 @@ const DevTools = () => {
 		setStatus('seeding');
 		setMessage('');
 		try {
-			const res = await apiFetch<{ data: { surveys: number; responses: number } }>({
+			const res = await apiFetch<{ data: { surveys: number; responses: number; sessions: number } }>({
 				path:   '/allfeedback/v1/dev-tools/seed',
 				method: 'POST',
 				data:   { surveys, responses_per_survey: perSurvey },
@@ -25,10 +25,10 @@ const DevTools = () => {
 			setStatus('done');
 			setMessage(
 				sprintf(
-					__('Created %1$d surveys with %2$d responses each (%3$d total).', 'allfeedback'),
+					__('Created %1$d surveys · %2$d responses · %3$d sessions.', 'allfeedback'),
 					res.data.surveys,
-					perSurvey,
 					res.data.responses,
+					res.data.sessions,
 				),
 			);
 		} catch (e: unknown) {
@@ -42,16 +42,17 @@ const DevTools = () => {
 		setMessage('');
 		setClearConfirm(false);
 		try {
-			const res = await apiFetch<{ data: { deleted_surveys: number; deleted_responses: number } }>({
+			const res = await apiFetch<{ data: { deleted_surveys: number; deleted_responses: number; deleted_sessions: number } }>({
 				path:   '/allfeedback/v1/dev-tools/seed',
 				method: 'DELETE',
 			});
 			setStatus('done');
 			setMessage(
 				sprintf(
-					__('Deleted %1$d seeded surveys and %2$d responses.', 'allfeedback'),
+					__('Deleted %1$d surveys · %2$d responses · %3$d sessions.', 'allfeedback'),
 					res.data.deleted_surveys,
 					res.data.deleted_responses,
+					res.data.deleted_sessions,
 				),
 			);
 		} catch (e: unknown) {

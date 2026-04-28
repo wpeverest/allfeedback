@@ -35,14 +35,9 @@ import { formatDistanceToNow, parseISO } from 'date-fns';
 import {
 	AlertCircle,
 	BarChart2,
-	CheckCircle2,
-	Clock,
-	FileText,
-	MessageSquare,
 	Monitor,
 	Smartphone,
 	Tablet,
-	XCircle,
 } from 'lucide-react';
 import type { CSSProperties } from 'react';
 import { useMemo } from 'react';
@@ -205,7 +200,6 @@ function DeltaPill({ value, label }: { value: number | null; label: string }) {
 }
 
 function KPICard({
-	icon: Icon,
 	label,
 	value,
 	unit,
@@ -213,10 +207,8 @@ function KPICard({
 	deltaLabel,
 	sparkData,
 	sparkColor,
-	iconColor,
 	loading,
 }: {
-	icon: React.ComponentType<{ style?: CSSProperties }>;
 	label: string;
 	value: string;
 	unit?: string;
@@ -224,7 +216,6 @@ function KPICard({
 	deltaLabel?: string;
 	sparkData?: number[];
 	sparkColor?: string;
-	iconColor?: string;
 	loading: boolean;
 }) {
 	return (
@@ -237,21 +228,6 @@ function KPICard({
 			}}
 		>
 			<div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-				<div
-					style={{
-						width: 30,
-						height: 30,
-						borderRadius: 8,
-						flexShrink: 0,
-						background: iconColor ? `${iconColor}18` : 'var(--muted)',
-						color: iconColor ? iconColor : 'var(--muted-foreground)',
-						display: 'grid',
-						placeItems: 'center',
-						boxShadow: `inset 0 0 0 1px ${iconColor ? `${iconColor}30` : 'var(--border)'}`,
-					}}
-				>
-					<Icon style={{ width: 15, height: 15 }} />
-				</div>
 				<span
 					style={{
 						fontSize: 'var(--text-xs)',
@@ -935,11 +911,11 @@ function SessionMetricsCard({
 
 			<div
 				style={{
-					display: 'grid',
-					gridTemplateColumns: 'auto 1fr',
-					gap: 0,
-					padding: '16px 20px',
+					display: 'flex',
+					flexDirection: 'column',
 					alignItems: 'center',
+					padding: '16px 20px',
+					gap: 12,
 				}}
 			>
 				{loading ? (
@@ -1057,7 +1033,7 @@ function SessionMetricsCard({
 
 				<div
 					style={{
-						paddingLeft: 16,
+						width: '100%',
 						display: 'flex',
 						flexDirection: 'column',
 						gap: 2,
@@ -1852,7 +1828,6 @@ const Analytics = () => {
 			<div style={{ transition: 'opacity 200ms ease', ...(isRefetching && { opacity: 0.5, pointerEvents: 'none' }) }}>
 			<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
 				<KPICard
-					icon={MessageSquare}
 					label={__('Total feedback', 'allfeedback')}
 					value={loading ? '—' : kpi.totalResponses.toLocaleString()}
 					deltaValue={kpi.totalChange}
@@ -1862,28 +1837,23 @@ const Analytics = () => {
 					loading={loading}
 				/>
 				<KPICard
-					icon={CheckCircle2}
 					label={__('Completion rate', 'allfeedback')}
 					value={loading ? '—' : kpi.completionRate !== null ? kpi.completionRate.toFixed(1) : '—'}
 					unit="%"
 					deltaValue={kpi.completionChange}
 					deltaLabel={kpi.completionChange !== null ? __('vs. last week', 'allfeedback') : __('of sessions submitted', 'allfeedback')}
-					iconColor="oklch(0.527 0.154 150)"
 					loading={loading}
 				/>
 				{kpi.thirdKind === 'time' ? (
 						<KPICard
-							icon={Clock}
 							label={__('Avg. time', 'allfeedback')}
 							value={loading ? '—' : formatSeconds(kpi.thirdValue)}
 							deltaValue={null}
 							deltaLabel={__('avg. completion time', 'allfeedback')}
-							iconColor="oklch(0.60 0.18 220)"
 							loading={loading}
 						/>
 					) : (
 						<KPICard
-							icon={XCircle}
 							label={__('Abandonment rate', 'allfeedback')}
 							value={
 								loading
@@ -1899,13 +1869,11 @@ const Analytics = () => {
 									? __('vs. last week', 'allfeedback')
 									: __('of started sessions', 'allfeedback')
 							}
-							iconColor="oklch(0.577 0.245 27)"
 							loading={loading}
 						/>
 					)}
 					{kpi.fourthIsFormView ? (
 						<KPICard
-							icon={XCircle}
 							label={__('Abandonment rate', 'allfeedback')}
 							value={
 								loading
@@ -1921,12 +1889,10 @@ const Analytics = () => {
 									? __('vs. last week', 'allfeedback')
 									: __('of started sessions', 'allfeedback')
 							}
-							iconColor="oklch(0.577 0.245 27)"
 							loading={loading}
 						/>
 					) : (
 						<KPICard
-							icon={FileText}
 							label={__('Active surveys', 'allfeedback')}
 							value={listLoading ? '—' : String(kpi.fourthValue ?? 0)}
 							deltaValue={null}
@@ -1935,7 +1901,6 @@ const Analytics = () => {
 									? `+${kpi.fourthNewThisWeek} ${__('new this week', 'allfeedback')}`
 									: __('published', 'allfeedback')
 							}
-							iconColor="oklch(0.60 0.14 280)"
 							loading={listLoading}
 						/>
 					)}
