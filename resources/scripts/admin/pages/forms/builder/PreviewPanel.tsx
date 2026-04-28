@@ -73,8 +73,6 @@ import type {
 	WidgetPosition,
 } from './types';
 
-type WidgetPosition = 'bottom-right' | 'bottom-left' | 'side-tab';
-
 interface PreviewPanelProps {
 	sections: FormSection[];
 	settings: FormSettings;
