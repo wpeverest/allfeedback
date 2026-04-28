@@ -7,6 +7,7 @@ namespace AllFeedback\API;
 defined( 'ABSPATH' ) || exit;
 
 use AllFeedback\API\Controllers\V1\AnalyticsController;
+use AllFeedback\API\Controllers\V1\DevToolsController;
 use AllFeedback\API\Controllers\V1\ContentSearchController;
 use AllFeedback\API\Controllers\V1\FormAnalyticsController;
 use AllFeedback\API\Controllers\V1\LogsController;
@@ -84,6 +85,7 @@ class ApiServiceProvider implements ServiceProvider {
 			WizardController::class,        // /wizard
 			ContentSearchController::class, // /content-search
 			LogsController::class,          // /logs
+			DevToolsController::class,      // /dev-tools (WP_DEBUG only)
 		];
 
 		foreach ( $controllers as $class ) {

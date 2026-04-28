@@ -1,12 +1,14 @@
 import { Link, Outlet, useRouterState } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
 import { __ } from '@wordpress/i18n';
-import { Info, ScrollText } from 'lucide-react';
+import { Info, ScrollText, Wand2 } from 'lucide-react';
+
+declare const __ALLFB_ADMIN__: { debug: boolean };
 
 type NavItem = {
 	label: string;
 	icon: React.ComponentType<{ className?: string }>;
-	to: '/tools/system-info' | '/tools/logs';
+	to: '/tools/system-info' | '/tools/logs' | '/tools/dev-tools';
 };
 
 const NAV_ITEMS: NavItem[] = [
@@ -20,6 +22,11 @@ const NAV_ITEMS: NavItem[] = [
 		icon: ScrollText,
 		to: '/tools/logs',
 	},
+	...( __ALLFB_ADMIN__.debug ? [{
+		label: __('Dev Tools', 'allfeedback'),
+		icon: Wand2,
+		to: '/tools/dev-tools' as const,
+	}] : [] ),
 ];
 
 const Tools = () => {

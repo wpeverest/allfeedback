@@ -67,6 +67,7 @@ use AllFeedback\Infrastructure\Mail\SendNotificationJob;
 use AllFeedback\Admin\AdminServiceProvider;
 use AllFeedback\API\ApiServiceProvider;
 use AllFeedback\API\Controllers\V1\AnalyticsController;
+use AllFeedback\API\Controllers\V1\DevToolsController;
 use AllFeedback\API\Controllers\V1\ContentSearchController;
 use AllFeedback\API\Controllers\V1\FormAnalyticsController;
 use AllFeedback\Frontend\Blocks\BlockRegistry;
@@ -206,6 +207,7 @@ return [
 	WizardController::class          => autowire(),
 	ContentSearchController::class   => autowire(),
 	LogsController::class            => autowire(),
+	DevToolsController::class        => autowire(),
 
 	// ------------------------------------------------------------------
 	// Gutenberg blocks
