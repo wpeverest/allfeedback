@@ -100,7 +100,7 @@ class DevToolsController extends RestController {
 				[
 					'methods'             => \WP_REST_Server::CREATABLE,
 					'callback'            => [ $this, 'seed' ],
-					'permission_callback' => [ $this, 'adminOnly' ],
+					'permission_callback' => [ $this, 'adminPermission' ],
 					'args'                => [
 						'surveys'              => [
 							'type'    => 'integer',
@@ -119,7 +119,7 @@ class DevToolsController extends RestController {
 				[
 					'methods'             => \WP_REST_Server::DELETABLE,
 					'callback'            => [ $this, 'clear' ],
-					'permission_callback' => [ $this, 'adminOnly' ],
+					'permission_callback' => [ $this, 'adminPermission' ],
 				],
 			]
 		);
@@ -238,7 +238,7 @@ class DevToolsController extends RestController {
 			);
 		}
 
-		return $this->success( [
+		return $this->successResponse( [
 			'surveys'   => count( $survey_ids ),
 			'responses' => $total_responses,
 			'survey_ids' => $survey_ids,
@@ -248,7 +248,7 @@ class DevToolsController extends RestController {
 	/**
 	 * Delete all seeded surveys and their responses.
 	 */
-	public function clear( \WP_REST_Request $request ): \WP_REST_Response {
+	public function clear(): \WP_REST_Response {
 		global $wpdb;
 
 		// Find all seeded surveys (flagged via conflict_reason)
@@ -260,7 +260,7 @@ class DevToolsController extends RestController {
 		);
 
 		if ( empty( $ids ) ) {
-			return $this->success( [ 'deleted_surveys' => 0, 'deleted_responses' => 0 ] );
+			return $this->successResponse( [ 'deleted_surveys' => 0, 'deleted_responses' => 0 ] );
 		}
 
 		$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
@@ -281,16 +281,10 @@ class DevToolsController extends RestController {
 			)
 		);
 
-		return $this->success( [
+		return $this->successResponse( [
 			'deleted_surveys'   => $deleted_surveys,
 			'deleted_responses' => $deleted_responses,
 		] );
 	}
 
-	/**
-	 * Only site administrators may call dev-tools endpoints.
-	 */
-	public function adminOnly(): bool {
-		return current_user_can( 'manage_options' );
-	}
 }
