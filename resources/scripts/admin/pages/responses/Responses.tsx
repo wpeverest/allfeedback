@@ -32,7 +32,7 @@ import {
 	useQuery,
 	useQueryClient,
 } from '@tanstack/react-query';
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { useNavigate, useRouterState, useSearch } from '@tanstack/react-router';
 import { __, _n, sprintf } from '@wordpress/i18n';
 import { format } from 'date-fns';
 import {
@@ -95,9 +95,7 @@ const Responses = () => {
 	const queryClient = useQueryClient();
 	const { surveyId } = useSearch({ from: '/_app/responses/' });
 
-	const [selectedSurveyId, setSelectedSurveyId] = useState<number | null>(
-		surveyId ?? null,
-	);
+	const selectedSurveyId = surveyId ?? null;
 	const [search, setSearch] = useState('');
 	const [page, setPage] = useState(1);
 	const [perPage, setPerPage] = useState(10);
@@ -142,6 +140,7 @@ const Responses = () => {
 		placeholderData: keepPreviousData,
 	});
 
+	const isNavigating = useRouterState({ select: (s) => s.isLoading });
 	const activeQuery =
 		selectedSurveyId === null ? allResponsesResult : surveyResponsesResult;
 	const { data, isLoading, isError, isFetching } = activeQuery;
@@ -454,7 +453,7 @@ const Responses = () => {
 			<div
 				className={cn(
 					'border-border bg-card rounded-xl border transition-opacity',
-					isFetching && !isLoading && 'pointer-events-none opacity-60',
+					(isFetching || isNavigating) && 'pointer-events-none opacity-60',
 				)}
 			>
 			<div className="overflow-x-auto">
@@ -610,7 +609,7 @@ const Responses = () => {
 														type="button"
 														className="group/form flex min-w-0 items-start gap-1 text-left"
 														onClick={() => {
-															setSelectedSurveyId(response.survey_id);
+														void navigate({ search: { surveyId: response.survey_id } });
 															setPage(1);
 															setChecked([]);
 														}}
