@@ -1,14 +1,15 @@
 import type { Settings } from '@/admin/api/settings';
 import { settingsApi } from '@/admin/api/settings';
-import { settingsQuery } from '@/admin/queries/settings';
 import { useSettingsDirty } from '@/admin/pages/settings/Settings';
+import { settingsQuery } from '@/admin/queries/settings';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import UnsavedChangesBadge from '@/components/ui/unsaved-changes-badge';
 import { cn } from '@/lib/utils';
 import { useForm, useStore } from '@tanstack/react-form';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { __ } from '@wordpress/i18n';
-import UnsavedChangesBadge from '@/components/ui/unsaved-changes-badge';
 import { CheckCircle2, Loader2, Mail, Send, XCircle } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
@@ -50,7 +51,7 @@ const EmailSettingsSkeleton = () => (
 			<Skeleton className="size-9 rounded-xl" />
 			<Skeleton className="h-5 w-28" />
 		</div>
-		<div className="px-6 pb-6 pt-4">
+		<div className="space-y-3 px-6 pb-6 pt-4">
 			<Skeleton className="h-2.5 w-20" />
 			{[1, 2, 3].map((i) => (
 				<div key={i} className="flex items-start gap-4">
@@ -61,9 +62,16 @@ const EmailSettingsSkeleton = () => (
 					<Skeleton className="h-9 flex-1 rounded-lg" />
 				</div>
 			))}
-			<div className="mt-2 h-px bg-border/50" />
+			<div className="!mt-6 h-px bg-border/50" />
 			<Skeleton className="h-2.5 w-24" />
-			<Skeleton className="h-[88px] w-full rounded-xl" />
+			<div className="flex items-center gap-4 rounded-xl border border-border/40 bg-muted/20 px-5 py-4">
+				<Skeleton className="size-9 shrink-0 rounded-lg" />
+				<div className="flex-1 space-y-1.5">
+					<Skeleton className="h-3.5 w-36" />
+					<Skeleton className="h-3 w-56" />
+				</div>
+				<Skeleton className="h-8 w-24 rounded-lg" />
+			</div>
 		</div>
 	</div>
 );
@@ -201,45 +209,62 @@ const EmailSettings = () => {
 				<div className="space-y-3">
 				<SectionLabel>{__('Test email', 'all-feedback')}</SectionLabel>
 
-				<div className="rounded-xl border border-border/60 bg-muted/20 p-5">
-					<div className="flex items-start justify-between gap-4">
-						<div>
-							<p className={labelCls}>{__('Send a test email', 'all-feedback')}</p>
-							<p className="mt-1 text-xs leading-relaxed text-muted-foreground/80">
-								{values.to_email
-									? <>
-										{__('A test message will be sent to', 'all-feedback')}{' '}
-										<span className="font-medium text-foreground/70">{values.to_email}</span>.
-									</>
-									: __('Set a "To email" address above before sending a test.', 'all-feedback')
-								}
-							</p>
-						</div>
-
-						<button
-							type="button"
-							disabled={testStatus === 'sending' || !values.to_email}
-							onClick={() => testMutation.mutate()}
-							className={cn(
-								'inline-flex shrink-0 items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-colors',
-								'disabled:cursor-not-allowed disabled:opacity-50',
-								testStatus === 'success'
-									? 'border-success/30 bg-success/10 text-success'
-									: testStatus === 'error'
-										? 'border-destructive/30 bg-destructive/10 text-destructive'
-										: 'border-border bg-white text-foreground hover:bg-muted/60',
-							)}
-						>
-							{testStatus === 'sending' && <Loader2 className="size-3.5 animate-spin" />}
-							{testStatus === 'success' && <CheckCircle2 className="size-3.5" />}
-							{testStatus === 'error'   && <XCircle className="size-3.5" />}
-							{testStatus === 'idle'    && <Send className="size-3.5" />}
-							{testStatus === 'sending' ? __('Sending…', 'all-feedback')
-								: testStatus === 'success' ? __('Sent!', 'all-feedback')
-								: testStatus === 'error'   ? __('Failed', 'all-feedback')
-								: __('Send test', 'all-feedback')}
-						</button>
+				<div
+					className={cn(
+						'flex items-start gap-4 rounded-xl border px-5 py-4 transition-all duration-300',
+						testStatus === 'success' ? 'border-emerald-200/70 bg-emerald-50/60'
+							: testStatus === 'error' ? 'border-destructive/20 bg-destructive/[0.04]'
+							: 'border-border/60 bg-muted/20',
+					)}
+				>
+					<div
+						className={cn(
+							'flex size-9 shrink-0 items-center justify-center rounded-lg border transition-all duration-300',
+							testStatus === 'success' ? 'border-emerald-200 bg-emerald-100 text-emerald-600'
+								: testStatus === 'error'   ? 'border-destructive/20 bg-destructive/10 text-destructive'
+								: testStatus === 'sending' ? 'border-primary/20 bg-primary/5 text-primary'
+								: 'border-border/60 bg-background text-muted-foreground',
+						)}
+					>
+						{testStatus === 'sending' && <Loader2 className="size-4 animate-spin" />}
+						{testStatus === 'success' && <CheckCircle2 className="size-4" />}
+						{testStatus === 'error'   && <XCircle className="size-4" />}
+						{testStatus === 'idle'    && <Send className="size-4" />}
 					</div>
+
+					<div className="min-w-0 flex-1">
+						<p className="!mb-1 !mt-0 !text-md font-medium text-foreground/90">
+							{__('Send a test email', 'all-feedback')}
+						</p>
+						<p className="!mt-0 text-xs leading-relaxed text-muted-foreground/80">
+							{values.to_email ? (
+								<>
+									{__('A test message will be sent to', 'all-feedback')}{' '}
+									<span className="font-medium text-foreground/70">{values.to_email}</span>.
+								</>
+							) : (
+								__('Set a "To email" address above to send a test.', 'all-feedback')
+							)}
+						</p>
+					</div>
+
+					<Button
+						type="button"
+						size="sm"
+						variant="secondary"
+						disabled={testStatus === 'sending' || !values.to_email}
+						onClick={() => testMutation.mutate()}
+						className={cn(
+							'shrink-0',
+							testStatus === 'success' && 'border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50',
+							testStatus === 'error'   && 'border-destructive/30 bg-white text-destructive hover:bg-destructive/5',
+						)}
+					>
+						{testStatus === 'sending' ? __('Sending…', 'all-feedback')
+							: testStatus === 'success' ? __('Sent!', 'all-feedback')
+							: testStatus === 'error'   ? __('Failed', 'all-feedback')
+							: __('Send test', 'all-feedback')}
+					</Button>
 				</div>
 				</div>
 
