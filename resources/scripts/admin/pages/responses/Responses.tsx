@@ -85,7 +85,11 @@ const SkeletonRow = ({ showForm }: { showForm: boolean }) => (
 			<div className="bg-muted h-4 w-24 animate-pulse rounded" />
 		</td>
 		<td className="w-36 px-4 py-5">
-			<div className="bg-muted h-6 w-24 animate-pulse
+			<div className="bg-muted h-6 w-24 animate-pulse rounded" />
+		</td>
+	</tr>
+);
+
 const Responses = () => {
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
@@ -450,8 +454,11 @@ const Responses = () => {
 			<div
 				className={cn(
 					'border-border bg-card rounded-xl border transition-opacity',
-					isFetching && !isLoading && 'pointer-eve				<div className="overflow-x-auto">
-					<table className="w-full table-fixed">
+					isFetching && !isLoading && 'pointer-events-none opacity-60',
+				)}
+			>
+			<div className="overflow-x-auto">
+				<table className="w-full table-fixed">
 						<thead>
 							<tr className="border-border bg-muted/30 border-b">
 								<th className="w-12 px-4 py-4 text-left">
@@ -534,7 +541,10 @@ const Responses = () => {
 												)}
 												description={__(
 													'Try a different keyword.',
-													'allfeedba										</td>
+													'allfeedback',
+												)}
+											/>
+										</td>
 									</tr>
 								)}
 
@@ -717,7 +727,6 @@ const Responses = () => {
 					setPage(1);
 				}}
 			/>
-			</div>
 
 			<BulkActionBar
 				count={checked.length}
