@@ -1,6 +1,7 @@
 declare let __webpack_public_path__: string;
 __webpack_public_path__ = __ALLFB_ADMIN__.buildUrl;
 
+import { WIZARD_STATUS_QUERY_KEY } from '@/admin/api/wizard';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Toaster } from '@/components/ui/sonner';
 import { queryClient } from '@/lib/query-client';
@@ -18,6 +19,8 @@ export const router = createRouter();
 document.addEventListener('DOMContentLoaded', () => {
 
 	apiFetch.use(apiFetch.createNonceMiddleware(__ALLFB_ADMIN__.nonce));
+
+	queryClient.setQueryData(WIZARD_STATUS_QUERY_KEY, { status: __ALLFB_ADMIN__.wizardStatus });
 
 	const rootElement = document.getElementById('ALLFB-Admin-Root');
 

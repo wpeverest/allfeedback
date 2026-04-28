@@ -335,18 +335,14 @@ const Logs = () => {
 	const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
 	const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-	const { data: listData, isPending: isListPending } = useQuery({
-		...logsQuery(),
-		staleTime: 30 * 1000,
-	});
+	const { data: listData, isPending: isListPending } = useQuery(logsQuery());
 
 	const files = listData?.logs ?? [];
 
 	const fileDetailQueries = useQueries({
 		queries: files.map((file) => ({
 			...logQuery(file.id),
-			staleTime: 5 * 60 * 1000,
-			enabled:   files.length > 0,
+			enabled: files.length > 0,
 		})),
 	});
 

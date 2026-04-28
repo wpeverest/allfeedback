@@ -64,4 +64,6 @@ declare const __ALLFB_ADMIN__: {
 	hasDomDocument: boolean;
 
 	hasMultibyte: boolean;
+
+	wizardStatus: 'not_started' | 'pending_redirect' | 'initiated' | 'completed';
 };

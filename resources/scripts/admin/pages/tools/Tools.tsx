@@ -1,4 +1,5 @@
-import { Link, Outlet } from '@tanstack/react-router';
+import { Link, Outlet, useRouterState } from '@tanstack/react-router';
+import { cn } from '@/lib/utils';
 import { __ } from '@wordpress/i18n';
 import { Info, ScrollText } from 'lucide-react';
 
@@ -21,7 +22,9 @@ const NAV_ITEMS: NavItem[] = [
 	},
 ];
 
-const Tools = () => (
+const Tools = () => {
+	const isNavigating = useRouterState({ select: (s) => s.isLoading });
+	return (
 	<div className="p-6 md:p-8">
 		<div className="mx-auto max-w-[1340px]">
 			<div className="flex flex-col gap-6 lg:flex-row lg:items-start">
@@ -42,12 +45,16 @@ const Tools = () => (
 					))}
 				</nav>
 
-				<div className="min-w-0 flex-1 overflow-hidden rounded-2xl border border-border/60 bg-white">
+				<div className={cn(
+					'min-w-0 flex-1 overflow-hidden rounded-2xl border border-border/60 bg-white transition-opacity duration-200',
+					isNavigating && 'pointer-events-none opacity-50',
+				)}>
 					<Outlet />
 				</div>
 			</div>
 		</div>
 	</div>
-);
+	);
+};
 
 export default Tools;

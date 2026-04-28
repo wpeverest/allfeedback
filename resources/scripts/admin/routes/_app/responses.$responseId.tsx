@@ -52,10 +52,10 @@ export const Route = createFileRoute('/_app/responses/$responseId')({
 	loaderDeps: ({ search }) => ({ surveyId: search.surveyId }),
 	loader: ({ context: { queryClient }, params: { responseId }, deps: { surveyId } }) =>
 		Promise.all([
-			queryClient.ensureQueryData(surveyQuery(surveyId)).catch(() => undefined),
-			queryClient.ensureQueryData(surveyResponseQuery(surveyId, Number(responseId))).catch(() => undefined),
+			surveyId > 0 ? queryClient.ensureQueryData(surveyQuery(surveyId)).catch(() => undefined) : Promise.resolve(undefined),
+			surveyId > 0 ? queryClient.ensureQueryData(surveyResponseQuery(surveyId, Number(responseId))).catch(() => undefined) : Promise.resolve(undefined),
 			queryClient.ensureQueryData(surveysQuery({ per_page: 100 })).catch(() => undefined),
-			queryClient.ensureQueryData(surveyResponsesQuery(surveyId, { per_page: 100, page: 1 })).catch(() => undefined),
+			surveyId > 0 ? queryClient.ensureQueryData(surveyResponsesQuery(surveyId, { per_page: 100, page: 1 })).catch(() => undefined) : Promise.resolve(undefined),
 		]),
 	component:        lazyRouteComponent(() => import('@/admin/pages/responses/ResponseDetail')),
 	pendingComponent: ResponseDetailPending,

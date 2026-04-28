@@ -334,6 +334,7 @@ class AdminServiceProvider implements ServiceProvider {
 				'hasGzip'         => $isAdmin ? function_exists( 'gzopen' ) : null,
 				'hasDomDocument'  => $isAdmin ? class_exists( 'DOMDocument' ) : null,
 				'hasMultibyte'    => $isAdmin ? function_exists( 'mb_strtolower' ) : null,
+				'wizardStatus'    => get_option( 'allfeedback_wizard_status', 'not_started' ),
 			]
 		);
 
