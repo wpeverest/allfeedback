@@ -1,4 +1,4 @@
-import { analyticsFormsQuery, analyticsOverviewQuery } from '@/admin/queries/analytics';
+import { analyticsFormDetailQuery, analyticsFormsQuery, analyticsOverviewQuery } from '@/admin/queries/analytics';
 import { allResponsesQuery } from '@/admin/queries/surveys';
 import { createFileRoute, lazyRouteComponent } from '@tanstack/react-router';
 
@@ -17,11 +17,15 @@ export const Route = createFileRoute('/_app/analytics/')({
 		const id = rawId !== undefined && rawId !== null ? Number(rawId) : undefined;
 		return { formId: id !== undefined && Number.isFinite(id) && id > 0 ? id : undefined };
 	},
-	loader: ({ context: { queryClient } }) =>
+	loaderDeps: ({ search: { formId } }) => ({ formId }),
+	loader: ({ context: { queryClient }, deps: { formId } }) =>
 		Promise.all([
 			queryClient.ensureQueryData(analyticsFormsQuery({ per_page: 100 })).catch(() => undefined),
 			queryClient.ensureQueryData(analyticsOverviewQuery()).catch(() => undefined),
 			queryClient.ensureQueryData(allResponsesQuery({ per_page: 5 })).catch(() => undefined),
+			formId
+				? queryClient.ensureQueryData(analyticsFormDetailQuery(formId)).catch(() => undefined)
+				: Promise.resolve(undefined),
 		]),
 	component: lazyRouteComponent(() => import('@/admin/pages/analytics/Analytics')),
 });

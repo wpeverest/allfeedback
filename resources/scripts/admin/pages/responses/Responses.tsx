@@ -23,10 +23,10 @@ import { allResponsesQuery, surveyResponsesQuery, surveysQuery } from '@/admin/q
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { cn } from '@/lib/utils';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { useNavigate, useRouterState, useSearch } from '@tanstack/react-router';
 import { __, _n, sprintf } from '@wordpress/i18n';
 import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown, Edit2, Eye, Mail, MailOpen, MessageSquare, MoreVertical, Pencil, Trash2 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import type { SurveyResponse } from '@/admin/api/surveys';
 
@@ -41,16 +41,6 @@ const getResponseSummary = (data: Record<string, unknown> | null): string => {
 	return String(first);
 };
 
-const SkeletonRow = ({ showForm }: { showForm: boolean }) => (
-	<tr className="border-b border-border">
-		<td className="w-12 px-4 py-5"><div className="size-[16px] animate-pulse rounded-[4px] bg-muted" /></td>
-		<td className="w-16 px-4 py-5"><div className="h-4 w-8 animate-pulse rounded bg-muted" /></td>
-		<td className="w-[220px] px-4 py-5"><div className="h-4 w-36 animate-pulse rounded bg-muted" /></td>
-		{showForm && <td className="w-[180px] px-4 py-5"><div className="h-4 w-28 animate-pulse rounded bg-muted" /></td>}
-		<td className="w-36 px-4 py-5"><div className="h-4 w-24 animate-pulse rounded bg-muted" /></td>
-		<td className="w-36 px-4 py-5"><div className="h-6 w-24 animate-pulse rounded-lg bg-muted" /></td>
-	</tr>
-);
 
 const Responses = () => {
 	const navigate    = useNavigate();
@@ -94,16 +84,12 @@ const Responses = () => {
 		placeholderData: keepPreviousData,
 	});
 
+	const isNavigating = useRouterState({ select: (s) => s.isLoading });
 	const activeQuery  = selectedSurveyId === null ? allResponsesResult : surveyResponsesResult;
-	const { data, isLoading, isError, isFetching } = activeQuery;
+	const { data, isError, isFetching } = activeQuery;
 
-	const dataRef = useRef<typeof data>(undefined);
-	if (data !== undefined) dataRef.current = data;
-	const displayData   = data ?? dataRef.current;
-	const isInitialLoad = displayData === undefined;
-
-	const responses  = displayData?.responses ?? [];
-	const total      = displayData?.total     ?? 0;
+	const responses  = data?.responses ?? [];
+	const total      = data?.total     ?? 0;
 	const totalPages = Math.max(1, Math.ceil(total / perPage));
 	const showForm   = selectedSurveyId === null;
 	const numCols    = showForm ? 6 : 5;
@@ -324,7 +310,8 @@ const Responses = () => {
 				</Select>
 			</div>
 
-			<div className={cn('rounded-xl border border-border bg-card transition-opacity', isFetching && !isInitialLoad && 'pointer-events-none opacity-50')}>
+			<div className={cn('transition-opacity', (isFetching || isNavigating) && 'pointer-events-none opacity-50')}>
+			<div className="rounded-xl border border-border bg-card">
 				<div className="overflow-x-auto">
 					<table className="w-full table-fixed">
 						<thead>
@@ -333,7 +320,7 @@ const Responses = () => {
 									<Checkbox
 										checked={someChecked ? 'indeterminate' : allChecked}
 										onCheckedChange={toggleAll}
-										disabled={isInitialLoad || filtered.length === 0}
+										disabled={filtered.length === 0}
 									/>
 								</th>
 								<th className="w-16 px-4 py-4 text-left">
@@ -357,9 +344,7 @@ const Responses = () => {
 						</thead>
 
 						<tbody>
-							{isInitialLoad && Array.from({ length: 5 }, (_, i) => <SkeletonRow key={i} showForm={showForm} />)}
-
-							{isError && !isInitialLoad && (
+							{isError && !isFetching && (
 								<tr><td colSpan={numCols}>
 									<EmptyState
 										icon={AlertCircle}
@@ -369,7 +354,7 @@ const Responses = () => {
 								</td></tr>
 							)}
 
-							{!isInitialLoad && !isError && responses.length === 0 && (
+							{!isFetching && !isError && responses.length === 0 && (
 								<tr><td colSpan={numCols}>
 									<EmptyState
 										icon={MessageSquare}
@@ -379,7 +364,7 @@ const Responses = () => {
 								</td></tr>
 							)}
 
-							{!isInitialLoad && !isError && responses.length > 0 && filtered.length === 0 && (
+							{!isFetching && !isError && responses.length > 0 && filtered.length === 0 && (
 								<tr><td colSpan={numCols}>
 									<EmptyState
 										icon={MessageSquare}
@@ -389,7 +374,7 @@ const Responses = () => {
 								</td></tr>
 							)}
 
-							{!isInitialLoad && !isError && filtered.map((response: SurveyResponse) => {
+							{!isError && filtered.map((response: SurveyResponse) => {
 								const isSelected = checked.includes(response.id);
 								const summary    = getResponseSummary(response.response_data);
 								return (
@@ -546,6 +531,7 @@ const Responses = () => {
 				onPageChange={setPage}
 				onPerPageChange={(n) => { setPerPage(n); setPage(1); }}
 			/>
+			</div>
 
 			<BulkActionBar
 				count={checked.length}

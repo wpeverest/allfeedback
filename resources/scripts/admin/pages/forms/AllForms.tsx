@@ -601,7 +601,8 @@ const AllForms = () => {
 				</div>
 			</div>
 
-			<div className={cn('rounded-xl border border-border bg-card transition-opacity', isFetching && !isLoading && 'pointer-events-none opacity-50')}>
+			<div className={cn('transition-opacity', isFetching && !isLoading && 'pointer-events-none opacity-50')}>
+			<div className="rounded-xl border border-border bg-card">
 				<div className="overflow-x-auto">
 					<table className="w-full table-fixed">
 						<thead>
@@ -892,6 +893,7 @@ const AllForms = () => {
 				onPageChange={setPage}
 				onPerPageChange={(n) => { setPerPage(n); setPage(1); }}
 			/>
+			</div>
 
 			<BulkActionBar
 				count={checked.length}

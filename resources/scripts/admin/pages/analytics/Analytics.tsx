@@ -6,7 +6,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { Link, useNavigate, useSearch } from '@tanstack/react-router';
+import { Link, useNavigate, useRouterState, useSearch } from '@tanstack/react-router';
 import { __ } from '@wordpress/i18n';
 import {
 	ArcElement,
@@ -794,11 +794,12 @@ const Analytics = () => {
 
 	const forms   = listData?.forms ?? [];
 	const totals  = listData?.totals;
+	const isNavigating = useRouterState({ select: (s) => s.isLoading });
 	const isFormView = selectedFormId !== null;
 	const loading = listLoading;
-	const isRefetching = isFormView
+	const isRefetching = isNavigating || (isFormView
 		? detailFetching
-		: (listFetching && !listLoading) || (overviewFetching && !overviewLoading);
+		: (listFetching && !listLoading) || (overviewFetching && !overviewLoading));
 
 	const kpi = useMemo(() => {
 		if (isFormView && detailData) {

@@ -1,4 +1,4 @@
-import { surveyQuery, surveyResponseQuery } from '@/admin/queries/surveys';
+import { surveyQuery, surveyResponseQuery, surveyResponsesQuery, surveysQuery } from '@/admin/queries/surveys';
 import { createFileRoute, lazyRouteComponent } from '@tanstack/react-router';
 
 const ResponseDetailPending = () => (
@@ -53,9 +53,9 @@ export const Route = createFileRoute('/_app/responses/$responseId')({
 	loader: ({ context: { queryClient }, params: { responseId }, deps: { surveyId } }) =>
 		Promise.all([
 			queryClient.ensureQueryData(surveyQuery(surveyId)).catch(() => undefined),
-			queryClient
-				.ensureQueryData(surveyResponseQuery(surveyId, Number(responseId)))
-				.catch(() => undefined),
+			queryClient.ensureQueryData(surveyResponseQuery(surveyId, Number(responseId))).catch(() => undefined),
+			queryClient.ensureQueryData(surveysQuery({ per_page: 100 })).catch(() => undefined),
+			queryClient.ensureQueryData(surveyResponsesQuery(surveyId, { per_page: 100, page: 1 })).catch(() => undefined),
 		]),
 	component:        lazyRouteComponent(() => import('@/admin/pages/responses/ResponseDetail')),
 	pendingComponent: ResponseDetailPending,

@@ -1,4 +1,4 @@
-import { surveysQuery } from '@/admin/queries/surveys';
+import { allResponsesQuery, surveyResponsesQuery, surveysQuery } from '@/admin/queries/surveys';
 import { createFileRoute, lazyRouteComponent } from '@tanstack/react-router';
 
 let _hashFallback = true;
@@ -16,7 +16,13 @@ export const Route = createFileRoute('/_app/responses/')({
 		const id = rawId !== undefined && rawId !== null ? Number(rawId) : undefined;
 		return { surveyId: id !== undefined && Number.isFinite(id) && id > 0 ? id : undefined };
 	},
-	loader: ({ context: { queryClient } }) =>
-		queryClient.ensureQueryData(surveysQuery({ per_page: 100 })).catch(() => undefined),
+	loaderDeps: ({ search: { surveyId } }) => ({ surveyId }),
+	loader: ({ context: { queryClient }, deps: { surveyId } }) =>
+		Promise.all([
+			queryClient.ensureQueryData(surveysQuery({ per_page: 100 })).catch(() => undefined),
+			surveyId
+				? queryClient.ensureQueryData(surveyResponsesQuery(surveyId, { page: 1, per_page: 10 })).catch(() => undefined)
+				: queryClient.ensureQueryData(allResponsesQuery({ page: 1, per_page: 10 })).catch(() => undefined),
+		]),
 	component: lazyRouteComponent(() => import('@/admin/pages/responses/Responses')),
 });
