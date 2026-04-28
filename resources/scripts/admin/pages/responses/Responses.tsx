@@ -107,7 +107,7 @@ const Responses = () => {
 		id: number;
 		surveyId: number;
 	} | null>(null);
-	const [bulkConfirmOpen, setBu
+	const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
 	const debouncedSearch = useDebouncedValue(search, 300);
 
 	useEffect(() => {
@@ -140,7 +140,7 @@ const Responses = () => {
 
 	const activeQuery =
 		selectedSurveyId === null ? allResponsesResult : surveyResponsesResult;
-	const { data, isLoading, isE
+	const { data, isLoading, isError, isFetching } = activeQuery;
 	const responses = data?.responses ?? [];
 	const total = data?.total ?? 0;
 	const totalPages = Math.max(1, Math.ceil(total / perPage));
