@@ -19,7 +19,7 @@ use AllFeedback\Support\Logger;
  *
  * REST controller for the /surveys resource.
  *
- * Routes registered (all under all-feedback/v1):
+ * Routes registered (all under allfeedback/v1):
  *   GET    /surveys                      → index()                : paginated list
  *   POST   /surveys                      → store()               : create
  *   DELETE /surveys/trash                → destroyMany()          : bulk trash
@@ -45,7 +45,7 @@ class SurveysController extends RestController {
 	 * @since 1.0.0
 	 */
 	private const FIELD_TYPES = [
-		'nps', 'csat', 'ces',
+		'nps',
 		'short_text', 'long_text',
 		'radio', 'checkboxes', 'dropdown',
 		'star_rating', 'scale',
@@ -187,7 +187,7 @@ class SurveysController extends RestController {
 	}
 
 	/**
-	 * GET /all-feedback/v1/surveys
+	 * GET /allfeedback/v1/surveys
 	 *
 	 * Return a paginated list of surveys.
 	 *
@@ -226,7 +226,7 @@ class SurveysController extends RestController {
 	}
 
 	/**
-	 * POST /all-feedback/v1/surveys
+	 * POST /allfeedback/v1/surveys
 	 *
 	 * Create a new survey.
 	 *
@@ -290,7 +290,7 @@ class SurveysController extends RestController {
 	}
 
 	/**
-	 * GET /all-feedback/v1/surveys/{id}
+	 * GET /allfeedback/v1/surveys/{id}
 	 *
 	 * Return a single survey including full form_schema, settings, and targeting.
 	 *
@@ -313,7 +313,7 @@ class SurveysController extends RestController {
 	}
 
 	/**
-	 * PUT /all-feedback/v1/surveys/{id}
+	 * PUT /allfeedback/v1/surveys/{id}
 	 *
 	 * Apply a full or partial update to an existing survey.
 	 * Called by the builder autosave on every change.
@@ -458,7 +458,7 @@ class SurveysController extends RestController {
 	}
 
 	/**
-	 * DELETE /all-feedback/v1/surveys/{id}/trash
+	 * DELETE /allfeedback/v1/surveys/{id}/trash
 	 *
 	 * Move a survey to the trash (sets status to 'trashed').
 	 * To permanently remove a trashed survey use DELETE /surveys/{id}/delete.
@@ -500,7 +500,7 @@ class SurveysController extends RestController {
 	}
 
 	/**
-	 * DELETE /all-feedback/v1/surveys/{id}/delete
+	 * DELETE /allfeedback/v1/surveys/{id}/delete
 	 *
 	 * Permanently remove a trashed survey from the database.
 	 * The survey must have status 'trashed' — use DELETE /surveys/{id}/trash first.
@@ -540,7 +540,7 @@ class SurveysController extends RestController {
 	}
 
 	/**
-	 * POST /all-feedback/v1/surveys/{id}/duplicate
+	 * POST /allfeedback/v1/surveys/{id}/duplicate
 	 *
 	 * Create a copy of a survey with status reset to draft.
 	 *
@@ -575,7 +575,7 @@ class SurveysController extends RestController {
 	}
 
 	/**
-	 * POST /all-feedback/v1/surveys/{id}/publish
+	 * POST /allfeedback/v1/surveys/{id}/publish
 	 *
 	 * Transition a survey to published status.
 	 *
@@ -588,7 +588,7 @@ class SurveysController extends RestController {
 	}
 
 	/**
-	 * DELETE /all-feedback/v1/surveys/trash
+	 * DELETE /allfeedback/v1/surveys/trash
 	 *
 	 * Bulk-trash multiple surveys by ID.
 	 * Surveys that are already trashed are skipped (not counted as failures).
@@ -652,7 +652,7 @@ class SurveysController extends RestController {
 	}
 
 	/**
-	 * DELETE /all-feedback/v1/surveys/delete
+	 * DELETE /allfeedback/v1/surveys/delete
 	 *
 	 * Bulk permanently delete multiple surveys by ID.
 	 * Only surveys with status 'trashed' are deleted — others are skipped.

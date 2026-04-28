@@ -22,7 +22,7 @@ use AllFeedback\Support\Logger;
  *
  * Handles the public-facing survey submission endpoint.
  *
- * Route registered (under all-feedback/v1):
+ * Route registered (under allfeedback/v1):
  *   POST /surveys/{id}/submit → handle() : public widget submission
  *
  * Intentionally separate from ResponsesController (admin read/delete) to
@@ -95,7 +95,7 @@ class SubmitController extends RestController {
 	}
 
 	/**
-	 * POST /all-feedback/v1/surveys/{id}/submit
+	 * POST /allfeedback/v1/surveys/{id}/submit
 	 *
 	 * Accept and persist a public widget submission.
 	 *
@@ -321,7 +321,7 @@ class SubmitController extends RestController {
 				'validate_callback' => 'rest_validate_request_arg',
 			],
 			'score'         => $this->argInteger(
-				description: __( 'Numeric score for NPS, CSAT, CES, or star-rating fields.', 'allfeedback' ),
+				description: __( 'Numeric score for NPS or star-rating fields.', 'allfeedback' ),
 				min:         0,
 				max:         100,
 			),

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AllFeedback\Modules;
 
+defined( 'ABSPATH' ) || exit;
+
 use AllFeedback\Core\Container;
 use AllFeedback\Support\Logger;
 use AllFeedback\Traits\Hooks;

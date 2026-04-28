@@ -1,16 +1,7 @@
 ﻿import { computePosition, flip, offset, shift } from '@floating-ui/dom';
-import { Smile, Target, Zap } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { FIELD_TYPES } from './fieldTypes';
 import type { FieldType } from './types';
-import { __ } from '@wordpress/i18n';
-import { Tooltip } from '@/admin/components/Tooltip';
-
-const PRO_FIELD_TYPES = [
-	{ label: 'PMF',  description: 'Product Market Fit',    Icon: Target },
-	{ label: 'CSAT', description: 'Customer Satisfaction', Icon: Smile  },
-	{ label: 'CES',  description: 'Customer Effort Score', Icon: Zap    },
-];
 
 interface FieldTypeMenuProps {
 	triggerRef: React.RefObject<HTMLElement | null>;
@@ -75,22 +66,6 @@ const FieldTypeMenu = ({ triggerRef, onSelect, onClose }: FieldTypeMenuProps) =>
 					<Icon className="size-4 shrink-0" />
 					{label}
 				</button>
-			))}
-
-			<div className="my-1 border-t border-border/60" />
-
-			{PRO_FIELD_TYPES.map(({ label, description, Icon }) => (
-				<Tooltip key={label} content={__('Available in Pro plan', 'all-feedback')}>
-					<div
-						className="flex w-full cursor-not-allowed items-center gap-3 rounded-lg px-4 py-3 text-left text-sm text-muted-foreground opacity-55"
-					>
-						<Icon className="size-4 shrink-0" />
-						<span className="flex-1">{description}</span>
-						<span className="shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-2xs font-semibold text-amber-600">
-							Pro
-						</span>
-					</div>
-				</Tooltip>
 			))}
 		</div>
 	);

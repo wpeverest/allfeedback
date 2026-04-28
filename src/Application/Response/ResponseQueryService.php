@@ -38,7 +38,7 @@ class ResponseQueryService {
 		$response = $this->repository->findById( $id );
 
 		if ( $response === null ) {
-			throw NotFoundException::forResource( esc_html__( 'Response', 'allfeedback' ), $id );
+			throw NotFoundException::forResource( esc_html__( 'Response', 'allfeedback' ), $id ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- $id is a typed int
 		}
 
 		return $response;

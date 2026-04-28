@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AllFeedback\Core;
 
+defined( 'ABSPATH' ) || exit;
+
 /**
  * Central store for plugin-wide constants and path/URL helpers.
  *
@@ -82,7 +84,7 @@ final class Constants {
 	private static ?string $pluginUrl = null;
 
 	/**
-	 * Plugin basename, e.g. `all-feedback/all-feedback.php`.
+	 * Plugin basename, e.g. `allfeedback/allfeedback.php`.
 	 *
 	 * @var string|null
 	 * @since 1.0.0
@@ -100,7 +102,7 @@ final class Constants {
 	/**
 	 * Resolve all path and URL constants from the main plugin file.
 	 *
-	 * Must be called once from `all-feedback.php` before the plugin boots.
+	 * Must be called once from `allfeedback.php` before the plugin boots.
 	 *
 	 * @param  string $pluginFile Absolute path to the main plugin file.
 	 * @return void
@@ -166,7 +168,7 @@ final class Constants {
 	}
 
 	/**
-	 * Return the plugin basename, e.g. `all-feedback/all-feedback.php`.
+	 * Return the plugin basename, e.g. `allfeedback/allfeedback.php`.
 	 *
 	 * @return string
 	 * @since  1.0.0

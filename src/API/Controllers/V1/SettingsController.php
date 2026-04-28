@@ -15,7 +15,7 @@ use AllFeedback\Support\Logger;
  *
  * REST controller for plugin-wide settings.
  *
- * Routes (under all-feedback/v1):
+ * Routes (under allfeedback/v1):
  *   GET   /settings → index()  : return full three-level settings object
  *   PATCH /settings → update() : persist one or more pages/sections/fields
  *
@@ -28,7 +28,7 @@ use AllFeedback\Support\Logger;
  *     "general":  { "widget":  { "color": "#6366F1", "position": "bottom-right", … } },
  *     "advanced": { "privacy": { "disable_user_details": false },
  *                   "logging": { "enabled": false, "level": "error", "retention_days": 30 },
- *                   "plugin":  { "delete_on_uninstall": false, "allow_usage_tracking": true } }
+ *                   "plugin":  { "delete_on_uninstall": false } }
  *   }
  * }
  * ```
@@ -89,7 +89,7 @@ class SettingsController extends RestController {
 	}
 
 	/**
-	 * GET /all-feedback/v1/settings
+	 * GET /allfeedback/v1/settings
 	 *
 	 * Return the complete three-level settings object merged with defaults.
 	 * Every page, section, and field is always present so the client never
@@ -104,7 +104,7 @@ class SettingsController extends RestController {
 	}
 
 	/**
-	 * PUT|PATCH /all-feedback/v1/settings
+	 * PUT|PATCH /allfeedback/v1/settings
 	 *
 	 * Persist one or more pages / sections / fields in a single atomic write.
 	 * Partial updates are fully supported at every level — send only the

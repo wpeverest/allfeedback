@@ -23,7 +23,9 @@ const CopyButton = ({
 
 	const handleCopy = () => {
 		const onSuccess = () => {
-			toast.success(successMessage ?? __('Copied to clipboard.', 'all-feedback'));
+			toast.success(
+				successMessage ?? __('Copied to clipboard.', 'allfeedback'),
+			);
 			setCopied(true);
 			setTimeout(() => setCopied(false), 1500);
 		};
@@ -33,7 +35,12 @@ const CopyButton = ({
 		} else {
 			const el = document.createElement('textarea');
 			el.value = text;
-			Object.assign(el.style, { position: 'fixed', opacity: '0', top: '0', left: '0' });
+			Object.assign(el.style, {
+				position: 'fixed',
+				opacity: '0',
+				top: '0',
+				left: '0',
+			});
 			document.body.appendChild(el);
 			el.focus();
 			el.select();
@@ -41,7 +48,7 @@ const CopyButton = ({
 				document.execCommand('copy');
 				onSuccess();
 			} catch {
-				toast.error(__('Failed to copy to clipboard.', 'all-feedback'));
+				toast.error(__('Failed to copy to clipboard.', 'allfeedback'));
 			}
 			document.body.removeChild(el);
 		}
@@ -51,16 +58,19 @@ const CopyButton = ({
 		<button
 			type="button"
 			onClick={handleCopy}
-			title={title ?? __('Copy', 'all-feedback')}
+			title={title ?? __('Copy', 'allfeedback')}
 			className={cn(
 				'flex shrink-0 items-center justify-center transition-colors',
 				className,
 			)}
 		>
-			{copied
-				? <Check className={cn(iconClassName, 'text-green-500 stroke-[2.5]')} />
-				: <Copy className={cn(iconClassName, 'text-foreground/70 stroke-[2.5]')} />
-			}
+			{copied ? (
+				<Check className={cn(iconClassName, 'stroke-[2.5] text-green-500')} />
+			) : (
+				<Copy
+					className={cn(iconClassName, 'text-foreground/70 stroke-[2.5]')}
+				/>
+			)}
 		</button>
 	);
 };

@@ -69,7 +69,7 @@ abstract class AbstractBlock {
 		$blockDir = Constants::path( 'resources/scripts/blocks/' . $this->getSlug() );
 
 		if ( ! is_dir( $blockDir ) || ! file_exists( $blockDir . '/block.json' ) ) {
-			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error, WordPress.Security.EscapeOutput.OutputNotEscaped -- internal server path, not rendered as HTML
 			trigger_error(
 				sprintf(
 					'AllFeedback block "%s": expected block.json at %s/block.json',

@@ -14,7 +14,7 @@ use AllFeedback\API\RestController;
  * Provides a unified search endpoint over published pages and posts.
  * Powers the "Select specific pages & posts" targeting picker in the form builder.
  *
- * Route: GET /all-feedback/v1/content-search
+ * Route: GET /allfeedback/v1/content-search
  *
  * Pro add-ons can extend the searchable post types and modify the underlying
  * WP_Query args via the filters documented on each method.
@@ -53,7 +53,7 @@ class ContentSearchController extends RestController {
 	}
 
 	/**
-	 * GET /all-feedback/v1/content-search
+	 * GET /allfeedback/v1/content-search
 	 *
 	 * Search published pages and posts for the page targeting picker.
 	 * Runs a paginated WP_Query across the resolved post types, ordered

@@ -46,29 +46,9 @@ class AppServiceProvider implements ServiceProviderInterface {
 	 * @since  1.0.0
 	 */
 	public function boot(): void {
-		$this->loadTextDomain();
 		$this->bootCore();
 		$this->registerProviders();
 		$this->registerHooks();
-	}
-
-	/**
-	 * Load plugin translations from the /languages directory.
-	 *
-	 * @return void
-	 * @since  1.0.0
-	 */
-	private function loadTextDomain(): void {
-		$this->addAction(
-			'init',
-			function () {
-				load_plugin_textdomain(
-					Constants::textDomain(),
-					false,
-					Constants::path( 'languages/' )
-				);
-			}
-		);
 	}
 
 	/**

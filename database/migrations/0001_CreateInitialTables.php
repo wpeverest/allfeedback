@@ -4,15 +4,16 @@ declare(strict_types=1);
 
 namespace AllFeedback\Database\Migrations;
 
+defined( 'ABSPATH' ) || exit;
+
 use AllFeedback\Infrastructure\Database\Migration;
 
 /**
  * Migration: CreateInitialTables
  *
- * Creates the af_surveys and af_responses custom tables.
+ * Creates the af_surveys, af_survey_sessions, and af_responses tables with
  *
- * af_surveys  — survey definitions (form schema, settings, styling, status).
- * af_responses — individual submissions linked to a survey.
+
  *
  * @since 1.0.0
  */
@@ -28,18 +29,18 @@ class CreateInitialTables extends Migration {
 
 		$this->dbDelta(
 			"CREATE TABLE IF NOT EXISTS {$this->table( 'af_surveys' )} (
-			id             bigint(20) unsigned  NOT NULL AUTO_INCREMENT,
-			title          varchar(255)         NOT NULL DEFAULT '',
-			description    text                          DEFAULT NULL,
-			form_schema    longtext                      DEFAULT NULL,
-			settings       longtext                      DEFAULT NULL,
-			styling        json                          DEFAULT NULL,
-			status         varchar(20)          NOT NULL DEFAULT 'draft',
+			id              bigint(20) unsigned  NOT NULL AUTO_INCREMENT,
+			title           varchar(255)         NOT NULL DEFAULT '',
+			description     text                          DEFAULT NULL,
+			form_schema     longtext                      DEFAULT NULL,
+			settings        longtext                      DEFAULT NULL,
+			styling         json                          DEFAULT NULL,
+			status          varchar(20)          NOT NULL DEFAULT 'draft',
 			conflict_reason text                          DEFAULT NULL,
-			response_count int unsigned         NOT NULL DEFAULT 0,
-			created_by     bigint(20) unsigned           DEFAULT NULL,
-			created_at     datetime             NOT NULL,
-			updated_at     datetime                      DEFAULT NULL,
+			response_count  int unsigned         NOT NULL DEFAULT 0,
+			created_by      bigint(20) unsigned           DEFAULT NULL,
+			created_at      datetime             NOT NULL,
+			updated_at      datetime                      DEFAULT NULL,
 			PRIMARY KEY  (id),
 			KEY status     (status),
 			KEY created_by (created_by),
@@ -61,10 +62,10 @@ class CreateInitialTables extends Migration {
 			last_active_at datetime            NOT NULL,
 			created_at     datetime            NOT NULL,
 			PRIMARY KEY  (id),
-			UNIQUE KEY session_id   (session_id),
-			KEY survey_id           (survey_id),
-			KEY survey_status       (survey_id, status),
-			KEY created_at          (created_at)
+			UNIQUE KEY session_id  (session_id),
+			KEY survey_id          (survey_id),
+			KEY survey_status      (survey_id, status),
+			KEY created_at         (created_at)
 		) {$charset};"
 		);
 
@@ -107,7 +108,7 @@ class CreateInitialTables extends Migration {
 		];
 
 		foreach ( $tables as $table ) {
-			$wpdb->query( "DROP TABLE IF EXISTS {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, PluginCheck.Security.DirectDB.UnescapedDBParameter
+			$wpdb->query( "DROP TABLE IF EXISTS {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
 		}
 	}
 }

@@ -1,35 +1,41 @@
-﻿import { EditorContent, useEditor } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import HighlightExtension from '@tiptap/extension-highlight';
-import UnderlineExtension from '@tiptap/extension-underline';
-import PlaceholderExtension from '@tiptap/extension-placeholder';
+﻿import { Tooltip } from '@/admin/components/Tooltip';
 import { Button } from '@/components/ui/button';
-import { Tooltip } from '@/admin/components/Tooltip';
 import { cn, htmlToText } from '@/lib/utils';
+import HighlightExtension from '@tiptap/extension-highlight';
+import PlaceholderExtension from '@tiptap/extension-placeholder';
+import UnderlineExtension from '@tiptap/extension-underline';
+import { EditorContent, useEditor } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
 import { __ } from '@wordpress/i18n';
+import type { LucideIcon } from 'lucide-react';
 import {
+	Quote as BlockquoteIcon,
 	Bold as BoldIcon,
+	List as BulletListIcon,
 	ChevronDown,
 	Code as CodeIcon,
 	Copy,
 	GripVertical,
 	Highlighter as HighlighterIcon,
 	Italic as ItalicIcon,
-	List as BulletListIcon,
 	ListOrdered as OrderedListIcon,
 	Pencil,
 	Plus,
-	Quote as BlockquoteIcon,
 	Strikethrough as StrikethroughIcon,
 	Trash2,
 	Underline as UnderlineIcon,
 } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { FIELD_TYPES } from './fieldTypes';
 import type { FormField } from './types';
 
-const RequiredSwitch = ({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) => (
+const RequiredSwitch = ({
+	value,
+	onChange,
+}: {
+	value: boolean;
+	onChange: (v: boolean) => void;
+}) => (
 	<button
 		type="button"
 		role="switch"
@@ -37,17 +43,21 @@ const RequiredSwitch = ({ value, onChange }: { value: boolean; onChange: (v: boo
 		onClick={() => onChange(!value)}
 		className="flex items-center gap-1.5 rounded-md px-1.5 py-1 transition-colors hover:bg-black/[0.04]"
 	>
-		<span className="text-sm font-medium text-muted-foreground/60 select-none">
-			{__('Required', 'all-feedback')}
+		<span className="text-muted-foreground/60 text-sm font-medium select-none">
+			{__('Required', 'allfeedback')}
 		</span>
-		<span className={cn(
-			'relative inline-flex h-[14px] w-6 shrink-0 items-center rounded-full transition-colors duration-200',
-			value ? 'bg-primary' : 'bg-border',
-		)}>
-			<span className={cn(
-				'inline-block size-[10px] rounded-full bg-white shadow-sm transition-transform duration-200',
-				value ? 'translate-x-[11px]' : 'translate-x-[2px]',
-			)} />
+		<span
+			className={cn(
+				'relative inline-flex h-[14px] w-6 shrink-0 items-center rounded-full transition-colors duration-200',
+				value ? 'bg-primary' : 'bg-border',
+			)}
+		>
+			<span
+				className={cn(
+					'inline-block size-[10px] rounded-full bg-white shadow-sm transition-transform duration-200',
+					value ? 'translate-x-[11px]' : 'translate-x-[2px]',
+				)}
+			/>
 		</span>
 	</button>
 );
@@ -83,35 +93,55 @@ const OptionRow = ({
 }: OptionRowProps) => (
 	<div
 		draggable
-		onDragStart={(e) => { e.stopPropagation(); onDragStart(index); }}
-		onDragOver={(e) => { e.stopPropagation(); e.preventDefault(); onDragOver(e, index); }}
-		onDragEnd={(e) => { e.stopPropagation(); onDragEnd(); }}
-		onDrop={(e) => { e.stopPropagation(); e.preventDefault(); onDrop(e, index); }}
+		onDragStart={(e) => {
+			e.stopPropagation();
+			onDragStart(index);
+		}}
+		onDragOver={(e) => {
+			e.stopPropagation();
+			e.preventDefault();
+			onDragOver(e, index);
+		}}
+		onDragEnd={(e) => {
+			e.stopPropagation();
+			onDragEnd();
+		}}
+		onDrop={(e) => {
+			e.stopPropagation();
+			e.preventDefault();
+			onDrop(e, index);
+		}}
 		className={cn(
 			'flex items-center gap-2 transition-opacity',
 			isDragging && 'opacity-40',
 		)}
 	>
-		<span className="cursor-grab text-muted-foreground/25 transition-colors hover:text-muted-foreground/60">
+		<span className="text-muted-foreground/25 hover:text-muted-foreground/60 cursor-grab transition-colors">
 			<GripVertical className="size-3.5" />
 		</span>
 
-		<div className={cn(
-			'flex flex-1 items-center gap-2 rounded-lg border px-2.5 py-2 transition-all duration-150',
-			isDragOver && !isDragging
-				? 'border-primary/40 shadow-[0_0_0_3px_hsl(var(--primary)/0.08)]'
-				: 'border-dashed border-border/50 hover:border-border/80 hover:bg-muted/20 focus-within:border-primary/50 focus-within:bg-primary/[0.015]',
-		)}>
-			<span className={cn(
-				'flex shrink-0 items-center justify-center border border-border/60 bg-white',
-				fieldType === 'radio' ? 'size-3.5 rounded-full' : 'size-3.5 rounded-[3px]',
-			)} />
+		<div
+			className={cn(
+				'flex flex-1 items-center gap-2 rounded-lg border px-2.5 py-2 transition-all duration-150',
+				isDragOver && !isDragging
+					? 'border-primary/40 shadow-[0_0_0_3px_hsl(var(--primary)/0.08)]'
+					: 'border-border/50 hover:border-border/80 hover:bg-muted/20 focus-within:border-primary/50 focus-within:bg-primary/[0.015] border-dashed',
+			)}
+		>
+			<span
+				className={cn(
+					'border-border/60 flex shrink-0 items-center justify-center border bg-white',
+					fieldType === 'radio'
+						? 'size-3.5 rounded-full'
+						: 'size-3.5 rounded-[3px]',
+				)}
+			/>
 
 			<input
 				value={value}
 				onChange={(e) => onChange(e.target.value)}
 				placeholder={`Option ${index + 1}`}
-				className="option-row-input flex-1 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none"
+				className="option-row-input text-foreground placeholder:text-muted-foreground/40 flex-1 text-sm focus:outline-none"
 			/>
 		</div>
 
@@ -119,14 +149,14 @@ const OptionRow = ({
 			<button
 				type="button"
 				onClick={onDelete}
-				className="flex size-6 items-center justify-center rounded text-muted-foreground/40 transition-colors hover:bg-destructive/10 hover:text-destructive"
+				className="text-muted-foreground/40 hover:bg-destructive/10 hover:text-destructive flex size-6 items-center justify-center rounded transition-colors"
 			>
 				<Trash2 className="size-3" />
 			</button>
 			<button
 				type="button"
 				onClick={onAddAfter}
-				className="flex size-6 items-center justify-center rounded text-muted-foreground/40 transition-colors hover:bg-muted hover:text-foreground"
+				className="text-muted-foreground/40 hover:bg-muted hover:text-foreground flex size-6 items-center justify-center rounded transition-colors"
 			>
 				<Plus className="size-3" />
 			</button>
@@ -137,34 +167,42 @@ const OptionRow = ({
 interface QuestionEditorProps {
 	value: string;
 	onChange: (html: string) => void;
-	autoFocus?:    boolean;
+	autoFocus?: boolean;
 	focusTrigger?: number;
 }
 
-const QuestionEditor = ({ value, onChange, autoFocus, focusTrigger }: QuestionEditorProps) => {
+const QuestionEditor = ({
+	value,
+	onChange,
+	autoFocus,
+	focusTrigger,
+}: QuestionEditorProps) => {
 	const [isFocused, setIsFocused] = useState(false);
-	const [isOpen,    setIsOpen]    = useState(false);
-	const onChangeRef   = useRef(onChange);
-	const didFocusRef   = useRef(false);
+	const [isOpen, setIsOpen] = useState(false);
+	const onChangeRef = useRef(onChange);
+	const didFocusRef = useRef(false);
 	onChangeRef.current = onChange;
 
 	const editor = useEditor({
 		extensions: [
 			StarterKit.configure({
-				heading:        false,
-				codeBlock:      false,
+				heading: false,
+				codeBlock: false,
 				horizontalRule: false,
 			}),
 			UnderlineExtension,
 			HighlightExtension.configure({ multicolor: false }),
 			PlaceholderExtension.configure({
-				placeholder: __('Write a question…', 'all-feedback'),
+				placeholder: __('Write a question…', 'allfeedback'),
 			}),
 		],
-		content:  value || '',
+		content: value || '',
 		onUpdate: ({ editor }) => onChangeRef.current(editor.getHTML()),
-		onFocus:  () => { setIsFocused(true); setIsOpen(true); },
-		onBlur:   () => setIsFocused(false),
+		onFocus: () => {
+			setIsFocused(true);
+			setIsOpen(true);
+		},
+		onBlur: () => setIsFocused(false),
 	});
 
 	useEffect(() => {
@@ -184,39 +222,76 @@ const QuestionEditor = ({ value, onChange, autoFocus, focusTrigger }: QuestionEd
 		if (focusTrigger && editor) editor.commands.focus('end');
 	}, [focusTrigger, editor]);
 
-	type FormatMark = 'bold' | 'italic' | 'underline' | 'strike' | 'code' | 'highlight' | 'bulletList' | 'orderedList' | 'blockquote';
+	type FormatMark =
+		| 'bold'
+		| 'italic'
+		| 'underline'
+		| 'strike'
+		| 'code'
+		| 'highlight'
+		| 'bulletList'
+		| 'orderedList'
+		| 'blockquote';
 
 	const toggleFormat = (fmt: FormatMark) => {
 		if (!editor) return;
 		const chain = editor.chain().focus();
-		if (fmt === 'bold')        chain.toggleBold().run();
-		if (fmt === 'italic')      chain.toggleItalic().run();
-		if (fmt === 'underline')   chain.toggleUnderline().run();
-		if (fmt === 'strike')      chain.toggleStrike().run();
-		if (fmt === 'code')        chain.toggleCode().run();
-		if (fmt === 'highlight')   chain.toggleHighlight().run();
-		if (fmt === 'bulletList')  chain.toggleBulletList().run();
+		if (fmt === 'bold') chain.toggleBold().run();
+		if (fmt === 'italic') chain.toggleItalic().run();
+		if (fmt === 'underline') chain.toggleUnderline().run();
+		if (fmt === 'strike') chain.toggleStrike().run();
+		if (fmt === 'code') chain.toggleCode().run();
+		if (fmt === 'highlight') chain.toggleHighlight().run();
+		if (fmt === 'bulletList') chain.toggleBulletList().run();
 		if (fmt === 'orderedList') chain.toggleOrderedList().run();
-		if (fmt === 'blockquote')  chain.toggleBlockquote().run();
+		if (fmt === 'blockquote') chain.toggleBlockquote().run();
 	};
 
 	const clearAllMarks = () => editor?.chain().focus().unsetAllMarks().run();
 
-	const TOOLBAR_GROUPS: { fmt: FormatMark; Icon: LucideIcon; title: string }[][] = [
+	const TOOLBAR_GROUPS: {
+		fmt: FormatMark;
+		Icon: LucideIcon;
+		title: string;
+	}[][] = [
 		[
-			{ fmt: 'bold',        Icon: BoldIcon,          title: __('Bold', 'all-feedback') },
-			{ fmt: 'italic',      Icon: ItalicIcon,        title: __('Italic', 'all-feedback') },
-			{ fmt: 'underline',   Icon: UnderlineIcon,     title: __('Underline', 'all-feedback') },
-			{ fmt: 'strike',      Icon: StrikethroughIcon, title: __('Strikethrough', 'all-feedback') },
+			{ fmt: 'bold', Icon: BoldIcon, title: __('Bold', 'allfeedback') },
+			{ fmt: 'italic', Icon: ItalicIcon, title: __('Italic', 'allfeedback') },
+			{
+				fmt: 'underline',
+				Icon: UnderlineIcon,
+				title: __('Underline', 'allfeedback'),
+			},
+			{
+				fmt: 'strike',
+				Icon: StrikethroughIcon,
+				title: __('Strikethrough', 'allfeedback'),
+			},
 		],
 		[
-			{ fmt: 'code',        Icon: CodeIcon,          title: __('Inline code', 'all-feedback') },
-			{ fmt: 'highlight',   Icon: HighlighterIcon,   title: __('Highlight', 'all-feedback') },
+			{ fmt: 'code', Icon: CodeIcon, title: __('Inline code', 'allfeedback') },
+			{
+				fmt: 'highlight',
+				Icon: HighlighterIcon,
+				title: __('Highlight', 'allfeedback'),
+			},
 		],
 		[
-			{ fmt: 'bulletList',  Icon: BulletListIcon,    title: __('Bullet list', 'all-feedback') },
-			{ fmt: 'orderedList', Icon: OrderedListIcon,   title: __('Ordered list', 'all-feedback') },
-			{ fmt: 'blockquote',  Icon: BlockquoteIcon,    title: __('Blockquote', 'all-feedback') },
+			{
+				fmt: 'bulletList',
+				Icon: BulletListIcon,
+				title: __('Bullet list', 'allfeedback'),
+			},
+			{
+				fmt: 'orderedList',
+				Icon: OrderedListIcon,
+				title: __('Ordered list', 'allfeedback'),
+			},
+			{
+				fmt: 'blockquote',
+				Icon: BlockquoteIcon,
+				title: __('Blockquote', 'allfeedback'),
+			},
 		],
 	];
 
@@ -225,19 +300,29 @@ const QuestionEditor = ({ value, onChange, autoFocus, focusTrigger }: QuestionEd
 			<div
 				className={cn(
 					'mb-2 flex items-center gap-px overflow-hidden transition-all duration-150',
-					isOpen ? 'max-h-7 opacity-100' : 'max-h-0 opacity-0 pointer-events-none',
+					isOpen
+						? 'max-h-7 opacity-100'
+						: 'pointer-events-none max-h-0 opacity-0',
 				)}
 			>
 				{TOOLBAR_GROUPS.map((group, gi) => (
 					<>
-						{gi > 0 && <span key={`sep-${gi}`} className="mx-1 h-3.5 w-px bg-border/70" />}
+						{gi > 0 && (
+							<span
+								key={`sep-${gi}`}
+								className="bg-border/70 mx-1 h-3.5 w-px"
+							/>
+						)}
 						{group.map(({ fmt, Icon, title }) => {
 							const active = editor?.isActive(fmt) ?? false;
 							return (
 								<Tooltip key={fmt} content={title}>
 									<button
 										type="button"
-										onMouseDown={(e) => { e.preventDefault(); toggleFormat(fmt); }}
+										onMouseDown={(e) => {
+											e.preventDefault();
+											toggleFormat(fmt);
+										}}
 										className={cn(
 											'flex size-[22px] items-center justify-center rounded transition-colors',
 											active
@@ -253,24 +338,33 @@ const QuestionEditor = ({ value, onChange, autoFocus, focusTrigger }: QuestionEd
 					</>
 				))}
 
-				<span className="mx-1 h-3.5 w-px bg-border/70" />
-				<Tooltip content={__('Clear formatting', 'all-feedback')}>
+				<span className="bg-border/70 mx-1 h-3.5 w-px" />
+				<Tooltip content={__('Clear formatting', 'allfeedback')}>
 					<button
 						type="button"
-						onMouseDown={(e) => { e.preventDefault(); clearAllMarks(); }}
-						className="flex size-[22px] items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-muted hover:text-foreground"
+						onMouseDown={(e) => {
+							e.preventDefault();
+							clearAllMarks();
+						}}
+						className="text-muted-foreground/50 hover:bg-muted hover:text-foreground flex size-[22px] items-center justify-center rounded transition-colors"
 					>
-						<span className="text-2xs font-bold leading-none">T<span className="text-2xs">✕</span></span>
+						<span className="text-2xs leading-none font-bold">
+							T<span className="text-2xs">✕</span>
+						</span>
 					</button>
 				</Tooltip>
 
-				<span className="mx-1 h-3.5 w-px bg-border/70" />
+				<span className="bg-border/70 mx-1 h-3.5 w-px" />
 				<button
 					type="button"
-					onMouseDown={(e) => { e.preventDefault(); editor?.commands.blur(); setIsOpen(false); }}
-					className="flex h-[22px] items-center justify-center rounded px-1.5 text-2xs font-medium text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
+					onMouseDown={(e) => {
+						e.preventDefault();
+						editor?.commands.blur();
+						setIsOpen(false);
+					}}
+					className="text-2xs text-muted-foreground/60 hover:bg-muted hover:text-foreground flex h-[22px] items-center justify-center rounded px-1.5 font-medium transition-colors"
 				>
-					{__('Close', 'all-feedback')}
+					{__('Close', 'allfeedback')}
 				</button>
 			</div>
 
@@ -281,7 +375,7 @@ const QuestionEditor = ({ value, onChange, autoFocus, focusTrigger }: QuestionEd
 					'[&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-4',
 					'[&_ol]:my-1 [&_ol]:list-decimal [&_ol]:pl-4',
 					'[&_li]:my-0.5',
-					'[&_blockquote]:my-1 [&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground/70 [&_blockquote]:italic',
+					'[&_blockquote]:border-border [&_blockquote]:text-muted-foreground/70 [&_blockquote]:my-1 [&_blockquote]:border-l-2 [&_blockquote]:pl-3 [&_blockquote]:italic',
 					isOpen
 						? 'border-primary/50 bg-primary/[0.015]'
 						: 'border-border/50 hover:border-border/80 hover:bg-muted/20',
@@ -301,7 +395,7 @@ const TextFieldConfig = ({
 }: {
 	field: FormField;
 	onChange: (f: FormField) => void;
-	autoFocus?:    boolean;
+	autoFocus?: boolean;
 	focusTrigger?: number;
 }) => (
 	<div className="space-y-4">
@@ -313,14 +407,14 @@ const TextFieldConfig = ({
 		/>
 
 		<div className="space-y-1.5">
-			<label className="block text-sm font-medium text-muted-foreground/70">
-				{__('Placeholder', 'all-feedback')}
+			<label className="text-muted-foreground/70 block text-sm font-medium">
+				{__('Placeholder', 'allfeedback')}
 			</label>
 			<input
 				value={field.placeholder ?? ''}
 				onChange={(e) => onChange({ ...field, placeholder: e.target.value })}
 				placeholder="e.g. Enter your answer…"
-				className="w-full rounded-lg border border-border/70 bg-transparent px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/10"
+				className="border-border/70 text-foreground placeholder:text-muted-foreground/40 focus:border-primary/50 focus:ring-primary/10 w-full rounded-lg border bg-transparent px-3 py-2 text-sm focus:ring-1 focus:outline-none"
 			/>
 		</div>
 	</div>
@@ -334,14 +428,15 @@ const OptionsConfig = ({
 }: {
 	field: FormField;
 	onChange: (f: FormField) => void;
-	autoFocus?:    boolean;
+	autoFocus?: boolean;
 	focusTrigger?: number;
 }) => {
 	const options = field.options ?? ['Option 1', 'Option 2', 'Option 3'];
 	const [optDragIdx, setOptDragIdx] = useState<number | null>(null);
 	const [optDropIdx, setOptDropIdx] = useState<number | null>(null);
 
-	const updateOptions = (next: string[]) => onChange({ ...field, options: next });
+	const updateOptions = (next: string[]) =>
+		onChange({ ...field, options: next });
 
 	const updateOption = (i: number, val: string) => {
 		const next = [...options];
@@ -398,17 +493,20 @@ const OptionsConfig = ({
 						onAddAfter={() => addOptionAfter(i)}
 						onDragStart={setOptDragIdx}
 						onDragOver={(_e, idx) => setOptDropIdx(idx)}
-						onDragEnd={() => { setOptDragIdx(null); setOptDropIdx(null); }}
+						onDragEnd={() => {
+							setOptDragIdx(null);
+							setOptDropIdx(null);
+						}}
 						onDrop={handleOptDrop}
 					/>
 				))}
 				<button
 					type="button"
 					onClick={() => addOptionAfter(options.length - 1)}
-					className="mt-1.5 flex items-center gap-1.5 pl-[22px] text-sm text-muted-foreground/60 transition-colors hover:text-primary"
+					className="text-muted-foreground/60 hover:text-primary mt-1.5 flex items-center gap-1.5 pl-[22px] text-sm transition-colors"
 				>
 					<Plus className="size-3.5" />
-					{__('Add option', 'all-feedback')}
+					{__('Add option', 'allfeedback')}
 				</button>
 			</div>
 		</div>
@@ -423,17 +521,18 @@ const StarRatingConfig = ({
 }: {
 	field: FormField;
 	onChange: (f: FormField) => void;
-	autoFocus?:    boolean;
+	autoFocus?: boolean;
 	focusTrigger?: number;
 }) => {
-	const range    = field.starRange ?? 5;
+	const range = field.starRange ?? 5;
 	const labelCls = 'block text-sm font-medium text-muted-foreground/70';
-	const chipCls  = (active: boolean) => cn(
-		'flex h-8 w-10 items-center justify-center rounded-lg border text-sm font-semibold transition-colors',
-		active
-			? 'border-primary bg-primary/10 text-primary'
-			: 'border-border/60 text-muted-foreground/60 hover:border-primary/40 hover:text-primary/70',
-	);
+	const chipCls = (active: boolean) =>
+		cn(
+			'flex h-8 w-10 items-center justify-center rounded-lg border text-sm font-semibold transition-colors',
+			active
+				? 'border-primary bg-primary/10 text-primary'
+				: 'border-border/60 text-muted-foreground/60 hover:border-primary/40 hover:text-primary/70',
+		);
 
 	return (
 		<div className="space-y-4">
@@ -445,12 +544,20 @@ const StarRatingConfig = ({
 			/>
 
 			<div className="space-y-1.5">
-				<label className={labelCls}>{__('Range', 'all-feedback')}</label>
+				<label className={labelCls}>{__('Range', 'allfeedback')}</label>
 				<div className="flex gap-1.5">
-					<button type="button" onClick={() => onChange({ ...field, starRange: 5 })} className={chipCls(range === 5)}>
+					<button
+						type="button"
+						onClick={() => onChange({ ...field, starRange: 5 })}
+						className={chipCls(range === 5)}
+					>
 						5
 					</button>
-					<button type="button" onClick={() => onChange({ ...field, starRange: 10 })} className={chipCls(range === 10)}>
+					<button
+						type="button"
+						onClick={() => onChange({ ...field, starRange: 10 })}
+						className={chipCls(range === 10)}
+					>
 						10
 					</button>
 				</div>
@@ -467,13 +574,14 @@ const ScaleConfig = ({
 }: {
 	field: FormField;
 	onChange: (f: FormField) => void;
-	autoFocus?:    boolean;
+	autoFocus?: boolean;
 	focusTrigger?: number;
 }) => {
-	const min      = field.scaleMin ?? 0;
-	const max      = field.scaleMax ?? 10;
+	const min = field.scaleMin ?? 0;
+	const max = field.scaleMax ?? 10;
 	const labelCls = 'block text-sm font-medium text-muted-foreground/70';
-	const inputCls = 'w-full rounded-lg border border-border/70 bg-transparent px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/10';
+	const inputCls =
+		'w-full rounded-lg border border-border/70 bg-transparent px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/10';
 
 	return (
 		<div className="space-y-4">
@@ -485,7 +593,7 @@ const ScaleConfig = ({
 			/>
 
 			<div className="space-y-1.5">
-				<label className={labelCls}>{__('Range', 'all-feedback')}</label>
+				<label className={labelCls}>{__('Range', 'allfeedback')}</label>
 				<div className="flex w-fit items-center gap-2">
 					<div className="flex flex-col items-center gap-0.5">
 						<input
@@ -494,14 +602,17 @@ const ScaleConfig = ({
 							value={min}
 							onChange={(e) => {
 								const v = parseInt(e.target.value, 10);
-								if (!isNaN(v) && v >= 0 && v < max) onChange({ ...field, scaleMin: v });
+								if (!isNaN(v) && v >= 0 && v < max)
+									onChange({ ...field, scaleMin: v });
 							}}
-							className="h-8 w-16 rounded-lg border border-border/70 bg-transparent px-2.5 text-center text-sm font-semibold text-foreground focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/10"
+							className="border-border/70 text-foreground focus:border-primary/50 focus:ring-primary/10 h-8 w-16 rounded-lg border bg-transparent px-2.5 text-center text-sm font-semibold focus:ring-1 focus:outline-none"
 						/>
-						<span className="text-xs text-muted-foreground/50">{__('Start', 'all-feedback')}</span>
+						<span className="text-muted-foreground/50 text-xs">
+							{__('Start', 'allfeedback')}
+						</span>
 					</div>
 
-					<span className="mb-3.5 text-sm text-muted-foreground/40">–</span>
+					<span className="text-muted-foreground/40 mb-3.5 text-sm">–</span>
 
 					<div className="flex flex-col items-center gap-0.5">
 						<input
@@ -512,29 +623,35 @@ const ScaleConfig = ({
 								const v = parseInt(e.target.value, 10);
 								if (!isNaN(v) && v > min) onChange({ ...field, scaleMax: v });
 							}}
-							className="h-8 w-16 rounded-lg border border-border/70 bg-transparent px-2.5 text-center text-sm font-semibold text-foreground focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/10"
+							className="border-border/70 text-foreground focus:border-primary/50 focus:ring-primary/10 h-8 w-16 rounded-lg border bg-transparent px-2.5 text-center text-sm font-semibold focus:ring-1 focus:outline-none"
 						/>
-						<span className="text-xs text-muted-foreground/50">{__('End', 'all-feedback')}</span>
+						<span className="text-muted-foreground/50 text-xs">
+							{__('End', 'allfeedback')}
+						</span>
 					</div>
 				</div>
 			</div>
 
 			<div className="grid grid-cols-2 gap-3">
 				<div className="space-y-1.5">
-					<label className={labelCls}>{__('Low label', 'all-feedback')}</label>
+					<label className={labelCls}>{__('Low label', 'allfeedback')}</label>
 					<input
 						value={field.scaleLowLabel ?? ''}
-						onChange={(e) => onChange({ ...field, scaleLowLabel: e.target.value })}
-						placeholder={__('e.g. Not likely', 'all-feedback')}
+						onChange={(e) =>
+							onChange({ ...field, scaleLowLabel: e.target.value })
+						}
+						placeholder={__('e.g. Not likely', 'allfeedback')}
 						className={inputCls}
 					/>
 				</div>
 				<div className="space-y-1.5">
-					<label className={labelCls}>{__('High label', 'all-feedback')}</label>
+					<label className={labelCls}>{__('High label', 'allfeedback')}</label>
 					<input
 						value={field.scaleHighLabel ?? ''}
-						onChange={(e) => onChange({ ...field, scaleHighLabel: e.target.value })}
-						placeholder={__('e.g. Very likely', 'all-feedback')}
+						onChange={(e) =>
+							onChange({ ...field, scaleHighLabel: e.target.value })
+						}
+						placeholder={__('e.g. Very likely', 'allfeedback')}
 						className={inputCls}
 					/>
 				</div>
@@ -551,7 +668,7 @@ const NpsConfig = ({
 }: {
 	field: FormField;
 	onChange: (f: FormField) => void;
-	autoFocus?:    boolean;
+	autoFocus?: boolean;
 	focusTrigger?: number;
 }) => (
 	<div className="space-y-4">
@@ -561,8 +678,8 @@ const NpsConfig = ({
 			autoFocus={autoFocus}
 			focusTrigger={focusTrigger}
 		/>
-		<p className="text-sm text-muted-foreground/60">
-			{__('Fixed 0 – 10 scale. No configuration needed.', 'all-feedback')}
+		<p className="text-muted-foreground/60 text-sm">
+			{__('Fixed 0 – 10 scale. No configuration needed.', 'allfeedback')}
 		</p>
 	</div>
 );
@@ -575,7 +692,7 @@ const DefaultFieldConfig = ({
 }: {
 	field: FormField;
 	onChange: (f: FormField) => void;
-	autoFocus?:    boolean;
+	autoFocus?: boolean;
 	focusTrigger?: number;
 }) => (
 	<div className="space-y-4">
@@ -603,7 +720,6 @@ export interface FieldEditorProps {
 	onDrop: (e: React.DragEvent, index: number) => void;
 }
 
-
 const FieldEditor = ({
 	field,
 	index,
@@ -618,26 +734,68 @@ const FieldEditor = ({
 	onDragEnd,
 	onDrop,
 }: FieldEditorProps) => {
-	const typeConfig   = FIELD_TYPES.find((t) => t.type === field.type);
-	const [isCollapsed,   setIsCollapsed]   = useState(false);
-	const [focusTrigger,  setFocusTrigger]  = useState(0);
+	const typeConfig = FIELD_TYPES.find((t) => t.type === field.type);
+	const [isCollapsed, setIsCollapsed] = useState(false);
+	const [focusTrigger, setFocusTrigger] = useState(0);
 
 	const renderConfig = () => {
 		switch (field.type) {
 			case 'short_text':
 			case 'long_text':
-				return <TextFieldConfig field={field} onChange={onChange} autoFocus={autoFocus} focusTrigger={focusTrigger} />;
+				return (
+					<TextFieldConfig
+						field={field}
+						onChange={onChange}
+						autoFocus={autoFocus}
+						focusTrigger={focusTrigger}
+					/>
+				);
 			case 'radio':
 			case 'checkboxes':
-				return <OptionsConfig field={field} onChange={onChange} autoFocus={autoFocus} focusTrigger={focusTrigger} />;
+				return (
+					<OptionsConfig
+						field={field}
+						onChange={onChange}
+						autoFocus={autoFocus}
+						focusTrigger={focusTrigger}
+					/>
+				);
 			case 'star_rating':
-				return <StarRatingConfig field={field} onChange={onChange} autoFocus={autoFocus} focusTrigger={focusTrigger} />;
+				return (
+					<StarRatingConfig
+						field={field}
+						onChange={onChange}
+						autoFocus={autoFocus}
+						focusTrigger={focusTrigger}
+					/>
+				);
 			case 'scale':
-				return <ScaleConfig field={field} onChange={onChange} autoFocus={autoFocus} focusTrigger={focusTrigger} />;
+				return (
+					<ScaleConfig
+						field={field}
+						onChange={onChange}
+						autoFocus={autoFocus}
+						focusTrigger={focusTrigger}
+					/>
+				);
 			case 'nps':
-				return <NpsConfig field={field} onChange={onChange} autoFocus={autoFocus} focusTrigger={focusTrigger} />;
+				return (
+					<NpsConfig
+						field={field}
+						onChange={onChange}
+						autoFocus={autoFocus}
+						focusTrigger={focusTrigger}
+					/>
+				);
 			default:
-				return <DefaultFieldConfig field={field} onChange={onChange} autoFocus={autoFocus} focusTrigger={focusTrigger} />;
+				return (
+					<DefaultFieldConfig
+						field={field}
+						onChange={onChange}
+						autoFocus={autoFocus}
+						focusTrigger={focusTrigger}
+					/>
+				);
 		}
 	};
 
@@ -646,11 +804,19 @@ const FieldEditor = ({
 	return (
 		<div
 			ref={cardRef}
-			onDragOver={(e) => { e.stopPropagation(); e.preventDefault(); onDragOver(e, index); }}
-			onDrop={(e) => { e.stopPropagation(); e.preventDefault(); onDrop(e, index); }}
+			onDragOver={(e) => {
+				e.stopPropagation();
+				e.preventDefault();
+				onDragOver(e, index);
+			}}
+			onDrop={(e) => {
+				e.stopPropagation();
+				e.preventDefault();
+				onDrop(e, index);
+			}}
 			className={cn(
 				'relative rounded-xl border bg-white transition-all duration-150',
-				isDragging && 'opacity-40 scale-[0.98]',
+				isDragging && 'scale-[0.98] opacity-40',
 				isDragOver && !isDragging
 					? 'border-primary/40 shadow-[0_0_0_3px_hsl(var(--primary)/0.08)]'
 					: 'border-border/60',
@@ -660,27 +826,35 @@ const FieldEditor = ({
 				draggable
 				onDragStart={(e) => {
 					e.stopPropagation();
-					const el = cardRef.current ?? e.currentTarget as HTMLElement;
+					const el = cardRef.current ?? (e.currentTarget as HTMLElement);
 					const clone = el.cloneNode(true) as HTMLElement;
 					Object.assign(clone.style, {
-						position: 'fixed', top: '-9999px', left: '-9999px',
+						position: 'fixed',
+						top: '-9999px',
+						left: '-9999px',
 						width: `${el.offsetWidth}px`,
 						transform: 'rotate(1.5deg) scale(1.02)',
-						boxShadow: '0 20px 40px rgba(0,0,0,0.15), 0 6px 12px rgba(0,0,0,0.08)',
-						borderRadius: '12px', overflow: 'hidden', pointerEvents: 'none',
+						boxShadow:
+							'0 20px 40px rgba(0,0,0,0.15), 0 6px 12px rgba(0,0,0,0.08)',
+						borderRadius: '12px',
+						overflow: 'hidden',
+						pointerEvents: 'none',
 					});
 					document.body.appendChild(clone);
 					e.dataTransfer.setDragImage(clone, el.offsetWidth / 2, 32);
 					requestAnimationFrame(() => document.body.removeChild(clone));
 					onDragStart(index);
 				}}
-				onDragEnd={(e) => { e.stopPropagation(); onDragEnd(); }}
-				className="flex cursor-pointer items-center gap-2 rounded-t-xl border-b border-border/50 bg-muted/25 px-4 py-2.5 transition-colors hover:bg-muted/40"
+				onDragEnd={(e) => {
+					e.stopPropagation();
+					onDragEnd();
+				}}
+				className="border-border/50 bg-muted/25 hover:bg-muted/40 flex cursor-pointer items-center gap-2 rounded-t-xl border-b px-4 py-2.5 transition-colors"
 				onClick={() => setIsCollapsed((v) => !v)}
 			>
-				<Tooltip content={__('Drag to reorder', 'all-feedback')}>
+				<Tooltip content={__('Drag to reorder', 'allfeedback')}>
 					<span
-						className="cursor-grab text-muted-foreground/40 transition-colors hover:text-muted-foreground/70 active:cursor-grabbing"
+						className="text-muted-foreground/40 hover:text-muted-foreground/70 cursor-grab transition-colors active:cursor-grabbing"
 						onClick={(e) => e.stopPropagation()}
 						onMouseDown={(e) => e.stopPropagation()}
 					>
@@ -690,15 +864,18 @@ const FieldEditor = ({
 
 				{typeConfig && (
 					<Tooltip content={typeConfig.label}>
-						<span className="flex shrink-0 items-center" onClick={(e) => e.stopPropagation()}>
-							<typeConfig.Icon className="size-4 text-muted-foreground/60" />
+						<span
+							className="flex shrink-0 items-center"
+							onClick={(e) => e.stopPropagation()}
+						>
+							<typeConfig.Icon className="text-muted-foreground/60 size-4" />
 						</span>
 					</Tooltip>
 				)}
 
 				<button
 					type="button"
-					className="group/title flex min-w-0 flex-1 items-center gap-2 rounded-md border border-transparent px-2 py-1 text-left transition-colors hover:border-border/50 hover:bg-black/[0.04]"
+					className="group/title hover:border-border/50 flex min-w-0 flex-1 items-center gap-2 rounded-md border border-transparent px-2 py-1 text-left transition-colors hover:bg-black/[0.04]"
 					onClick={(e) => {
 						e.stopPropagation();
 						setIsCollapsed(false);
@@ -706,14 +883,17 @@ const FieldEditor = ({
 					}}
 					onMouseDown={(e) => e.stopPropagation()}
 				>
-					<span className="min-w-0 flex-1 truncate text-sm text-foreground/80">
-						{htmlToText(field.label) || __('Untitled', 'all-feedback')}
+					<span className="text-foreground/80 min-w-0 flex-1 truncate text-sm">
+						{htmlToText(field.label) || __('Untitled', 'allfeedback')}
 					</span>
-					<Pencil className="size-3 shrink-0 text-muted-foreground/40 opacity-0 transition-opacity group-hover/title:opacity-100" />
+					<Pencil className="text-muted-foreground/40 size-3 shrink-0 opacity-0 transition-opacity group-hover/title:opacity-100" />
 				</button>
 
 				<div className="ml-auto flex items-center gap-1">
-					<div onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
+					<div
+						onClick={(e) => e.stopPropagation()}
+						onMouseDown={(e) => e.stopPropagation()}
+					>
 						<RequiredSwitch
 							value={field.required}
 							onChange={(v) => onChange({ ...field, required: v })}
@@ -721,33 +901,35 @@ const FieldEditor = ({
 					</div>
 
 					<span className="flex size-6 items-center justify-center rounded transition-colors hover:bg-black/[0.06]">
-						<ChevronDown className={cn(
-							'size-3.5 transition-transform duration-200',
-							isCollapsed && '-rotate-90',
-						)} />
+						<ChevronDown
+							className={cn(
+								'size-3.5 transition-transform duration-200',
+								isCollapsed && '-rotate-90',
+							)}
+						/>
 					</span>
 
 					<div
 						className="flex items-center gap-0.5"
 						onClick={(e) => e.stopPropagation()}
 					>
-						<Tooltip content={__('Duplicate field', 'all-feedback')}>
+						<Tooltip content={__('Duplicate field', 'allfeedback')}>
 							<Button
 								variant="ghost"
 								size="icon-xs"
 								onClick={onDuplicate}
-								aria-label={__('Duplicate field', 'all-feedback')}
+								aria-label={__('Duplicate field', 'allfeedback')}
 							>
 								<Copy className="size-3" />
 							</Button>
 						</Tooltip>
-						<Tooltip content={__('Delete field', 'all-feedback')}>
+						<Tooltip content={__('Delete field', 'allfeedback')}>
 							<Button
 								variant="ghost"
 								size="icon-xs"
 								onClick={onDelete}
 								className="hover:bg-destructive/10 hover:text-destructive active:bg-destructive/15"
-								aria-label={__('Delete field', 'all-feedback')}
+								aria-label={__('Delete field', 'allfeedback')}
 							>
 								<Trash2 className="size-3" />
 							</Button>
@@ -756,14 +938,14 @@ const FieldEditor = ({
 				</div>
 			</div>
 
-			<div className={cn(
-				'grid transition-[grid-template-rows] duration-200 ease-in-out',
-				isCollapsed ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]',
-			)}>
+			<div
+				className={cn(
+					'grid transition-[grid-template-rows] duration-200 ease-in-out',
+					isCollapsed ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]',
+				)}
+			>
 				<div className="overflow-hidden">
-					<div className="space-y-3 px-5 py-4">
-						{renderConfig()}
-					</div>
+					<div className="space-y-3 px-5 py-4">{renderConfig()}</div>
 				</div>
 			</div>
 		</div>

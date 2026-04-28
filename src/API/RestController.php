@@ -31,7 +31,7 @@ abstract class RestController {
 	 * @var string
 	 * @since 1.0.0
 	 */
-	protected string $namespace = 'all-feedback/v1';
+	protected string $namespace = 'allfeedback/v1';
 
 	/**
 	 * Resource slug for this controller's route base.

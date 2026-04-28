@@ -1,7 +1,15 @@
-import { AlignLeft, BarChart3, CheckSquare, CircleDot, Gauge, Star, Type } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
-import type { FieldType } from './types';
 import { __ } from '@wordpress/i18n';
+import type { LucideIcon } from 'lucide-react';
+import {
+	AlignLeft,
+	BarChart3,
+	CheckSquare,
+	CircleDot,
+	Gauge,
+	Star,
+	Type,
+} from 'lucide-react';
+import type { FieldType } from './types';
 
 export interface FieldTypeConfig {
 	type: FieldType;
@@ -15,7 +23,7 @@ export interface FieldTypeConfig {
 export const FIELD_TYPES: FieldTypeConfig[] = [
 	{
 		type: 'short_text',
-		label: __('Short Text', 'all-feedback'),
+		label: __('Short Text', 'allfeedback'),
 		Icon: Type,
 		iconBg: '#fef2f2',
 		iconColor: '#f43f5e',
@@ -23,7 +31,7 @@ export const FIELD_TYPES: FieldTypeConfig[] = [
 	},
 	{
 		type: 'long_text',
-		label: __('Long Text', 'all-feedback'),
+		label: __('Long Text', 'allfeedback'),
 		Icon: AlignLeft,
 		iconBg: '#eff6ff',
 		iconColor: '#3b82f6',
@@ -31,7 +39,7 @@ export const FIELD_TYPES: FieldTypeConfig[] = [
 	},
 	{
 		type: 'radio',
-		label: __('Radio', 'all-feedback'),
+		label: __('Radio', 'allfeedback'),
 		Icon: CircleDot,
 		iconBg: '#f5f3ff',
 		iconColor: '#8b5cf6',
@@ -39,7 +47,7 @@ export const FIELD_TYPES: FieldTypeConfig[] = [
 	},
 	{
 		type: 'checkboxes',
-		label: __('Checkboxes', 'all-feedback'),
+		label: __('Checkboxes', 'allfeedback'),
 		Icon: CheckSquare,
 		iconBg: '#f0fdf4',
 		iconColor: '#22c55e',
@@ -47,7 +55,7 @@ export const FIELD_TYPES: FieldTypeConfig[] = [
 	},
 	{
 		type: 'star_rating',
-		label: __('Star Rating', 'all-feedback'),
+		label: __('Star Rating', 'allfeedback'),
 		Icon: Star,
 		iconBg: '#fffbeb',
 		iconColor: '#f59e0b',
@@ -55,7 +63,7 @@ export const FIELD_TYPES: FieldTypeConfig[] = [
 	},
 	{
 		type: 'scale',
-		label: __('Scale', 'all-feedback'),
+		label: __('Scale', 'allfeedback'),
 		Icon: BarChart3,
 		iconBg: '#ecfdf5',
 		iconColor: '#10b981',
@@ -63,10 +71,11 @@ export const FIELD_TYPES: FieldTypeConfig[] = [
 	},
 	{
 		type: 'nps',
-		label: __('NPS', 'all-feedback'),
+		label: __('NPS', 'allfeedback'),
 		Icon: Gauge,
 		iconBg: '#fff1f2',
 		iconColor: '#e11d48',
-		defaultLabel: 'How likely are you to recommend us to a friend or colleague?',
+		defaultLabel:
+			'How likely are you to recommend us to a friend or colleague?',
 	},
 ];

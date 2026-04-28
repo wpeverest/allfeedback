@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AllFeedback\Support;
 
+defined( 'ABSPATH' ) || exit;
+
 /**
  * Class Config
  *
@@ -11,7 +13,7 @@ namespace AllFeedback\Support;
  * accessor so deep values can be read cleanly:
  *
  *   $config->get( 'cache.ttl' );   // → 3600
- *   $config->get( 'paths.base' );  // → /var/www/html/wp-content/plugins/all-feedback/
+ *   $config->get( 'paths.base' );  // → /var/www/html/wp-content/plugins/allfeedback/
  *
  * @package AllFeedback\Support
  * @since   1.0.0

@@ -21,7 +21,7 @@ use AllFeedback\Domain\Survey\SurveyStatus;
 /**
  * REST controller for form-level analytics summaries.
  *
- * Routes (under `all-feedback/v1`):
+ * Routes (under `allfeedback/v1`):
  *   `GET /analytics/overview`   — admin; global stats for "all forms" dashboard view.
  *   `GET /analytics/forms`      — admin; summary metrics for every form.
  *   `GET /analytics/forms/{id}` — admin; full analytics for a single form.
@@ -416,18 +416,18 @@ class FormAnalyticsController extends RestController {
 	}
 
 	/**
-	 * Extract the primary survey type (NPS/CSAT/CES) from a form schema.
+	 * Extract the primary survey type (NPS) from a form schema.
 	 *
 	 * Walks `form_schema.sections[*].fields[*].type` and returns the first
 	 * primary field type found, uppercased. Returns null when the schema has no
 	 * recognised primary field (e.g. a plain text-only survey).
 	 *
 	 * @param  array<mixed> $formSchema Decoded form_schema array.
-	 * @return string|null  'NPS', 'CSAT', 'CES', or null.
+	 * @return string|null  'NPS' or null.
 	 * @since  1.0.0
 	 */
 	private function extractSurveyType( array $formSchema ): ?string {
-		$primaryTypes = [ 'nps', 'csat', 'ces' ];
+		$primaryTypes = [ 'nps' ];
 
 		foreach ( (array) ( $formSchema['sections'] ?? [] ) as $section ) {
 			foreach ( (array) ( $section['fields'] ?? [] ) as $field ) {

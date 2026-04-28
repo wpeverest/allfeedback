@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AllFeedback\Core;
 
+defined( 'ABSPATH' ) || exit;
+
 use DI\ContainerBuilder;
 
 /**

@@ -12,11 +12,8 @@ use AllFeedback\Support\Logger;
 use AllFeedback\Traits\Hooks;
 
 /**
- * Class CoreServiceProvider
- *
  * Bootstraps core plugin functionality:
  *  - Database migrations on admin_init
- *  - Custom post type and taxonomy registration on init
  *  - Role creation on plugin activation
  *
  * @package AllFeedback\Core
@@ -75,5 +72,4 @@ class CoreServiceProvider implements ServiceProviderInterface {
 		$this->logger->ensureDirectory();
 		$this->doAction( 'allfeedback:activated:complete' );
 	}
-
 }

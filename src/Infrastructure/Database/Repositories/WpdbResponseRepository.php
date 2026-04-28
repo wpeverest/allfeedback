@@ -327,14 +327,16 @@ class WpdbResponseRepository implements ResponseRepository {
 
 		$surveysTable = $wpdb->prefix . 'af_surveys';
 
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$count = (int) $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT COUNT(*) FROM {$this->table}
 				 WHERE is_read = 0
-				   AND survey_id IN (SELECT id FROM {$surveysTable} WHERE status != %s)", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				   AND survey_id IN (SELECT id FROM {$surveysTable} WHERE status != %s)",
 				'trashed'
 			)
 		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		set_transient( self::UNREAD_CACHE_KEY, $count, 5 * MINUTE_IN_SECONDS );
 
@@ -354,6 +356,7 @@ class WpdbResponseRepository implements ResponseRepository {
 	public function existsByIpHash( int $surveyId, string $ipHash, int $windowHours = 0 ): bool {
 		global $wpdb;
 
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		if ( $windowHours > 0 ) {
 			$count = (int) $wpdb->get_var(
 				$wpdb->prepare(
@@ -376,6 +379,7 @@ class WpdbResponseRepository implements ResponseRepository {
 				)
 			);
 		}
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		return $count > 0;
 	}
@@ -399,7 +403,7 @@ class WpdbResponseRepository implements ResponseRepository {
 
 		$existingIds = $wpdb->get_col( // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 			$wpdb->prepare(
-				"SELECT id FROM {$this->table} WHERE id IN ({$placeholders})", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT id FROM {$this->table} WHERE id IN ({$placeholders})", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 				...$ids
 			)
 		);
@@ -411,7 +415,7 @@ class WpdbResponseRepository implements ResponseRepository {
 			$updatePlaceholders = implode( ',', array_fill( 0, count( $existingIds ), '%d' ) );
 			$wpdb->query( // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 				$wpdb->prepare(
-					"UPDATE {$this->table} SET is_read = %d WHERE id IN ({$updatePlaceholders})", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					"UPDATE {$this->table} SET is_read = %d WHERE id IN ({$updatePlaceholders})", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 					$isRead ? 1 : 0,
 					...$existingIds
 				)
@@ -435,13 +439,14 @@ class WpdbResponseRepository implements ResponseRepository {
 	public function existsByUserId( int $surveyId, int $userId, int $windowHours = 0 ): bool {
 		global $wpdb;
 
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		if ( $windowHours > 0 ) {
 			$count = (int) $wpdb->get_var(
 				$wpdb->prepare(
 					"SELECT COUNT(*) FROM {$this->table}
 					 WHERE survey_id = %d
 					   AND user_id   = %d
-					   AND created_at >= DATE_SUB( NOW(), INTERVAL %d HOUR )", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					   AND created_at >= DATE_SUB( NOW(), INTERVAL %d HOUR )",
 					$surveyId,
 					$userId,
 					$windowHours
@@ -451,12 +456,13 @@ class WpdbResponseRepository implements ResponseRepository {
 			$count = (int) $wpdb->get_var(
 				$wpdb->prepare(
 					"SELECT COUNT(*) FROM {$this->table}
-					 WHERE survey_id = %d AND user_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					 WHERE survey_id = %d AND user_id = %d",
 					$surveyId,
 					$userId
 				)
 			);
 		}
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		return $count > 0;
 	}
@@ -473,13 +479,14 @@ class WpdbResponseRepository implements ResponseRepository {
 	public function existsByGuestToken( int $surveyId, string $guestToken, int $windowHours = 0 ): bool {
 		global $wpdb;
 
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		if ( $windowHours > 0 ) {
 			$count = (int) $wpdb->get_var(
 				$wpdb->prepare(
 					"SELECT COUNT(*) FROM {$this->table}
 					 WHERE survey_id   = %d
 					   AND guest_token = %s
-					   AND created_at >= DATE_SUB( NOW(), INTERVAL %d HOUR )", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					   AND created_at >= DATE_SUB( NOW(), INTERVAL %d HOUR )",
 					$surveyId,
 					$guestToken,
 					$windowHours
@@ -489,12 +496,13 @@ class WpdbResponseRepository implements ResponseRepository {
 			$count = (int) $wpdb->get_var(
 				$wpdb->prepare(
 					"SELECT COUNT(*) FROM {$this->table}
-					 WHERE survey_id = %d AND guest_token = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					 WHERE survey_id = %d AND guest_token = %s",
 					$surveyId,
 					$guestToken
 				)
 			);
 		}
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		return $count > 0;
 	}
@@ -509,6 +517,7 @@ class WpdbResponseRepository implements ResponseRepository {
 	public function aggregateScoreStats( int $surveyId ): array {
 		global $wpdb;
 
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$row = $wpdb->get_row(
 			$wpdb->prepare(
 				"SELECT
@@ -519,11 +528,12 @@ class WpdbResponseRepository implements ResponseRepository {
 					SUM(CASE WHEN score >= 7 AND score < 9 THEN 1 ELSE 0 END) AS passives,
 					SUM(CASE WHEN score < 7 AND score IS NOT NULL THEN 1 ELSE 0 END) AS detractors
 				 FROM {$this->table}
-				 WHERE survey_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				 WHERE survey_id = %d",
 				$surveyId
 			),
 			ARRAY_A
 		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		return [
 			'total'       => (int) ( $row['total'] ?? 0 ),
@@ -545,17 +555,19 @@ class WpdbResponseRepository implements ResponseRepository {
 	public function countByScore( int $surveyId ): array {
 		global $wpdb;
 
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT CAST(score AS UNSIGNED) AS s, COUNT(*) AS cnt
 				 FROM {$this->table}
 				 WHERE survey_id = %d AND score IS NOT NULL AND score BETWEEN 0 AND 10
 				 GROUP BY s
-				 ORDER BY s ASC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				 ORDER BY s ASC",
 				$surveyId
 			),
 			ARRAY_A
 		) ?: [];
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		$result = [];
 		foreach ( $rows as $row ) {
@@ -575,16 +587,18 @@ class WpdbResponseRepository implements ResponseRepository {
 	public function countByDevice( int $surveyId ): array {
 		global $wpdb;
 
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT COALESCE(device_type, 'unknown') AS device, COUNT(*) AS cnt
 				 FROM {$this->table}
 				 WHERE survey_id = %d
-				 GROUP BY device", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				 GROUP BY device",
 				$surveyId
 			),
 			ARRAY_A
 		) ?: [];
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		$result = [];
 		foreach ( $rows as $row ) {
@@ -604,17 +618,19 @@ class WpdbResponseRepository implements ResponseRepository {
 	public function countByDate( int $surveyId ): array {
 		global $wpdb;
 
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT DATE(created_at) AS d, COUNT(*) AS cnt
 				 FROM {$this->table}
 				 WHERE survey_id = %d
 				 GROUP BY d
-				 ORDER BY d ASC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				 ORDER BY d ASC",
 				$surveyId
 			),
 			ARRAY_A
 		) ?: [];
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		$result = [];
 		foreach ( $rows as $row ) {
@@ -635,7 +651,7 @@ class WpdbResponseRepository implements ResponseRepository {
 	public function getOverviewStats(): array {
 		global $wpdb;
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$row = $wpdb->get_row(
 			"SELECT
 				COUNT(*)                                                                                  AS total_feedback,
@@ -659,6 +675,7 @@ class WpdbResponseRepository implements ResponseRepository {
 			FROM {$this->table}",
 			ARRAY_A
 		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		$scoreCount      = (int) ( $row['score_count']           ?? 0 );
 		$scoreSum        = (float) ( $row['score_sum']           ?? 0 );
@@ -817,7 +834,7 @@ class WpdbResponseRepository implements ResponseRepository {
 
 		$placeholders = implode( ',', array_fill( 0, count( $surveyIds ), '%d' ) );
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT
@@ -835,6 +852,7 @@ class WpdbResponseRepository implements ResponseRepository {
 			),
 			ARRAY_A
 		) ?: [];
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 
 		$result = [];
 		foreach ( $rows as $row ) {

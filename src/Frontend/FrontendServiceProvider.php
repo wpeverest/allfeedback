@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AllFeedback\Frontend;
 
+defined( 'ABSPATH' ) || exit;
+
 use AllFeedback\API\Controllers\V1\SubmitController;
 use AllFeedback\Application\Survey\SurveyStateService;
 use AllFeedback\Core\Container;
@@ -88,7 +90,7 @@ class FrontendServiceProvider implements ServiceProvider {
 		return array_merge(
 			[
 				[
-					'slug'  => 'all-feedback',
+					'slug'  => 'allfeedback',
 					'title' => __( 'All Feedback', 'allfeedback' ),
 					'icon'  => null,
 				],
@@ -230,7 +232,7 @@ class FrontendServiceProvider implements ServiceProvider {
 			'allfeedback:frontend:script_data',
 			[
 				'siteUrl'     => home_url( '/' ),
-				'restUrl'     => rest_url( 'all-feedback/v1/' ),
+				'restUrl'     => rest_url( 'allfeedback/v1/' ),
 				'nonce'       => wp_create_nonce( 'wp_rest' ),
 				'submitNonce' => wp_create_nonce( SubmitController::NONCE_ACTION ),
 				'version'     => \AllFeedback\Core\Constants::VERSION,

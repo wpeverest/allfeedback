@@ -1,25 +1,40 @@
-﻿import { format } from 'date-fns';
+﻿import type { SurveyResponse } from '@/admin/api/surveys';
+import { surveysApi } from '@/admin/api/surveys';
+import { surveyResponsesQuery } from '@/admin/queries/surveys';
 import { BulkActionBar } from '@/components/ui/bulk-action-bar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Pagination } from '@/components/ui/pagination';
-import { surveysApi } from '@/admin/api/surveys';
-import { surveyResponsesQuery } from '@/admin/queries/surveys';
 import { cn } from '@/lib/utils';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { __ } from '@wordpress/i18n';
-import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown, MessageSquare, MoreVertical, Trash2 } from 'lucide-react';
+import { format } from 'date-fns';
+import {
+	AlertCircle,
+	ArrowDown,
+	ArrowUp,
+	ArrowUpDown,
+	MessageSquare,
+	MoreVertical,
+	Trash2,
+} from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import type { SurveyResponse } from '@/admin/api/surveys';
 
 const cellCls = 'text-base font-normal leading-5 text-body-text';
 
 const getResponseSummary = (data: Record<string, unknown> | null): string => {
 	if (!data) return '—';
-	const vals = Object.values(data).filter((v) => v !== null && v !== undefined && v !== '');
+	const vals = Object.values(data).filter(
+		(v) => v !== null && v !== undefined && v !== '',
+	);
 	if (!vals.length) return '—';
 	const first = vals[0];
 	if (Array.isArray(first)) return first.join(', ');
@@ -27,12 +42,22 @@ const getResponseSummary = (data: Record<string, unknown> | null): string => {
 };
 
 const SkeletonRow = () => (
-	<tr className="border-b border-border">
-		<td className="w-12 px-4 py-5"><div className="size-[16px] animate-pulse rounded-[4px] bg-muted" /></td>
-		<td className="w-14 px-4 py-5"><div className="h-4 w-8 animate-pulse rounded bg-muted" /></td>
-		<td className="w-[220px] px-4 py-5"><div className="h-4 w-36 animate-pulse rounded bg-muted" /></td>
-		<td className="w-32 px-4 py-5"><div className="h-4 w-20 animate-pulse rounded bg-muted" /></td>
-		<td className="w-24 px-4 py-5"><div className="size-7 animate-pulse rounded-lg bg-muted" /></td>
+	<tr className="border-border border-b">
+		<td className="w-12 px-4 py-5">
+			<div className="bg-muted size-[16px] animate-pulse rounded-[4px]" />
+		</td>
+		<td className="w-14 px-4 py-5">
+			<div className="bg-muted h-4 w-8 animate-pulse rounded" />
+		</td>
+		<td className="w-[220px] px-4 py-5">
+			<div className="bg-muted h-4 w-36 animate-pulse rounded" />
+		</td>
+		<td className="w-32 px-4 py-5">
+			<div className="bg-muted h-4 w-20 animate-pulse rounded" />
+		</td>
+		<td className="w-24 px-4 py-5">
+			<div className="bg-muted size-7 animate-pulse rounded-lg" />
+		</td>
 	</tr>
 );
 
@@ -43,11 +68,11 @@ interface ResponsesPanelProps {
 const ResponsesPanel = ({ surveyId }: ResponsesPanelProps) => {
 	const queryClient = useQueryClient();
 
-	const [page,    setPage]    = useState(1);
+	const [page, setPage] = useState(1);
 	const [perPage, setPerPage] = useState(10);
-	const [sortBy,  setSortBy]  = useState<'id' | 'created_at'>('created_at');
-	const [order,   setOrder]   = useState<'ASC' | 'DESC'>('DESC');
-	const [checked,         setChecked]         = useState<number[]>([]);
+	const [sortBy, setSortBy] = useState<'id' | 'created_at'>('created_at');
+	const [order, setOrder] = useState<'ASC' | 'DESC'>('DESC');
+	const [checked, setChecked] = useState<number[]>([]);
 	const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 	const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
 
@@ -58,8 +83,8 @@ const ResponsesPanel = ({ surveyId }: ResponsesPanelProps) => {
 		placeholderData: keepPreviousData,
 	});
 
-	const responses  = data?.responses ?? [];
-	const total      = data?.total     ?? 0;
+	const responses = data?.responses ?? [];
+	const total = data?.total ?? 0;
 	const totalPages = Math.max(1, Math.ceil(total / perPage));
 
 	const sorted = [...responses].sort((a, b) => {
@@ -68,23 +93,30 @@ const ResponsesPanel = ({ surveyId }: ResponsesPanelProps) => {
 		return order === 'DESC' ? valB - valA : valA - valB;
 	});
 
-	const allChecked  = responses.length > 0 && responses.every((r) => checked.includes(r.id));
+	const allChecked =
+		responses.length > 0 && responses.every((r) => checked.includes(r.id));
 	const someChecked = checked.length > 0 && !allChecked;
-	const toggleAll   = () => setChecked(allChecked ? [] : responses.map((r) => r.id));
-	const toggleOne   = (id: number) =>
-		setChecked((prev) => prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]);
+	const toggleAll = () =>
+		setChecked(allChecked ? [] : responses.map((r) => r.id));
+	const toggleOne = (id: number) =>
+		setChecked((prev) =>
+			prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
+		);
 
 	const deleteMutation = useMutation({
-		mutationFn: (responseId: number) => surveysApi.deleteResponse(surveyId, responseId),
+		mutationFn: (responseId: number) =>
+			surveysApi.deleteResponse(surveyId, responseId),
 		onSuccess: () => {
 			void queryClient.invalidateQueries({ queryKey: ['responses', surveyId] });
 			setChecked((prev) => prev.filter((id) => id !== confirmDeleteId));
 			setConfirmDeleteId(null);
-			toast.success(__('Response deleted.', 'all-feedback'));
+			toast.success(__('Response deleted.', 'allfeedback'));
 		},
 		onError: () => {
 			setConfirmDeleteId(null);
-			toast.error(__('Failed to delete response. Please try again.', 'all-feedback'));
+			toast.error(
+				__('Failed to delete response. Please try again.', 'allfeedback'),
+			);
 		},
 	});
 
@@ -97,25 +129,38 @@ const ResponsesPanel = ({ surveyId }: ResponsesPanelProps) => {
 			setBulkConfirmOpen(false);
 			toast.success(
 				ids.length === 1
-					? __('1 response deleted.', 'all-feedback')
-					: `${ids.length} ${__('responses deleted.', 'all-feedback')}`,
+					? __('1 response deleted.', 'allfeedback')
+					: `${ids.length} ${__('responses deleted.', 'allfeedback')}`,
 			);
 		},
 		onError: () => {
 			setBulkConfirmOpen(false);
-			toast.error(__('Failed to delete responses. Please try again.', 'all-feedback'));
+			toast.error(
+				__('Failed to delete responses. Please try again.', 'allfeedback'),
+			);
 		},
 	});
 
-	const colHeadCls = 'flex items-center gap-1 text-sm font-semibold uppercase tracking-wide leading-4 select-none text-body-text';
-	const ColHead = ({ label, col }: { label: string; col?: 'id' | 'created_at' }) => {
+	const colHeadCls =
+		'flex items-center gap-1 text-sm font-semibold uppercase tracking-wide leading-4 select-none text-body-text';
+	const ColHead = ({
+		label,
+		col,
+	}: {
+		label: string;
+		col?: 'id' | 'created_at';
+	}) => {
 		const isActive = col !== undefined && sortBy === col;
-		const Icon     = isActive ? (order === 'DESC' ? ArrowDown : ArrowUp) : ArrowUpDown;
+		const Icon = isActive
+			? order === 'DESC'
+				? ArrowDown
+				: ArrowUp
+			: ArrowUpDown;
 		const sortable = col !== undefined;
 		const handleClick = () => {
 			if (!sortable) return;
 			if (sortBy === col) {
-				setOrder((o) => o === 'DESC' ? 'ASC' : 'DESC');
+				setOrder((o) => (o === 'DESC' ? 'ASC' : 'DESC'));
 			} else {
 				setSortBy(col);
 				setOrder('DESC');
@@ -126,8 +171,20 @@ const ResponsesPanel = ({ surveyId }: ResponsesPanelProps) => {
 				role={sortable ? 'button' : undefined}
 				tabIndex={sortable ? 0 : undefined}
 				onClick={sortable ? handleClick : undefined}
-				onKeyDown={sortable ? (e) => { if (e.key === 'Enter' || e.key === ' ') handleClick(); } : undefined}
-				className={cn(colHeadCls, sortable ? 'cursor-pointer transition-colors hover:text-foreground' : '', isActive ? 'text-foreground' : '')}
+				onKeyDown={
+					sortable
+						? (e) => {
+								if (e.key === 'Enter' || e.key === ' ') handleClick();
+							}
+						: undefined
+				}
+				className={cn(
+					colHeadCls,
+					sortable
+						? 'hover:text-foreground cursor-pointer transition-colors'
+						: '',
+					isActive ? 'text-foreground' : '',
+				)}
 			>
 				{label}
 				{sortable && <Icon className="size-3 shrink-0" />}
@@ -136,35 +193,46 @@ const ResponsesPanel = ({ surveyId }: ResponsesPanelProps) => {
 	};
 
 	return (
-		<div className="flex-1 overflow-y-auto bg-background p-5">
-
+		<div className="bg-background flex-1 overflow-y-auto p-5">
 			<ConfirmDialog
 				open={confirmDeleteId !== null}
-				onOpenChange={(open) => { if (!open && !deleteMutation.isPending) setConfirmDeleteId(null); }}
-				onConfirm={() => { if (confirmDeleteId !== null) deleteMutation.mutate(confirmDeleteId); }}
-				title={__('Delete response?', 'all-feedback')}
-				description={__('This action cannot be undone. The response will be permanently removed.', 'all-feedback')}
-				confirmLabel={__('Delete', 'all-feedback')}
-				cancelLabel={__('Cancel', 'all-feedback')}
+				onOpenChange={(open) => {
+					if (!open && !deleteMutation.isPending) setConfirmDeleteId(null);
+				}}
+				onConfirm={() => {
+					if (confirmDeleteId !== null) deleteMutation.mutate(confirmDeleteId);
+				}}
+				title={__('Delete response?', 'allfeedback')}
+				description={__(
+					'This action cannot be undone. The response will be permanently removed.',
+					'allfeedback',
+				)}
+				confirmLabel={__('Delete', 'allfeedback')}
+				cancelLabel={__('Cancel', 'allfeedback')}
 				isPending={deleteMutation.isPending}
 			/>
 
 			<ConfirmDialog
 				open={bulkConfirmOpen}
-				onOpenChange={(open) => { if (!open && !bulkDeleteMutation.isPending) setBulkConfirmOpen(false); }}
+				onOpenChange={(open) => {
+					if (!open && !bulkDeleteMutation.isPending) setBulkConfirmOpen(false);
+				}}
 				onConfirm={() => bulkDeleteMutation.mutate(checked)}
-				title={__('Delete selected responses?', 'all-feedback')}
-				description={__('This action cannot be undone. The selected responses will be permanently removed.', 'all-feedback')}
-				confirmLabel={__('Delete', 'all-feedback')}
-				cancelLabel={__('Cancel', 'all-feedback')}
+				title={__('Delete selected responses?', 'allfeedback')}
+				description={__(
+					'This action cannot be undone. The selected responses will be permanently removed.',
+					'allfeedback',
+				)}
+				confirmLabel={__('Delete', 'allfeedback')}
+				cancelLabel={__('Cancel', 'allfeedback')}
 				isPending={bulkDeleteMutation.isPending}
 			/>
 
-			<div className="rounded-xl border border-border bg-card">
+			<div className="border-border bg-card rounded-xl border">
 				<div className="overflow-x-auto">
 					<table className="w-full table-fixed">
 						<thead>
-							<tr className="border-b border-border bg-muted/30">
+							<tr className="border-border bg-muted/30 border-b">
 								<th className="w-12 px-4 py-5 text-left">
 									<Checkbox
 										checked={someChecked ? 'indeterminate' : allChecked}
@@ -172,85 +240,123 @@ const ResponsesPanel = ({ surveyId }: ResponsesPanelProps) => {
 										disabled={isLoading || responses.length === 0}
 									/>
 								</th>
-								<th className="w-14 px-4 py-5 text-left"><ColHead label={__('ID', 'all-feedback')} col="id" /></th>
-								<th className="w-[220px] px-4 py-5 text-left"><ColHead label={__('Response', 'all-feedback')} /></th>
-								<th className="w-32 px-4 py-5 text-left"><ColHead label={__('Submitted', 'all-feedback')} col="created_at" /></th>
-								<th className="w-24 px-4 py-5 text-left"><ColHead label={__('Actions', 'all-feedback')} /></th>
+								<th className="w-14 px-4 py-5 text-left">
+									<ColHead label={__('ID', 'allfeedback')} col="id" />
+								</th>
+								<th className="w-[220px] px-4 py-5 text-left">
+									<ColHead label={__('Response', 'allfeedback')} />
+								</th>
+								<th className="w-32 px-4 py-5 text-left">
+									<ColHead
+										label={__('Submitted', 'allfeedback')}
+										col="created_at"
+									/>
+								</th>
+								<th className="w-24 px-4 py-5 text-left">
+									<ColHead label={__('Actions', 'allfeedback')} />
+								</th>
 							</tr>
 						</thead>
 						<tbody>
-							{isLoading && Array.from({ length: 5 }, (_, i) => <SkeletonRow key={i} />)}
+							{isLoading &&
+								Array.from({ length: 5 }, (_, i) => <SkeletonRow key={i} />)}
 
 							{isError && !isLoading && (
-								<tr><td colSpan={5}>
-									<EmptyState
-										icon={AlertCircle}
-										title={__('Failed to load responses', 'all-feedback')}
-										description={__('There was a problem fetching responses. Please try again.', 'all-feedback')}
-									/>
-								</td></tr>
+								<tr>
+									<td colSpan={5}>
+										<EmptyState
+											icon={AlertCircle}
+											title={__('Failed to load responses', 'allfeedback')}
+											description={__(
+												'There was a problem fetching responses. Please try again.',
+												'allfeedback',
+											)}
+										/>
+									</td>
+								</tr>
 							)}
 
 							{!isLoading && !isError && responses.length === 0 && (
-								<tr><td colSpan={5}>
-									<EmptyState
-										icon={MessageSquare}
-										title={__('No responses yet', 'all-feedback')}
-										description={__('Responses will appear here once visitors submit this form.', 'all-feedback')}
-									/>
-								</td></tr>
+								<tr>
+									<td colSpan={5}>
+										<EmptyState
+											icon={MessageSquare}
+											title={__('No responses yet', 'allfeedback')}
+											description={__(
+												'Responses will appear here once visitors submit this form.',
+												'allfeedback',
+											)}
+										/>
+									</td>
+								</tr>
 							)}
 
-							{!isLoading && !isError && sorted.map((response: SurveyResponse) => {
-								const isSelected = checked.includes(response.id);
-								const summary    = getResponseSummary(response.response_data);
-								return (
-									<tr
-										key={response.id}
-										className={cn(
-											'border-b border-border last:border-0 transition-colors',
-											isSelected ? 'bg-primary/[0.03]' : 'hover:bg-muted/20',
-										)}
-									>
-										<td className="w-12 px-4 py-5">
-											<Checkbox checked={isSelected} onCheckedChange={() => toggleOne(response.id)} />
-										</td>
-										<td className="w-14 px-4 py-5">
-											<span className={cn(cellCls, 'tabular-nums text-foreground/40')}>#{response.id}</span>
-										</td>
-										<td className="w-[220px] px-4 py-5">
-											<span className={cn(cellCls, 'line-clamp-1 block')}>{summary}</span>
-										</td>
-										<td className="w-32 px-4 py-5">
-											<span className={cellCls}>{format(new Date(response.created_at), 'MMM d, yyyy')}</span>
-										</td>
-										<td className="w-24 px-4 py-5">
-											<div className="flex items-center gap-1">
-												<DropdownMenu>
-													<DropdownMenuTrigger asChild>
-														<button
-															type="button"
-															style={{ border: '1.5px solid #E2E2E8' }}
-															className="flex size-7 shrink-0 items-center justify-center rounded-lg text-foreground/50 transition-colors hover:bg-muted/50 hover:text-foreground"
-														>
-															<MoreVertical className="size-3.5" />
-														</button>
-													</DropdownMenuTrigger>
-													<DropdownMenuContent>
-														<DropdownMenuItem
-															destructive
-															onSelect={() => setConfirmDeleteId(response.id)}
-														>
-															<Trash2 className="size-3.5" />
-															{__('Delete', 'all-feedback')}
-														</DropdownMenuItem>
-													</DropdownMenuContent>
-												</DropdownMenu>
-											</div>
-										</td>
-									</tr>
-								);
-							})}
+							{!isLoading &&
+								!isError &&
+								sorted.map((response: SurveyResponse) => {
+									const isSelected = checked.includes(response.id);
+									const summary = getResponseSummary(response.response_data);
+									return (
+										<tr
+											key={response.id}
+											className={cn(
+												'border-border border-b transition-colors last:border-0',
+												isSelected ? 'bg-primary/[0.03]' : 'hover:bg-muted/20',
+											)}
+										>
+											<td className="w-12 px-4 py-5">
+												<Checkbox
+													checked={isSelected}
+													onCheckedChange={() => toggleOne(response.id)}
+												/>
+											</td>
+											<td className="w-14 px-4 py-5">
+												<span
+													className={cn(
+														cellCls,
+														'text-foreground/40 tabular-nums',
+													)}
+												>
+													#{response.id}
+												</span>
+											</td>
+											<td className="w-[220px] px-4 py-5">
+												<span className={cn(cellCls, 'line-clamp-1 block')}>
+													{summary}
+												</span>
+											</td>
+											<td className="w-32 px-4 py-5">
+												<span className={cellCls}>
+													{format(new Date(response.created_at), 'MMM d, yyyy')}
+												</span>
+											</td>
+											<td className="w-24 px-4 py-5">
+												<div className="flex items-center gap-1">
+													<DropdownMenu>
+														<DropdownMenuTrigger asChild>
+															<button
+																type="button"
+																style={{ border: '1.5px solid #E2E2E8' }}
+																className="text-foreground/50 hover:bg-muted/50 hover:text-foreground flex size-7 shrink-0 items-center justify-center rounded-lg transition-colors"
+															>
+																<MoreVertical className="size-3.5" />
+															</button>
+														</DropdownMenuTrigger>
+														<DropdownMenuContent>
+															<DropdownMenuItem
+																destructive
+																onSelect={() => setConfirmDeleteId(response.id)}
+															>
+																<Trash2 className="size-3.5" />
+																{__('Delete', 'allfeedback')}
+															</DropdownMenuItem>
+														</DropdownMenuContent>
+													</DropdownMenu>
+												</div>
+											</td>
+										</tr>
+									);
+								})}
 						</tbody>
 					</table>
 				</div>
@@ -265,7 +371,10 @@ const ResponsesPanel = ({ surveyId }: ResponsesPanelProps) => {
 				perPageOptions={[10, 25, 50]}
 				isLoading={isFetching}
 				onPageChange={setPage}
-				onPerPageChange={(n) => { setPerPage(n); setPage(1); }}
+				onPerPageChange={(n) => {
+					setPerPage(n);
+					setPage(1);
+				}}
 			/>
 
 			<BulkActionBar

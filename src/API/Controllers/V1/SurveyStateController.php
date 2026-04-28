@@ -15,7 +15,7 @@ use AllFeedback\Domain\Survey\SurveyRepository;
  *
  * REST controller for recording per-user survey display state.
  *
- * Route (under all-feedback/v1):
+ * Route (under allfeedback/v1):
  *   POST /surveys/{id}/state  →  handle()  : logged-in users only
  *
  * This endpoint is the server-side counterpart of the JS StateManager.
@@ -75,7 +75,7 @@ class SurveyStateController extends RestController {
 	}
 
 	/**
-	 * POST /all-feedback/v1/surveys/{id}/state
+	 * POST /allfeedback/v1/surveys/{id}/state
 	 *
 	 * Record an impression, dismissal, or submission for the current user.
 	 *

@@ -18,7 +18,7 @@ use AllFeedback\Support\Logger;
  *
  * Admin REST controller for reading and deleting survey responses.
  *
- * Routes registered (all under all-feedback/v1):
+ * Routes registered (all under allfeedback/v1):
  *   GET    /responses                        → indexAll()         : paginated list across all surveys
  *   DELETE /responses/delete                  → destroyManyGlobal() : bulk delete by ID (any survey)
  *   POST   /responses/mark-read               → markManyRead()      : bulk mark responses as read
@@ -239,7 +239,7 @@ class ResponsesController extends RestController {
 	}
 
 	/**
-	 * GET /all-feedback/v1/responses
+	 * GET /allfeedback/v1/responses
 	 *
 	 * Return a paginated list of all responses across every survey.
 	 *
@@ -274,7 +274,7 @@ class ResponsesController extends RestController {
 	}
 
 	/**
-	 * DELETE /all-feedback/v1/responses/delete
+	 * DELETE /allfeedback/v1/responses/delete
 	 *
 	 * Bulk-delete multiple responses by ID across any survey.
 	 *
@@ -324,7 +324,7 @@ class ResponsesController extends RestController {
 	}
 
 	/**
-	 * POST /all-feedback/v1/responses/mark-read
+	 * POST /allfeedback/v1/responses/mark-read
 	 *
 	 * Bulk mark responses as read across any survey.
 	 *
@@ -337,7 +337,7 @@ class ResponsesController extends RestController {
 	}
 
 	/**
-	 * POST /all-feedback/v1/responses/mark-unread
+	 * POST /allfeedback/v1/responses/mark-unread
 	 *
 	 * Bulk mark responses as unread across any survey.
 	 *
@@ -350,7 +350,7 @@ class ResponsesController extends RestController {
 	}
 
 	/**
-	 * GET /all-feedback/v1/responses/unread-count
+	 * GET /allfeedback/v1/responses/unread-count
 	 *
 	 * Return the total number of unread responses across all surveys.
 	 * Used by the React admin to keep the WP sidebar badge in sync without a reload.
@@ -363,7 +363,7 @@ class ResponsesController extends RestController {
 	}
 
 	/**
-	 * GET /all-feedback/v1/surveys/{id}/responses
+	 * GET /allfeedback/v1/surveys/{id}/responses
 	 *
 	 * Return a paginated list of responses for a survey.
 	 *
@@ -418,7 +418,7 @@ class ResponsesController extends RestController {
 	}
 
 	/**
-	 * GET /all-feedback/v1/surveys/{id}/responses/{rid}
+	 * GET /allfeedback/v1/surveys/{id}/responses/{rid}
 	 *
 	 * Return a single response record.
 	 * Verifies the response belongs to the given survey.
@@ -441,7 +441,7 @@ class ResponsesController extends RestController {
 	}
 
 	/**
-	 * PUT /all-feedback/v1/surveys/{id}/responses/{rid}
+	 * PUT /allfeedback/v1/surveys/{id}/responses/{rid}
 	 *
 	 * Patch response_data and/or is_read on an existing response.
 	 * Verifies the response belongs to the given survey before saving.
@@ -509,7 +509,7 @@ class ResponsesController extends RestController {
 	}
 
 	/**
-	 * DELETE /all-feedback/v1/surveys/{id}/responses/delete
+	 * DELETE /allfeedback/v1/surveys/{id}/responses/delete
 	 *
 	 * Bulk-delete multiple responses by ID.
 	 * Only deletes responses that belong to the given survey — others are counted as failures.
@@ -568,7 +568,7 @@ class ResponsesController extends RestController {
 	}
 
 	/**
-	 * DELETE /all-feedback/v1/surveys/{id}/responses/{rid}
+	 * DELETE /allfeedback/v1/surveys/{id}/responses/{rid}
 	 *
 	 * Permanently delete a single response record.
 	 * Verifies the response belongs to the given survey before deleting.
@@ -635,7 +635,7 @@ class ResponsesController extends RestController {
 					'context'     => [ 'view' ],
 				],
 				'score'         => [
-					'description' => __( 'Numeric score for NPS, CSAT, or CES fields.', 'allfeedback' ),
+					'description' => __( 'Numeric score for NPS fields.', 'allfeedback' ),
 					'type'        => [ 'number', 'null' ],
 					'context'     => [ 'view' ],
 				],

@@ -1,4 +1,10 @@
-import { format } from 'date-fns';
+import type { SurveyResponse } from '@/admin/api/surveys';
+import { surveysApi } from '@/admin/api/surveys';
+import {
+	allResponsesQuery,
+	surveyResponsesQuery,
+	surveysQuery,
+} from '@/admin/queries/surveys';
 import { BulkActionBar } from '@/components/ui/bulk-action-bar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -18,49 +24,94 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '@/components/ui/select';
-import { surveysApi } from '@/admin/api/surveys';
-import { allResponsesQuery, surveyResponsesQuery, surveysQuery } from '@/admin/queries/surveys';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { cn } from '@/lib/utils';
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate, useRouterState, useSearch } from '@tanstack/react-router';
-import { __, _n, sprintf } from '@wordpress/i18n';
-import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown, Edit2, Eye, Mail, MailOpen, MessageSquare, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import {
+	keepPreviousData,
+	useMutation,
+	useQuery,
+	useQueryClient,
+} from '@tanstack/react-query';
+import { useNavigate, useSearchimport { __, _n, sprintf } from '@wordpress/i18n';
+import { format } from 'date-fns';
+import {
+	AlertCircle,
+	ArrowDown,
+	ArrowUp,
+	ArrowUpDown,
+	Edit2,
+	Eye,
+	Mail,
+	MailOpen,
+	MessageSquare,
+	MoreVertical,
+	Pencil,
+	Trash2,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import type { SurveyResponse } from '@/admin/api/surveys';
 
 const cellCls = 'text-base font-normal leading-5 text-body-text';
 
 const getResponseSummary = (data: Record<string, unknown> | null): string => {
 	if (!data) return '—';
-	const vals = Object.values(data).filter((v) => v !== null && v !== undefined && v !== '');
+	const vals = Object.values(data).filter(
+		(v) => v !== null && v !== undefined && v !== '',
+	);
 	if (!vals.length) return '—';
 	const first = vals[0];
 	if (Array.isArray(first)) return first.join(', ');
 	return String(first);
 };
 
-
+const SkeletonRow = ({ showForm }: { showForm: boolean }) => (
+	<tr className="border-border border-b">
+		<td className="w-12 px-4 py-5">
+			<div className="bg-muted size-[16px] animate-pulse rounded-[4px]" />
+		</td>
+		<td className="w-16 px-4 py-5">
+			<div className="bg-muted h-4 w-8 animate-pulse rounded" />
+		</td>
+		<td className="w-[220px] px-4 py-5">
+			<div className="bg-muted h-4 w-36 animate-pulse rounded" />
+		</td>
+		{showForm && (
+			<td className="w-[180px] px-4 py-5">
+				<div className="bg-muted h-4 w-28 animate-pulse rounded" />
+			</td>
+		)}
+		<td className="w-36 px-4 py-5">
+			<div className="bg-muted h-4 w-24 animate-pulse rounded" />
+		</td>
+		<td className="w-36 px-4 py-5">
+			<div className="bg-muted h-6 w-24 animate-pulse
 const Responses = () => {
-	const navigate    = useNavigate();
+	const navigate = useNavigate();
 	const queryClient = useQueryClient();
 	const { surveyId } = useSearch({ from: '/_app/responses/' });
 
-	const selectedSurveyId = surveyId ?? null;
-	const [search,           setSearch]           = useState('');
-	const [page,             setPage]             = useState(1);
-	const [perPage,          setPerPage]          = useState(10);
-	const [sortBy,           setSortBy]           = useState<'id' | 'created_at'>('created_at');
-	const [order,            setOrder]            = useState<'ASC' | 'DESC'>('DESC');
-	const [readFilter,       setReadFilter]       = useState<'all' | 'read' | 'unread'>('all');
-	const [checked,          setChecked]          = useState<number[]>([]);
-	const [confirmDelete,    setConfirmDelete]    = useState<{ id: number; surveyId: number } | null>(null);
-	const [bulkConfirmOpen,  setBulkConfirmOpen]  = useState(false);
-
+	const [selectedSurveyId, setSelectedSurveyId] = useState<number | null>(
+		surveyId ?? null,
+	);
+	const [search, setSearch] = useState('');
+	const [page, setPage] = useState(1);
+	const [perPage, setPerPage] = useState(10);
+	const [sortBy, setSortBy] = useState<'id' | 'created_at'>('created_at');
+	const [order, setOrder] = useState<'ASC' | 'DESC'>('DESC');
+	const [readFilter, setReadFilter] = useState<'all' | 'read' | 'unread'>(
+		'all',
+	);
+	const [checked, setChecked] = useState<number[]>([]);
+	const [confirmDelete, setConfirmDelete] = useState<{
+		id: number;
+		surveyId: number;
+	} | null>(null);
+	const [bulkConfirmOpen, setBu
 	const debouncedSearch = useDebouncedValue(search, 300);
 
-	useEffect(() => { setPage(1); }, [debouncedSearch]);
+	useEffect(() => {
+		setPage(1);
+	}, [debouncedSearch]);
 
 	const { data: surveysData } = useQuery({
 		...surveysQuery({ per_page: 100 }),
@@ -68,31 +119,32 @@ const Responses = () => {
 	});
 	const allSurveys = surveysData?.surveys ?? [];
 
-	const surveyTitleMap = Object.fromEntries(allSurveys.map((s) => [s.id, s.title]));
+	const surveyTitleMap = Object.fromEntries(
+		allSurveys.map((s) => [s.id, s.title]),
+	);
 
 	const queryParams = { page, per_page: perPage };
 
 	const allResponsesResult = useQuery({
 		...allResponsesQuery(queryParams),
-		enabled:  selectedSurveyId === null,
+		enabled: selectedSurveyId === null,
 		placeholderData: keepPreviousData,
 	});
 
 	const surveyResponsesResult = useQuery({
 		...surveyResponsesQuery(selectedSurveyId ?? 0, queryParams),
-		enabled:  selectedSurveyId !== null,
+		enabled: selectedSurveyId !== null,
 		placeholderData: keepPreviousData,
 	});
 
-	const isNavigating = useRouterState({ select: (s) => s.isLoading });
-	const activeQuery  = selectedSurveyId === null ? allResponsesResult : surveyResponsesResult;
-	const { data, isError, isFetching } = activeQuery;
-
-	const responses  = data?.responses ?? [];
-	const total      = data?.total     ?? 0;
+	const activeQuery =
+		selectedSurveyId === null ? allResponsesResult : surveyResponsesResult;
+	const { data, isLoading, isE
+	const responses = data?.responses ?? [];
+	const total = data?.total ?? 0;
 	const totalPages = Math.max(1, Math.ceil(total / perPage));
-	const showForm   = selectedSurveyId === null;
-	const numCols    = showForm ? 6 : 5;
+	const showForm = selectedSurveyId === null;
+	const numCols = showForm ? 6 : 5;
 
 	const sorted = [...responses].sort((a, b) => {
 		const valA = sortBy === 'id' ? a.id : new Date(a.created_at).getTime();
@@ -100,27 +152,34 @@ const Responses = () => {
 		return order === 'DESC' ? valB - valA : valA - valB;
 	});
 
-	const byReadFilter = readFilter === 'read'
-		? sorted.filter((r) => r.is_read)
-		: readFilter === 'unread'
-			? sorted.filter((r) => !r.is_read)
-			: sorted;
+	const byReadFilter =
+		readFilter === 'read'
+			? sorted.filter((r) => r.is_read)
+			: readFilter === 'unread'
+				? sorted.filter((r) => !r.is_read)
+				: sorted;
 
 	const filtered = debouncedSearch.trim()
 		? byReadFilter.filter((r) =>
-			getResponseSummary(r.response_data).toLowerCase().includes(debouncedSearch.toLowerCase()),
-		)
+				getResponseSummary(r.response_data)
+					.toLowerCase()
+					.includes(debouncedSearch.toLowerCase()),
+			)
 		: byReadFilter;
 
-	const allChecked  = filtered.length > 0 && filtered.every((r) => checked.includes(r.id));
+	const allChecked =
+		filtered.length > 0 && filtered.every((r) => checked.includes(r.id));
 	const someChecked = checked.length > 0 && !allChecked;
-	const toggleAll   = () => setChecked(allChecked ? [] : filtered.map((r) => r.id));
-	const toggleOne   = (id: number) =>
-		setChecked((prev) => prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]);
+	const toggleAll = () =>
+		setChecked(allChecked ? [] : filtered.map((r) => r.id));
+	const toggleOne = (id: number) =>
+		setChecked((prev) =>
+			prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
+		);
 
 	const openDetail = (response: SurveyResponse, edit = false) => {
 		void navigate({
-			to:     '/responses/$responseId',
+			to: '/responses/$responseId',
 			params: { responseId: String(response.id) },
 			search: { surveyId: response.survey_id, edit },
 		});
@@ -133,11 +192,13 @@ const Responses = () => {
 			void queryClient.invalidateQueries({ queryKey: ['responses'] });
 			setChecked((prev) => prev.filter((i) => i !== id));
 			setConfirmDelete(null);
-			toast.success(__('Response deleted.', 'all-feedback'));
+			toast.success(__('Response deleted.', 'allfeedback'));
 		},
 		onError: () => {
 			setConfirmDelete(null);
-			toast.error(__('Failed to delete response. Please try again.', 'all-feedback'));
+			toast.error(
+				__('Failed to delete response. Please try again.', 'allfeedback'),
+			);
 		},
 	});
 
@@ -150,14 +211,24 @@ const Responses = () => {
 			const count = result.deleted;
 			toast.success(
 				sprintf(
-					_n('%d response deleted.', '%d responses deleted.', count, 'all-feedback'),
+					_n(
+						'%d response deleted.',
+						'%d responses deleted.',
+						count,
+						'allfeedback',
+					),
 					count,
 				),
 			);
 			if (result.failed.length > 0) {
 				toast.error(
 					sprintf(
-						_n('%d response could not be deleted.', '%d responses could not be deleted.', result.failed.length, 'all-feedback'),
+						_n(
+							'%d response could not be deleted.',
+							'%d responses could not be deleted.',
+							result.failed.length,
+							'allfeedback',
+						),
 						result.failed.length,
 					),
 				);
@@ -165,19 +236,34 @@ const Responses = () => {
 		},
 		onError: () => {
 			setBulkConfirmOpen(false);
-			toast.error(__('Failed to delete responses. Please try again.', 'all-feedback'));
+			toast.error(
+				__('Failed to delete responses. Please try again.', 'allfeedback'),
+			);
 		},
 	});
 
 	const markReadMutation = useMutation({
-		mutationFn: ({ id, surveyId, isRead }: { id: number; surveyId: number; isRead: boolean }) =>
-			surveysApi.updateResponse(surveyId, id, { is_read: isRead }),
+		mutationFn: ({
+			id,
+			surveyId,
+			isRead,
+		}: {
+			id: number;
+			surveyId: number;
+			isRead: boolean;
+		}) => surveysApi.updateResponse(surveyId, id, { is_read: isRead }),
 		onSuccess: (_, { isRead }) => {
 			void queryClient.invalidateQueries({ queryKey: ['responses'] });
-			toast.success(isRead ? __('Marked as read.', 'all-feedback') : __('Marked as unread.', 'all-feedback'));
+			toast.success(
+				isRead
+					? __('Marked as read.', 'allfeedback')
+					: __('Marked as unread.', 'allfeedback'),
+			);
 		},
 		onError: () => {
-			toast.error(__('Failed to update response. Please try again.', 'all-feedback'));
+			toast.error(
+				__('Failed to update response. Please try again.', 'allfeedback'),
+			);
 		},
 	});
 
@@ -191,28 +277,43 @@ const Responses = () => {
 			setChecked([]);
 			toast.success(
 				isRead
-					? __('Marked as read.', 'all-feedback')
-					: __('Marked as unread.', 'all-feedback'),
+					? __('Marked as read.', 'allfeedback')
+					: __('Marked as unread.', 'allfeedback'),
 			);
 			if (result.failed.length > 0) {
-				toast.error(`${result.failed.length} ${__('response(s) could not be updated.', 'all-feedback')}`);
+				toast.error(
+					`${result.failed.length} ${__('response(s) could not be updated.', 'allfeedback')}`,
+				);
 			}
 		},
 		onError: () => {
-			toast.error(__('Failed to update responses. Please try again.', 'all-feedback'));
+			toast.error(
+				__('Failed to update responses. Please try again.', 'allfeedback'),
+			);
 		},
 	});
 
-	const colHeadCls = 'flex items-center gap-1 text-sm font-semibold uppercase tracking-wide leading-4 select-none text-body-text';
+	const colHeadCls =
+		'flex items-center gap-1 text-sm font-semibold uppercase tracking-wide leading-4 select-none text-body-text';
 
-	const ColHead = ({ label, col }: { label: string; col?: 'id' | 'created_at' }) => {
+	const ColHead = ({
+		label,
+		col,
+	}: {
+		label: string;
+		col?: 'id' | 'created_at';
+	}) => {
 		const isActive = col !== undefined && sortBy === col;
-		const Icon     = isActive ? (order === 'DESC' ? ArrowDown : ArrowUp) : ArrowUpDown;
+		const Icon = isActive
+			? order === 'DESC'
+				? ArrowDown
+				: ArrowUp
+			: ArrowUpDown;
 		const sortable = col !== undefined;
 		const handleClick = () => {
 			if (!sortable) return;
 			if (sortBy === col) {
-				setOrder((o) => o === 'DESC' ? 'ASC' : 'DESC');
+				setOrder((o) => (o === 'DESC' ? 'ASC' : 'DESC'));
 			} else {
 				setSortBy(col);
 				setOrder('DESC');
@@ -223,8 +324,20 @@ const Responses = () => {
 				role={sortable ? 'button' : undefined}
 				tabIndex={sortable ? 0 : undefined}
 				onClick={sortable ? handleClick : undefined}
-				onKeyDown={sortable ? (e) => { if (e.key === 'Enter' || e.key === ' ') handleClick(); } : undefined}
-				className={cn(colHeadCls, sortable ? 'cursor-pointer transition-colors hover:text-foreground' : '', isActive ? 'text-foreground' : '')}
+				onKeyDown={
+					sortable
+						? (e) => {
+								if (e.key === 'Enter' || e.key === ' ') handleClick();
+							}
+						: undefined
+				}
+				className={cn(
+					colHeadCls,
+					sortable
+						? 'hover:text-foreground cursor-pointer transition-colors'
+						: '',
+					isActive ? 'text-foreground' : '',
+				)}
 			>
 				{label}
 				{sortable && <Icon className="size-3 shrink-0" />}
@@ -234,42 +347,56 @@ const Responses = () => {
 
 	return (
 		<div className="p-5 md:p-6">
-
 			<ConfirmDialog
 				open={confirmDelete !== null}
-				onOpenChange={(open) => { if (!open && !deleteMutation.isPending) setConfirmDelete(null); }}
-				onConfirm={() => { if (confirmDelete) deleteMutation.mutate(confirmDelete); }}
-				title={__('Delete response?', 'all-feedback')}
-				description={__('This action cannot be undone. The response will be permanently removed.', 'all-feedback')}
-				confirmLabel={__('Delete', 'all-feedback')}
-				cancelLabel={__('Cancel', 'all-feedback')}
+				onOpenChange={(open) => {
+					if (!open && !deleteMutation.isPending) setConfirmDelete(null);
+				}}
+				onConfirm={() => {
+					if (confirmDelete) deleteMutation.mutate(confirmDelete);
+				}}
+				title={__('Delete response?', 'allfeedback')}
+				description={__(
+					'This action cannot be undone. The response will be permanently removed.',
+					'allfeedback',
+				)}
+				confirmLabel={__('Delete', 'allfeedback')}
+				cancelLabel={__('Cancel', 'allfeedback')}
 				isPending={deleteMutation.isPending}
 			/>
 
 			<ConfirmDialog
 				open={bulkConfirmOpen}
-				onOpenChange={(open) => { if (!open && !bulkDeleteMutation.isPending) setBulkConfirmOpen(false); }}
+				onOpenChange={(open) => {
+					if (!open && !bulkDeleteMutation.isPending) setBulkConfirmOpen(false);
+				}}
 				onConfirm={() => bulkDeleteMutation.mutate(checked)}
-				title={__('Delete selected responses?', 'all-feedback')}
-				description={__('This action cannot be undone. The selected responses will be permanently removed.', 'all-feedback')}
-				confirmLabel={__('Delete', 'all-feedback')}
-				cancelLabel={__('Cancel', 'all-feedback')}
+				title={__('Delete selected responses?', 'allfeedback')}
+				description={__(
+					'This action cannot be undone. The selected responses will be permanently removed.',
+					'allfeedback',
+				)}
+				confirmLabel={__('Delete', 'allfeedback')}
+				cancelLabel={__('Cancel', 'allfeedback')}
 				isPending={bulkDeleteMutation.isPending}
 			/>
 
 			<div className="mb-4 flex flex-wrap items-center gap-3 py-1">
-
 				<div className="relative w-full sm:w-[260px]">
 					<svg
-						className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
-						fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"
+						className="text-muted-foreground absolute top-1/2 left-3 size-3.5 -translate-y-1/2"
+						fill="none"
+						stroke="currentColor"
+						strokeWidth="2"
+						viewBox="0 0 24 24"
 					>
-						<circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+						<circle cx="11" cy="11" r="8" />
+						<path d="m21 21-4.35-4.35" />
 					</svg>
 					<Input
 						value={search}
 						onChange={(e) => setSearch(e.target.value)}
-						placeholder={__('Search responses…', 'all-feedback')}
+						placeholder={__('Search responses…', 'allfeedback')}
 						className="pl-9"
 					/>
 				</div>
@@ -283,10 +410,12 @@ const Responses = () => {
 					}}
 				>
 					<SelectTrigger className="w-full sm:w-[220px]">
-						<SelectValue placeholder={__('All Forms', 'all-feedback')} />
+						<SelectValue placeholder={__('All Forms', 'allfeedback')} />
 					</SelectTrigger>
 					<SelectContent>
-						<SelectItem value="all">{__('All Forms', 'all-feedback')}</SelectItem>
+						<SelectItem value="all">
+							{__('All Forms', 'allfeedback')}
+						</SelectItem>
 						{allSurveys.map((s) => (
 							<SelectItem key={s.id} value={String(s.id)}>
 								{s.title}
@@ -297,25 +426,33 @@ const Responses = () => {
 
 				<Select
 					value={readFilter}
-					onValueChange={(v) => { setReadFilter(v as 'all' | 'read' | 'unread'); setPage(1); }}
+					onValueChange={(v) => {
+						setReadFilter(v as 'all' | 'read' | 'unread');
+						setPage(1);
+					}}
 				>
 					<SelectTrigger className="w-full sm:w-[160px]">
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>
-						<SelectItem value="all">{__('All status', 'all-feedback')}</SelectItem>
-						<SelectItem value="unread">{__('Unread', 'all-feedback')}</SelectItem>
-						<SelectItem value="read">{__('Read', 'all-feedback')}</SelectItem>
+						<SelectItem value="all">
+							{__('All status', 'allfeedback')}
+						</SelectItem>
+						<SelectItem value="unread">
+							{__('Unread', 'allfeedback')}
+						</SelectItem>
+						<SelectItem value="read">{__('Read', 'allfeedback')}</SelectItem>
 					</SelectContent>
 				</Select>
 			</div>
 
-			<div className={cn('transition-opacity', (isFetching || isNavigating) && 'pointer-events-none opacity-50')}>
-			<div className="rounded-xl border border-border bg-card">
-				<div className="overflow-x-auto">
+			<div
+				className={cn(
+					'border-border bg-card rounded-xl border transition-opacity',
+					isFetching && !isLoading && 'pointer-eve				<div className="overflow-x-auto">
 					<table className="w-full table-fixed">
 						<thead>
-							<tr className="border-b border-border bg-muted/30">
+							<tr className="border-border bg-muted/30 border-b">
 								<th className="w-12 px-4 py-4 text-left">
 									<Checkbox
 										checked={someChecked ? 'indeterminate' : allChecked}
@@ -324,197 +461,242 @@ const Responses = () => {
 									/>
 								</th>
 								<th className="w-16 px-4 py-4 text-left">
-									<ColHead label={__('ID', 'all-feedback')} col="id" />
+									<ColHead label={__('ID', 'allfeedback')} col="id" />
 								</th>
 								<th className="w-[220px] px-4 py-4 text-left">
-									<ColHead label={__('Response', 'all-feedback')} />
+									<ColHead label={__('Response', 'allfeedback')} />
 								</th>
 								{showForm && (
 									<th className="w-[180px] px-4 py-4 text-left">
-										<ColHead label={__('Form', 'all-feedback')} />
+										<ColHead label={__('Form', 'allfeedback')} />
 									</th>
 								)}
 								<th className="w-36 px-4 py-4 text-left">
-									<ColHead label={__('Submitted', 'all-feedback')} col="created_at" />
+									<ColHead
+										label={__('Submitted', 'allfeedback')}
+										col="created_at"
+									/>
 								</th>
 								<th className="w-36 px-4 py-4 text-left">
-									<ColHead label={__('Actions', 'all-feedback')} />
+									<ColHead label={__('Actions', 'allfeedback')} />
 								</th>
 							</tr>
 						</thead>
 
 						<tbody>
-							{isError && !isFetching && (
-								<tr><td colSpan={numCols}>
-									<EmptyState
-										icon={AlertCircle}
-										title={__('Failed to load responses', 'all-feedback')}
-										description={__('There was a problem fetching responses. Please try again.', 'all-feedback')}
-									/>
-								</td></tr>
+							{isLoading &&
+								Array.from({ length: 5 }, (_, i) => (
+									<SkeletonRow key={i} showForm={showForm} />
+								))}
+
+							{isError && !isLoading && (
+								<tr>
+									<td colSpan={numCols}>
+										<EmptyState
+											icon={AlertCircle}
+											title={__('Failed to load responses', 'allfeedback')}
+											description={__(
+												'There was a problem fetching responses. Please try again.',
+												'allfeedback',
+											)}
+										/>
+									</td>
+								</tr>
 							)}
 
-							{!isFetching && !isError && responses.length === 0 && (
-								<tr><td colSpan={numCols}>
-									<EmptyState
-										icon={MessageSquare}
-										title={__('No responses yet', 'all-feedback')}
-										description={__('Responses will appear here once visitors submit forms.', 'all-feedback')}
-									/>
-								</td></tr>
+							{!isLoading && !isError && responses.length === 0 && (
+								<tr>
+									<td colSpan={numCols}>
+										<EmptyState
+											icon={MessageSquare}
+											title={__('No responses yet', 'allfeedback')}
+											description={__(
+												'Responses will appear here once visitors submit forms.',
+												'allfeedback',
+											)}
+										/>
+									</td>
+								</tr>
 							)}
 
-							{!isFetching && !isError && responses.length > 0 && filtered.length === 0 && (
-								<tr><td colSpan={numCols}>
-									<EmptyState
-										icon={MessageSquare}
-										title={__('No responses match your search', 'all-feedback')}
-										description={__('Try a different keyword.', 'all-feedback')}
-									/>
-								</td></tr>
-							)}
+							{!isLoading &&
+								!isError &&
+								responses.length > 0 &&
+								filtered.length === 0 && (
+									<tr>
+										<td colSpan={numCols}>
+											<EmptyState
+												icon={MessageSquare}
+												title={__(
+													'No responses match your search',
+													'allfeedback',
+												)}
+												description={__(
+													'Try a different keyword.',
+													'allfeedba										</td>
+									</tr>
+								)}
 
-							{!isError && filtered.map((response: SurveyResponse) => {
-								const isSelected = checked.includes(response.id);
-								const summary    = getResponseSummary(response.response_data);
-								return (
-									<tr
-										key={response.id}
-										className={cn(
-											'border-b border-border last:border-b-0 transition-colors',
-											!response.is_read && !isSelected
-												? 'border-l-[3px] border-l-primary/50'
-												: 'border-l-[3px] border-l-transparent',
-											isSelected
-												? 'bg-primary/[0.05]'
-												: !response.is_read
-													? 'bg-muted/[0.22] hover:bg-muted/[0.36]'
-													: 'hover:bg-muted/20',
-										)}
-									>
-										{/* Checkbox */}
-										<td className="w-12 px-4 py-5">
-											<Checkbox checked={isSelected} onCheckedChange={() => toggleOne(response.id)} />
-										</td>
+							{!isLoading &&
+								!isError &&
+								filtered.map((response: SurveyResponse) => {
+									const isSelected = checked.includes(response.id);
+									const summary = getResponseSummary(response.response_data);
+									return (
+										<tr
+											key={response.id}
+											className={cn(
+												'border-border border-b transition-colors last:border-0',
+												!response.is_read && !isSelected
+													? 'border-l-primary/50 border-l-[3px]'
+													: 'border-l-[3px] border-l-transparent',
+												isSelected
+													? 'bg-primary/[0.05]'
+													: !response.is_read
+														? 'bg-muted/[0.22] hover:bg-muted/[0.36]'
+														: 'hover:bg-muted/20',
+											)}
+										>
+											{/* Checkbox */}
+											<td className="w-12 px-4 py-5">
+												<Checkbox
+													checked={isSelected}
+													onCheckedChange={() => toggleOne(response.id)}
+												/>
+											</td>
 
-										{/* ID */}
-										<td className="w-16 px-4 py-5">
-											<span className={cn(cellCls, 'tabular-nums')}>
-												#{response.id}
-											</span>
-										</td>
-
-										{/* Response summary — clickable, opens detail page */}
-										<td className="w-[220px] px-4 py-5">
-											<button
-												type="button"
-												className="group/resp flex min-w-0 items-start gap-1.5 text-left"
-												onClick={() => openDetail(response)}
-											>
-												<span className={cn(
-													cellCls,
-													'line-clamp-2 break-words font-semibold underline-offset-2 transition-colors',
-													'group-hover/resp:text-primary group-hover/resp:underline',
-													)}>
-													{summary}
+											{/* ID */}
+											<td className="w-16 px-4 py-5">
+												<span className={cn(cellCls, 'tabular-nums')}>
+													#{response.id}
 												</span>
-												<Edit2 className="mt-0.5 size-3 shrink-0 opacity-0 transition-all group-hover/resp:text-primary group-hover/resp:opacity-60" />
-											</button>
-										</td>
+											</td>
 
-										{/* Form — click to filter by this form */}
-										{showForm && (
-											<td className="w-[180px] px-4 py-5">
+											{/* Response summary — clickable, opens detail page */}
+											<td className="w-[220px] px-4 py-5">
 												<button
 													type="button"
-													className="group/form flex min-w-0 items-start gap-1 text-left"
-													onClick={() => {
-														void navigate({ search: { surveyId: response.survey_id } });
-														setPage(1);
-														setChecked([]);
-													}}
+													className="group/resp flex min-w-0 items-start gap-1.5 text-left"
+													onClick={() => openDetail(response)}
 												>
-													<span className={cn(
-														cellCls,
-														'line-clamp-2 break-words underline-offset-2 transition-colors group-hover/form:text-primary group-hover/form:underline',
-													)}>
-														{surveyTitleMap[response.survey_id] ?? `#${response.survey_id}`}
+													<span
+														className={cn(
+															cellCls,
+															'line-clamp-2 font-semibold break-words underline-offset-2 transition-colors',
+															'group-hover/resp:text-primary group-hover/resp:underline',
+														)}
+													>
+														{summary}
 													</span>
+													<Edit2 className="group-hover/resp:text-primary mt-0.5 size-3 shrink-0 opacity-0 transition-all group-hover/resp:opacity-60" />
 												</button>
 											</td>
-										)}
 
-										{/* Submitted date */}
-										<td className="w-36 px-4 py-5">
-											<span className={cellCls}>
-												{format(new Date(response.created_at), 'MMM d, yyyy')}
-											</span>
-										</td>
+											{/* Form — click to filter by this form */}
+											{showForm && (
+												<td className="w-[180px] px-4 py-5">
+													<button
+														type="button"
+														className="group/form flex min-w-0 items-start gap-1 text-left"
+														onClick={() => {
+															setSelectedSurveyId(response.survey_id);
+															setPage(1);
+															setChecked([]);
+														}}
+													>
+														<span
+															className={cn(
+																cellCls,
+																'group-hover/form:text-primary line-clamp-2 break-words underline-offset-2 transition-colors group-hover/form:underline',
+															)}
+														>
+															{surveyTitleMap[response.survey_id] ??
+																`#${response.survey_id}`}
+														</span>
+													</button>
+												</td>
+											)}
 
-										{/* Actions */}
-										<td className="w-36 px-4 py-5">
-											<div className="flex items-center gap-1">
-												<button
-													type="button"
-													onClick={() => openDetail(response)}
-													style={{ border: '1.5px solid #E2E2E8' }}
-													className="flex max-sm:hidden items-center gap-1 rounded-lg bg-primary/[0.04] px-2 py-1 text-xs font-medium text-primary/80 transition-colors hover:bg-primary/[0.08] hover:text-primary"
-												>
-													<Eye className="size-3" />
-													{__('View', 'all-feedback')}
-												</button>
-												<DropdownMenu>
-													<DropdownMenuTrigger asChild>
-														<button
-															type="button"
-															style={{ border: '1.5px solid #E2E2E8' }}
-															className="flex size-7 shrink-0 items-center justify-center rounded-lg text-foreground/50 transition-colors hover:bg-muted/50 hover:text-foreground"
-														>
-															<MoreVertical className="size-3.5" />
-														</button>
-													</DropdownMenuTrigger>
-													<DropdownMenuContent>
-														<DropdownMenuItem
-															className="max-sm:flex sm:hidden"
-															onSelect={() => openDetail(response)}
-														>
-															<Eye className="size-3.5" />
-															{__('View', 'all-feedback')}
-														</DropdownMenuItem>
-														<DropdownMenuItem onSelect={() => openDetail(response, true)}>
-															<Pencil className="size-3.5" />
-															{__('Edit', 'all-feedback')}
-														</DropdownMenuItem>
-														<DropdownMenuItem
-															onSelect={() => markReadMutation.mutate({
-																id: response.id,
-																surveyId: response.survey_id,
-																isRead: !response.is_read,
-															})}
-														>
-															{response.is_read
-																? <Mail className="size-3.5" />
-																: <MailOpen className="size-3.5" />
-															}
-															{response.is_read
-																? __('Mark as unread', 'all-feedback')
-																: __('Mark as read', 'all-feedback')
-															}
-														</DropdownMenuItem>
-														<DropdownMenuItem
-															destructive
-															onSelect={() => setConfirmDelete({ id: response.id, surveyId: response.survey_id })}
-														>
-															<Trash2 className="size-3.5" />
-															{__('Delete', 'all-feedback')}
-														</DropdownMenuItem>
-													</DropdownMenuContent>
-												</DropdownMenu>
-											</div>
-										</td>
-									</tr>
-								);
-							})}
+											{/* Submitted date */}
+											<td className="w-36 px-4 py-5">
+												<span className={cellCls}>
+													{format(new Date(response.created_at), 'MMM d, yyyy')}
+												</span>
+											</td>
+
+											{/* Actions */}
+											<td className="w-36 px-4 py-5">
+												<div className="flex items-center gap-1">
+													<button
+														type="button"
+														onClick={() => openDetail(response)}
+														style={{ border: '1.5px solid #E2E2E8' }}
+														className="bg-primary/[0.04] text-primary/80 hover:bg-primary/[0.08] hover:text-primary flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors max-sm:hidden"
+													>
+														<Eye className="size-3" />
+														{__('View', 'allfeedback')}
+													</button>
+													<DropdownMenu>
+														<DropdownMenuTrigger asChild>
+															<button
+																type="button"
+																style={{ border: '1.5px solid #E2E2E8' }}
+																className="text-foreground/50 hover:bg-muted/50 hover:text-foreground flex size-7 shrink-0 items-center justify-center rounded-lg transition-colors"
+															>
+																<MoreVertical className="size-3.5" />
+															</button>
+														</DropdownMenuTrigger>
+														<DropdownMenuContent>
+															<DropdownMenuItem
+																className="max-sm:flex sm:hidden"
+																onSelect={() => openDetail(response)}
+															>
+																<Eye className="size-3.5" />
+																{__('View', 'allfeedback')}
+															</DropdownMenuItem>
+															<DropdownMenuItem
+																onSelect={() => openDetail(response, true)}
+															>
+																<Pencil className="size-3.5" />
+																{__('Edit', 'allfeedback')}
+															</DropdownMenuItem>
+															<DropdownMenuItem
+																onSelect={() =>
+																	markReadMutation.mutate({
+																		id: response.id,
+																		surveyId: response.survey_id,
+																		isRead: !response.is_read,
+																	})
+																}
+															>
+																{response.is_read ? (
+																	<Mail className="size-3.5" />
+																) : (
+																	<MailOpen className="size-3.5" />
+																)}
+																{response.is_read
+																	? __('Mark as unread', 'allfeedback')
+																	: __('Mark as read', 'allfeedback')}
+															</DropdownMenuItem>
+															<DropdownMenuItem
+																destructive
+																onSelect={() =>
+																	setConfirmDelete({
+																		id: response.id,
+																		surveyId: response.survey_id,
+																	})
+																}
+															>
+																<Trash2 className="size-3.5" />
+																{__('Delete', 'allfeedback')}
+															</DropdownMenuItem>
+														</DropdownMenuContent>
+													</DropdownMenu>
+												</div>
+											</td>
+										</tr>
+									);
+								})}
 						</tbody>
 					</table>
 				</div>
@@ -529,7 +711,10 @@ const Responses = () => {
 				perPageOptions={[10, 25, 50]}
 				isLoading={isFetching}
 				onPageChange={setPage}
-				onPerPageChange={(n) => { setPerPage(n); setPage(1); }}
+				onPerPageChange={(n) => {
+					setPerPage(n);
+					setPage(1);
+				}}
 			/>
 			</div>
 
@@ -538,15 +723,25 @@ const Responses = () => {
 				showMarkRead={checked.length > 0}
 				showMarkUnread={checked.length > 0}
 				showDelete={checked.length > 0}
-				onMarkRead={() => bulkMarkReadMutation.mutate({ ids: checked, isRead: true })}
-				onMarkUnread={() => bulkMarkReadMutation.mutate({ ids: checked, isRead: false })}
+				onMarkRead={() =>
+					bulkMarkReadMutation.mutate({ ids: checked, isRead: true })
+				}
+				onMarkUnread={() =>
+					bulkMarkReadMutation.mutate({ ids: checked, isRead: false })
+				}
 				onDelete={() => setBulkConfirmOpen(true)}
 				onTrash={() => {}}
 				onRestore={() => {}}
 				onClone={() => {}}
 				onClear={() => setChecked([])}
-				isMarkingRead={bulkMarkReadMutation.isPending && bulkMarkReadMutation.variables?.isRead === true}
-				isMarkingUnread={bulkMarkReadMutation.isPending && bulkMarkReadMutation.variables?.isRead === false}
+				isMarkingRead={
+					bulkMarkReadMutation.isPending &&
+					bulkMarkReadMutation.variables?.isRead === true
+				}
+				isMarkingUnread={
+					bulkMarkReadMutation.isPending &&
+					bulkMarkReadMutation.variables?.isRead === false
+				}
 				isDeleting={bulkDeleteMutation.isPending}
 			/>
 		</div>

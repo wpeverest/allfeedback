@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AllFeedback\API;
 
+defined( 'ABSPATH' ) || exit;
+
 use AllFeedback\API\Controllers\V1\AnalyticsController;
 use AllFeedback\API\Controllers\V1\ContentSearchController;
 use AllFeedback\API\Controllers\V1\FormAnalyticsController;

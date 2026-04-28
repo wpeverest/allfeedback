@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AllFeedback\Core\Contracts;
 
+defined( 'ABSPATH' ) || exit;
+
 /**
  * Implemented by core-layer service providers that only need a `boot()` step.
  *

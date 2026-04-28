@@ -10,12 +10,16 @@ interface ShortcodeChipProps {
 	className?: string;
 }
 
-const ShortcodeChip = ({ shortcode, size = 'sm', className }: ShortcodeChipProps) => {
+const ShortcodeChip = ({
+	shortcode,
+	size = 'sm',
+	className,
+}: ShortcodeChipProps) => {
 	const [copied, setCopied] = useState(false);
 
 	const handleCopy = () => {
 		const onSuccess = () => {
-			toast.success(__('Shortcode copied to clipboard.', 'all-feedback'));
+			toast.success(__('Shortcode copied to clipboard.', 'allfeedback'));
 			setCopied(true);
 			setTimeout(() => setCopied(false), 1500);
 		};
@@ -25,7 +29,12 @@ const ShortcodeChip = ({ shortcode, size = 'sm', className }: ShortcodeChipProps
 		} else {
 			const el = document.createElement('textarea');
 			el.value = shortcode;
-			Object.assign(el.style, { position: 'fixed', opacity: '0', top: '0', left: '0' });
+			Object.assign(el.style, {
+				position: 'fixed',
+				opacity: '0',
+				top: '0',
+				left: '0',
+			});
 			document.body.appendChild(el);
 			el.focus();
 			el.select();
@@ -33,7 +42,7 @@ const ShortcodeChip = ({ shortcode, size = 'sm', className }: ShortcodeChipProps
 				document.execCommand('copy');
 				onSuccess();
 			} catch {
-				toast.error(__('Failed to copy to clipboard.', 'all-feedback'));
+				toast.error(__('Failed to copy to clipboard.', 'allfeedback'));
 			}
 			document.body.removeChild(el);
 		}
@@ -45,21 +54,31 @@ const ShortcodeChip = ({ shortcode, size = 'sm', className }: ShortcodeChipProps
 		<button
 			type="button"
 			onClick={handleCopy}
-			title={__('Copy shortcode', 'all-feedback')}
+			title={__('Copy shortcode', 'allfeedback')}
 			className={cn(
-				'group flex w-full cursor-pointer items-center gap-1.5 rounded-md border border-border bg-muted/60 pl-3 pr-2 text-left transition-colors hover:border-border hover:bg-muted',
+				'group border-border bg-muted/60 hover:border-border hover:bg-muted flex w-full cursor-pointer items-center gap-1.5 rounded-md border pr-2 pl-3 text-left transition-colors',
 				size === 'sm' ? 'py-2' : 'py-2.5',
 				className,
 			)}
 		>
-			<Code2 className={cn(iconCls, 'shrink-0 text-muted-foreground/70')} />
-			<span className={cn('min-w-0 flex-1 truncate font-medium leading-none text-muted-foreground', size === 'md' ? 'text-[13px]' : 'text-[13px]')}>
+			<Code2 className={cn(iconCls, 'text-muted-foreground/70 shrink-0')} />
+			<span
+				className={cn(
+					'text-muted-foreground min-w-0 flex-1 truncate leading-none font-medium',
+					size === 'md' ? 'text-[13px]' : 'text-[13px]',
+				)}
+			>
 				{shortcode}
 			</span>
-			{copied
-				? <Check className={cn(iconCls, 'shrink-0 text-green-600 stroke-[2.5]')} />
-				: <Copy className={cn(iconCls, 'shrink-0 text-foreground/70 stroke-[2.5]')} />
-			}
+			{copied ? (
+				<Check
+					className={cn(iconCls, 'shrink-0 stroke-[2.5] text-green-600')}
+				/>
+			) : (
+				<Copy
+					className={cn(iconCls, 'text-foreground/70 shrink-0 stroke-[2.5]')}
+				/>
+			)}
 		</button>
 	);
 };

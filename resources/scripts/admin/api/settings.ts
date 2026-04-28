@@ -28,8 +28,7 @@ export type Settings = {
 			retention_days:  number;
 		};
 		plugin: {
-			delete_on_uninstall:  boolean;
-			allow_usage_tracking: boolean;
+			delete_on_uninstall: boolean;
 		};
 	};
 };

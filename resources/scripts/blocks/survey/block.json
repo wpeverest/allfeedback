@@ -4,11 +4,11 @@
 	"name": "allfeedback/survey",
 	"version": "1.0.0",
 	"title": "All Feedback Survey",
-	"category": "all-feedback",
+	"category": "allfeedback",
 	"icon": "megaphone",
 	"description": "Embed a published All Feedback survey directly in your content.",
 	"keywords": [ "survey", "feedback", "form", "nps" ],
-	"textdomain": "all-feedback",
+	"textdomain": "allfeedback",
 	"attributes": {
 		"surveyId": {
 			"type": "number",

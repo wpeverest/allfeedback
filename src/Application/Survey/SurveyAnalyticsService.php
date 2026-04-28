@@ -47,14 +47,14 @@ class SurveyAnalyticsService {
 	 * @since  1.0.0
 	 */
 	/**
-	 * Extract the primary survey type (NPS/CSAT/CES) from a form schema.
+	 * Extract the primary survey type (NPS) from a form schema.
 	 *
 	 * @param  array<mixed> $formSchema Decoded form_schema array.
-	 * @return string|null  'NPS', 'CSAT', 'CES', or null.
+	 * @return string|null  'NPS' or null.
 	 * @since  1.0.0
 	 */
 	private function extractSurveyType( array $formSchema ): ?string {
-		$primaryTypes = [ 'nps', 'csat', 'ces' ];
+		$primaryTypes = [ 'nps' ];
 
 		foreach ( (array) ( $formSchema['sections'] ?? [] ) as $section ) {
 			foreach ( (array) ( $section['fields'] ?? [] ) as $field ) {
@@ -72,7 +72,7 @@ class SurveyAnalyticsService {
 		$survey = $this->surveyRepository->findById( $surveyId );
 
 		if ( $survey === null ) {
-			throw NotFoundException::forResource( esc_html__( 'Survey', 'allfeedback' ), $surveyId );
+			throw NotFoundException::forResource( esc_html__( 'Survey', 'allfeedback' ), $surveyId ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- $surveyId is a typed int
 		}
 
 		$stats          = $this->responseRepository->aggregateScoreStats( $surveyId );

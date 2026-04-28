@@ -24,7 +24,7 @@ use AllFeedback\Traits\Hooks;
  *     "general":  { "widget":  { "color": "#6366F1", "position": "bottom-right", … } },
  *     "advanced": { "privacy": { "disable_user_details": false },
  *                   "logging": { "enabled": false, "level": "error", "retention_days": 30 },
- *                   "plugin":  { "delete_on_uninstall": false, "allow_usage_tracking": true } }
+ *                   "plugin":  { "delete_on_uninstall": false } }
  *   }
  *
  * ── Dot-notation access ───────────────────────────────────────────────
@@ -112,8 +112,7 @@ class SettingsManager {
 				'retention_days' => 30,
 			],
 			'plugin'  => [
-				'delete_on_uninstall'  => false,
-				'allow_usage_tracking' => true,
+				'delete_on_uninstall' => false,
 			],
 		],
 	];
@@ -520,17 +519,12 @@ class SettingsManager {
 						],
 					],
 					'plugin'  => [
-						'description' => \__( 'Plugin lifecycle and usage-tracking settings.', 'allfeedback' ),
+						'description' => __( 'Plugin lifecycle settings.', 'allfeedback' ),
 						'properties'  => [
-							'delete_on_uninstall'  => [
+							'delete_on_uninstall' => [
 								'type'        => 'boolean',
 								'default'     => self::DEFAULTS['advanced']['plugin']['delete_on_uninstall'],
 								'description' => \__( 'Permanently delete all surveys, responses, and settings on uninstall. Irreversible.', 'allfeedback' ),
-							],
-							'allow_usage_tracking' => [
-								'type'        => 'boolean',
-								'default'     => self::DEFAULTS['advanced']['plugin']['allow_usage_tracking'],
-								'description' => \__( 'Share anonymised usage statistics with the AllFeedback team. No personal data is transmitted.', 'allfeedback' ),
 							],
 						],
 					],

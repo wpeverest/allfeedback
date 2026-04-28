@@ -1,6 +1,6 @@
 import apiFetch from '@wordpress/api-fetch';
 
-const NAMESPACE = '/all-feedback/v1';
+const NAMESPACE = '/allfeedback/v1';
 
 type ApiResponse<T> = {
 	success: boolean;
