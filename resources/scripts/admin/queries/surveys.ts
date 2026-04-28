@@ -9,6 +9,7 @@ export const surveysQuery = (params?: SurveyListParams) => ({
 export const surveyQuery = (id: number) => ({
 	queryKey: ['surveys', id] as const,
 	queryFn:  () => surveysApi.get(id),
+	staleTime: 30_000,
 });
 
 export const allResponsesQuery = (params?: ResponseListParams) => ({
@@ -22,8 +23,9 @@ export const surveyResponsesQuery = (surveyId: number, params?: ResponseListPara
 });
 
 export const surveyResponseQuery = (surveyId: number, responseId: number) => ({
-	queryKey: ['responses', surveyId, responseId] as const,
-	queryFn:  () => surveysApi.getResponse(surveyId, responseId),
+	queryKey:  ['responses', surveyId, responseId] as const,
+	queryFn:   () => surveysApi.getResponse(surveyId, responseId),
+	staleTime: 30_000,
 });
 
 export const unreadCountQuery = () => ({

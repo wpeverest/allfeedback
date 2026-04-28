@@ -48,6 +48,7 @@ import {
 	Pencil,
 	Shield,
 	Smartphone,
+	Star,
 	Tablet,
 	Trash2,
 	X,
