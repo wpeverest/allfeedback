@@ -1866,42 +1866,6 @@ const Analytics = () => {
 					loading={loading}
 				/>
 				{kpi.thirdKind === 'time' ? (
-					<KPICard
-						icon={MessageSquare}
-						label={__('Total feedback', 'allfeedback')}
-						value={loading ? '—' : kpi.totalResponses.toLocaleString()}
-						deltaValue={kpi.totalChange}
-						deltaLabel={
-							kpi.totalChange !== null
-								? __('vs. last week', 'allfeedback')
-								: __('total responses', 'allfeedback')
-						}
-						sparkData={sparkBase}
-						sparkColor="var(--primary)"
-						iconColor="oklch(0.580 0.238 277)"
-						loading={loading}
-					/>
-					<KPICard
-						icon={CheckCircle2}
-						label={__('Completion rate', 'allfeedback')}
-						value={
-							loading
-								? '—'
-								: kpi.completionRate !== null
-									? kpi.completionRate.toFixed(1)
-									: '—'
-						}
-						unit="%"
-						deltaValue={kpi.completionChange}
-						deltaLabel={
-							kpi.completionChange !== null
-								? __('vs. last week', 'allfeedback')
-								: __('of sessions submitted', 'allfeedback')
-						}
-						iconColor="oklch(0.527 0.154 150)"
-						loading={loading}
-					/>
-					{kpi.thirdKind === 'time' ? (
 						<KPICard
 							icon={Clock}
 							label={__('Avg. time', 'allfeedback')}
@@ -1970,37 +1934,6 @@ const Analytics = () => {
 						/>
 					)}
 				</div>
-
-				{/* Chart row — NPS gets 70/30 split, everything else is full width */}
-				{isNpsForm ? (
-					<div
-						style={{
-							display: 'grid',
-							gridTemplateColumns: '7fr 3fr',
-							gap: 16,
-							marginTop: 16,
-						}}
-					>
-						<AreaChartCard
-							chartData={chartData}
-							loading={loading}
-							totalInPeriod={totalInPeriod}
-						/>
-						<NpsDistributionCard
-							nps={npsData}
-							scoreDist={detailData!.response_metrics.score_distribution}
-							loading={detailLoading}
-						/>
-					</div>
-				) : (
-					<div style={{ marginTop: 16 }}>
-						<AreaChartCard
-							chartData={chartData}
-							loading={loading}
-							totalInPeriod={totalInPeriod}
-						/>
-					</div>
-				)}
 
 			{/* Chart row — NPS gets 70/30 split, everything else is full width */}
 			{isNpsForm ? (

@@ -839,7 +839,9 @@ const AllForms = () => {
 												title={__('Failed to load forms', 'allfeedback')}
 												description={__(
 													'There was a problem fetching your forms. Please try refreshing the page.',
-																				/>
+													'allfeedback',
+												)}
+											/>
 										</td>
 									</tr>
 								)}

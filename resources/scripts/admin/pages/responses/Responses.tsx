@@ -32,7 +32,8 @@ import {
 	useQuery,
 	useQueryClient,
 } from '@tanstack/react-query';
-import { useNavigate, useSearchimport { __, _n, sprintf } from '@wordpress/i18n';
+import { useNavigate, useSearch } from '@tanstack/react-router';
+import { __, _n, sprintf } from '@wordpress/i18n';
 import { format } from 'date-fns';
 import {
 	AlertCircle,
