@@ -156,7 +156,7 @@ const EmailSettings = () => {
 						<Mail className="size-[18px] text-primary" />
 					</div>
 					<h3 className="text-md font-semibold text-foreground" style={{ margin: 0 }}>
-						{__('Email', 'all-feedback')}
+						{__('Email', 'allfeedback')}
 					</h3>
 				</div>
 				{sharedIsDirty && !isSaving && <UnsavedChangesBadge />}
@@ -165,11 +165,11 @@ const EmailSettings = () => {
 			<div className="px-6 pb-6 pt-4">
 
 				<div className="space-y-3">
-				<SectionLabel>{__('Delivery', 'all-feedback')}</SectionLabel>
+				<SectionLabel>{__('Delivery', 'allfeedback')}</SectionLabel>
 
 				<Row
-					label={__('To email', 'all-feedback')}
-					description={__('Notification emails will be sent to this address.', 'all-feedback')}
+					label={__('To email', 'allfeedback')}
+					description={__('Notification emails will be sent to this address.', 'allfeedback')}
 				>
 					<Input
 						type="email"
@@ -180,8 +180,8 @@ const EmailSettings = () => {
 				</Row>
 
 				<Row
-					label={__('From name', 'all-feedback')}
-					description={__('The sender name that appears in the email inbox.', 'all-feedback')}
+					label={__('From name', 'allfeedback')}
+					description={__('The sender name that appears in the email inbox.', 'allfeedback')}
 				>
 					<Input
 						type="text"
@@ -192,8 +192,8 @@ const EmailSettings = () => {
 				</Row>
 
 				<Row
-					label={__('From email', 'all-feedback')}
-					description={__('The sender address used when sending emails.', 'all-feedback')}
+					label={__('From email', 'allfeedback')}
+					description={__('The sender address used when sending emails.', 'allfeedback')}
 				>
 					<Input
 						type="email"
@@ -207,7 +207,7 @@ const EmailSettings = () => {
 				<div className="my-6 border-t border-border/50" />
 
 				<div className="space-y-3">
-				<SectionLabel>{__('Test email', 'all-feedback')}</SectionLabel>
+				<SectionLabel>{__('Test email', 'allfeedback')}</SectionLabel>
 
 				<div
 					className={cn(
@@ -234,16 +234,16 @@ const EmailSettings = () => {
 
 					<div className="min-w-0 flex-1">
 						<p className="!mb-1 !mt-0 !text-md font-medium text-foreground/90">
-							{__('Send a test email', 'all-feedback')}
+							{__('Send a test email', 'allfeedback')}
 						</p>
 						<p className="!mt-0 text-xs leading-relaxed text-muted-foreground/80">
 							{values.to_email ? (
 								<>
-									{__('A test message will be sent to', 'all-feedback')}{' '}
+									{__('A test message will be sent to', 'allfeedback')}{' '}
 									<span className="font-medium text-foreground/70">{values.to_email}</span>.
 								</>
 							) : (
-								__('Set a "To email" address above to send a test.', 'all-feedback')
+								__('Set a "To email" address above to send a test.', 'allfeedback')
 							)}
 						</p>
 					</div>
@@ -260,10 +260,10 @@ const EmailSettings = () => {
 							testStatus === 'error'   && 'border-destructive/30 bg-white text-destructive hover:bg-destructive/5',
 						)}
 					>
-						{testStatus === 'sending' ? __('Sending…', 'all-feedback')
-							: testStatus === 'success' ? __('Sent!', 'all-feedback')
-							: testStatus === 'error'   ? __('Failed', 'all-feedback')
-							: __('Send test', 'all-feedback')}
+						{testStatus === 'sending' ? __('Sending…', 'allfeedback')
+							: testStatus === 'success' ? __('Sent!', 'allfeedback')
+							: testStatus === 'error'   ? __('Failed', 'allfeedback')
+							: __('Send test', 'allfeedback')}
 					</Button>
 				</div>
 				</div>

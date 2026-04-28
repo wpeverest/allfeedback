@@ -44,7 +44,7 @@ Domain classes (`Form`, `FormField`, `FormSubmission`) are framework-agnostic ag
 All controllers extend `src/API/RestController.php`.
 
 - Route registration via `src/API/ApiServiceProvider.php` → `rest_api_init`
-- Namespace: `/all-feedback/v1/`
+- Namespace: `/allfeedback/v1/`
 - Standard verbs: index, show, store, update, destroy
 - Response helpers: `successResponse()`, `errorResponse()` — envelope is `{ success: bool, data: mixed }`
 - Permission helpers: `publicPermission()`, `adminPermission()`, `authenticatedPermission()`

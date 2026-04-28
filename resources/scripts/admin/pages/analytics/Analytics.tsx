@@ -8,7 +8,7 @@ import {
 	analyticsFormsQuery,
 	analyticsOverviewQuery,
 } from '@/admin/queries/analytics';
-import { allResponsesQuery } from '@/admin/queries/surveys';
+import { allResponsesQuery, surveyResponsesQuery } from '@/admin/queries/surveys';
 import { EmptyState } from '@/components/ui/empty-state';
 import {
 	Select,
@@ -1540,10 +1540,12 @@ function RecentResponsesCard({
 	responses,
 	forms,
 	loading,
+	surveyId,
 }: {
 	responses: SurveyResponse[];
 	forms: FormAnalyticsListItem[];
 	loading: boolean;
+	surveyId?: number;
 }) {
 	const formMap = useMemo(() => {
 		const m = new Map<number, string>();
@@ -1599,7 +1601,7 @@ function RecentResponsesCard({
 				</div>
 				<Link
 					to="/responses"
-					search={{ surveyId: undefined }}
+					search={{ surveyId: surveyId ?? undefined }}
 					className="border-border/70 text-foreground hover:bg-muted inline-flex items-center gap-1.5 rounded-lg border bg-white px-3 py-1.5 text-sm font-medium transition-colors"
 				>
 					{__('View all', 'allfeedback')}
@@ -1665,7 +1667,7 @@ const Analytics = () => {
 	const navigate = useNavigate();
 	const selectedFormId = formId ?? null;
 	const setSelectedFormId = (id: number | null) => {
-		void navigate({ to: '/analytics/', search: id !== null ? { formId: id } : {} });
+		void navigate({ to: '/analytics/', search: { formId: id !== null ? id : undefined } });
 	};
 
 	const {
@@ -1688,6 +1690,11 @@ const Analytics = () => {
 	});
 	const { data: responsesData, isLoading: responsesLoading } = useQuery({
 		...allResponsesQuery({ per_page: 5 }),
+		placeholderData: keepPreviousData,
+	});
+	const { data: formResponsesData, isLoading: formResponsesLoading } = useQuery({
+		...surveyResponsesQuery(selectedFormId ?? 0, { per_page: 5 }),
+		enabled: selectedFormId !== null,
 		placeholderData: keepPreviousData,
 	});
 	const {
@@ -1852,7 +1859,6 @@ const Analytics = () => {
 					deltaLabel={kpi.totalChange !== null ? __('vs. last week', 'allfeedback') : __('total responses', 'allfeedback')}
 					sparkData={sparkBase}
 					sparkColor="var(--primary)"
-					iconColor="oklch(0.580 0.238 277)"
 					loading={loading}
 				/>
 				<KPICard
@@ -1953,7 +1959,8 @@ const Analytics = () => {
 
 			{/* Bottom row */}
 			{isFormView ? (
-				<div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+				<div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+					<RecentResponsesCard responses={formResponsesData?.responses ?? []} forms={forms} loading={formResponsesLoading} surveyId={selectedFormId ?? undefined} />
 					<SessionMetricsCard sm={detailData?.session_metrics ?? null} loading={detailLoading} />
 					<DeviceDistributionCard breakdown={deviceBreakdown} loading={detailLoading} />
 				</div>

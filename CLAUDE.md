@@ -4,7 +4,7 @@
 
 WordPress plugin for NPS feedback surveys. All data stored locally — no third-party services. React admin SPA + public widget.
 
-Entry: `all-feedback.php` → `src/Plugin.php`
+Entry: `allfeedback.php` → `src/Plugin.php`
 
 ---
 
@@ -70,7 +70,7 @@ composer lint:fix         # phpcbf
 
 ### REST API
 
-Base: `/wp-json/all-feedback/v1/`
+Base: `/wp-json/allfeedback/v1/`
 Auth: write endpoints require `manage_options`; submission requires nonce only (`allfeedback_submit`).
 Envelope: `{ success: bool, data: mixed }`
 Full spec: [`.claude/docs/api_reference.md`](.claude/docs/api_reference.md)

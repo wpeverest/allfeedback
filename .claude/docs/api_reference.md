@@ -1,6 +1,6 @@
 # AllFeedback REST API Reference
 
-**Base URL:** `/wp-json/all-feedback/v1`  
+**Base URL:** `/wp-json/allfeedback/v1`  
 **Response envelope:** `{ "success": true, "data": <payload> }` (all endpoints)  
 **Auth:** All admin endpoints require `manage_options` (overridable via `allfeedback_required_capability` filter). The submit endpoint requires a WordPress nonce only.
 
