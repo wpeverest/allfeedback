@@ -101,4 +101,5 @@ export const release = series(
             .pipe(dest('./release/'));
     },
     function cleanup()  { return exec('rm -rf build/'); },
+	
 );
