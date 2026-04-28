@@ -65,7 +65,7 @@ const DevTools = () => {
 	return (
 		<div className="p-6 md:p-8">
 			{/* Header */}
-			<div className="mb-6 flex items-start gap-3">
+			<div className="mb-6 flex items-center gap-3">
 				<div className="bg-warning/10 flex size-10 shrink-0 items-center justify-center rounded-lg">
 					<AlertTriangle className="text-warning size-5" />
 				</div>
