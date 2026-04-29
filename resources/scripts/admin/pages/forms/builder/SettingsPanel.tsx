@@ -34,14 +34,14 @@ interface SettingsPanelProps {
 const labelCls = 'text-base font-normal text-foreground/90';
 
 const inputCls = [
-	'flex h-9 w-full rounded-lg border border-border/70 bg-transparent px-3 py-2',
+	'flex h-10 w-full rounded-lg border border-transparent bg-muted/60 px-3 py-1 text-[14px] text-foreground placeholder:text-muted-foreground/50 transition-colors focus:border-border focus:bg-white focus:outline-none',
 	'text-base text-foreground placeholder:text-muted-foreground/40',
 	'transition-colors focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/10',
 	'disabled:cursor-not-allowed disabled:opacity-50',
 ].join(' ');
 
 const textareaCls = [
-	'flex w-full resize-none rounded-lg border border-border/70 bg-transparent px-3 py-2',
+	'flex w-full resize-none rounded-lg border border-transparent bg-muted/60 px-3 py-2 text-[14px] text-foreground placeholder:text-muted-foreground/50 transition-colors focus:border-border focus:bg-white focus:outline-none',
 	'text-base text-foreground placeholder:text-muted-foreground/40',
 	'transition-colors focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/10',
 	'disabled:cursor-not-allowed disabled:opacity-50',

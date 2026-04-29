@@ -376,7 +376,7 @@ const Logs = () => {
 	const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
 	const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-	const { data: listData, isPending: isListPending } = useQuery(logsQuery());
+	const { data: listData, isPending: isListPending, isFetching: isListFetching } = useQuery(logsQuery());
 
 	const files = listData?.logs ?? [];
 
@@ -485,33 +485,33 @@ const Logs = () => {
 					</p>
 				</div>
 				<div className="ml-auto flex items-center gap-2">
-					{files.length > 0 && (
-						<Button
-							variant="outline"
-							size="sm"
-							disabled={isDeletingAll || isListPending}
-							onClick={handleDeleteAll}
-							className={cn(
-								'border-destructive/60 text-destructive hover:bg-destructive/10 hover:text-destructive',
-								confirmDeleteAll && 'bg-destructive/10',
-							)}
-						>
-							<Trash2 className="size-3.5" />
-							{confirmDeleteAll
-								? __('Confirm delete all?', 'allfeedback')
-								: __('Delete All', 'allfeedback')}
-						</Button>
-					)}
 					<Button
-						variant="outline"
+						variant="secondary"
 						size="sm"
-						disabled={isListPending}
+						disabled={isDeletingAll || isListPending || files.length === 0}
+						onClick={handleDeleteAll}
+						style={{ border: '1.5px solid color-mix(in oklch, var(--destructive) 60%, transparent)' }}
+						className={cn(
+							'text-destructive hover:bg-destructive/10 hover:text-destructive',
+							confirmDeleteAll && 'bg-destructive/10',
+						)}
+					>
+						<Trash2 className="size-3.5" />
+						{confirmDeleteAll
+							? __('Confirm delete all?', 'allfeedback')
+							: __('Delete All', 'allfeedback')}
+					</Button>
+					<Button
+						variant="secondary"
+						size="sm"
+						disabled={isListFetching}
 						onClick={() =>
 							queryClient.invalidateQueries({ queryKey: ['logs'] })
 						}
+						style={{ border: '1.5px solid color-mix(in oklch, var(--primary) 60%, transparent)' }}
 					>
 						<RefreshCw
-							className={cn('size-3.5', isListPending && 'animate-spin')}
+							className={cn('size-3.5', isListFetching && 'animate-spin')}
 						/>
 						{__('Refresh', 'allfeedback')}
 					</Button>

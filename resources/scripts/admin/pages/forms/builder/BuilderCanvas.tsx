@@ -1,4 +1,4 @@
-﻿import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { __ } from '@wordpress/i18n';
 import { Plus } from 'lucide-react';
 import { useCallback, useState } from 'react';

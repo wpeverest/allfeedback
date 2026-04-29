@@ -1433,7 +1433,8 @@ function DeviceDistributionCard({
 
 function ResponseRow({
 	r,
-	formTitle,}: {
+	formTitle,
+}: {
 	r: SurveyResponse;
 	formTitle: string;
 }) {
@@ -1441,16 +1442,13 @@ function ResponseRow({
 		addSuffix: true,
 	});
 
-	const sentiment =
+	const sentimentClass =
 		r.score !== null
 			? r.score >= 9
-				? { label: __('Positive', 'allfeedback'), color: 'var(--success)' }
+				? { label: __('Positive', 'allfeedback'), cls: 'text-emerald-700 bg-emerald-50 ring-1 ring-emerald-200/80' }
 				: r.score >= 7
-					? { label: __('Neutral', 'allfeedback'), color: 'var(--warning)' }
-					: {
-							label: __('Negative', 'allfeedback'),
-							color: 'var(--destructive)',
-						}
+					? { label: __('Neutral', 'allfeedback'), cls: 'text-amber-700 bg-amber-50 ring-1 ring-amber-200/80' }
+					: { label: __('Negative', 'allfeedback'), cls: 'text-red-700 bg-red-50 ring-1 ring-red-200/80' }
 			: null;
 
 	const responseText = (() => {
@@ -1468,118 +1466,47 @@ function ResponseRow({
 			to="/responses/$responseId"
 			params={{ responseId: String(r.id) }}
 			search={{ surveyId: r.survey_id, edit: false }}
-			style={{
-				display: 'grid',
-				gridTemplateColumns: '1fr auto',
-				gap: 14,
-				padding: '16px 20px',
-				borderBottom: '1px solid var(--border)',
-				transition: 'background 140ms',
-				cursor: 'pointer',
-				textDecoration: 'none',
-				color: 'inherit',
-			}}
-			onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--muted)')}
-			onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+			className={[
+				'block grid gap-2 px-5 py-1.5 border-b border-border hover:bg-muted/30 transition-colors cursor-pointer no-underline text-inherit',
+				r.is_read
+					? 'border-l-[3px] border-l-transparent'
+					: 'border-l-[3px] border-l-primary/50 bg-muted/[0.18]',
+			].join(' ')}
+			style={{ gridTemplateColumns: '1fr auto' }}
 		>
-
-			<div style={{ minWidth: 0 }}>
-				<div
-					style={{
-						display: 'flex',
-						alignItems: 'center',
-						gap: 8,
-						marginBottom: 4,
-						flexWrap: 'wrap',
-					}}
-				>
+			<div className="min-w-0">
+				<div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
 					{formTitle && (
-						<span
-							style={{
-								fontSize: '13px',
-								color: 'var(--muted-foreground)',
-								fontWeight: 500,
-							}}
-						>
+						<span className="text-[13px] font-medium text-muted-foreground">
 							{formTitle}
 						</span>
 					)}
-					{sentiment && (
-						<span
-							style={{
-								display: 'inline-flex',
-								alignItems: 'center',
-								gap: 4,
-								fontSize: 'var(--text-xs)',
-								fontWeight: 500,
-								color: sentiment.color,
-								background: `${sentiment.color}18`,
-								boxShadow: `inset 0 0 0 1px ${sentiment.color}30`,
-								padding: '1px 7px',
-								borderRadius: 999,
-							}}
-						>
-							<span
-								style={{
-									width: 5,
-									height: 5,
-									borderRadius: 99,
-									background: 'currentColor',
-								}}
-							/>
-							{sentiment.label}
+					{sentimentClass && (
+						<span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${sentimentClass.cls}`}>
+							<span className="size-1.5 rounded-full bg-current" />
+							{sentimentClass.label}
 						</span>
 					)}
 					{r.score !== null && (
-						<span
-							style={{
-								display: 'inline-flex',
-								alignItems: 'center',
-								gap: 3,
-								fontSize: 'var(--text-xs)',
-								fontWeight: 600,
-								color: 'var(--brand-700)',
-								background: 'var(--brand-50)',
-								boxShadow: 'inset 0 0 0 1px var(--brand-100)',
-								padding: '1px 7px',
-								borderRadius: 999,
-								fontVariantNumeric: 'tabular-nums',
-							}}
-						>
+						<span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold bg-primary/[0.07] text-primary ring-1 ring-primary/15">
 							NPS {r.score}
 						</span>
 					)}
 				</div>
-				<div
-					style={
-						{
-							fontSize: '13px',
-							color: 'color-mix(in oklch, var(--foreground) 80%, transparent)',
-							lineHeight: 1.55,
-							display: '-webkit-box',
-							WebkitLineClamp: 2,
-							WebkitBoxOrient: 'vertical',
-							overflow: 'hidden',
-						} as CSSProperties
-					}
-				>
-					"{responseText}"
-				</div>
+				{responseText === '—' ? (
+					<p className="text-[13px] leading-snug text-muted-foreground italic">
+						{__('No response text.', 'allfeedback')}
+					</p>
+				) : (
+					<p className="line-clamp-2 text-[13px] leading-snug text-foreground/80">
+						&ldquo;{responseText}&rdquo;
+					</p>
+				)}
 			</div>
 
-			<div
-				style={{
-					fontSize: '13px',
-					color: 'var(--muted-foreground)',
-					fontVariantNumeric: 'tabular-nums',
-					fontWeight: 500,
-					whiteSpace: 'nowrap',
-					alignSelf: 'start',
-					marginTop: 2,
-				}}
-			>
+			<span className="shrink-0 text-[12px] font-medium tabular-nums text-muted-foreground whitespace-nowrap self-start mt-0.5">
 				{timeAgo}
-			</div>
+			</span>
 		</Link>
 	);
 }
@@ -1650,7 +1577,8 @@ function RecentResponsesCard({
 				<Link
 					to="/responses"
 					search={{ surveyId: surveyId ?? undefined }}
-					className="border-primary/40 text-primary hover:bg-primary/5 inline-flex items-center gap-1.5 rounded-lg border bg-white px-3 py-1.5 text-sm font-medium transition-colors"
+					className="inline-flex items-center gap-1.5 rounded-lg bg-transparent px-3 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-primary/5"
+					style={{ border: '1.5px solid color-mix(in oklch, var(--primary) 60%, transparent)', color: 'var(--primary)' }}
 				>
 					{__('View all', 'allfeedback')}
 					<ArrowRight className="size-3.5" />
@@ -1662,48 +1590,29 @@ function RecentResponsesCard({
 					{Array.from({ length: 4 }).map((_, i) => (
 						<div
 							key={i}
-							style={{
-								display: 'grid',
-								gridTemplateColumns: 'auto 1fr auto',
-								gap: 14,
-								padding: '16px 20px',
-								borderBottom: '1px solid var(--border)',
-							}}
+							className="flex items-start justify-between gap-3.5 px-5 py-4 border-b border-border last:border-0"
 						>
-							<Skeleton
-								style={{
-									width: 32,
-									height: 32,
-									borderRadius: 10,
-									flexShrink: 0,
-								}}
-							/>
-							<div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-								<Skeleton style={{ height: 12, width: 128, borderRadius: 4 }} />
-								<Skeleton style={{ height: 12, width: 240, borderRadius: 4 }} />
+							<div className="flex flex-col gap-1.5 min-w-0 flex-1">
+								<Skeleton className="h-3 w-28 rounded" />
+								<Skeleton className="h-3 w-4/5 rounded" />
 							</div>
-							<Skeleton style={{ height: 12, width: 48, borderRadius: 4 }} />
+							<Skeleton className="h-3 w-14 rounded shrink-0 mt-0.5" />
 						</div>
 					))}
 				</div>
 			) : !responses.length ? (
-				<div
-					style={{
-						padding: '48px 24px',
-						textAlign: 'center',
-						color: 'var(--muted-foreground)',
-						fontSize: '12px',
-					}}
-				>
-					{__('No responses yet.', 'allfeedback')}
+				<div className="py-12 text-center">
+					<p className="text-sm text-muted-foreground">
+						{__('No responses yet.', 'allfeedback')}
+					</p>
 				</div>
 			) : (
-				responses.map((r, i) => (
+				responses.map((r) => (
 					<ResponseRow
 						key={r.id}
 						r={r}
 						formTitle={formMap.get(r.survey_id) ?? ''}
-						/>
+					/>
 				))
 			)}
 		</div>
@@ -1715,7 +1624,7 @@ const Analytics = () => {
 	const navigate = useNavigate();
 	const selectedFormId = formId ?? null;
 	const setSelectedFormId = (id: number | null) => {
-		void navigate({ to: '/analytics/', search: { formId: id !== null ? id : undefined } });
+		void navigate({ to: '/analytics', search: { formId: id !== null ? id : undefined } });
 	};
 
 	const {

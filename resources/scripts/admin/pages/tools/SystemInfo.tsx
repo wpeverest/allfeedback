@@ -116,9 +116,9 @@ const SystemInfo = () => {
 					</h3>
 				</div>
 				<Button
-					variant="outline"
+					variant="secondary"
 					size="sm"
-					className="text-primary"
+					className="gap-1.5" style={{ border: '1.5px solid color-mix(in oklch, var(--primary) 60%, transparent)' }}
 					onClick={handleCopy}
 				>
 					{copied ? (

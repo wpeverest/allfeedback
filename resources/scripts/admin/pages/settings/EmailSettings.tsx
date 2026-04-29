@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 import { useForm, useStore } from '@tanstack/react-form';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { __ } from '@wordpress/i18n';
-import { CheckCircle2, Loader2, Mail, Send, XCircle } from 'lucide-react';
+import { CheckCircle2, Eye, Loader2, Mail, Send, X, XCircle } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 const labelCls = 'text-base font-normal text-foreground/90';
@@ -83,6 +83,7 @@ const EmailSettings = () => {
 	const { isDirty: sharedIsDirty, isSaving, setDirty, patches, setPatch } = useSettingsDirty();
 
 	const [testStatus, setTestStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+	const [previewOpen, setPreviewOpen] = useState(false);
 
 	const stagedEmail = (patches[FORM_KEY] as { email?: { delivery?: Partial<Settings['email']['delivery']> } } | undefined)?.email?.delivery;
 	const serverEmail = data?.email?.delivery;
@@ -148,7 +149,7 @@ const EmailSettings = () => {
 
 	if (isPending) return <EmailSettingsSkeleton />;
 
-	return (
+	return (<>
 		<div>
 			<div className="flex items-center justify-between gap-3 border-b border-border/50 px-6 py-4">
 				<div className="flex items-center gap-3">
@@ -160,6 +161,7 @@ const EmailSettings = () => {
 					</h3>
 				</div>
 				{sharedIsDirty && !isSaving && <UnsavedChangesBadge />}
+				<Button type="button" variant="secondary" size="sm" onClick={() => setPreviewOpen(true)} className="gap-1.5 text-primary" style={{ border: "1.5px solid color-mix(in oklch, var(--primary) 60%, transparent)", color: 'var(--primary)' }}><Eye className="size-3.5" />{__('Preview email', 'allfeedback')}</Button>
 			</div>
 
 			<div className="px-6 pb-6 pt-4">
@@ -254,10 +256,22 @@ const EmailSettings = () => {
 						variant="secondary"
 						disabled={testStatus === 'sending' || !values.to_email}
 						onClick={() => testMutation.mutate()}
+						style={{
+							border: testStatus === 'success'
+								? '1.5px solid color-mix(in oklch, var(--success, #10b981) 40%, transparent)'
+								: testStatus === 'error'
+								? '1.5px solid color-mix(in oklch, var(--destructive) 40%, transparent)'
+								: '1.5px solid color-mix(in oklch, var(--primary) 60%, transparent)',
+							color: testStatus === 'success'
+								? undefined
+								: testStatus === 'error'
+								? 'var(--destructive)'
+								: 'var(--primary)',
+						}}
 						className={cn(
 							'shrink-0',
-							testStatus === 'success' && 'border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50',
-							testStatus === 'error'   && 'border-destructive/30 bg-white text-destructive hover:bg-destructive/5',
+							testStatus === 'success' && 'bg-white text-emerald-700 hover:bg-emerald-50',
+							testStatus === 'error'   && 'bg-white hover:bg-destructive/5',
 						)}
 					>
 						{testStatus === 'sending' ? __('Sending…', 'allfeedback')
@@ -270,7 +284,23 @@ const EmailSettings = () => {
 
 			</div>
 		</div>
-	);
+
+		{previewOpen && (
+			<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setPreviewOpen(false)}>
+				<div className="relative flex h-[80vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
+					<div className="flex items-center justify-between border-b border-border/50 px-5 py-3.5">
+						<span className="text-base font-semibold text-foreground/90">{__('Email Preview', 'allfeedback')}</span>
+						<button type="button" onClick={() => setPreviewOpen(false)} className="text-muted-foreground hover:text-foreground transition-colors"><X className="size-4" /></button>
+					</div>
+					<iframe
+						srcDoc={`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;"><table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:32px 16px;"><tr><td align="center"><table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;overflow:hidden;max-width:600px;width:100%;"><tr><td style="background:#6366f1;padding:24px 32px;"><h1 style="margin:0;color:#fff;font-size:18px;font-weight:600;">\</h1></td></tr><tr><td style="padding:32px;color:#374151;font-size:14px;line-height:1.6;"><p><strong>New response received</strong></p><p>A new response has been submitted to your form.</p><p><strong>From:</strong> \ &lt;\&gt;<br><strong>To:</strong> \</p></td></tr><tr><td style="padding:16px 32px;border-top:1px solid #e5e7eb;text-align:center;"><p style="margin:0;color:#9ca3af;font-size:12px;">&copy; \</p></td></tr></table></td></tr></table></body></html>`}
+						className="flex-1 w-full border-0"
+						title="Email Preview"
+					/>
+				</div>
+			</div>
+		)}
+	</>);
 };
 
 export default EmailSettings;
