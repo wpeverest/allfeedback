@@ -495,10 +495,10 @@ const SettingsPanel = ({
 							</SelectTrigger>
 							<SelectContent className="z-[100000]">
 								<SelectItem value="immediate">
-									{__('Immediately', 'allfeedback')}
+									{__('Page load — Immediately', 'allfeedback')}
 								</SelectItem>
 								<SelectItem value="time_delay">
-									{__('After a delay', 'allfeedback')}
+									{__('Page load — After a delay', 'allfeedback')}
 								</SelectItem>
 							</SelectContent>
 						</Select>
