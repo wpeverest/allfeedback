@@ -132,6 +132,7 @@ export type SubmitFormData = {
 	score?:        number;
 	page_url?:     string;
 	device_type?:  string;
+	session_id?:   string;
 };
 
 export type SubmitFormResult = {

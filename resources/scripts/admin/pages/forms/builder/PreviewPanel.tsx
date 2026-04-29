@@ -26,7 +26,7 @@ import {
 	Tablet,
 	X,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const TypingBubbleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 	<svg
@@ -420,6 +420,8 @@ const PreviewPanel = ({
 	const widgetPosition =
 		(settings.widgetPosition as Exclude<WidgetPosition, ''>) || globalPosition;
 
+	const sessionIdRef = useRef<string>(crypto.randomUUID());
+
 	const [viewMode, setViewMode] = useState<PreviewView>('page');
 	const [isMinimized, setIsMinimized] = useState(false);
 	const [isClosed, setIsClosed] = useState(false);
@@ -540,6 +542,7 @@ const PreviewPanel = ({
 				...(score !== undefined && !isNaN(score) && { score }),
 				page_url: window.location.href,
 				device_type: device,
+				session_id: sessionIdRef.current,
 			});
 		} else {
 			setIsSubmitted(true);
@@ -548,6 +551,7 @@ const PreviewPanel = ({
 	};
 
 	const handleReset = () => {
+		sessionIdRef.current = crypto.randomUUID();
 		submitMutation.reset();
 		setIsClosed(false);
 		setIsMinimized(false);
