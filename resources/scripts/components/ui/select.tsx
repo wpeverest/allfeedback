@@ -111,8 +111,8 @@ function SelectContent({
 			>
 				<div
 					className={cn(
-						'flex shrink-0 cursor-default items-center justify-center bg-gradient-to-b from-white via-white/90 to-transparent transition-all duration-150',
-						canScrollUp ? 'h-7 opacity-100' : 'h-0 pointer-events-none opacity-0',
+						'pointer-events-none absolute inset-x-0 top-0 z-10 flex h-7 items-center justify-center bg-white transition-opacity duration-150',
+						canScrollUp ? 'pointer-events-auto opacity-100' : 'opacity-0',
 					)}
 					onPointerEnter={() => startScroll('up')}
 					onPointerLeave={stopScroll}
@@ -136,8 +136,8 @@ function SelectContent({
 				</div>
 				<div
 					className={cn(
-						'flex h-7 shrink-0 cursor-default items-center justify-center bg-gradient-to-t from-white via-white/90 to-transparent transition-opacity duration-150',
-						canScrollDown ? 'opacity-100' : 'pointer-events-none opacity-0',
+						'pointer-events-none absolute inset-x-0 bottom-0 z-10 flex h-7 items-center justify-center bg-white transition-opacity duration-150',
+						canScrollDown ? 'pointer-events-auto opacity-100' : 'opacity-0',
 					)}
 					onPointerEnter={() => startScroll('down')}
 					onPointerLeave={stopScroll}
