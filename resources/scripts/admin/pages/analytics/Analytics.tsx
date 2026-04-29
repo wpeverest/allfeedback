@@ -259,7 +259,7 @@ function KPICard({
 								fontSize: 'var(--text-xl)',
 								fontWeight: 600,
 								letterSpacing: '-0.02em',
-								color: 'var(--foreground)',
+								color: 'color-mix(in oklch, var(--foreground) 80%, transparent)',
 								fontVariantNumeric: 'tabular-nums',
 							}}
 						>
@@ -442,7 +442,7 @@ function AreaChartCard({
 							fontSize: 'var(--text-md)',
 							fontWeight: 600,
 							letterSpacing: '-0.01em',
-							color: 'var(--foreground)',
+							color: 'color-mix(in oklch, var(--foreground) 80%, transparent)',
 							margin: 0,
 						}}
 					>
@@ -463,7 +463,7 @@ function AreaChartCard({
 							<span
 								style={{
 									fontVariantNumeric: 'tabular-nums',
-									color: 'var(--foreground)',
+									color: 'color-mix(in oklch, var(--foreground) 80%, transparent)',
 									fontWeight: 600,
 								}}
 							>
@@ -686,7 +686,7 @@ function NpsDistributionCard({
 						fontSize: 'var(--text-md)',
 						fontWeight: 600,
 						letterSpacing: '-0.01em',
-						color: 'var(--foreground)',
+						color: 'color-mix(in oklch, var(--foreground) 80%, transparent)',
 						margin: 0,
 					}}
 				>
@@ -1022,7 +1022,7 @@ function SessionMetricsCard({
 						fontSize: 'var(--text-md)',
 						fontWeight: 600,
 						letterSpacing: '-0.01em',
-						color: 'var(--foreground)',
+						color: 'color-mix(in oklch, var(--foreground) 80%, transparent)',
 						margin: 0,
 					}}
 				>
@@ -1140,7 +1140,7 @@ function SessionMetricsCard({
 										fontSize: 'var(--text-xl)',
 										fontWeight: 600,
 										letterSpacing: '-0.02em',
-										color: 'var(--foreground)',
+										color: 'color-mix(in oklch, var(--foreground) 80%, transparent)',
 										fontVariantNumeric: 'tabular-nums',
 										lineHeight: 1.2,
 									}}
@@ -1205,7 +1205,7 @@ function SessionMetricsCard({
 										style={{
 											fontSize: '12px',
 											fontWeight: 500,
-											color: 'var(--foreground)',
+											color: 'color-mix(in oklch, var(--foreground) 80%, transparent)',
 										}}
 									>
 										{s.label}
@@ -1230,7 +1230,7 @@ function SessionMetricsCard({
 												style={{
 													fontSize: '12px',
 													fontWeight: 600,
-													color: 'var(--foreground)',
+													color: 'color-mix(in oklch, var(--foreground) 80%, transparent)',
 													fontVariantNumeric: 'tabular-nums',
 												}}
 											>
@@ -1305,7 +1305,7 @@ function DeviceDistributionCard({
 						fontSize: 'var(--text-md)',
 						fontWeight: 600,
 						letterSpacing: '-0.01em',
-						color: 'var(--foreground)',
+						color: 'color-mix(in oklch, var(--foreground) 80%, transparent)',
 						margin: 0,
 					}}
 				>
@@ -1391,7 +1391,7 @@ function DeviceDistributionCard({
 											style={{
 												fontSize: '12px',
 												fontWeight: 500,
-												color: 'var(--foreground)',
+												color: 'color-mix(in oklch, var(--foreground) 80%, transparent)',
 											}}
 										>
 											{d.label}
@@ -1404,7 +1404,7 @@ function DeviceDistributionCard({
 											style={{
 												fontSize: 'var(--text-md)',
 												fontWeight: 700,
-												color: 'var(--foreground)',
+												color: 'color-mix(in oklch, var(--foreground) 80%, transparent)',
 												fontVariantNumeric: 'tabular-nums',
 												letterSpacing: '-0.01em',
 											}}
@@ -1612,7 +1612,7 @@ function ResponseRow({
 					style={
 						{
 							fontSize: '12px',
-							color: 'var(--foreground)',
+							color: 'color-mix(in oklch, var(--foreground) 80%, transparent)',
 							lineHeight: 1.55,
 							display: '-webkit-box',
 							WebkitLineClamp: 2,
@@ -1683,7 +1683,7 @@ function RecentResponsesCard({
 							fontSize: 'var(--text-md)',
 							fontWeight: 600,
 							letterSpacing: '-0.01em',
-							color: 'var(--foreground)',
+							color: 'color-mix(in oklch, var(--foreground) 80%, transparent)',
 							margin: 0,
 						}}
 					>
