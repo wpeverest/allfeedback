@@ -558,7 +558,7 @@ const ScaleConfig = ({
 	const max = field.scaleMax ?? 10;
 	const labelCls = 'block text-base font-normal text-foreground/90';
 	const inputCls =
-		'w-full rounded-lg border border-border/70 bg-transparent px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/10';
+		'w-full rounded-lg border border-border/70 bg-transparent px-3 py-2 text-base text-foreground placeholder:text-muted-foreground/40 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/10 box-border';
 
 	return (
 		<div className="space-y-4">
@@ -568,29 +568,19 @@ const ScaleConfig = ({
 				autoFocus={autoFocus}
 				focusTrigger={focusTrigger}
 			/>
-
-			<div className="grid gap-3"  style={{ gridTemplateColumns: "auto 1fr 1fr" }}>
-				<div className="space-y-1.5">
-					<label className={labelCls}>{__('Range', 'allfeedback')}</label>
-					<div className="flex items-center gap-1.5">
-						<input type="number" min={0} value={min} onChange={(e) => { const v = parseInt(e.target.value, 10); if (!isNaN(v) && v >= 0 && v < max) onChange({ ...field, scaleMin: v }); }} className={cn(inputCls, "!w-14 text-center")} />
-						<span className="text-muted-foreground/40 text-sm shrink-0">–</span>
-						<input type="number" min={min + 1} value={max} onChange={(e) => { const v = parseInt(e.target.value, 10); if (!isNaN(v) && v > min) onChange({ ...field, scaleMax: v }); }} className={cn(inputCls, "!w-14 text-center")} />
-					</div>
-				</div>
-				<div className="space-y-1.5">
-					<label className={labelCls}>{__('Low label', 'allfeedback')}</label>
+			<div className="space-y-2">
+				<label className={labelCls}>{__('Scale endpoints', 'allfeedback')}</label>
+				<div className="flex items-center gap-2">
+					<input type="number" value={min} onChange={(e) => { const v = parseInt(e.target.value, 10); if (!isNaN(v) && v >= 0 && v < max) onChange({ ...field, scaleMin: v }); }} className={cn(inputCls, '!w-16 !rounded-lg !py-2 text-center')} />
 					<input value={field.scaleLowLabel ?? ''} onChange={(e) => onChange({ ...field, scaleLowLabel: e.target.value })} placeholder={__('e.g. Not likely', 'allfeedback')} className={inputCls} />
-				</div>
-				<div className="space-y-1.5">
-					<label className={labelCls}>{__('High label', 'allfeedback')}</label>
+					<span className="text-muted-foreground/40 shrink-0">—</span>
 					<input value={field.scaleHighLabel ?? ''} onChange={(e) => onChange({ ...field, scaleHighLabel: e.target.value })} placeholder={__('e.g. Very likely', 'allfeedback')} className={inputCls} />
+					<input type="number" value={max} onChange={(e) => { const v = parseInt(e.target.value, 10); if (!isNaN(v) && v > min) onChange({ ...field, scaleMax: v }); }} className={cn(inputCls, '!w-16 !rounded-lg !py-2 text-center')} />
 				</div>
 			</div>
 		</div>
 	);
 };
-
 const NpsConfig = ({
 	field,
 	onChange,
@@ -610,7 +600,7 @@ const NpsConfig = ({
 			focusTrigger={focusTrigger}
 		/>
 		<p className="text-muted-foreground/60 text-sm">
-			{__('Fixed 0 – 10 scale. No configuration needed.', 'allfeedback')}
+			{__('0–6 detractors · 7–8 passives · 9–10 promoters', 'allfeedback')}
 		</p>
 	</div>
 );
@@ -780,7 +770,7 @@ const FieldEditor = ({
 					e.stopPropagation();
 					onDragEnd();
 				}}
-				className="border-border/50 bg-muted/25 hover:bg-muted/40 flex cursor-pointer items-center gap-2 rounded-t-xl border-b px-4 py-2.5 transition-colors"
+				className="border-border/50 bg-muted/20 hover:bg-muted/30 flex cursor-pointer items-center gap-2 rounded-t-xl border-b px-4 py-3 transition-colors"
 				onClick={() => setIsCollapsed((v) => !v)}
 			>
 				<Tooltip content={__('Drag to reorder', 'allfeedback')}>
@@ -814,7 +804,7 @@ const FieldEditor = ({
 					}}
 					onMouseDown={(e) => e.stopPropagation()}
 				>
-					<span className="text-foreground/90 min-w-0 flex-1 truncate text-sm">
+					<span className="text-foreground/90 min-w-0 flex-1 truncate text-base font-medium">
 						{htmlToText(field.label) || __('Untitled', 'allfeedback')}
 					</span>
 					<Pencil className="text-muted-foreground/40 size-3 shrink-0 opacity-0 transition-opacity group-hover/title:opacity-100" />

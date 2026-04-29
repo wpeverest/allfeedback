@@ -265,7 +265,7 @@ const Card = ({
 }) => (
 	<div className="border-border bg-card overflow-hidden rounded-2xl border">
 		<div className="border-border/50 border-b p-5">
-			<div className="text-md text-foreground font-medium">{title}</div>
+			<div className="text-base font-semibold text-foreground/90">{title}</div>
 		</div>
 		<div className="p-5">{children}</div>
 	</div>
