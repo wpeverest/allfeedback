@@ -799,7 +799,7 @@ const AllForms = () => {
 										/>
 									</th>
 									<th className="w-[220px] px-4 py-4 text-left">
-										<ColHead label={__('Form Name', 'allfeedback')} />
+										<ColHead column="title" label={__('Form Name', 'allfeedback')} sortable />
 									</th>
 									<th className="w-20 px-4 py-4 text-left">
 										<ColHead

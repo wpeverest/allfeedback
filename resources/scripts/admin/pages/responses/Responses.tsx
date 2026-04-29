@@ -99,7 +99,7 @@ const Responses = () => {
 	const [search, setSearch] = useState('');
 	const [page, setPage] = useState(1);
 	const [perPage, setPerPage] = useState(10);
-	const [sortBy, setSortBy] = useState<'id' | 'created_at'>('created_at');
+	const [sortBy, setSortBy] = useState<'id' | 'created_at' | 'response' | 'form'>('created_at');
 	const [order, setOrder] = useState<'ASC' | 'DESC'>('DESC');
 	const [readFilter, setReadFilter] = useState<'all' | 'read' | 'unread'>(
 		'all',
@@ -151,6 +151,16 @@ const Responses = () => {
 	const numCols = showForm ? 6 : 5;
 
 	const sorted = [...responses].sort((a, b) => {
+		if (sortBy === 'response') {
+			const va = getResponseSummary(a.response_data).toLowerCase();
+			const vb = getResponseSummary(b.response_data).toLowerCase();
+			return order === 'DESC' ? vb.localeCompare(va) : va.localeCompare(vb);
+		}
+		if (sortBy === 'form') {
+			const va = (surveyTitleMap[a.survey_id] ?? '').toLowerCase();
+			const vb = (surveyTitleMap[b.survey_id] ?? '').toLowerCase();
+			return order === 'DESC' ? vb.localeCompare(va) : va.localeCompare(vb);
+		}
 		const valA = sortBy === 'id' ? a.id : new Date(a.created_at).getTime();
 		const valB = sortBy === 'id' ? b.id : new Date(b.created_at).getTime();
 		return order === 'DESC' ? valB - valA : valA - valB;
@@ -305,7 +315,7 @@ const Responses = () => {
 		col,
 	}: {
 		label: string;
-		col?: 'id' | 'created_at';
+		col?: 'id' | 'created_at' | 'response' | 'form';
 	}) => {
 		const isActive = col !== undefined && sortBy === col;
 		const Icon = isActive
@@ -471,11 +481,11 @@ const Responses = () => {
 									<ColHead label={__('ID', 'allfeedback')} col="id" />
 								</th>
 								<th className="w-[220px] px-4 py-4 text-left">
-									<ColHead label={__('Response', 'allfeedback')} />
+									<ColHead label={__('Response', 'allfeedback')} col="response" />
 								</th>
 								{showForm && (
 									<th className="w-[180px] px-4 py-4 text-left">
-										<ColHead label={__('Form', 'allfeedback')} />
+										<ColHead label={__('Form', 'allfeedback')} col="form" />
 									</th>
 								)}
 								<th className="w-36 px-4 py-4 text-left">
