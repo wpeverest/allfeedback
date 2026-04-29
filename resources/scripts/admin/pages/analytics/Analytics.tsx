@@ -34,6 +34,7 @@ import {
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import {
 	AlertCircle,
+	ArrowRight,
 	BarChart2,
 	Monitor,
 	Smartphone,
@@ -130,12 +131,7 @@ function Sparkline({
 	const area = `${path} L ${pts[pts.length - 1][0]} ${h - pad} L ${pts[0][0]} ${h - pad} Z`;
 	const uid = `sp-${color.replace(/[^a-z0-9]/gi, '').slice(0, 12)}`;
 	return (
-		<svg
-			width={w}
-			height={h}
-			viewBox={`0 0 ${w} ${h}`}
-			style={{ display: 'block' }}
-		>
+		<svg width={w} height={h} style={{ overflow: 'visible' }}>
 			<defs>
 				<linearGradient id={uid} x1="0" y1="0" x2="0" y2="1">
 					<stop offset="0%" stopColor={color} stopOpacity="0.22" />
@@ -143,20 +139,8 @@ function Sparkline({
 				</linearGradient>
 			</defs>
 			<path d={area} fill={`url(#${uid})`} />
-			<path
-				d={path}
-				fill="none"
-				stroke={color}
-				strokeWidth="1.6"
-				strokeLinecap="round"
-				strokeLinejoin="round"
-			/>
-			<circle
-				cx={pts[pts.length - 1][0]}
-				cy={pts[pts.length - 1][1]}
-				r="2.2"
-				fill={color}
-			/>
+			<path d={path} fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+			<circle cx={pts[pts.length - 1][0]} cy={pts[pts.length - 1][1]} r="2.2" fill={color} />
 		</svg>
 	);
 }
@@ -1446,26 +1430,13 @@ function DeviceDistributionCard({
 	);
 }
 
-const AVATAR_PAIRS: [string, string][] = [
-	['oklch(0.72 0.16 277)', 'oklch(0.55 0.22 277)'],
-	['oklch(0.75 0.14 200)', 'oklch(0.55 0.18 210)'],
-	['oklch(0.78 0.14 60)', 'oklch(0.60 0.18 40)'],
-	['oklch(0.76 0.14 340)', 'oklch(0.55 0.20 340)'],
-	['oklch(0.75 0.14 155)', 'oklch(0.52 0.14 155)'],
-];
 
 function ResponseRow({
 	r,
-	formTitle,
-	idx,
-}: {
+	formTitle,}: {
 	r: SurveyResponse;
 	formTitle: string;
-	idx: number;
 }) {
-	const [gradA, gradB] = AVATAR_PAIRS[idx % AVATAR_PAIRS.length];
-	const gradId = `av-${r.id}`;
-	const letter = String.fromCharCode(65 + ((r.id * 7) % 26));
 	const timeAgo = formatDistanceToNow(new Date(r.created_at), {
 		addSuffix: true,
 	});
@@ -1499,7 +1470,7 @@ function ResponseRow({
 			search={{ surveyId: r.survey_id, edit: false }}
 			style={{
 				display: 'grid',
-				gridTemplateColumns: 'auto 1fr auto',
+				gridTemplateColumns: '1fr auto',
 				gap: 14,
 				padding: '14px 20px',
 				borderBottom: '1px solid var(--border)',
@@ -1511,32 +1482,6 @@ function ResponseRow({
 			onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--muted)')}
 			onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
 		>
-			<svg
-				width="32"
-				height="32"
-				viewBox="0 0 32 32"
-				style={{ flexShrink: 0, marginTop: 2 }}
-			>
-				<defs>
-					<linearGradient id={gradId} x1="0" y1="0" x2="1" y2="1">
-						<stop offset="0" stopColor={gradA} />
-						<stop offset="1" stopColor={gradB} />
-					</linearGradient>
-				</defs>
-				<rect width="32" height="32" rx="10" fill={`url(#${gradId})`} />
-				<text
-					x="16"
-					y="21"
-					textAnchor="middle"
-					fontFamily="var(--font-sans)"
-					fontSize="13"
-					fontWeight="600"
-					fill="white"
-					opacity="0.95"
-				>
-					{letter}
-				</text>
-			</svg>
 
 			<div style={{ minWidth: 0 }}>
 				<div
@@ -1705,9 +1650,10 @@ function RecentResponsesCard({
 				<Link
 					to="/responses"
 					search={{ surveyId: surveyId ?? undefined }}
-					className="border-border/70 text-foreground hover:bg-muted inline-flex items-center gap-1.5 rounded-lg border bg-white px-3 py-1.5 text-sm font-medium transition-colors"
+					className="border-primary/40 text-primary hover:bg-primary/5 inline-flex items-center gap-1.5 rounded-lg border bg-white px-3 py-1.5 text-sm font-medium transition-colors"
 				>
 					{__('View all', 'allfeedback')}
+					<ArrowRight className="size-3.5" />
 				</Link>
 			</div>
 
@@ -1757,8 +1703,7 @@ function RecentResponsesCard({
 						key={r.id}
 						r={r}
 						formTitle={formMap.get(r.survey_id) ?? ''}
-						idx={i}
-					/>
+						/>
 				))
 			)}
 		</div>
