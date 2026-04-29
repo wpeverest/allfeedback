@@ -12,6 +12,7 @@ use AllFeedback\Application\Response\SubmitResponseService;
 use AllFeedback\Core\Exceptions\NotFoundException;
 use AllFeedback\Core\Exceptions\ValidationException;
 use AllFeedback\Core\Settings\SettingsManager;
+use AllFeedback\Domain\Analytics\SurveySession;
 use AllFeedback\Domain\Analytics\SurveySessionRepository;
 use AllFeedback\Domain\Response\ResponseRepository;
 use AllFeedback\Domain\Survey\SurveyRepository;
@@ -198,9 +199,18 @@ class SubmitController extends RestController {
 
 		$sessionId = sanitize_text_field( (string) ( $request->get_param( 'session_id' ) ?? '' ) );
 		if ( $sessionId !== '' ) {
+			$now     = new \DateTimeImmutable();
 			$session = $this->sessionRepository->findBySessionId( $sessionId );
-			if ( $session !== null && ! $session->isSubmitted() ) {
-				$session->markSubmitted( new \DateTimeImmutable() );
+			if ( $session === null ) {
+				$session = new SurveySession(
+					surveyId:  $surveyId,
+					sessionId: $sessionId,
+					userId:    get_current_user_id() ?: null,
+					guestId:   sanitize_text_field( (string) ( $request->get_param( 'visitor_token' ) ?? '' ) ) ?: null,
+				);
+			}
+			if ( ! $session->isSubmitted() ) {
+				$session->markSubmitted( $now );
 				$this->sessionRepository->save( $session );
 			}
 		}

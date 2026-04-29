@@ -79,7 +79,7 @@ class WpdbSurveySessionRepository implements SurveySessionRepository {
 				throw new \RuntimeException( 'Failed to insert survey session: ' . esc_html( $wpdb->last_error ) );
 			}
 
-			$session->setId( (int) $wpdb->insert_id );
+			$session->assignId( (int) $wpdb->insert_id );
 		} else {
 			$result = $wpdb->update(
 				$this->table,
