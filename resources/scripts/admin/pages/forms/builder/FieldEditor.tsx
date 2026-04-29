@@ -43,7 +43,7 @@ const RequiredSwitch = ({
 		onClick={() => onChange(!value)}
 		className="flex items-center gap-1.5 rounded-md px-1.5 py-1 transition-colors hover:bg-black/[0.04]"
 	>
-		<span className="text-muted-foreground/60 text-sm font-medium select-none">
+		<span className="text-sm font-medium text-foreground/80 select-none">
 			{__('Required', 'allfeedback')}
 		</span>
 		<span
@@ -141,7 +141,7 @@ const OptionRow = ({
 				value={value}
 				onChange={(e) => onChange(e.target.value)}
 				placeholder={`Option ${index + 1}`}
-				className="option-row-input text-foreground placeholder:text-muted-foreground/40 flex-1 text-sm focus:outline-none"
+				className="option-row-input text-foreground/90 placeholder:text-muted-foreground/40 flex-1 text-base focus:outline-none"
 			/>
 		</div>
 

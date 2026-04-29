@@ -1,4 +1,4 @@
-﻿import type { ContentSearchItem } from '@/admin/api/surveys';
+import type { ContentSearchItem } from '@/admin/api/surveys';
 import { surveysApi } from '@/admin/api/surveys';
 import {
 	Select,
@@ -69,7 +69,7 @@ const Card = ({
 }) => (
 	<div className="border-border/60 overflow-hidden rounded-2xl border bg-white">
 		<div className="border-border/50 border-b p-5">
-			<div className="text-md text-foreground font-medium">{title}</div>
+			<div className="text-base font-semibold text-foreground/90">{title}</div>
 		</div>
 		<div className="space-y-4 p-5">{children}</div>
 	</div>

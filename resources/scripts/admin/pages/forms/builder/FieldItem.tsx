@@ -64,10 +64,10 @@ const FieldItem = ({
 			)}
 
 			<div className="min-w-0 flex-1">
-				<p className="text-foreground text-sm font-medium">
+				<p className="text-base font-medium text-foreground/90">
 					{htmlToText(field.label) || __('Untitled', 'allfeedback')}
 				</p>
-				<p className="text-muted-foreground text-sm">{typeConfig?.label}</p>
+				<p className="text-sm text-muted-foreground/70">{typeConfig?.label}</p>
 			</div>
 
 			<div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">

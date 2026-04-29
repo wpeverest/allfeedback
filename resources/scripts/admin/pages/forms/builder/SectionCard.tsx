@@ -1,4 +1,4 @@
-﻿import { Tooltip } from '@/admin/components/Tooltip';
+import { Tooltip } from '@/admin/components/Tooltip';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { __ } from '@wordpress/i18n';
@@ -244,7 +244,7 @@ const SectionCard = ({
 									if (e.key === 'Escape') cancelTitle();
 								}}
 								onMouseDown={(e) => e.stopPropagation()}
-								className="section-title-input border-border/70 text-md text-foreground focus:border-primary/50 focus:ring-primary/10 w-[260px] rounded-md border bg-transparent px-2 py-1 font-semibold outline-none focus:ring-1"
+								className="section-title-input border-border/70 text-base text-foreground focus:border-primary/50 focus:ring-primary/10 w-[260px] rounded-md border bg-transparent px-2 py-1 font-semibold outline-none focus:ring-1"
 							/>
 							<Button
 								variant="ghost"
@@ -269,7 +269,7 @@ const SectionCard = ({
 						<Tooltip content={__('Click to edit', 'allfeedback')}>
 							<button
 								type="button"
-								className="section-title-btn group text-md text-foreground hover:border-border/50 flex w-[260px] items-center gap-2 rounded-md border border-transparent px-2 py-1 text-left font-semibold transition-colors hover:bg-black/[0.04]"
+								className="section-title-btn group text-base text-foreground hover:border-border/50 flex w-[260px] items-center gap-2 rounded-md border border-transparent px-2 py-1 text-left font-semibold transition-colors hover:bg-black/[0.04]"
 								onClick={(e) => {
 									e.stopPropagation();
 									startEditingTitle();
