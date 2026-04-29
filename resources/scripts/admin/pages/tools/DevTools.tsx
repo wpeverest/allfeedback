@@ -9,6 +9,7 @@ import {
 	Wand2,
 } from 'lucide-react';
 import { useState } from 'react';
+import { Link } from '@tanstack/react-router';
 
 type Status = 'idle' | 'seeding' | 'clearing' | 'done' | 'error';
 
@@ -227,6 +228,12 @@ const DevTools = () => {
 					{message}
 				</div>
 			)}
+
+			<div className="mt-8 border-t border-border/50 pt-5">
+				<Link to="/wizard/" className="text-sm text-primary/70 hover:text-primary transition-colors">
+					{__('→ Open Setup Wizard', 'allfeedback')}
+				</Link>
+			</div>
 		</div>
 	);
 };
