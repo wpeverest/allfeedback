@@ -28,6 +28,8 @@ import {
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
+const genId = (): string => typeof crypto?.randomUUID === 'function' ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36);
+
 const TypingBubbleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 	<svg
 		viewBox="0 0 24 24"
@@ -420,7 +422,7 @@ const PreviewPanel = ({
 	const widgetPosition =
 		(settings.widgetPosition as Exclude<WidgetPosition, ''>) || globalPosition;
 
-	const sessionIdRef = useRef<string>(crypto.randomUUID());
+	const sessionIdRef = useRef<string>(genId());
 
 	const [viewMode, setViewMode] = useState<PreviewView>('page');
 	const [isMinimized, setIsMinimized] = useState(false);
@@ -551,7 +553,7 @@ const PreviewPanel = ({
 	};
 
 	const handleReset = () => {
-		sessionIdRef.current = crypto.randomUUID();
+		sessionIdRef.current = genId();
 		submitMutation.reset();
 		setIsClosed(false);
 		setIsMinimized(false);
