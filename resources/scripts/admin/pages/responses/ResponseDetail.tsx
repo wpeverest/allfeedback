@@ -451,9 +451,9 @@ const SidebarRow = ({
 	children: React.ReactNode;
 }) => (
 	<div className="px-5 py-3.5">
-		<p className="text-muted-foreground/70 mb-1 text-xs font-medium">{label}</p>
+		<p className="text-muted-foreground/80 mb-1 text-sm font-medium">{label}</p>
 		<div className="text-foreground flex min-w-0 items-center gap-2 text-base font-normal">
-			<Icon className="text-muted-foreground/70 size-3.5 shrink-0" />
+			<Icon className="text-muted-foreground/50 size-3.5 shrink-0" />
 			<span className="min-w-0">{children}</span>
 		</div>
 	</div>
@@ -738,7 +738,7 @@ const ResponseDetail = () => {
 						<ArrowLeft className="size-4" />
 					</Button>
 					<span className="bg-border mx-3 h-5 w-px" />
-					<span className="text-foreground text-sm font-semibold">
+					<span className="text-foreground text-base font-semibold">
 						{__('Response not found', 'allfeedback')}
 					</span>
 				</div>
@@ -997,7 +997,7 @@ const ResponseDetail = () => {
 															<FieldIcon className="text-muted-foreground size-4" />
 														</span>
 													</Tooltip>
-													<div className="text-foreground/80 flex items-baseline gap-1 text-base font-medium">
+													<div className="text-foreground/90 flex items-baseline gap-1 text-base font-medium">
 														<span
 															className="text-base [&_p]:m-0 [&_p]:inline"
 															dangerouslySetInnerHTML={{
