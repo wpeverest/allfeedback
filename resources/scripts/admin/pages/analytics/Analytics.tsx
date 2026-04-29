@@ -778,9 +778,8 @@ function NpsDistributionCard({
 							x={rLabelL.x - 2}
 							y={rLabelL.y + 3}
 							textAnchor="end"
-							fontSize="7"
+							fontSize="5"
 							fill="var(--muted-foreground)"
-							opacity="0.5"
 						>
 							−100
 						</text>
@@ -788,9 +787,8 @@ function NpsDistributionCard({
 							x={rLabel0.x}
 							y={rLabel0.y - 2}
 							textAnchor="middle"
-							fontSize="7"
+							fontSize="5"
 							fill="var(--muted-foreground)"
-							opacity="0.5"
 						>
 							0
 						</text>
@@ -798,9 +796,8 @@ function NpsDistributionCard({
 							x={rLabelR.x + 2}
 							y={rLabelR.y + 3}
 							textAnchor="start"
-							fontSize="7"
+							fontSize="5"
 							fill="var(--muted-foreground)"
-							opacity="0.5"
 						>
 							+100
 						</text>

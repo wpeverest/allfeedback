@@ -64,7 +64,6 @@ function SelectContent({
 		setCanScrollDown(el.scrollTop + el.clientHeight < el.scrollHeight - 1);
 	}, []);
 
-	// Callback ref on the scroll area — fires each time the dropdown mounts.
 	const scrollAreaRef = useCallback((el: HTMLDivElement | null) => {
 		scrollRef.current = el;
 		if (!el) return;
@@ -76,6 +75,7 @@ function SelectContent({
 	}, [checkScroll]);
 
 	const startScroll = (dir: 'up' | 'down') => {
+		if (rafRef.current !== null) return;
 		const step = () => {
 			const el = scrollRef.current;
 			if (!el) return;
@@ -109,16 +109,16 @@ function SelectContent({
 				)}
 				{...props}
 			>
-				{canScrollUp && (
-					<div
-						className="flex h-7 shrink-0 cursor-default items-center justify-center bg-gradient-to-b from-white via-white/90 to-transparent"
-						onPointerEnter={() => startScroll('up')}
-						onPointerLeave={stopScroll}
-					>
-						<ChevronUpIcon className="size-4 text-muted-foreground" />
-					</div>
-				)}
-				{/* This div is the actual scroll container */}
+				<div
+					className={cn(
+						'flex shrink-0 cursor-default items-center justify-center bg-gradient-to-b from-white via-white/90 to-transparent transition-all duration-150',
+						canScrollUp ? 'h-7 opacity-100' : 'h-0 pointer-events-none opacity-0',
+					)}
+					onPointerEnter={() => startScroll('up')}
+					onPointerLeave={stopScroll}
+				>
+					<ChevronUpIcon className="size-4 text-muted-foreground" />
+				</div>
 				<div
 					ref={scrollAreaRef}
 					className="min-h-0 flex-1 overflow-y-auto"
@@ -134,15 +134,16 @@ function SelectContent({
 						{children}
 					</SelectPrimitive.Viewport>
 				</div>
-				{canScrollDown && (
-					<div
-						className="flex h-7 shrink-0 cursor-default items-center justify-center bg-gradient-to-t from-white via-white/90 to-transparent"
-						onPointerEnter={() => startScroll('down')}
-						onPointerLeave={stopScroll}
-					>
-						<ChevronDownIcon className="size-4 text-muted-foreground" />
-					</div>
-				)}
+				<div
+					className={cn(
+						'flex h-7 shrink-0 cursor-default items-center justify-center bg-gradient-to-t from-white via-white/90 to-transparent transition-opacity duration-150',
+						canScrollDown ? 'opacity-100' : 'pointer-events-none opacity-0',
+					)}
+					onPointerEnter={() => startScroll('down')}
+					onPointerLeave={stopScroll}
+				>
+					<ChevronDownIcon className="size-4 text-muted-foreground" />
+				</div>
 			</SelectPrimitive.Content>
 		</SelectPrimitive.Portal>
 	);
