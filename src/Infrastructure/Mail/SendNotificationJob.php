@@ -12,16 +12,14 @@ use AllFeedback\Domain\Response\ResponseRepository;
 use AllFeedback\Domain\Survey\SurveyRepository;
 use AllFeedback\Infrastructure\Mail\Notifications\NewResponseAdminNotification;
 use AllFeedback\Infrastructure\Mail\Notifications\SurveyPublishedNotification;
-use AllFeedback\Infrastructure\Mail\Notifications\ThankYouRespondentNotification;
 use AllFeedback\Support\Logger;
 
 /**
  * Background job that dispatches a single notification email.
  *
  * Notification type routing:
- *   - `new_response_alert`      → admin email on new response submission
- *   - `survey_published`        → admin email when a survey is activated
- *   - `thank_you_respondent`    → respondent email after survey submission
+ *   - `new_response_alert`  → admin email on new response submission
+ *   - `survey_published`    → admin email when a survey is activated
  *
  * @package AllFeedback\Infrastructure\Mail
  * @since   1.0.0
@@ -37,16 +35,14 @@ class SendNotificationJob extends AbstractJob {
 	private const VALID_TYPES = [
 		'new_response_alert',
 		'survey_published',
-		'thank_you_respondent',
 	];
 
 	/**
-	 * @param  SurveyRepository                $surveyRepository   Repository for loading survey aggregates.
-	 * @param  ResponseRepository              $responseRepository Repository for loading response aggregates.
-	 * @param  NewResponseAdminNotification    $newResponseAdmin   Admin alert notification handler.
-	 * @param  SurveyPublishedNotification     $surveyPublished    Survey-published notification handler.
-	 * @param  ThankYouRespondentNotification  $thankYouRespondent Respondent thank-you notification handler.
-	 * @param  Logger                          $logger             Logger for recording errors and info.
+	 * @param  SurveyRepository              $surveyRepository   Repository for loading survey aggregates.
+	 * @param  ResponseRepository            $responseRepository Repository for loading response aggregates.
+	 * @param  NewResponseAdminNotification  $newResponseAdmin   Admin alert notification handler.
+	 * @param  SurveyPublishedNotification   $surveyPublished    Survey-published notification handler.
+	 * @param  Logger                        $logger             Logger for recording errors and info.
 	 * @since  1.0.0
 	 */
 	public function __construct(
@@ -54,7 +50,6 @@ class SendNotificationJob extends AbstractJob {
 		private readonly ResponseRepository $responseRepository,
 		private readonly NewResponseAdminNotification $newResponseAdmin,
 		private readonly SurveyPublishedNotification $surveyPublished,
-		private readonly ThankYouRespondentNotification $thankYouRespondent,
 		private readonly Logger $logger,
 	) {}
 
@@ -115,7 +110,7 @@ class SendNotificationJob extends AbstractJob {
 	}
 
 	/**
-	 * Handle response-scoped notification types (new_response_alert, thank_you_respondent).
+	 * Handle the new_response_alert notification type.
 	 *
 	 * @param  string $type       Notification type identifier.
 	 * @param  int    $surveyId   Survey primary key.
@@ -137,12 +132,7 @@ class SendNotificationJob extends AbstractJob {
 		}
 
 		$context = new NotificationContext( survey: $survey, response: $response );
-
-		match ( $type ) {
-			'new_response_alert'   => $this->newResponseAdmin->send( $context ),
-			'thank_you_respondent' => $this->thankYouRespondent->send( $context ),
-			default                => null,
-		};
+		$this->newResponseAdmin->send( $context );
 
 		$this->logger->info(
 			'Notification sent',

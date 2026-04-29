@@ -62,6 +62,24 @@ class ApiServiceProvider implements ServiceProvider {
 	 */
 	public function boot(): void {
 		$this->addAction( 'rest_api_init', [ $this, 'registerRoutes' ] );
+		$this->addAction( 'rest_api_init', [ $this, 'registerShutdownHook' ] );
+	}
+
+	/**
+	 * Flush the FastCGI response buffer before Action Scheduler runs on shutdown.
+	 *
+	 * Priority 0 ensures the browser receives the REST response immediately while
+	 * AS queue processing (priority 10) continues in the background.
+	 *
+	 * @return void
+	 * @since  1.0.0
+	 */
+	public function registerShutdownHook(): void {
+		add_action( 'shutdown', function () {
+			if ( function_exists( 'fastcgi_finish_request' ) ) {
+				fastcgi_finish_request();
+			}
+		}, 0 );
 	}
 
 	/**

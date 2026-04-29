@@ -8,18 +8,18 @@ defined( 'ABSPATH' ) || exit;
 
 use AllFeedback\API\RestController;
 use AllFeedback\Core\Settings\SettingsManager;
+use AllFeedback\Infrastructure\Mail\Mailer;
 use AllFeedback\Support\Logger;
 
 /**
- * Class SettingsController
- *
  * REST controller for plugin-wide settings.
  *
  * Routes (under allfeedback/v1):
- *   GET   /settings → index()  : return full three-level settings object
- *   PATCH /settings → update() : persist one or more pages/sections/fields
+ *   GET   /settings            → index()     : return full three-level settings object
+ *   PATCH /settings            → update()    : persist one or more pages/sections/fields
+ *   POST  /settings/test-email → testEmail() : send a test email to the configured address
  *
- * ── Response shape ────────────────────────────────────────────────────
+ * ── Response shape ────────────────────────────────────────────────────────────
  *
  * ```json
  * {
@@ -33,7 +33,7 @@ use AllFeedback\Support\Logger;
  * }
  * ```
  *
- * ── PATCH body — send only what changed ───────────────────────────────
+ * ── PATCH body — send only what changed ──────────────────────────────────────
  *
  * ```json
  * { "advanced": { "logging": { "enabled": true, "level": "debug" } } }
@@ -53,11 +53,13 @@ class SettingsController extends RestController {
 
 	/**
 	 * @param  SettingsManager $settingsManager Plugin-wide settings store.
+	 * @param  Mailer          $mailer          Email dispatcher for the test-email endpoint.
 	 * @param  Logger          $logger          Structured logger.
 	 * @since  1.0.0
 	 */
 	public function __construct(
 		private readonly SettingsManager $settingsManager,
+		private readonly Mailer $mailer,
 		private readonly Logger $logger,
 	) {}
 
@@ -84,6 +86,16 @@ class SettingsController extends RestController {
 					'args'                => $this->settingsArgs(),
 				],
 				'schema' => [ $this, 'getPublicItemSchema' ],
+			]
+		);
+
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->restBase . '/test-email',
+			[
+				'methods'             => \WP_REST_Server::CREATABLE,
+				'callback'            => [ $this, 'testEmail' ],
+				'permission_callback' => [ $this, 'adminPermission' ],
 			]
 		);
 	}
@@ -134,6 +146,50 @@ class SettingsController extends RestController {
 		);
 
 		return $this->successResponse( $this->settingsManager->all() );
+	}
+
+	/**
+	 * POST /allfeedback/v1/settings/test-email
+	 *
+	 * Send a test email to the configured "To email" address (falls back to the
+	 * WordPress admin email) to verify that the delivery settings are correct.
+	 *
+	 * The email uses the same Mailer pipeline — including the HTML layout,
+	 * From name, From address, and Reply-To — as real notification emails so
+	 * it is a true end-to-end deliverability test.
+	 *
+	 * @param  \WP_REST_Request $request Full request data.
+	 * @return \WP_REST_Response
+	 * @since  1.0.0
+	 */
+	public function testEmail( \WP_REST_Request $request ): \WP_REST_Response {
+		$to = (string) ( $this->settingsManager->get( 'email.delivery.to_email' ) ?: get_option( 'admin_email' ) );
+
+		$siteName = get_bloginfo( 'name' );
+
+		$subject = sprintf(
+			/* translators: %s: site name */
+			__( '[%s] Test email from AllFeedback', 'allfeedback' ),
+			$siteName
+		);
+
+		$body = implode( "\n\n", [
+			__( 'This is a test email sent from AllFeedback to verify your email delivery settings.', 'allfeedback' ),
+			__( 'If you received this message, your configuration is working correctly.', 'allfeedback' ),
+			/* translators: %s: site name */
+			sprintf( __( 'Site: %s', 'allfeedback' ), esc_html( $siteName ) ),
+		] );
+
+		$sent = $this->mailer->send( $to, $subject, $body );
+
+		if ( ! $sent ) {
+			$this->logger->warning(
+				'Test email delivery failed.',
+				[ 'to' => $to, 'user_id' => get_current_user_id() ]
+			);
+		}
+
+		return $this->successResponse( [ 'sent' => $sent ] );
 	}
 
 	/**

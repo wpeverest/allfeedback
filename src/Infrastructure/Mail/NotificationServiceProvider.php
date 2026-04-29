@@ -13,15 +13,19 @@ use AllFeedback\Domain\Survey\Survey;
 use AllFeedback\Traits\Hooks;
 
 /**
- * Registers WordPress action hooks that queue notification jobs.
+ * Wires WordPress action hooks to async notification jobs.
  *
- * Listens to:
- *   - `allfeedback:response:submitted`  → queues new_response_alert + thank_you_respondent
- *   - `allfeedback:survey:created`      → (no-op; notification only fires on activation)
- *   - `allfeedback:survey:activated`    → queues survey_published
+ * Listened hooks → dispatched jobs:
+ *   - `allfeedback:response:submitted`  → new_response_alert
+ *   - `allfeedback:survey:activated`    → survey_published
+ *   - `init`                            → scheduleWeeklyDigest (idempotent, AS-only)
  *
- * All emails are dispatched asynchronously via Action Scheduler so that the
- * critical path (e.g. public widget submission) is never delayed by SMTP.
+ * Jobs are dispatched via the configured {@see JobDispatcher}. When Action
+ * Scheduler is available emails are sent in the background; otherwise they are
+ * sent synchronously in-process.
+ *
+ * To register additional notification types from a Pro add-on, hook into
+ * `allfeedback:response:submitted` directly instead of modifying this class.
  *
  * @package AllFeedback\Infrastructure\Mail
  * @since   1.0.0
@@ -31,7 +35,19 @@ class NotificationServiceProvider implements ServiceProviderInterface {
 	use Hooks;
 
 	/**
-	 * @param  JobDispatcher $dispatcher Background job dispatcher for async email delivery.
+	 * WordPress option key used to record that a single recurring digest action
+	 * has already been registered in Action Scheduler.
+	 *
+	 * Storing this in wp_options prevents re-scheduling on every page load and
+	 * avoids a race condition where `isPending()` returns false while the job is
+	 * currently in-progress (AS status "in-progress" ≠ "pending").
+	 *
+	 * @since 1.0.0
+	 */
+	private const DIGEST_SCHEDULED_OPTION = 'allfeedback_digest_scheduled';
+
+	/**
+	 * @param  JobDispatcher $dispatcher Background job dispatcher.
 	 * @since  1.0.0
 	 */
 	public function __construct(
@@ -39,42 +55,31 @@ class NotificationServiceProvider implements ServiceProviderInterface {
 	) {}
 
 	/**
-	 * Wire up WordPress hooks for notification triggers.
+	 * Register WordPress action hooks.
 	 *
 	 * @return void
 	 * @since  1.0.0
 	 */
 	public function boot(): void {
 		$this->addAction( 'allfeedback:response:submitted', [ $this, 'onResponseSubmitted' ] );
-		$this->addAction( 'allfeedback:survey:activated', [ $this, 'onSurveyActivated' ] );
+		$this->addAction( 'allfeedback:survey:activated',   [ $this, 'onSurveyActivated' ] );
+		$this->addAction( 'init',                           [ $this, 'scheduleWeeklyDigest' ] );
 	}
 
 	/**
-	 * Queue admin alert and optional respondent thank-you on a new response.
+	 * Queue the admin alert job when a response is submitted.
 	 *
-	 * @param  Response $response The newly submitted response.
+	 * @param  Response $response Newly submitted response aggregate.
 	 * @return void
 	 * @since  1.0.0
 	 */
 	public function onResponseSubmitted( Response $response ): void {
-		$surveyId   = $response->getSurveyId();
-		$responseId = (int) $response->getId();
-
 		$this->dispatcher->dispatch(
 			SendNotificationJob::class,
 			new SendNotificationJobPayload(
 				notificationType: 'new_response_alert',
-				surveyId: $surveyId,
-				responseId: $responseId,
-			)
-		);
-
-		$this->dispatcher->dispatch(
-			SendNotificationJob::class,
-			new SendNotificationJobPayload(
-				notificationType: 'thank_you_respondent',
-				surveyId: $surveyId,
-				responseId: $responseId,
+				surveyId:         $response->getSurveyId(),
+				responseId:       (int) $response->getId(),
 			)
 		);
 	}
@@ -82,7 +87,7 @@ class NotificationServiceProvider implements ServiceProviderInterface {
 	/**
 	 * Queue a survey-published notification when a survey is activated.
 	 *
-	 * @param  Survey $survey The survey that was activated.
+	 * @param  Survey $survey The survey that transitioned to the active state.
 	 * @return void
 	 * @since  1.0.0
 	 */
@@ -96,8 +101,56 @@ class NotificationServiceProvider implements ServiceProviderInterface {
 			SendNotificationJob::class,
 			new SendNotificationJobPayload(
 				notificationType: 'survey_published',
-				surveyId: $surveyId,
+				surveyId:         $surveyId,
 			)
 		);
+	}
+
+	/**
+	 * Register the weekly digest as a single recurring Action Scheduler job.
+	 *
+	 * Only runs when Action Scheduler is available — skipped silently otherwise.
+	 *
+	 * Uses a wp_options flag rather than isPending() to guard against a race
+	 * condition: when AS runs the digest job in-process (during the same request),
+	 * the action status changes from "pending" to "in-progress". isPending() uses
+	 * as_has_scheduled_action() which only matches "pending" status, so it briefly
+	 * returns false and a duplicate recurring action would be created. The option
+	 * flag is set once and persists across requests, preventing that entirely.
+	 *
+	 * On the first call:
+	 *   1. Cancel any stale/duplicate recurring actions already in the AS queue.
+	 *   2. Schedule exactly one new recurring action (weekly, from next Monday 08:00).
+	 *   3. Persist the option flag so subsequent calls skip immediately.
+	 *
+	 * @return void
+	 * @since  1.0.0
+	 */
+	public function scheduleWeeklyDigest(): void {
+		if ( ! function_exists( 'as_schedule_recurring_action' ) ) {
+			return;
+		}
+
+		// Fast-path: option set → a clean recurring action is already registered.
+		if ( get_option( self::DIGEST_SCHEDULED_OPTION ) ) {
+			return;
+		}
+
+		$payload = new SendWeeklyDigestJobPayload();
+
+		// Cancel any duplicates created before this guard was in place.
+		$this->dispatcher->cancel( SendWeeklyDigestJob::class, $payload );
+
+		$timezone   = wp_timezone();
+		$nextMonday = new \DateTimeImmutable( 'next Monday 08:00:00', $timezone );
+
+		$this->dispatcher->scheduleRecurring(
+			SendWeeklyDigestJob::class,
+			$payload,
+			604800,
+			$nextMonday->getTimestamp()
+		);
+
+		update_option( self::DIGEST_SCHEDULED_OPTION, true, false );
 	}
 }

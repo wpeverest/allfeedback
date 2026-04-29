@@ -96,10 +96,15 @@ class SettingsManager {
 			],
 		],
 		'email'    => [
-			'delivery' => [
+			'delivery'      => [
 				'to_email'   => '',
 				'from_name'  => '',
 				'from_email' => '',
+				'reply_to'   => '',
+			],
+			'notifications' => [
+				'admin_enabled'      => true,
+				'respondent_enabled' => true,
 			],
 		],
 		'advanced' => [
@@ -176,8 +181,18 @@ class SettingsManager {
 
 		$merged = $this->mergeWithDefaults( $this->loaded );
 
-		if ( empty( $merged['email']['delivery']['to_email'] ) ) {
-			$merged['email']['delivery']['to_email'] = (string) \get_option( 'admin_email', '' );
+		$delivery = &$merged['email']['delivery'];
+
+		if ( empty( $delivery['to_email'] ) ) {
+			$delivery['to_email'] = (string) \get_option( 'admin_email', '' );
+		}
+
+		if ( empty( $delivery['from_name'] ) ) {
+			$delivery['from_name'] = 'AllFeedback';
+		}
+
+		if ( empty( $delivery['from_email'] ) ) {
+			$delivery['from_email'] = (string) \get_option( 'admin_email', '' );
 		}
 
 		return $merged;
@@ -431,6 +446,26 @@ class SettingsManager {
 								'type'        => 'string',
 								'default'     => self::DEFAULTS['email']['delivery']['from_email'],
 								'description' => \__( 'Sender address used when dispatching emails.', 'allfeedback' ),
+							],
+							'reply_to'   => [
+								'type'        => 'string',
+								'default'     => self::DEFAULTS['email']['delivery']['reply_to'],
+								'description' => \__( 'Reply-To address. Leave blank to use From email.', 'allfeedback' ),
+							],
+						],
+					],
+					'notifications' => [
+						'description' => \__( 'Notification email settings.', 'allfeedback' ),
+						'properties'  => [
+							'admin_enabled'      => [
+								'type'        => 'boolean',
+								'default'     => self::DEFAULTS['email']['notifications']['admin_enabled'],
+								'description' => \__( 'Send admin alert email on each new response.', 'allfeedback' ),
+							],
+							'respondent_enabled' => [
+								'type'        => 'boolean',
+								'default'     => self::DEFAULTS['email']['notifications']['respondent_enabled'],
+								'description' => \__( 'Send a confirmation email to the respondent after submission.', 'allfeedback' ),
 							],
 						],
 					],

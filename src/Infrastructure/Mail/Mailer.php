@@ -13,9 +13,7 @@ use AllFeedback\Traits\Hooks;
 /**
  * Thin wrapper around wp_mail() with HTML layout, header normalisation,
  * and filter extensibility.
- *
- * The sender name and address default to the site name and admin email when
- * not configured in plugin settings.
+
  *
  * @package AllFeedback\Infrastructure\Mail
  * @since   1.0.0
@@ -37,28 +35,38 @@ class Mailer {
 	/**
 	 * Send an HTML email via wp_mail().
 	 *
-	 * Headers are merged with a Content-Type and From header derived from plugin
-	 * settings. The body is wrapped in a minimal HTML layout before dispatch.
+	 * From name, From address, and optional Reply-To are resolved from plugin
+	 * settings, falling back to the site title and WordPress admin email. The
+	 * body is wrapped in an HTML layout before dispatch.
 	 *
 	 * @param  string   $to      Recipient email address.
 	 * @param  string   $subject Email subject line.
-	 * @param  string   $body    Plain or partial HTML body content.
+	 * @param  string   $body    Plain text or partial HTML body content.
 	 * @param  string[] $headers Additional raw email headers.
 	 * @return bool True when wp_mail() reports success.
 	 * @since  1.0.0
 	 */
 	public function send( string $to, string $subject, string $body, array $headers = [] ): bool {
-		$senderName  = sanitize_text_field( (string) ( $this->settings->get( 'email_sender_name' ) ?: get_bloginfo( 'name' ) ) );
-		$senderEmail = sanitize_email( (string) ( $this->settings->get( 'email_sender_email' ) ?: get_option( 'admin_email' ) ) );
+		$senderName  = sanitize_text_field(
+			(string) ( $this->settings->get( 'email.delivery.from_name' ) ?: get_bloginfo( 'name' ) )
+		);
+		$senderEmail = sanitize_email(
+			(string) ( $this->settings->get( 'email.delivery.from_email' ) ?: get_option( 'admin_email' ) )
+		);
+		$replyTo = sanitize_email(
+			(string) ( $this->settings->get( 'email.delivery.reply_to' ) ?: '' )
+		);
 
 		$headers[] = 'Content-Type: text/html; charset=UTF-8';
 		$headers[] = sprintf( 'From: %s <%s>', $senderName, $senderEmail );
 
-		$headers = $this->applyFilters( 'allfeedback:mail:headers', $headers, $to, $subject );
+		if ( $replyTo !== '' ) {
+			$headers[] = 'Reply-To: ' . $replyTo;
+		}
 
+		$headers  = (array) $this->applyFilters( 'allfeedback:mail:headers', $headers, $to, $subject );
 		$htmlBody = $this->wrapInLayout( $body, $subject );
-
-		$htmlBody = $this->applyFilters( 'allfeedback:mail:body', $htmlBody, $to, $subject );
+		$htmlBody = (string) $this->applyFilters( 'allfeedback:mail:body', $htmlBody, $to, $subject );
 
 		$sent = wp_mail( $to, $subject, $htmlBody, $headers );
 
@@ -66,66 +74,67 @@ class Mailer {
 			$this->doAction( 'allfeedback:mail:sent', $to, $subject );
 		} else {
 			$this->doAction( 'allfeedback:mail:failed', $to, $subject );
-
-			$this->logger->error(
-				'Failed to send email',
-				[
-					'to'      => $to,
-					'subject' => $subject,
-				]
-			);
+			$this->logger->error( 'Failed to send email', [ 'to' => $to, 'subject' => $subject ] );
 		}
 
 		return $sent;
 	}
 
 	/**
-	 * Replace `{key}` placeholders in a template string with the supplied values.
+	 * Replace `{key}` placeholders in a template string.
 	 *
-	 * @param  string                $template Template string containing `{key}` tokens.
-	 * @param  array<string, string> $vars     Key-to-replacement map.
+	 * @param  string                $template String containing `{key}` tokens.
+	 * @param  array<string, string> $vars     Token → replacement map.
 	 * @return string
 	 * @since  1.0.0
 	 */
 	public function interpolate( string $template, array $vars ): string {
-		$replacements = [];
+		$map = [];
 		foreach ( $vars as $key => $value ) {
-			$replacements[ '{' . $key . '}' ] = (string) $value;
+			$map[ '{' . $key . '}' ] = (string) $value;
 		}
-		return strtr( $template, $replacements );
+		return strtr( $template, $map );
 	}
 
 	/**
-	 * Wrap raw body content in a minimal, inline-styled HTML email layout.
+	 * Wrap body content in a minimal inline-styled HTML email layout.
 	 *
-	 * @param  string $body    Raw body content to embed.
-	 * @param  string $subject Subject used as the HTML document title.
+	 * The header strip colour is filterable via `allfeedback:mail:brand_color`
+	 * so Pro add-ons or site owners can white-label the emails without touching
+	 * this class.
+	 *
+	 * @param  string $body    Raw body content to embed (nl2br applied automatically).
+	 * @param  string $subject Used as the HTML document title.
 	 * @return string Fully-rendered HTML email document.
 	 * @since  1.0.0
 	 */
 	private function wrapInLayout( string $body, string $subject ): string {
-		$siteName = esc_html( get_bloginfo( 'name' ) );
-		$bodyHtml = nl2br( $body );
+		$siteName   = esc_html( get_bloginfo( 'name' ) );
+		$brandColor = (string) $this->applyFilters( 'allfeedback:mail:brand_color', '#6366f1' );
+		$bodyHtml   = nl2br( $body );
 
 		return '<!DOCTYPE html>'
-			. '<html lang="en">'
+			. '<html lang="' . esc_attr( get_bloginfo( 'language' ) ) . '">'
 			. '<head>'
 			. '<meta charset="UTF-8">'
-			. '<meta name="viewport" content="width=device-width, initial-scale=1.0">'
+			. '<meta name="viewport" content="width=device-width,initial-scale=1">'
 			. '<title>' . esc_html( $subject ) . '</title>'
 			. '</head>'
 			. '<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;">'
 			. '<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f5;padding:32px 16px;">'
 			. '<tr><td align="center">'
 			. '<table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:8px;overflow:hidden;max-width:600px;width:100%;">'
-			. '<tr><td style="background-color:#6366f1;padding:24px 32px;">'
-			. '<h1 style="margin:0;color:#ffffff;font-size:18px;font-weight:600;">' . $siteName . '</h1>'
+			. '<tr><td style="background-color:' . esc_attr( $brandColor ) . ';padding:20px 32px;">'
+			. '<h1 style="margin:0;color:#ffffff;font-size:16px;font-weight:600;">' . $siteName . '</h1>'
 			. '</td></tr>'
 			. '<tr><td style="padding:32px;color:#374151;font-size:14px;line-height:1.6;">'
 			. $bodyHtml
 			. '</td></tr>'
-			. '<tr><td style="padding:16px 32px;border-top:1px solid #e5e7eb;text-align:center;">'
-			. '<p style="margin:0;color:#9ca3af;font-size:12px;">&copy; ' . $siteName . '</p>'
+			. '<tr><td style="padding:16px 32px;border-top:1px solid #e5e7eb;">'
+			. '<table width="100%" cellpadding="0" cellspacing="0"><tr>'
+			. '<td style="color:#9ca3af;font-size:12px;">&copy; ' . $siteName . '</td>'
+			. '<td align="right" style="color:#9ca3af;font-size:11px;">Powered by <a href="https://allfeedback.io" style="color:#9ca3af;text-decoration:underline;">AllFeedback</a></td>'
+			. '</tr></table>'
 			. '</td></tr>'
 			. '</table>'
 			. '</td></tr>'

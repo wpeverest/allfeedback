@@ -10,12 +10,14 @@ import { cn } from '@/lib/utils';
 import { useForm, useStore } from '@tanstack/react-form';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { __ } from '@wordpress/i18n';
-import { CheckCircle2, Eye, Loader2, Mail, Send, X, XCircle } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { Bell, CheckCircle2, Eye, Loader2, Mail, Send, X, XCircle } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+// ─── Shared layout primitives ─────────────────────────────────────────────────
 
 const labelCls = 'text-base font-normal text-foreground/90';
 
-const Row = ({
+const Row = ( {
 	label,
 	description,
 	children,
@@ -23,7 +25,7 @@ const Row = ({
 	label:        string;
 	description?: string;
 	children:     React.ReactNode;
-}) => (
+} ) => (
 	<div className="flex items-start gap-4">
 		<div className="w-[40%] shrink-0">
 			<label className={labelCls}>{label}</label>
@@ -33,27 +35,35 @@ const Row = ({
 				</p>
 			)}
 		</div>
-		<div className={cn('min-w-0 flex-1', !description && 'flex items-center')} style={description ? { paddingTop: '2px' } : undefined}>
+		<div
+			className={cn( 'min-w-0 flex-1', ! description && 'flex items-center' )}
+			style={description ? { paddingTop: '2px' } : undefined}
+		>
 			{children}
 		</div>
 	</div>
 );
 
-const SectionLabel = ({ children }: { children: React.ReactNode }) => (
+const SectionLabel = ( { children }: { children: React.ReactNode } ) => (
 	<div className="mt-5 mb-4">
-		<span className="text-sm font-semibold tracking-widest uppercase text-foreground/60">{children}</span>
+		<span className="text-sm font-semibold tracking-widest uppercase text-foreground/60">
+			{children}
+		</span>
 	</div>
 );
+
+// ─── Loading skeleton ─────────────────────────────────────────────────────────
 
 const EmailSettingsSkeleton = () => (
 	<div>
 		<div className="flex items-center gap-3 border-b border-border/50 px-6 py-4">
 			<Skeleton className="size-9 rounded-xl" />
 			<Skeleton className="h-5 w-28" />
+			<div className="flex-1" />
 		</div>
 		<div className="space-y-3 px-6 pb-6 pt-4">
 			<Skeleton className="h-2.5 w-20" />
-			{[1, 2, 3].map((i) => (
+			{[1, 2, 3].map( ( i ) => (
 				<div key={i} className="flex items-start gap-4">
 					<div className="w-[40%] shrink-0 space-y-1.5">
 						<Skeleton className="h-4 w-3/4" />
@@ -61,7 +71,7 @@ const EmailSettingsSkeleton = () => (
 					</div>
 					<Skeleton className="h-9 flex-1 rounded-lg" />
 				</div>
-			))}
+			) )}
 			<div className="!mt-6 h-px bg-border/50" />
 			<Skeleton className="h-2.5 w-24" />
 			<div className="flex items-center gap-4 rounded-xl border border-border/40 bg-muted/20 px-5 py-4">
@@ -76,16 +86,226 @@ const EmailSettingsSkeleton = () => (
 	</div>
 );
 
+// ─── Email preview helpers ────────────────────────────────────────────────────
+
+/** Escape a plain string for safe interpolation into HTML attributes and text. */
+const escHtml = ( s: string ): string =>
+	s
+		.replace( /&/g, '&amp;' )
+		.replace( /</g, '&lt;' )
+		.replace( />/g, '&gt;' )
+		.replace( /"/g, '&quot;' );
+
+/**
+ * Build a full HTML document for the individual response-alert email preview.
+ * Includes a sample NPS score badge (Promoter · 9/10) and CTA button.
+ */
+const buildResponseAlertHtml = ( fromName: string, toEmail: string ): string => {
+	const siteName = escHtml( fromName.trim() || __( 'Your Site', 'allfeedback' ) );
+	const today    = new Date().toLocaleString( undefined, {
+		year: 'numeric', month: 'long', day: 'numeric',
+		hour: '2-digit', minute: '2-digit',
+	} );
+
+	return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Email Preview</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f5;padding:32px 16px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:8px;overflow:hidden;max-width:600px;width:100%;">
+        <tr>
+          <td style="background-color:#6366f1;padding:20px 32px;">
+            <h1 style="margin:0;color:#ffffff;font-size:16px;font-weight:600;">${siteName}</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:32px;color:#374151;font-size:14px;line-height:1.6;">
+            <p style="margin:0 0 16px 0;">A new response has been submitted for your survey.</p>
+            <p style="margin:0 0 8px 0;"><strong>Survey:</strong> Q1 NPS Survey</p>
+            <p style="margin:0 0 12px 0;"><span style="display:inline-block;background:#dcfce7;padding:4px 12px;border-radius:99px;font-size:13px;font-weight:600;color:#16a34a;">Promoter &middot; 9/10</span></p>
+            <p style="margin:0 0 8px 0;"><strong>Response ID:</strong> #42</p>
+            <p style="margin:0 0 16px 0;"><strong>Submitted at:</strong> ${escHtml( today )}</p>
+            ${toEmail ? `<p style="margin:0 0 20px 0;color:#6b7280;font-size:13px;">Delivered to: ${escHtml( toEmail )}</p>` : ''}
+            <a href="#" style="display:inline-block;padding:10px 24px;background:#6366f1;color:#ffffff;border-radius:6px;text-decoration:none;font-size:14px;font-weight:600;">View Response →</a>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px 32px;border-top:1px solid #e5e7eb;">
+            <table width="100%" cellpadding="0" cellspacing="0"><tr>
+              <td style="color:#9ca3af;font-size:12px;">&copy; ${siteName}</td>
+              <td align="right" style="color:#9ca3af;font-size:11px;">Powered by <a href="https://allfeedback.io" style="color:#9ca3af;text-decoration:underline;">AllFeedback</a></td>
+            </tr></table>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+};
+
+/**
+ * Build a full HTML document for the weekly digest email preview.
+ * Shows a generic template that works for any survey type — score row is
+ * omitted here to represent surveys with no numeric score field.
+ */
+const buildWeeklyDigestHtml = ( fromName: string ): string => {
+	const siteName  = escHtml( fromName.trim() || __( 'Your Site', 'allfeedback' ) );
+	const today     = new Date();
+	const dateFrom  = new Date( today );
+	dateFrom.setDate( today.getDate() - 6 );
+	const fmt       = ( d: Date ) => d.toLocaleDateString( undefined, { month: 'short', day: 'numeric' } );
+	const dateRange = `${escHtml( fmt( dateFrom ) )}–${escHtml( fmt( today ) )}`;
+
+	return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Email Preview</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f5;padding:32px 16px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:8px;overflow:hidden;max-width:600px;width:100%;">
+        <tr>
+          <td style="background-color:#6366f1;padding:20px 32px;">
+            <h1 style="margin:0;color:#ffffff;font-size:16px;font-weight:600;">${siteName}</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:32px;color:#374151;font-size:14px;line-height:1.6;">
+            <p style="margin:0 0 2px 0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#9ca3af;">Weekly Report</p>
+            <p style="margin:0 0 24px 0;font-size:12px;color:#9ca3af;">${dateRange}</p>
+
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;"><tr>
+              <td style="vertical-align:middle;">
+                <span style="display:block;font-size:36px;font-weight:700;color:#111827;line-height:1;">47</span>
+                <span style="display:block;margin-top:4px;font-size:13px;color:#6b7280;">responses this week</span>
+              </td>
+              <td style="vertical-align:middle;text-align:right;">
+                <span style="display:inline-block;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600;background:#dcfce7;color:#16a34a;">+31% vs last week</span>
+              </td>
+            </tr></table>
+
+            <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e5e7eb;margin-bottom:24px;">
+              <tr>
+                <td style="padding:11px 0;font-size:13px;color:#374151;">Completion rate this week</td>
+                <td style="padding:11px 0;font-size:13px;font-weight:600;color:#111827;text-align:right;">64% <span style="font-size:11px;font-weight:500;color:#16a34a;">↑ vs 61%</span></td>
+              </tr>
+            </table>
+
+            <p style="margin:0 0 10px 0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#9ca3af;">Survey Breakdown</p>
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+              <tr>
+                <td style="padding:8px 0;font-size:13px;color:#374151;border-bottom:1px solid #f3f4f6;">Product Feedback Survey</td>
+                <td style="padding:8px 0;font-size:13px;color:#6b7280;text-align:right;border-bottom:1px solid #f3f4f6;">32 responses</td>
+              </tr>
+              <tr>
+                <td style="padding:8px 0;font-size:13px;color:#374151;">Customer Feedback</td>
+                <td style="padding:8px 0;font-size:13px;color:#6b7280;text-align:right;">15 responses</td>
+              </tr>
+            </table>
+
+            <a href="#" style="display:inline-block;padding:10px 24px;background:#6366f1;color:#ffffff;border-radius:6px;text-decoration:none;font-size:14px;font-weight:600;">View Analytics →</a>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px 32px;border-top:1px solid #e5e7eb;">
+            <table width="100%" cellpadding="0" cellspacing="0"><tr>
+              <td style="color:#9ca3af;font-size:12px;">&copy; ${siteName}</td>
+              <td align="right" style="color:#9ca3af;font-size:11px;">Powered by <a href="https://allfeedback.io" style="color:#9ca3af;text-decoration:underline;">AllFeedback</a></td>
+            </tr></table>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+};
+
+// ─── Preview modal component ──────────────────────────────────────────────────
+
+const PreviewModal = ( {
+	html,
+	title,
+	onClose,
+}: {
+	html:    string;
+	title:   string;
+	onClose: () => void;
+} ) => {
+	useEffect( () => {
+		const onKey = ( e: KeyboardEvent ) => { if ( e.key === 'Escape' ) onClose(); };
+		document.addEventListener( 'keydown', onKey );
+		return () => document.removeEventListener( 'keydown', onKey );
+	}, [onClose] );
+
+	return (
+		<div
+			role="dialog"
+			aria-modal="true"
+			aria-label={title}
+			className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+			onClick={onClose}
+		>
+			<div
+				className="relative flex h-[560px] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+				onClick={( e ) => e.stopPropagation()}
+			>
+				<div className="flex shrink-0 items-center justify-between border-b border-border/50 px-5 py-3.5">
+					<span className="text-base font-semibold text-foreground/90">{title}</span>
+					<button
+						type="button"
+						aria-label={__( 'Close preview', 'allfeedback' )}
+						className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+						onClick={onClose}
+					>
+						<X className="size-4" />
+					</button>
+				</div>
+				<iframe
+					srcDoc={html}
+					sandbox="allow-same-origin"
+					className="flex-1 w-full border-0"
+					title={title}
+				/>
+			</div>
+		</div>
+	);
+};
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
 const FORM_KEY = 'email';
 
+// ─── Main component ───────────────────────────────────────────────────────────
+
 const EmailSettings = () => {
-	const { data, isPending } = useQuery(settingsQuery());
+	const { data, isPending }                                                = useQuery( settingsQuery() );
 	const { isDirty: sharedIsDirty, isSaving, setDirty, patches, setPatch } = useSettingsDirty();
 
-	const [testStatus, setTestStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
-	const [previewOpen, setPreviewOpen] = useState(false);
+	const [testStatus, setTestStatus] = useState<'idle' | 'sending' | 'success' | 'error'>( 'idle' );
+	const [previewType, setPreviewType] = useState<null | 'response' | 'digest'>( null );
 
-	const stagedEmail = (patches[FORM_KEY] as { email?: { delivery?: Partial<Settings['email']['delivery']> } } | undefined)?.email?.delivery;
+	const openResponsePreview = useCallback( () => setPreviewType( 'response' ), [] );
+	const openDigestPreview   = useCallback( () => setPreviewType( 'digest' ),   [] );
+	const closePreview        = useCallback( () => setPreviewType( null ),        [] );
+
+	// ── Staged & server delivery values ──────────────────────────────────────
+
+	type DeliveryPatch = Partial<Pick<Settings['email']['delivery'], 'to_email' | 'from_name' | 'from_email'>>;
+
+	const stagedEmail = (
+		patches[FORM_KEY] as { email?: { delivery?: DeliveryPatch } } | undefined
+	)?.email?.delivery;
+
 	const serverEmail = data?.email?.delivery;
 
 	const DEFAULT_VALUES = {
@@ -102,205 +322,286 @@ const EmailSettings = () => {
 		}
 		: DEFAULT_VALUES;
 
-	const form = useForm({
-		defaultValues: initValues,
-		onSubmit: async () => {},
-	});
+	// ── Form ──────────────────────────────────────────────────────────────────
 
-	const markedDirtyRef = useRef(false);
-	useEffect(() => {
-		if (stagedEmail && !markedDirtyRef.current) {
-			setDirty(FORM_KEY, true);
+	const form = useForm( {
+		defaultValues: initValues,
+		onSubmit:      async () => {},
+	} );
+
+	const markedDirtyRef = useRef( false );
+	useEffect( () => {
+		if ( stagedEmail && ! markedDirtyRef.current ) {
+			setDirty( FORM_KEY, true );
 			markedDirtyRef.current = true;
 		}
 	// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
+	}, [] );
 
-	useEffect(() => {
-		if (!data || patches[FORM_KEY]) return;
-		form.reset({
+	useEffect( () => {
+		if ( ! data || patches[FORM_KEY] ) return;
+		form.reset( {
 			to_email:   data.email?.delivery?.to_email   ?? '',
 			from_name:  data.email?.delivery?.from_name  ?? '',
 			from_email: data.email?.delivery?.from_email ?? '',
-		}, { keepDefaultValues: true });
-	}, [data]); // eslint-disable-line react-hooks/exhaustive-deps
+		}, { keepDefaultValues: true } );
+	}, [data] ); // eslint-disable-line react-hooks/exhaustive-deps
 
-	const values  = useStore(form.store, (s) => s.values);
-	const isDirty = useStore(form.store, (s) => s.isDirty);
+	const values  = useStore( form.store, ( s ) => s.values );
+	const isDirty = useStore( form.store, ( s ) => s.isDirty );
 
-	useEffect(() => {
-		if (!isDirty) return;
+	useEffect( () => {
+		if ( ! isDirty ) return;
 		const sv = data?.email?.delivery;
-		if (
-			values.to_email   === (sv?.to_email   ?? '') &&
-			values.from_name  === (sv?.from_name  ?? '') &&
-			values.from_email === (sv?.from_email ?? '')
-		) return;
-		setDirty(FORM_KEY, true);
-		setPatch(FORM_KEY, { email: { delivery: { to_email: values.to_email, from_name: values.from_name, from_email: values.from_email } } } as Record<string, unknown>);
-	}, [values, isDirty]); // eslint-disable-line react-hooks/exhaustive-deps
+		const unchanged =
+			values.to_email   === ( sv?.to_email   ?? '' ) &&
+			values.from_name  === ( sv?.from_name  ?? '' ) &&
+			values.from_email === ( sv?.from_email ?? '' );
 
-	const testMutation = useMutation({
+		if ( unchanged ) return;
+
+		setDirty( FORM_KEY, true );
+		setPatch( FORM_KEY, {
+			email: {
+				delivery: {
+					to_email:   values.to_email,
+					from_name:  values.from_name,
+					from_email: values.from_email,
+				},
+			},
+		} as Record<string, unknown> );
+	}, [values, isDirty] ); // eslint-disable-line react-hooks/exhaustive-deps
+
+	// ── Test email mutation ───────────────────────────────────────────────────
+
+	const testMutation = useMutation( {
 		mutationFn: settingsApi.sendTestEmail,
-		onMutate:   () => setTestStatus('sending'),
-		onSuccess:  () => { setTestStatus('success'); setTimeout(() => setTestStatus('idle'), 4000); },
-		onError:    () => { setTestStatus('error');   setTimeout(() => setTestStatus('idle'), 4000); },
-	});
+		onMutate:   () => setTestStatus( 'sending' ),
+		onSuccess:  () => { setTestStatus( 'success' ); setTimeout( () => setTestStatus( 'idle' ), 4000 ); },
+		onError:    () => { setTestStatus( 'error' );   setTimeout( () => setTestStatus( 'idle' ), 4000 ); },
+	} );
 
-	if (isPending) return <EmailSettingsSkeleton />;
+	// ── Render ────────────────────────────────────────────────────────────────
 
-	return (<>
-		<div>
-			<div className="flex items-center justify-between gap-3 border-b border-border/50 px-6 py-4">
-				<div className="flex items-center gap-3">
+	if ( isPending ) return <EmailSettingsSkeleton />;
+
+	const previewBtnCls = {
+		border: '1.5px solid color-mix(in oklch, var(--primary) 60%, transparent)',
+		color:  'var(--primary)',
+	};
+
+	return (
+		<>
+			<div>
+
+				{/* Card header */}
+				<div className="flex items-center gap-3 border-b border-border/50 px-6 py-4">
 					<div className="flex size-9 items-center justify-center rounded-xl bg-primary/10">
 						<Mail className="size-[18px] text-primary" />
 					</div>
 					<h3 className="text-md font-semibold text-foreground" style={{ margin: 0 }}>
-						{__('Email', 'allfeedback')}
+						{__( 'Email', 'allfeedback' )}
 					</h3>
-				</div>
-				{sharedIsDirty && !isSaving && <UnsavedChangesBadge />}
-				<Button type="button" variant="secondary" size="sm" onClick={() => setPreviewOpen(true)} className="gap-1.5 text-primary" style={{ border: "1.5px solid color-mix(in oklch, var(--primary) 60%, transparent)", color: 'var(--primary)' }}><Eye className="size-3.5" />{__('Preview email', 'allfeedback')}</Button>
-			</div>
-
-			<div className="px-6 pb-6 pt-4">
-
-				<div className="space-y-3">
-				<SectionLabel>{__('Delivery', 'allfeedback')}</SectionLabel>
-
-				<Row
-					label={__('To email', 'allfeedback')}
-					description={__('Notification emails will be sent to this address.', 'allfeedback')}
-				>
-					<Input
-						type="email"
-						value={values.to_email}
-						onChange={(e) => form.setFieldValue('to_email', e.target.value)}
-						placeholder="admin@yoursite.com"
-					/>
-				</Row>
-
-				<Row
-					label={__('From name', 'allfeedback')}
-					description={__('The sender name that appears in the email inbox.', 'allfeedback')}
-				>
-					<Input
-						type="text"
-						value={values.from_name}
-						onChange={(e) => form.setFieldValue('from_name', e.target.value)}
-						placeholder="All Feedback"
-					/>
-				</Row>
-
-				<Row
-					label={__('From email', 'allfeedback')}
-					description={__('The sender address used when sending emails.', 'allfeedback')}
-				>
-					<Input
-						type="email"
-						value={values.from_email}
-						onChange={(e) => form.setFieldValue('from_email', e.target.value)}
-						placeholder="noreply@yoursite.com"
-					/>
-				</Row>
+					{sharedIsDirty && ! isSaving && <UnsavedChangesBadge />}
 				</div>
 
-				<div className="my-6 border-t border-border/50" />
+				<div className="px-6 pb-6 pt-4">
 
-				<div className="space-y-3">
-				<SectionLabel>{__('Test email', 'allfeedback')}</SectionLabel>
+					{/* ── Delivery ──────────────────────────────────────── */}
+					<div className="space-y-3">
+						<SectionLabel>{__( 'Delivery', 'allfeedback' )}</SectionLabel>
 
-				<div
-					className={cn(
-						'flex items-start gap-4 rounded-xl border px-5 py-4 transition-all duration-300',
-						testStatus === 'success' ? 'border-emerald-200/70 bg-emerald-50/60'
-							: testStatus === 'error' ? 'border-destructive/20 bg-destructive/[0.04]'
-							: 'border-border/60 bg-muted/20',
-					)}
-				>
-					<div
-						className={cn(
-							'flex size-9 shrink-0 items-center justify-center rounded-lg border transition-all duration-300',
-							testStatus === 'success' ? 'border-emerald-200 bg-emerald-100 text-emerald-600'
-								: testStatus === 'error'   ? 'border-destructive/20 bg-destructive/10 text-destructive'
-								: testStatus === 'sending' ? 'border-primary/20 bg-primary/5 text-primary'
-								: 'border-border/60 bg-background text-muted-foreground',
-						)}
-					>
-						{testStatus === 'sending' && <Loader2 className="size-4 animate-spin" />}
-						{testStatus === 'success' && <CheckCircle2 className="size-4" />}
-						{testStatus === 'error'   && <XCircle className="size-4" />}
-						{testStatus === 'idle'    && <Send className="size-4" />}
+						<Row
+							label={__( 'To email', 'allfeedback' )}
+							description={__( 'Admin notification emails will be sent to this address.', 'allfeedback' )}
+						>
+							<Input
+								type="email"
+								value={values.to_email}
+								onChange={( e ) => form.setFieldValue( 'to_email', e.target.value )}
+								placeholder="admin@yoursite.com"
+							/>
+						</Row>
+
+						<Row
+							label={__( 'From name', 'allfeedback' )}
+							description={__( 'The sender name that appears in the recipient\'s inbox.', 'allfeedback' )}
+						>
+							<Input
+								type="text"
+								value={values.from_name}
+								onChange={( e ) => form.setFieldValue( 'from_name', e.target.value )}
+								placeholder="AllFeedback"
+							/>
+						</Row>
+
+						<Row
+							label={__( 'From email', 'allfeedback' )}
+							description={__( 'The sender address used when dispatching emails.', 'allfeedback' )}
+						>
+							<Input
+								type="email"
+								value={values.from_email}
+								onChange={( e ) => form.setFieldValue( 'from_email', e.target.value )}
+								placeholder="noreply@yoursite.com"
+							/>
+						</Row>
 					</div>
 
-					<div className="min-w-0 flex-1">
-						<p className="!mb-1 !mt-0 !text-md font-medium text-foreground/90">
-							{__('Send a test email', 'allfeedback')}
-						</p>
-						<p className="!mt-0 text-[13px] leading-relaxed text-muted-foreground/90">
-							{values.to_email ? (
-								<>
-									{__('A test message will be sent to', 'allfeedback')}{' '}
-									<span className="font-medium text-foreground/70">{values.to_email}</span>.
-								</>
-							) : (
-								__('Set a "To email" address above to send a test.', 'allfeedback')
+					<div className="my-6 border-t border-border/50" />
+
+					{/* ── Test email ────────────────────────────────────── */}
+					<div className="space-y-3">
+						<SectionLabel>{__( 'Test email', 'allfeedback' )}</SectionLabel>
+
+						<div
+							className={cn(
+								'flex items-start gap-4 rounded-xl border px-5 py-4 transition-all duration-300',
+								testStatus === 'success' ? 'border-emerald-200/70 bg-emerald-50/60'
+									: testStatus === 'error' ? 'border-destructive/20 bg-destructive/[0.04]'
+									: 'border-border/60 bg-muted/20',
 							)}
-						</p>
+						>
+							<div className={cn(
+								'flex size-9 shrink-0 items-center justify-center rounded-lg border transition-all duration-300',
+								testStatus === 'success' ? 'border-emerald-200 bg-emerald-100 text-emerald-600'
+									: testStatus === 'error'   ? 'border-destructive/20 bg-destructive/10 text-destructive'
+									: testStatus === 'sending' ? 'border-primary/20 bg-primary/5 text-primary'
+									: 'border-border/60 bg-background text-muted-foreground',
+							)}>
+								{testStatus === 'sending' && <Loader2 className="size-4 animate-spin" />}
+								{testStatus === 'success' && <CheckCircle2 className="size-4" />}
+								{testStatus === 'error'   && <XCircle className="size-4" />}
+								{testStatus === 'idle'    && <Send className="size-4" />}
+							</div>
+
+							<div className="min-w-0 flex-1">
+								<p className="!mb-1 !mt-0 !text-md font-medium text-foreground/90">
+									{__( 'Send a test email', 'allfeedback' )}
+								</p>
+								<p className="!mt-0 text-[13px] leading-relaxed text-muted-foreground/90">
+									{values.to_email ? (
+										<>
+											{__( 'A test message will be sent to', 'allfeedback' )}{' '}
+											<span className="font-medium text-foreground/70">{values.to_email}</span>.
+										</>
+									) : (
+										__( 'Set a "To email" address above to send a test.', 'allfeedback' )
+									)}
+								</p>
+							</div>
+
+							<Button
+								type="button"
+								size="sm"
+								variant="secondary"
+								disabled={testStatus === 'sending' || ! values.to_email}
+								onClick={() => testMutation.mutate()}
+								style={{
+									border: testStatus === 'success'
+										? '1.5px solid color-mix(in oklch, #10b981 40%, transparent)'
+										: testStatus === 'error'
+										? '1.5px solid color-mix(in oklch, var(--destructive) 40%, transparent)'
+										: '1.5px solid color-mix(in oklch, var(--primary) 60%, transparent)',
+									color: testStatus === 'success'
+										? '#065f46'
+										: testStatus === 'error'
+										? 'var(--destructive)'
+										: 'var(--primary)',
+								}}
+								className={cn(
+									'shrink-0',
+									testStatus === 'success' && 'bg-white hover:bg-emerald-50',
+									testStatus === 'error'   && 'bg-white hover:bg-destructive/5',
+								)}
+							>
+								{testStatus === 'sending' ? __( 'Sending…', 'allfeedback' )
+									: testStatus === 'success' ? __( 'Sent!', 'allfeedback' )
+									: testStatus === 'error'   ? __( 'Failed', 'allfeedback' )
+									: __( 'Send test', 'allfeedback' )}
+							</Button>
+						</div>
 					</div>
 
-					<Button
-						type="button"
-						size="sm"
-						variant="secondary"
-						disabled={testStatus === 'sending' || !values.to_email}
-						onClick={() => testMutation.mutate()}
-						style={{
-							border: testStatus === 'success'
-								? '1.5px solid color-mix(in oklch, var(--success, #10b981) 40%, transparent)'
-								: testStatus === 'error'
-								? '1.5px solid color-mix(in oklch, var(--destructive) 40%, transparent)'
-								: '1.5px solid color-mix(in oklch, var(--primary) 60%, transparent)',
-							color: testStatus === 'success'
-								? undefined
-								: testStatus === 'error'
-								? 'var(--destructive)'
-								: 'var(--primary)',
-						}}
-						className={cn(
-							'shrink-0',
-							testStatus === 'success' && 'bg-white text-emerald-700 hover:bg-emerald-50',
-							testStatus === 'error'   && 'bg-white hover:bg-destructive/5',
-						)}
-					>
-						{testStatus === 'sending' ? __('Sending…', 'allfeedback')
-							: testStatus === 'success' ? __('Sent!', 'allfeedback')
-							: testStatus === 'error'   ? __('Failed', 'allfeedback')
-							: __('Send test', 'allfeedback')}
-					</Button>
-				</div>
-				</div>
+					<div className="my-6 border-t border-border/50" />
 
-			</div>
-		</div>
+					{/* ── Notifications ─────────────────────────────────── */}
+					<div className="space-y-3">
+						<SectionLabel>{__( 'Notifications', 'allfeedback' )}</SectionLabel>
 
-		{previewOpen && (
-			<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setPreviewOpen(false)}>
-				<div className="relative flex h-[80vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
-					<div className="flex items-center justify-between border-b border-border/50 px-5 py-3.5">
-						<span className="text-base font-semibold text-foreground/90">{__('Email Preview', 'allfeedback')}</span>
-						<button type="button" onClick={() => setPreviewOpen(false)} className="text-muted-foreground hover:text-foreground transition-colors"><X className="size-4" /></button>
+						{/* New response alert */}
+						<div className="flex items-start gap-4 rounded-xl border border-border/60 bg-muted/20 px-5 py-4">
+							<div className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-background text-muted-foreground">
+								<Bell className="size-4" />
+							</div>
+							<div className="min-w-0 flex-1">
+								<p className="!mb-1 !mt-0 !text-md font-medium text-foreground/90">
+									{__( 'New response alert', 'allfeedback' )}
+								</p>
+								<p className="!mt-0 text-[13px] leading-relaxed text-muted-foreground/90">
+									{__( 'An email is sent to you each time a response is received, with a score badge (if your survey captures scores) and a direct link to view it.', 'allfeedback' )}
+								</p>
+							</div>
+							<Button
+								type="button"
+								variant="secondary"
+								size="sm"
+								onClick={openResponsePreview}
+								className="shrink-0 gap-1.5"
+								style={previewBtnCls}
+							>
+								<Eye className="size-3.5" />
+								{__( 'Preview', 'allfeedback' )}
+							</Button>
+						</div>
+
+						{/* Weekly digest */}
+						<div className="flex items-start gap-4 rounded-xl border border-border/60 bg-muted/20 px-5 py-4">
+							<div className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-background text-muted-foreground">
+								<Mail className="size-4" />
+							</div>
+							<div className="min-w-0 flex-1">
+								<p className="!mb-1 !mt-0 !text-md font-medium text-foreground/90">
+									{__( 'Weekly digest', 'allfeedback' )}
+								</p>
+								<p className="!mt-0 text-[13px] leading-relaxed text-muted-foreground/90">
+									{__( 'A weekly summary sent every Monday with response counts, completion rates, and a per-survey breakdown.', 'allfeedback' )}
+								</p>
+							</div>
+							<Button
+								type="button"
+								variant="secondary"
+								size="sm"
+								onClick={openDigestPreview}
+								className="shrink-0 gap-1.5"
+								style={previewBtnCls}
+							>
+								<Eye className="size-3.5" />
+								{__( 'Preview', 'allfeedback' )}
+							</Button>
+						</div>
 					</div>
-					<iframe
-						srcDoc={`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;"><table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:32px 16px;"><tr><td align="center"><table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;overflow:hidden;max-width:600px;width:100%;"><tr><td style="background:#6366f1;padding:24px 32px;"><h1 style="margin:0;color:#fff;font-size:18px;font-weight:600;">\</h1></td></tr><tr><td style="padding:32px;color:#374151;font-size:14px;line-height:1.6;"><p><strong>New response received</strong></p><p>A new response has been submitted to your form.</p><p><strong>From:</strong> \ &lt;\&gt;<br><strong>To:</strong> \</p></td></tr><tr><td style="padding:16px 32px;border-top:1px solid #e5e7eb;text-align:center;"><p style="margin:0;color:#9ca3af;font-size:12px;">&copy; \</p></td></tr></table></td></tr></table></body></html>`}
-						className="flex-1 w-full border-0"
-						title="Email Preview"
-					/>
+
 				</div>
 			</div>
-		)}
-	</>);
+
+			{/* ── Preview modals (outside card to avoid stacking-context clipping) */}
+			{previewType === 'response' && (
+				<PreviewModal
+					html={buildResponseAlertHtml( values.from_name, values.to_email )}
+					title={__( 'New response alert preview', 'allfeedback' )}
+					onClose={closePreview}
+				/>
+			)}
+			{previewType === 'digest' && (
+				<PreviewModal
+					html={buildWeeklyDigestHtml( values.from_name )}
+					title={__( 'Weekly digest preview', 'allfeedback' )}
+					onClose={closePreview}
+				/>
+			)}
+		</>
+	);
 };
 
 export default EmailSettings;

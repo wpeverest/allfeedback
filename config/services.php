@@ -61,7 +61,9 @@ use AllFeedback\Infrastructure\Jobs\SynchronousJobDispatcher;
 // ── Infrastructure — Mail ─────────────────────────────────────────────────────
 use AllFeedback\Infrastructure\Mail\Mailer;
 use AllFeedback\Infrastructure\Mail\NotificationServiceProvider;
+use AllFeedback\Infrastructure\Mail\Notifications\WeeklyDigestNotification;
 use AllFeedback\Infrastructure\Mail\SendNotificationJob;
+use AllFeedback\Infrastructure\Mail\SendWeeklyDigestJob;
 
 // ── API ───────────────────────────────────────────────────────────────────────
 use AllFeedback\Admin\AdminServiceProvider;
@@ -151,6 +153,8 @@ return [
 	SynchronousJobDispatcher::class  => autowire(),
 	ActionSchedulerRunner::class     => autowire(),
 	SendNotificationJob::class       => autowire(),
+	SendWeeklyDigestJob::class       => autowire(),
+	WeeklyDigestNotification::class  => autowire(),
 
 	// ------------------------------------------------------------------
 	// Domain → Infrastructure repository bindings

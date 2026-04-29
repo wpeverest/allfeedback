@@ -16,6 +16,11 @@ export type Settings = {
 			to_email:   string;
 			from_name:  string;
 			from_email: string;
+			reply_to:   string;
+		};
+		notifications: {
+			admin_enabled:      boolean;
+			respondent_enabled: boolean;
 		};
 	};
 	advanced: {
