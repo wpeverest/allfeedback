@@ -1,4 +1,4 @@
-﻿import { computePosition, flip, offset, shift } from '@floating-ui/dom';
+import { computePosition, flip, offset, shift } from '@floating-ui/dom';
 import { useEffect, useRef } from 'react';
 import { FIELD_TYPES } from './fieldTypes';
 import type { FieldType } from './types';
@@ -61,7 +61,7 @@ const FieldTypeMenu = ({ triggerRef, onSelect, onClose }: FieldTypeMenuProps) =>
 					key={type}
 					type="button"
 					onClick={() => { onSelect(type); onClose(); }}
-					className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+					className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-base text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
 				>
 					<Icon className="size-4 shrink-0" />
 					{label}

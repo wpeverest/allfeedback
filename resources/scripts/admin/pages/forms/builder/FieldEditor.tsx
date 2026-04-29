@@ -43,7 +43,7 @@ const RequiredSwitch = ({
 		onClick={() => onChange(!value)}
 		className="flex items-center gap-1.5 rounded-md px-1.5 py-1 transition-colors hover:bg-black/[0.04]"
 	>
-		<span className="text-sm font-medium text-foreground/80 select-none">
+		<span className="text-base font-normal text-foreground/80 select-none">
 			{__('Required', 'allfeedback')}
 		</span>
 		<span
@@ -407,7 +407,7 @@ const TextFieldConfig = ({
 		/>
 
 		<div className="space-y-1.5">
-			<label className="text-foreground/80 block text-sm font-medium">
+			<label className="text-foreground/90 block text-base font-normal">
 				{__('Placeholder', 'allfeedback')}
 			</label>
 			<input
@@ -479,7 +479,7 @@ const OptionsConfig = ({
 				autoFocus={autoFocus}
 				focusTrigger={focusTrigger}
 			/>
-			<div className="space-y-2">
+			<div className="space-y-1.5">
 				{options.map((opt, i) => (
 					<OptionRow
 						key={i}
@@ -491,23 +491,12 @@ const OptionsConfig = ({
 						onChange={(v) => updateOption(i, v)}
 						onDelete={() => removeOption(i)}
 						onAddAfter={() => addOptionAfter(i)}
-						onDragStart={setOptDragIdx}
-						onDragOver={(_e, idx) => setOptDropIdx(idx)}
-						onDragEnd={() => {
-							setOptDragIdx(null);
-							setOptDropIdx(null);
-						}}
+						onDragStart={(idx) => setOptDragIdx(idx)}
+						onDragOver={(e, idx) => { e.preventDefault(); setOptDropIdx(idx); }}
+						onDragEnd={() => { setOptDragIdx(null); setOptDropIdx(null); }}
 						onDrop={handleOptDrop}
 					/>
 				))}
-				<button
-					type="button"
-					onClick={() => addOptionAfter(options.length - 1)}
-					className="text-muted-foreground/60 hover:text-primary mt-1.5 flex items-center gap-1.5 pl-[22px] text-sm transition-colors"
-				>
-					<Plus className="size-3.5" />
-					{__('Add option', 'allfeedback')}
-				</button>
 			</div>
 		</div>
 	);
@@ -543,23 +532,11 @@ const StarRatingConfig = ({
 				focusTrigger={focusTrigger}
 			/>
 
-			<div className="space-y-1.5">
-				<label className={labelCls}>{__('Range', 'allfeedback')}</label>
-				<div className="flex gap-1.5">
-					<button
-						type="button"
-						onClick={() => onChange({ ...field, starRange: 5 })}
-						className={chipCls(range === 5)}
-					>
-						5
-					</button>
-					<button
-						type="button"
-						onClick={() => onChange({ ...field, starRange: 10 })}
-						className={chipCls(range === 10)}
-					>
-						10
-					</button>
+			<div className="flex items-center gap-3">
+				<span className={labelCls}>{__('Range', 'allfeedback')}</span>
+				<div className="flex gap-1">
+					<button type="button" onClick={() => onChange({ ...field, starRange: 5 })} className={chipCls(range === 5)}>5</button>
+					<button type="button" onClick={() => onChange({ ...field, starRange: 10 })} className={chipCls(range === 10)}>10</button>
 				</div>
 			</div>
 		</div>
@@ -592,68 +569,22 @@ const ScaleConfig = ({
 				focusTrigger={focusTrigger}
 			/>
 
-			<div className="space-y-1.5">
-				<label className={labelCls}>{__('Range', 'allfeedback')}</label>
-				<div className="flex w-fit items-center gap-2">
-					<div className="flex flex-col items-center gap-0.5">
-						<input
-							type="number"
-							min={0}
-							value={min}
-							onChange={(e) => {
-								const v = parseInt(e.target.value, 10);
-								if (!isNaN(v) && v >= 0 && v < max)
-									onChange({ ...field, scaleMin: v });
-							}}
-							className="border-border/70 text-foreground focus:border-primary/50 focus:ring-primary/10 h-8 w-16 rounded-lg border bg-transparent px-2.5 text-center text-sm font-semibold focus:ring-1 focus:outline-none"
-						/>
-						<span className="text-muted-foreground/50 text-xs">
-							{__('Start', 'allfeedback')}
-						</span>
-					</div>
-
-					<span className="text-muted-foreground/40 mb-3.5 text-sm">–</span>
-
-					<div className="flex flex-col items-center gap-0.5">
-						<input
-							type="number"
-							min={min + 1}
-							value={max}
-							onChange={(e) => {
-								const v = parseInt(e.target.value, 10);
-								if (!isNaN(v) && v > min) onChange({ ...field, scaleMax: v });
-							}}
-							className="border-border/70 text-foreground focus:border-primary/50 focus:ring-primary/10 h-8 w-16 rounded-lg border bg-transparent px-2.5 text-center text-sm font-semibold focus:ring-1 focus:outline-none"
-						/>
-						<span className="text-muted-foreground/50 text-xs">
-							{__('End', 'allfeedback')}
-						</span>
+			<div className="grid gap-3"  style={{ gridTemplateColumns: "auto 1fr 1fr" }}>
+				<div className="space-y-1.5">
+					<label className={labelCls}>{__('Range', 'allfeedback')}</label>
+					<div className="flex items-center gap-1.5">
+						<input type="number" min={0} value={min} onChange={(e) => { const v = parseInt(e.target.value, 10); if (!isNaN(v) && v >= 0 && v < max) onChange({ ...field, scaleMin: v }); }} className={cn(inputCls, "!w-14 text-center")} />
+						<span className="text-muted-foreground/40 text-sm shrink-0">–</span>
+						<input type="number" min={min + 1} value={max} onChange={(e) => { const v = parseInt(e.target.value, 10); if (!isNaN(v) && v > min) onChange({ ...field, scaleMax: v }); }} className={cn(inputCls, "!w-14 text-center")} />
 					</div>
 				</div>
-			</div>
-
-			<div className="grid grid-cols-2 gap-3">
 				<div className="space-y-1.5">
 					<label className={labelCls}>{__('Low label', 'allfeedback')}</label>
-					<input
-						value={field.scaleLowLabel ?? ''}
-						onChange={(e) =>
-							onChange({ ...field, scaleLowLabel: e.target.value })
-						}
-						placeholder={__('e.g. Not likely', 'allfeedback')}
-						className={inputCls}
-					/>
+					<input value={field.scaleLowLabel ?? ''} onChange={(e) => onChange({ ...field, scaleLowLabel: e.target.value })} placeholder={__('e.g. Not likely', 'allfeedback')} className={inputCls} />
 				</div>
 				<div className="space-y-1.5">
 					<label className={labelCls}>{__('High label', 'allfeedback')}</label>
-					<input
-						value={field.scaleHighLabel ?? ''}
-						onChange={(e) =>
-							onChange({ ...field, scaleHighLabel: e.target.value })
-						}
-						placeholder={__('e.g. Very likely', 'allfeedback')}
-						className={inputCls}
-					/>
+					<input value={field.scaleHighLabel ?? ''} onChange={(e) => onChange({ ...field, scaleHighLabel: e.target.value })} placeholder={__('e.g. Very likely', 'allfeedback')} className={inputCls} />
 				</div>
 			</div>
 		</div>
