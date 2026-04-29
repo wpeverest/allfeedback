@@ -1,4 +1,4 @@
-﻿import {
+import {
 	Select,
 	SelectContent,
 	SelectItem,
@@ -7,7 +7,7 @@
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { __ } from '@wordpress/i18n';
-import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, MoreHorizontal } from 'lucide-react';
 
 export interface PaginationProps {
 	page: number;
@@ -122,7 +122,7 @@ export const Pagination = ({
 
 			<div className="flex items-center gap-3">
 				{onPerPageChange && (
-					<div className="flex items-center gap-2">
+					<div className="flex items-center gap-1">
 						<span className="text-muted-foreground text-[14px] whitespace-nowrap">
 							{__('Rows per page', 'allfeedback')}
 						</span>
@@ -146,7 +146,14 @@ export const Pagination = ({
 					</div>
 				)}
 
-				<div className="flex items-center gap-2">
+				<div className="flex items-center gap-1">
+					<PageBtn
+						onClick={() => onPageChange(1)}
+						disabled={page <= 1 || isLoading}
+						aria-label={__('First page', 'allfeedback')}
+					>
+						<ChevronsLeft className="size-[18px]" />
+					</PageBtn>
 					<PageBtn
 						onClick={() => onPageChange(page - 1)}
 						disabled={page <= 1 || isLoading}
@@ -183,6 +190,13 @@ export const Pagination = ({
 						aria-label={__('Next page', 'allfeedback')}
 					>
 						<ChevronRight className="size-[18px]" />
+					</PageBtn>
+					<PageBtn
+						onClick={() => onPageChange(totalPages)}
+						disabled={page >= totalPages || isLoading}
+						aria-label={__('Last page', 'allfeedback')}
+					>
+						<ChevronsRight className="size-[18px]" />
 					</PageBtn>
 				</div>
 			</div>
