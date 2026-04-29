@@ -348,6 +348,36 @@ class DevToolsController extends RestController {
 				],
 			]
 		);
+
+		\register_rest_route(
+			$this->namespace,
+			"/{$this->restBase}/reset-wizard",
+			[
+				'methods'             => \WP_REST_Server::CREATABLE,
+				'callback'            => [ $this, 'resetWizard' ],
+				'permission_callback' => [ $this, 'adminPermission' ],
+			]
+		);
+
+		\register_rest_route(
+			$this->namespace,
+			"/{$this->restBase}/logs",
+			[
+				'methods'             => \WP_REST_Server::DELETABLE,
+				'callback'            => [ $this, 'clearLogs' ],
+				'permission_callback' => [ $this, 'adminPermission' ],
+			]
+		);
+
+		\register_rest_route(
+			$this->namespace,
+			"/{$this->restBase}/reset-settings",
+			[
+				'methods'             => \WP_REST_Server::CREATABLE,
+				'callback'            => [ $this, 'resetSettings' ],
+				'permission_callback' => [ $this, 'adminPermission' ],
+			]
+		);
 	}
 
 	/**
@@ -588,6 +618,32 @@ class DevToolsController extends RestController {
 			'deleted_responses' => $deleted_responses,
 			'deleted_sessions'  => $deleted_sessions,
 		] );
+	}
+
+	/**
+	 * Reset the setup wizard status so it can be re-run.
+	 */
+	public function resetWizard(): \WP_REST_Response {
+		\update_option( 'allfeedback_wizard_status', 'not_started' );
+		\delete_option( '_allfb_wizard_data' );
+		return $this->successResponse( [ 'reset' => true ] );
+	}
+
+	/**
+	 * Clear all plugin logs.
+	 */
+	public function clearLogs(): \WP_REST_Response {
+		global $wpdb;
+		$deleted = (int) $wpdb->query( "DELETE FROM {$wpdb->prefix}af_logs" ); // phpcs:ignore
+		return $this->successResponse( [ 'deleted' => $deleted ] );
+	}
+
+	/**
+	 * Reset plugin settings to defaults.
+	 */
+	public function resetSettings(): \WP_REST_Response {
+		\delete_option( 'allfeedback_settings' );
+		return $this->successResponse( [ 'reset' => true ] );
 	}
 
 }

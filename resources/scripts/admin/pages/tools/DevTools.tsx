@@ -5,6 +5,9 @@ import {
 	AlertTriangle,
 	CheckCircle2,
 	Loader2,
+	RotateCcw,
+	ScrollText,
+	Settings2,
 	Trash2,
 	Wand2,
 } from 'lucide-react';
@@ -19,6 +22,22 @@ const DevTools = () => {
 	const [status, setStatus] = useState<Status>('idle');
 	const [message, setMessage] = useState('');
 	const [clearConfirm, setClearConfirm] = useState(false);
+	const [quickStatus, setQuickStatus] = useState<Record<string, 'idle' | 'busy' | 'done' | 'error'>>({});
+
+	const setQuick = (key: string, s: 'idle' | 'busy' | 'done' | 'error') =>
+		setQuickStatus((p) => ({ ...p, [key]: s }));
+
+	const runQuick = async (key: string, path: string, method = 'POST') => {
+		setQuick(key, 'busy');
+		try {
+			await apiFetch({ path, method });
+			setQuick(key, 'done');
+			setTimeout(() => setQuick(key, 'idle'), 2000);
+		} catch {
+			setQuick(key, 'error');
+			setTimeout(() => setQuick(key, 'idle'), 3000);
+		}
+	};
 
 	const seed = async () => {
 		setStatus('seeding');
@@ -229,8 +248,24 @@ const DevTools = () => {
 				</div>
 			)}
 
-			<div className="mt-8 border-t border-border/50 pt-5">
-				<Link to="/wizard/" className="text-sm text-primary/70 hover:text-primary transition-colors">
+			<div className="mt-8 border-t border-border/50 pt-5 space-y-3">
+				<p className="text-sm font-semibold tracking-widest uppercase text-foreground/50">{__('Quick Actions', 'allfeedback')}</p>
+				<div className="flex flex-wrap gap-2">
+					{([
+						{ key: 'wizard',   label: __('Reset Wizard',    'allfeedback'), icon: RotateCcw,  path: '/allfeedback/v1/dev-tools/reset-wizard',   method: 'POST'   },
+						{ key: 'logs',     label: __('Clear Logs',      'allfeedback'), icon: ScrollText, path: '/allfeedback/v1/dev-tools/logs',            method: 'DELETE' },
+						{ key: 'settings', label: __('Reset Settings',  'allfeedback'), icon: Settings2,  path: '/allfeedback/v1/dev-tools/reset-settings',  method: 'POST'   },
+					] as const).map(({ key, label, icon: Icon, path, method }) => {
+						const s = quickStatus[key] ?? 'idle';
+						return (
+							<Button key={key} variant="outline" size="sm" disabled={s === 'busy'} onClick={() => runQuick(key, path, method)} className="gap-1.5 text-xs">
+								{s === 'busy' ? <Loader2 className="size-3.5 animate-spin" /> : s === 'done' ? <CheckCircle2 className="size-3.5 text-emerald-500" /> : s === 'error' ? <AlertTriangle className="size-3.5 text-destructive" /> : <Icon className="size-3.5" />}
+								{label}
+							</Button>
+						);
+					})}
+				</div>
+				<Link to="/wizard/" className="block text-sm text-primary/70 hover:text-primary transition-colors">
 					{__('→ Open Setup Wizard', 'allfeedback')}
 				</Link>
 			</div>
