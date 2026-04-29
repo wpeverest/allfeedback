@@ -440,9 +440,9 @@ const PreviewPanel = ({
 		onSuccess: () => {
 			setIsSubmitted(true);
 			setSubmitError('');
-			void queryClient.invalidateQueries({
-				queryKey: ['responses', 'unread-count'],
-			});
+				void queryClient.invalidateQueries({ queryKey: ['responses'] });
+
+
 			toast.success(
 				surveyStatus === 'draft'
 					? __('Form preview submitted successfully.', 'allfeedback')
