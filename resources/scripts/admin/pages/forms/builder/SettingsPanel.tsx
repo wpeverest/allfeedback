@@ -1,4 +1,4 @@
-﻿﻿import type { ContentSearchItem } from '@/admin/api/surveys';
+﻿import type { ContentSearchItem } from '@/admin/api/surveys';
 import { surveysApi } from '@/admin/api/surveys';
 import {
 	Select,
@@ -31,7 +31,7 @@ interface SettingsPanelProps {
 	onScrollChange?: (scrolled: boolean, progress: number) => void;
 }
 
-const labelCls = 'text-base font-normal text-foreground/80';
+const labelCls = 'text-base font-normal text-foreground/90';
 
 const inputCls = [
 	'flex h-9 w-full rounded-lg border border-border/70 bg-transparent px-3 py-2',
@@ -338,7 +338,7 @@ const ContentPicker = ({
 					{selected.map(({ id, title }) => (
 						<span
 							key={id}
-							className="border-border/60 bg-muted/40 text-foreground/80 flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs"
+							className="border-border/60 bg-muted/40 text-foreground/90 flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs"
 						>
 							<FileText className="text-muted-foreground/60 size-3 shrink-0" />
 							<span className="max-w-[140px] truncate">{title}</span>

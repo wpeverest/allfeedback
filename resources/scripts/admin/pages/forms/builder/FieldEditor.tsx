@@ -1,4 +1,4 @@
-﻿import { Tooltip } from '@/admin/components/Tooltip';
+import { Tooltip } from '@/admin/components/Tooltip';
 import { Button } from '@/components/ui/button';
 import { cn, htmlToText } from '@/lib/utils';
 import HighlightExtension from '@tiptap/extension-highlight';
@@ -375,7 +375,7 @@ const QuestionEditor = ({
 					'[&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-4',
 					'[&_ol]:my-1 [&_ol]:list-decimal [&_ol]:pl-4',
 					'[&_li]:my-0.5',
-					'[&_blockquote]:border-border [&_blockquote]:text-muted-foreground/70 [&_blockquote]:my-1 [&_blockquote]:border-l-2 [&_blockquote]:pl-3 [&_blockquote]:italic',
+					'[&_blockquote]:border-border [&_blockquote]:text-foreground/80 [&_blockquote]:my-1 [&_blockquote]:border-l-2 [&_blockquote]:pl-3 [&_blockquote]:italic',
 					isOpen
 						? 'border-primary/50 bg-primary/[0.015]'
 						: 'border-border/50 hover:border-border/80 hover:bg-muted/20',
@@ -407,7 +407,7 @@ const TextFieldConfig = ({
 		/>
 
 		<div className="space-y-1.5">
-			<label className="text-muted-foreground/70 block text-sm font-medium">
+			<label className="text-foreground/80 block text-sm font-medium">
 				{__('Placeholder', 'allfeedback')}
 			</label>
 			<input
@@ -525,7 +525,7 @@ const StarRatingConfig = ({
 	focusTrigger?: number;
 }) => {
 	const range = field.starRange ?? 5;
-	const labelCls = 'block text-sm font-medium text-muted-foreground/70';
+	const labelCls = 'block text-base font-normal text-foreground/90';
 	const chipCls = (active: boolean) =>
 		cn(
 			'flex h-8 w-10 items-center justify-center rounded-lg border text-sm font-semibold transition-colors',
@@ -579,7 +579,7 @@ const ScaleConfig = ({
 }) => {
 	const min = field.scaleMin ?? 0;
 	const max = field.scaleMax ?? 10;
-	const labelCls = 'block text-sm font-medium text-muted-foreground/70';
+	const labelCls = 'block text-base font-normal text-foreground/90';
 	const inputCls =
 		'w-full rounded-lg border border-border/70 bg-transparent px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/10';
 
@@ -854,7 +854,7 @@ const FieldEditor = ({
 			>
 				<Tooltip content={__('Drag to reorder', 'allfeedback')}>
 					<span
-						className="text-muted-foreground/40 hover:text-muted-foreground/70 cursor-grab transition-colors active:cursor-grabbing"
+						className="text-muted-foreground/40 hover:text-foreground/80 cursor-grab transition-colors active:cursor-grabbing"
 						onClick={(e) => e.stopPropagation()}
 						onMouseDown={(e) => e.stopPropagation()}
 					>
@@ -883,7 +883,7 @@ const FieldEditor = ({
 					}}
 					onMouseDown={(e) => e.stopPropagation()}
 				>
-					<span className="text-foreground/80 min-w-0 flex-1 truncate text-sm">
+					<span className="text-foreground/90 min-w-0 flex-1 truncate text-sm">
 						{htmlToText(field.label) || __('Untitled', 'allfeedback')}
 					</span>
 					<Pencil className="text-muted-foreground/40 size-3 shrink-0 opacity-0 transition-opacity group-hover/title:opacity-100" />

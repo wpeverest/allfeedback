@@ -13,7 +13,7 @@ import { __ } from '@wordpress/i18n';
 import { CheckCircle2, Loader2, Mail, Send, XCircle } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
-const labelCls = 'text-base font-normal text-foreground/80';
+const labelCls = 'text-base font-normal text-foreground/90';
 
 const Row = ({
 	label,
@@ -28,7 +28,7 @@ const Row = ({
 		<div className="w-[40%] shrink-0">
 			<label className={labelCls}>{label}</label>
 			{description && (
-				<p className="mt-1 text-xs leading-relaxed text-muted-foreground/80">
+				<p className="mt-0.5 text-[13px] leading-relaxed text-muted-foreground/90">
 					{description}
 				</p>
 			)}
@@ -40,9 +40,9 @@ const Row = ({
 );
 
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
-	<p className="text-2xs font-semibold uppercase tracking-widest text-muted-foreground/70">
-		{children}
-	</p>
+	<div className="mt-5 mb-4">
+		<span className="text-sm font-semibold tracking-widest uppercase text-foreground/60">{children}</span>
+	</div>
 );
 
 const EmailSettingsSkeleton = () => (
@@ -236,7 +236,7 @@ const EmailSettings = () => {
 						<p className="!mb-1 !mt-0 !text-md font-medium text-foreground/90">
 							{__('Send a test email', 'allfeedback')}
 						</p>
-						<p className="!mt-0 text-xs leading-relaxed text-muted-foreground/80">
+						<p className="!mt-0 text-[13px] leading-relaxed text-muted-foreground/90">
 							{values.to_email ? (
 								<>
 									{__('A test message will be sent to', 'allfeedback')}{' '}

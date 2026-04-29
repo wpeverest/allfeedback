@@ -1163,7 +1163,7 @@ const ResponseDetail = () => {
 				<aside className="border-border space-y-4 border-t p-4 sm:space-y-5 sm:p-6 md:w-[30%] md:shrink-0 md:overflow-y-auto md:border-t-0 md:border-l">
 					<div className="border-border bg-card overflow-hidden rounded-xl border">
 						<div className="px-5 pt-5">
-							<p className="text-2xs text-muted-foreground/70 !mb-0 font-semibold tracking-widest uppercase">
+							<p className="text-sm font-semibold tracking-widest uppercase text-foreground/60 mt-5 mb-4">
 								{__('Details', 'allfeedback')}
 							</p>
 						</div>

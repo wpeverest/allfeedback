@@ -4,8 +4,8 @@ import { Check, ClipboardCopy, Info, X } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-const labelCls = 'text-base font-normal text-foreground/80';
-const valueCls = 'text-base font-normal text-foreground';
+const labelCls = 'text-base font-normal text-foreground/90';
+const valueCls = 'text-base text-foreground/90';
 
 const BoolValue = ({ value }: { value: boolean }) =>
 	value ? (
@@ -32,9 +32,9 @@ const Row = ({
 );
 
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
-	<p className="text-2xs text-muted-foreground/70 font-semibold tracking-widest uppercase">
-		{children}
-	</p>
+	<div className="mt-5 mb-4">
+		<span className="text-sm font-semibold tracking-widest uppercase text-foreground/60">{children}</span>
+	</div>
 );
 
 const formatBool = (v: boolean | null | undefined) =>

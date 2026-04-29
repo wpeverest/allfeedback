@@ -396,7 +396,7 @@ function StepStyle({
 				<div className="border-border/50 bg-card shadow-card flex h-full flex-col rounded-2xl border p-6 md:p-8">
 					<div className="space-y-6">
 						<div className="space-y-3">
-							<label className="text-foreground block text-sm font-semibold">
+							<label className="text-foreground block text-base font-medium">
 								{__('Brand color', 'allfeedback')}
 							</label>
 							<ColorPicker
@@ -406,7 +406,7 @@ function StepStyle({
 						</div>
 						<div className="bg-border/50 h-px" />
 						<div className="space-y-4">
-							<label className="text-foreground block text-sm font-semibold">
+							<label className="text-foreground block text-base font-medium">
 								{__('Widget position', 'allfeedback')}
 							</label>
 							<div className="flex flex-col gap-2">
@@ -444,7 +444,7 @@ function StepStyle({
 							<span className="size-2.5 rounded-full bg-amber-400/20" />
 							<span className="size-2.5 rounded-full bg-green-500/20" />
 						</div>
-						<span className="text-muted-foreground/40 ml-2 text-xs font-bold tracking-widest uppercase">
+						<span className="text-muted-foreground/90 ml-2 text-xs font-bold tracking-widest uppercase">
 							{__('Live Preview', 'allfeedback')}
 						</span>
 					</div>
@@ -483,7 +483,7 @@ function StepSettings({
 				<div className="space-y-8 p-6 md:space-y-10 md:p-10">
 					<div className="space-y-4">
 						<div className="space-y-1.5">
-							<label className="text-foreground text-sm font-semibold">
+							<label className="text-foreground text-base font-medium">
 								{__('Where to send new response notifications', 'allfeedback')}
 							</label>
 							<p className="text-muted-foreground text-sm leading-relaxed">
@@ -518,7 +518,7 @@ function StepSettings({
 
 					<div className="space-y-4">
 						<div className="space-y-1.5">
-							<label className="text-foreground text-sm font-semibold">
+							<label className="text-foreground text-base font-medium">
 								{__('Delivery frequency', 'allfeedback')}
 							</label>
 							<p className="text-muted-foreground text-sm leading-relaxed">
@@ -684,7 +684,7 @@ function StepFinal({
 
 				<div className="flex w-full items-center gap-4">
 					<div className="to-border h-px flex-1 bg-gradient-to-r from-transparent" />
-					<span className="text-muted-foreground/40 text-xs font-semibold tracking-widest uppercase">
+					<span className="text-muted-foreground/90 text-xs font-semibold tracking-widest uppercase">
 						{__("What's next", 'allfeedback')}
 					</span>
 					<div className="to-border h-px flex-1 bg-gradient-to-l from-transparent" />

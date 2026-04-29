@@ -13,7 +13,7 @@ import { useEffect, useRef } from 'react';
 
 const DEFAULT_WIDGET_COLOR = '#6366F1';
 
-const labelCls = 'text-base font-normal text-foreground/80';
+const labelCls = 'text-base font-normal text-foreground/90';
 
 const Row = ({
 	label,
@@ -92,7 +92,7 @@ const ColorPicker = ({
 					className="border-border/60 size-4 rounded border"
 					style={{ backgroundColor: value }}
 				/>
-				<code className="text-muted-foreground/70 text-xs">
+				<code className="text-foreground/80 text-xs">
 					{value.toUpperCase()}
 				</code>
 			</div>
