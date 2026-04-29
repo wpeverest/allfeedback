@@ -1475,7 +1475,7 @@ function ResponseRow({
 			style={{ gridTemplateColumns: '1fr auto' }}
 		>
 			<div className="min-w-0">
-				<div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+				<div className="flex items-center gap-2 flex-wrap">
 					{formTitle && (
 						<span className="text-[13px] font-medium text-muted-foreground">
 							{formTitle}
@@ -1498,7 +1498,7 @@ function ResponseRow({
 						{__('No response text.', 'allfeedback')}
 					</p>
 				) : (
-					<p className="line-clamp-2 text-[13px] leading-snug text-foreground/80">
+					<p className="!mt-1 line-clamp-2 text-[13px] leading-snug text-foreground/80">
 						&ldquo;{responseText}&rdquo;
 					</p>
 				)}
