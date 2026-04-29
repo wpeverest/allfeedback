@@ -1,6 +1,6 @@
 === All Feedback ===
 Contributors:      themegrill
-Tags:              feedback, nps, forms
+Tags:              feedback, surveys, nps, csat, ces
 Requires at least: 6.5
 Tested up to:      6.9
 Requires PHP:      8.2
@@ -8,47 +8,45 @@ Stable tag:        1.0.0
 License:           GPLv3 or later
 License URI:       https://www.gnu.org/licenses/gpl-3.0.html
 
-Collect customer feedback with customizable feedback forms. All responses stored in your own WordPress database.
+WordPress-native feedback survey plugin. Collect customer feedback without sending data to an external service.
 
 == Description ==
 
-All Feedback lets you create and publish feedback forms directly from your WordPress admin. All responses are stored in your own database — no third-party accounts, no data leaving your server.
+Build beautiful feedback surveys with various question types, collect NPS scores, and better understand your audience — no external services required.
 
 Features include:
 
-* Build feedback forms with multiple field types: text, radio, checkboxes, star rating, scale, and NPS
-* Responses stored entirely in your own WordPress database
-* Embed feedback forms in posts and pages via a Gutenberg block
-* View responses and analytics inside WordPress
-* Email notifications for new responses
+* WordPress-native feedback survey management.
+* Beautiful feedback widget.
+* Custom trigger & targeting settings.
+* Feedback email notifications.
+* Detailed analytics.
+* 7+ question types.
+* NPS survey.
+* CES survey. _(coming soon)_
+* CSAT survey. _(coming soon)_
+
 
 == Installation ==
 
 1. Upload the plugin folder to `/wp-content/plugins/`.
-2. Activate the plugin through **Plugins → Installed Plugins**.
-3. Go to **All Feedback** in your admin menu to create your first feedback form.
+2. Run `composer install` inside the plugin folder.
+3. Run `pnpm install && pnpm build` to compile assets.
+4. Activate the plugin through **Plugins → Installed Plugins**.
 
 == Frequently Asked Questions ==
 
-= Where is my feedback data stored? =
+= Is the data collected within the website? =
 
-All responses are stored in your own WordPress database. No data is sent to any external service.
+Yes, all the feedback data you collect, remains safe within your own website.
 
-= Does this plugin require an account or subscription? =
+= Where can I contribute to the plugin? =
 
-No. All Feedback is entirely self-hosted and does not require any external account.
+The plugin is open source and the code is available here: https://github.com/wpeverest/allfeedback. Feel free to contribute :)
 
-= What types of feedback forms does this plugin support? =
+= Where do I report bugs? =
 
-You can build feedback forms with text fields, radio buttons, checkboxes, star ratings, numeric scales, and NPS (0–10) questions. Mix and match field types within a single form.
-
-= Can I embed a feedback form in a page or post? =
-
-Yes. Use the All Feedback block in the Gutenberg editor to embed any published feedback form.
-
-== Source Code ==
-
-The TypeScript and PostCSS source files are included in the `resources/scripts/` folder inside the plugin zip.
+You may reach out to us within the Forums here or can reach out to us via the live chat at: https://themegrill.com/support
 
 == Changelog ==
 
