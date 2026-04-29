@@ -1211,10 +1211,11 @@ const ResponseDetail = () => {
 								)}
 							</SidebarRow>
 
-							<SidebarRow icon={Shield} label={__('IP Address', 'allfeedback')}>
+							{response.ip_address && (
+										<SidebarRow icon={Shield} label={__('IP Address', 'allfeedback')}>
 								<div className="flex items-center gap-2">
 									<span className="font-mono text-sm">
-										{showIp ? (response.ip_address ?? '—') : '••••••••••••'}
+										{showIp ? response.ip_address : '••••••••••••'}
 									</span>
 									<Tooltip
 										content={
@@ -1237,6 +1238,7 @@ const ResponseDetail = () => {
 									</Tooltip>
 								</div>
 							</SidebarRow>
+								)}
 
 							<SidebarRow icon={Globe} label={__('Page URL', 'allfeedback')}>
 								{response.page_url ? (
