@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 import { useForm, useStore } from '@tanstack/react-form';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { __ } from '@wordpress/i18n';
-import { Bell, CheckCircle2, Eye, Loader2, Mail, Send, X, XCircle } from 'lucide-react';
+import { CheckCircle2, Eye, Loader2, Mail, Send, X, XCircle } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 // ─── Shared layout primitives ─────────────────────────────────────────────────
@@ -131,14 +131,14 @@ const buildResponseAlertHtml = ( fromName: string, toEmail: string ): string => 
             <p style="margin:0 0 8px 0;"><strong>Response ID:</strong> #42</p>
             <p style="margin:0 0 16px 0;"><strong>Submitted at:</strong> ${escHtml( today )}</p>
             ${toEmail ? `<p style="margin:0 0 20px 0;color:#6b7280;font-size:13px;">Delivered to: ${escHtml( toEmail )}</p>` : ''}
-            <a href="#" style="display:inline-block;padding:10px 24px;background:#6366f1;color:#ffffff;border-radius:6px;text-decoration:none;font-size:14px;font-weight:600;">View Response →</a>
+            <a href="#" style="display:inline-block;padding:10px 24px;background:#6366f1;color:#ffffff;border-radius:6px;text-decoration:none;font-size:14px;font-weight:600;">View Response &rarr;</a>
           </td>
         </tr>
         <tr>
           <td style="padding:16px 32px;border-top:1px solid #e5e7eb;">
             <table width="100%" cellpadding="0" cellspacing="0"><tr>
               <td style="color:#9ca3af;font-size:12px;">&copy; ${siteName}</td>
-              <td align="right" style="color:#9ca3af;font-size:11px;">Powered by <a href="https://allfeedback.io" style="color:#9ca3af;text-decoration:underline;">AllFeedback</a></td>
+              <td align="right" style="color:#9ca3af;font-size:11px;">Powered by <a href="#" style="color:#9ca3af;text-decoration:underline;">AllFeedback</a></td>
             </tr></table>
           </td>
         </tr>
@@ -196,7 +196,7 @@ const buildWeeklyDigestHtml = ( fromName: string ): string => {
             <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e5e7eb;margin-bottom:24px;">
               <tr>
                 <td style="padding:11px 0;font-size:13px;color:#374151;">Completion rate this week</td>
-                <td style="padding:11px 0;font-size:13px;font-weight:600;color:#111827;text-align:right;">64% <span style="font-size:11px;font-weight:500;color:#16a34a;">↑ vs 61%</span></td>
+                <td style="padding:11px 0;font-size:13px;font-weight:600;color:#111827;text-align:right;">64% <span style="font-size:11px;font-weight:500;color:#16a34a;">&#x2191; vs 61%</span></td>
               </tr>
             </table>
 
@@ -212,14 +212,14 @@ const buildWeeklyDigestHtml = ( fromName: string ): string => {
               </tr>
             </table>
 
-            <a href="#" style="display:inline-block;padding:10px 24px;background:#6366f1;color:#ffffff;border-radius:6px;text-decoration:none;font-size:14px;font-weight:600;">View Analytics →</a>
+            <a href="#" style="display:inline-block;padding:10px 24px;background:#6366f1;color:#ffffff;border-radius:6px;text-decoration:none;font-size:14px;font-weight:600;">View Analytics &rarr;</a>
           </td>
         </tr>
         <tr>
           <td style="padding:16px 32px;border-top:1px solid #e5e7eb;">
             <table width="100%" cellpadding="0" cellspacing="0"><tr>
               <td style="color:#9ca3af;font-size:12px;">&copy; ${siteName}</td>
-              <td align="right" style="color:#9ca3af;font-size:11px;">Powered by <a href="https://allfeedback.io" style="color:#9ca3af;text-decoration:underline;">AllFeedback</a></td>
+              <td align="right" style="color:#9ca3af;font-size:11px;">Powered by <a href="#" style="color:#9ca3af;text-decoration:underline;">AllFeedback</a></td>
             </tr></table>
           </td>
         </tr>
@@ -232,15 +232,18 @@ const buildWeeklyDigestHtml = ( fromName: string ): string => {
 
 // ─── Preview modal component ──────────────────────────────────────────────────
 
+type PreviewTab = { key: string; label: string; html: string };
+
 const PreviewModal = ( {
-	html,
-	title,
+	tabs,
 	onClose,
 }: {
-	html:    string;
-	title:   string;
+	tabs:    PreviewTab[];
 	onClose: () => void;
 } ) => {
+	const [active, setActive] = useState( tabs[0]?.key ?? '' );
+	const current = tabs.find( ( t ) => t.key === active ) ?? tabs[0];
+
 	useEffect( () => {
 		const onKey = ( e: KeyboardEvent ) => { if ( e.key === 'Escape' ) onClose(); };
 		document.addEventListener( 'keydown', onKey );
@@ -251,16 +254,19 @@ const PreviewModal = ( {
 		<div
 			role="dialog"
 			aria-modal="true"
-			aria-label={title}
+			aria-label={__( 'Email preview', 'allfeedback' )}
 			className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
 			onClick={onClose}
 		>
 			<div
-				className="relative flex h-[560px] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+				className="relative flex h-[80vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
 				onClick={( e ) => e.stopPropagation()}
 			>
-				<div className="flex shrink-0 items-center justify-between border-b border-border/50 px-5 py-3.5">
-					<span className="text-base font-semibold text-foreground/90">{title}</span>
+				{/* Header */}
+				<div className="flex shrink-0 items-center justify-between border-b border-border/50 px-5 py-4">
+					<span className="text-[15px] font-semibold text-foreground">
+						{__( 'Email preview', 'allfeedback' )}
+					</span>
 					<button
 						type="button"
 						aria-label={__( 'Close preview', 'allfeedback' )}
@@ -270,11 +276,34 @@ const PreviewModal = ( {
 						<X className="size-4" />
 					</button>
 				</div>
+
+				{/* Tab bar — sits in body, above iframe */}
+				{tabs.length > 1 && (
+					<div className="flex shrink-0 items-center gap-1 bg-[#f4f4f5] px-4 pt-2.5 pb-0">
+						{tabs.map( ( tab ) => (
+							<button
+								key={tab.key}
+								type="button"
+								onClick={() => setActive( tab.key )}
+								className={cn(
+									'rounded-full px-4 py-1.5 text-xs font-medium transition-all',
+									active === tab.key
+										? 'bg-white text-foreground shadow-sm ring-1 ring-black/[0.06]'
+										: 'text-foreground/50 hover:text-foreground/80',
+								)}
+							>
+								{tab.label}
+							</button>
+						) )}
+					</div>
+				)}
+
 				<iframe
-					srcDoc={html}
+					key={active}
+					srcDoc={current?.html ?? ''}
 					sandbox="allow-same-origin"
 					className="flex-1 w-full border-0"
-					title={title}
+					title={current?.label ?? ''}
 				/>
 			</div>
 		</div>
@@ -291,12 +320,11 @@ const EmailSettings = () => {
 	const { data, isPending }                                                = useQuery( settingsQuery() );
 	const { isDirty: sharedIsDirty, isSaving, setDirty, patches, setPatch } = useSettingsDirty();
 
-	const [testStatus, setTestStatus] = useState<'idle' | 'sending' | 'success' | 'error'>( 'idle' );
-	const [previewType, setPreviewType] = useState<null | 'response' | 'digest'>( null );
+	const [testStatus, setTestStatus]   = useState<'idle' | 'sending' | 'success' | 'error'>( 'idle' );
+	const [previewOpen, setPreviewOpen] = useState( false );
 
-	const openResponsePreview = useCallback( () => setPreviewType( 'response' ), [] );
-	const openDigestPreview   = useCallback( () => setPreviewType( 'digest' ),   [] );
-	const closePreview        = useCallback( () => setPreviewType( null ),        [] );
+	const openPreview  = useCallback( () => setPreviewOpen( true ),  [] );
+	const closePreview = useCallback( () => setPreviewOpen( false ), [] );
 
 	// ── Staged & server delivery values ──────────────────────────────────────
 
@@ -385,11 +413,6 @@ const EmailSettings = () => {
 
 	if ( isPending ) return <EmailSettingsSkeleton />;
 
-	const previewBtnCls = {
-		border: '1.5px solid color-mix(in oklch, var(--primary) 60%, transparent)',
-		color:  'var(--primary)',
-	};
-
 	return (
 		<>
 			<div>
@@ -403,6 +426,19 @@ const EmailSettings = () => {
 						{__( 'Email', 'allfeedback' )}
 					</h3>
 					{sharedIsDirty && ! isSaving && <UnsavedChangesBadge />}
+					<div className="ml-auto">
+						<Button
+							type="button"
+							variant="secondary"
+							size="sm"
+							onClick={openPreview}
+							className="gap-1.5"
+							style={{ border: '1.5px solid color-mix(in oklch, var(--primary) 60%, transparent)', color: 'var(--primary)' }}
+						>
+							<Eye className="size-3.5" />
+							{__( 'Preview email', 'allfeedback' )}
+						</Button>
+					</div>
 				</div>
 
 				<div className="px-6 pb-6 pt-4">
@@ -523,80 +559,23 @@ const EmailSettings = () => {
 						</div>
 					</div>
 
-					<div className="my-6 border-t border-border/50" />
-
-					{/* ── Notifications ─────────────────────────────────── */}
-					<div className="space-y-3">
-						<SectionLabel>{__( 'Notifications', 'allfeedback' )}</SectionLabel>
-
-						{/* New response alert */}
-						<div className="flex items-start gap-4 rounded-xl border border-border/60 bg-muted/20 px-5 py-4">
-							<div className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-background text-muted-foreground">
-								<Bell className="size-4" />
-							</div>
-							<div className="min-w-0 flex-1">
-								<p className="!mb-1 !mt-0 !text-md font-medium text-foreground/90">
-									{__( 'New response alert', 'allfeedback' )}
-								</p>
-								<p className="!mt-0 text-[13px] leading-relaxed text-muted-foreground/90">
-									{__( 'An email is sent to you each time a response is received, with a score badge (if your survey captures scores) and a direct link to view it.', 'allfeedback' )}
-								</p>
-							</div>
-							<Button
-								type="button"
-								variant="secondary"
-								size="sm"
-								onClick={openResponsePreview}
-								className="shrink-0 gap-1.5"
-								style={previewBtnCls}
-							>
-								<Eye className="size-3.5" />
-								{__( 'Preview', 'allfeedback' )}
-							</Button>
-						</div>
-
-						{/* Weekly digest */}
-						<div className="flex items-start gap-4 rounded-xl border border-border/60 bg-muted/20 px-5 py-4">
-							<div className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-background text-muted-foreground">
-								<Mail className="size-4" />
-							</div>
-							<div className="min-w-0 flex-1">
-								<p className="!mb-1 !mt-0 !text-md font-medium text-foreground/90">
-									{__( 'Weekly digest', 'allfeedback' )}
-								</p>
-								<p className="!mt-0 text-[13px] leading-relaxed text-muted-foreground/90">
-									{__( 'A weekly summary sent every Monday with response counts, completion rates, and a per-survey breakdown.', 'allfeedback' )}
-								</p>
-							</div>
-							<Button
-								type="button"
-								variant="secondary"
-								size="sm"
-								onClick={openDigestPreview}
-								className="shrink-0 gap-1.5"
-								style={previewBtnCls}
-							>
-								<Eye className="size-3.5" />
-								{__( 'Preview', 'allfeedback' )}
-							</Button>
-						</div>
-					</div>
-
 				</div>
 			</div>
 
-			{/* ── Preview modals (outside card to avoid stacking-context clipping) */}
-			{previewType === 'response' && (
+			{previewOpen && (
 				<PreviewModal
-					html={buildResponseAlertHtml( values.from_name, values.to_email )}
-					title={__( 'New response alert preview', 'allfeedback' )}
-					onClose={closePreview}
-				/>
-			)}
-			{previewType === 'digest' && (
-				<PreviewModal
-					html={buildWeeklyDigestHtml( values.from_name )}
-					title={__( 'Weekly digest preview', 'allfeedback' )}
+					tabs={[
+						{
+							key:   'response',
+							label: __( 'Response alert', 'allfeedback' ),
+							html:  buildResponseAlertHtml( values.from_name, values.to_email ),
+						},
+						{
+							key:   'digest',
+							label: __( 'Weekly digest', 'allfeedback' ),
+							html:  buildWeeklyDigestHtml( values.from_name ),
+						},
+					]}
 					onClose={closePreview}
 				/>
 			)}
