@@ -893,7 +893,7 @@ function NpsDistributionCard({
 							<span
 								key={g.label}
 								style={{
-									fontSize: '12px',
+									fontSize: '13px',
 									color: 'var(--muted-foreground)',
 									fontWeight: 500,
 									opacity: hovered === null || hovered === g.key ? 1 : 0.4,
@@ -1472,7 +1472,7 @@ function ResponseRow({
 				display: 'grid',
 				gridTemplateColumns: '1fr auto',
 				gap: 14,
-				padding: '14px 20px',
+				padding: '16px 20px',
 				borderBottom: '1px solid var(--border)',
 				transition: 'background 140ms',
 				cursor: 'pointer',
@@ -1496,7 +1496,7 @@ function ResponseRow({
 					{formTitle && (
 						<span
 							style={{
-								fontSize: '12px',
+								fontSize: '13px',
 								color: 'var(--muted-foreground)',
 								fontWeight: 500,
 							}}
@@ -1553,7 +1553,7 @@ function ResponseRow({
 				<div
 					style={
 						{
-							fontSize: '12px',
+							fontSize: '13px',
 							color: 'color-mix(in oklch, var(--foreground) 80%, transparent)',
 							lineHeight: 1.55,
 							display: '-webkit-box',
@@ -1569,7 +1569,7 @@ function ResponseRow({
 
 			<div
 				style={{
-					fontSize: '12px',
+					fontSize: '13px',
 					color: 'var(--muted-foreground)',
 					fontVariantNumeric: 'tabular-nums',
 					fontWeight: 500,
@@ -1666,7 +1666,7 @@ function RecentResponsesCard({
 								display: 'grid',
 								gridTemplateColumns: 'auto 1fr auto',
 								gap: 14,
-								padding: '14px 20px',
+								padding: '16px 20px',
 								borderBottom: '1px solid var(--border)',
 							}}
 						>
