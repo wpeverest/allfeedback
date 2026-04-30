@@ -30,7 +30,7 @@ class AddTargetingToSurveys extends Migration {
 
 		// Guard: skip if column already exists (e.g. fresh install from updated migration 0001).
 		$column = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			$wpdb->prepare( 'SHOW COLUMNS FROM `%i` LIKE %s', $table, 'targeting' ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			$wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $table, 'targeting' ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		);
 
 		if ( ! empty( $column ) ) {

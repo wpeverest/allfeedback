@@ -35,6 +35,7 @@ class CreateInitialTables extends Migration {
 			form_schema     longtext                      DEFAULT NULL,
 			settings        longtext                      DEFAULT NULL,
 			styling         json                          DEFAULT NULL,
+			targeting       json                          DEFAULT NULL,
 			status          varchar(20)          NOT NULL DEFAULT 'draft',
 			conflict_reason text                          DEFAULT NULL,
 			response_count  int unsigned         NOT NULL DEFAULT 0,

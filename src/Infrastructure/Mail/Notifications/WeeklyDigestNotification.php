@@ -69,15 +69,20 @@ class WeeklyDigestNotification {
 
 		$to = (string) ( $this->settings->get( 'email.delivery.to_email' ) ?: get_option( 'admin_email' ) );
 
-		$responseStats = $this->responses->getOverviewStats();
-		$sessionStats  = $this->sessions->getOverviewSessionStats();
-		$publishedSurveys = $this->surveys->findAll(
-			new SurveyFilter( status: SurveyStatus::Published, perPage: 5 )
+		$allPublishedSurveys = $this->surveys->findAll(
+			new SurveyFilter( status: SurveyStatus::Published, perPage: PHP_INT_MAX, orderBy: 'response_count', order: 'DESC' )
 		);
 
-		$dateFrom  = date( 'M j', strtotime( '-6 days' ) );
-		$dateTo    = date( 'M j' );
-		$dateRange = $dateFrom . '–' . $dateTo;
+		$allPublishedIds  = array_map( fn( Survey $s ) => (int) $s->getId(), $allPublishedSurveys );
+		$publishedSurveys = array_slice( $allPublishedSurveys, 0, 5 );
+
+		$responseStats = $this->responses->getOverviewStatsForSurveys( $allPublishedIds );
+		$sessionStats  = $this->sessions->getOverviewSessionStatsForSurveys( $allPublishedIds );
+
+		$surveyIds   = array_map( fn( Survey $s ) => (int) $s->getId(), $publishedSurveys );
+		$weeklyStats = $surveyIds ? $this->responses->getWeeklyStatsBySurveyIds( $surveyIds ) : [];
+
+		$dateRange = date( 'M j', strtotime( '-6 days' ) ) . '–' . date( 'M j' );
 
 		$subject = (string) $this->applyFilters(
 			'allfeedback:mail:digest_subject',
@@ -88,7 +93,7 @@ class WeeklyDigestNotification {
 			)
 		);
 
-		$body = $this->buildBody( $responseStats, $sessionStats, $publishedSurveys, $dateRange );
+		$body = $this->buildBody( $responseStats, $sessionStats, $publishedSurveys, $weeklyStats, $dateRange );
 		$body = (string) $this->applyFilters( 'allfeedback:mail:digest_body', $body );
 
 		return $this->mailer->send( $to, $subject, $body );
@@ -97,100 +102,119 @@ class WeeklyDigestNotification {
 	/**
 	 * Build the HTML body for the weekly digest.
 	 *
-	 * The body is constructed without newlines so that Mailer::wrapInLayout()'s
-	 * nl2br() pass does not insert spurious <br> tags inside table elements.
-	 *
-	 * @param  array<string, mixed> $responseStats   From ResponseRepository::getOverviewStats().
-	 * @param  array<string, mixed> $sessionStats    From SurveySessionRepository::getOverviewSessionStats().
-	 * @param  Survey[]             $surveys         Up to 5 published surveys.
-	 * @param  string               $dateRange       Human-readable date range string.
-	 * @return string HTML body content.
+	 * @param  array<string, mixed>                                            $responseStats  From ResponseRepository::getOverviewStats().
+	 * @param  array<string, mixed>                                            $sessionStats   From SurveySessionRepository::getOverviewSessionStats().
+	 * @param  Survey[]                                                        $surveys        Up to 5 published surveys ordered by response count.
+	 * @param  array<int, array{this_week_count: int, avg_score: float|null}>  $weeklyStats    Per-survey this-week stats keyed by survey ID.
+	 * @param  string                                                          $dateRange      Human-readable date range string.
+	 * @return string HTML body content (no newlines — safe for nl2br in Mailer).
 	 * @since  1.0.0
 	 */
-	private function buildBody( array $responseStats, array $sessionStats, array $surveys, string $dateRange ): string {
-		$thisWeek     = (int) ( $responseStats['this_week_count']     ?? 0 );
-		$lastWeek     = (int) ( $responseStats['last_week_count']     ?? 0 );
-		$thisAvgScore = $responseStats['this_week_avg_score'] ?? null;
-		$lastAvgScore = $responseStats['last_week_avg_score'] ?? null;
-		$thisCompletion = $sessionStats['this_week_completion_rate'] ?? null;
-		$lastCompletion = $sessionStats['last_week_completion_rate'] ?? null;
+	private function buildBody(
+		array $responseStats,
+		array $sessionStats,
+		array $surveys,
+		array $weeklyStats,
+		string $dateRange
+	): string {
+		$thisWeek       = (int) ( $responseStats['this_week_count']      ?? 0 );
+		$lastWeek       = (int) ( $responseStats['last_week_count']      ?? 0 );
+		$thisAvgScore   = $responseStats['this_week_avg_score']          ?? null;
+		$lastAvgScore   = $responseStats['last_week_avg_score']          ?? null;
+		$thisCompletion = $sessionStats['this_week_completion_rate']     ?? null;
+		$lastCompletion = $sessionStats['last_week_completion_rate']     ?? null;
 
 		$analyticsUrl = esc_url( admin_url( 'admin.php' ) . '?page=allfeedback#/analytics' );
 
-		// ── Header ────────────────────────────────────────────────────────────
+		// ── Date header ───────────────────────────────────────────────────────
 		$html  = '<p style="margin:0 0 2px 0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#9ca3af;">' . esc_html__( 'Weekly Report', 'allfeedback' ) . '</p>';
-		$html .= '<p style="margin:0 0 24px 0;font-size:12px;color:#9ca3af;">' . esc_html( $dateRange ) . '</p>';
+		$html .= '<p style="margin:0 0 28px 0;font-size:12px;color:#9ca3af;">' . esc_html( $dateRange ) . '</p>';
 
-		// ── Big response count ─────────────────────────────────────────────────
-		$trendBadge = $this->buildCountTrend( $thisWeek, $lastWeek );
-		$html .= '<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;"><tr>';
+		// ── Hero: total responses + trend badge ───────────────────────────────
+		$trend = $this->trendBadge( $thisWeek, $lastWeek );
+		$html .= '<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;"><tr>';
 		$html .= '<td style="vertical-align:middle;">';
-		$html .= '<span style="display:block;font-size:36px;font-weight:700;color:#111827;line-height:1;">' . $thisWeek . '</span>';
-		$html .= '<span style="display:block;margin-top:4px;font-size:13px;color:#6b7280;">' . esc_html__( 'responses this week', 'allfeedback' ) . '</span>';
+		$html .= '<span style="display:block;font-size:40px;font-weight:700;color:#111827;line-height:1;">' . $thisWeek . '</span>';
+		$html .= '<span style="display:block;margin-top:6px;font-size:13px;color:#6b7280;">' . esc_html__( 'responses this week', 'allfeedback' ) . '</span>';
 		$html .= '</td>';
-		if ( $trendBadge !== '' ) {
-			$html .= '<td style="vertical-align:middle;text-align:right;">' . $trendBadge . '</td>';
+		if ( $trend !== '' ) {
+			$html .= '<td style="vertical-align:middle;text-align:right;">' . $trend . '</td>';
 		}
 		$html .= '</tr></table>';
 
-		// ── Stats rows ────────────────────────────────────────────────────────
-		$html .= '<table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e5e7eb;margin-bottom:24px;">';
+		// ── Site-wide stats rows ──────────────────────────────────────────────
+		$html .= '<table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e5e7eb;margin-bottom:28px;">';
 
 		if ( $thisAvgScore !== null ) {
-			$scoreTrend = $lastAvgScore !== null ? $this->buildScoreTrend( (float) $thisAvgScore, (float) $lastAvgScore ) : '';
-			$html .= '<tr>';
-			$html .= '<td style="padding:11px 0;font-size:13px;color:#374151;border-bottom:1px solid #f3f4f6;">' . esc_html__( 'Avg score this week', 'allfeedback' ) . '</td>';
-			$html .= '<td style="padding:11px 0;font-size:13px;font-weight:600;color:#111827;text-align:right;border-bottom:1px solid #f3f4f6;">' . number_format( (float) $thisAvgScore, 1 ) . '/10 ' . $scoreTrend . '</td>';
-			$html .= '</tr>';
+			$scoreTrend = $lastAvgScore !== null ? $this->scoreTrend( (float) $thisAvgScore, (float) $lastAvgScore ) : '';
+			$html .= $this->statRow(
+				esc_html__( 'Avg score this week', 'allfeedback' ),
+				number_format( (float) $thisAvgScore, 1 ) . ' / 10',
+				$scoreTrend,
+				true
+			);
 		}
 
 		if ( $thisCompletion !== null ) {
-			$crTrend = $lastCompletion !== null ? $this->buildRateTrend( (float) $thisCompletion, (float) $lastCompletion ) : '';
-			$html .= '<tr>';
-			$html .= '<td style="padding:11px 0;font-size:13px;color:#374151;">' . esc_html__( 'Completion rate this week', 'allfeedback' ) . '</td>';
-			$html .= '<td style="padding:11px 0;font-size:13px;font-weight:600;color:#111827;text-align:right;">' . number_format( (float) $thisCompletion, 0 ) . '% ' . $crTrend . '</td>';
-			$html .= '</tr>';
+			$crTrend = $lastCompletion !== null ? $this->rateTrend( (float) $thisCompletion, (float) $lastCompletion ) : '';
+			$html .= $this->statRow(
+				esc_html__( 'Completion rate', 'allfeedback' ),
+				number_format( (float) $thisCompletion, 0 ) . '%',
+				$crTrend,
+				false
+			);
 		}
 
 		$html .= '</table>';
 
-		// ── Per-survey breakdown ───────────────────────────────────────────────
+		// ── Per-survey breakdown ──────────────────────────────────────────────
 		if ( ! empty( $surveys ) ) {
-			$html .= '<p style="margin:0 0 10px 0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#9ca3af;">' . esc_html__( 'Survey Breakdown', 'allfeedback' ) . '</p>';
-			$html .= '<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">';
+			$html .= '<p style="margin:0 0 12px 0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#9ca3af;">' . esc_html__( 'Survey Breakdown', 'allfeedback' ) . '</p>';
+			$html .= '<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">';
+
+			$lastSurvey = end( $surveys );
 			foreach ( $surveys as $survey ) {
+				$sid       = (int) $survey->getId();
+				$weekCount = $weeklyStats[ $sid ]['this_week_count'] ?? 0;
+				$avgScore  = $weeklyStats[ $sid ]['avg_score']       ?? null;
+				$border    = $survey === $lastSurvey ? '' : 'border-bottom:1px solid #f3f4f6;';
+
+				// Right cell: score + NPS pill when available, otherwise plain count
+				if ( $avgScore !== null ) {
+					$nps       = $this->npsLabel( $avgScore );
+					$rightHtml = '<span style="font-weight:600;color:#111827;">' . number_format( $avgScore, 1 ) . ' / 10</span>'
+						. '&nbsp;<span style="font-size:11px;padding:2px 8px;border-radius:99px;font-weight:600;background:' . $nps['bg'] . ';color:' . $nps['color'] . ';">' . esc_html( $nps['text'] ) . '</span>';
+				} else {
+					$rightHtml = '<span style="color:#6b7280;font-size:13px;">' . $weekCount . ' ' . esc_html__( 'this week', 'allfeedback' ) . '</span>';
+				}
+
 				$html .= '<tr>';
-				$html .= '<td style="padding:8px 0;font-size:13px;color:#374151;border-bottom:1px solid #f3f4f6;">' . esc_html( $survey->getTitle() ) . '</td>';
-				$html .= '<td style="padding:8px 0;font-size:13px;color:#6b7280;text-align:right;border-bottom:1px solid #f3f4f6;">' . (int) $survey->getResponseCount() . ' ' . esc_html__( 'responses', 'allfeedback' ) . '</td>';
+				$html .= '<td style="padding:10px 0;font-size:13px;color:#374151;' . $border . '">'
+					. esc_html( $survey->getTitle() )
+					. '<span style="margin-left:8px;font-size:12px;color:#9ca3af;">' . $weekCount . ' ' . esc_html__( 'responses', 'allfeedback' ) . '</span>'
+					. '</td>';
+				$html .= '<td style="padding:10px 0;font-size:13px;text-align:right;' . $border . '">' . $rightHtml . '</td>';
 				$html .= '</tr>';
 			}
+
 			$html .= '</table>';
 		}
 
-		// ── CTA ───────────────────────────────────────────────────────────────
+		// ── CTA button ────────────────────────────────────────────────────────
 		$html .= '<a href="' . $analyticsUrl . '" style="display:inline-block;padding:10px 24px;background:#6366f1;color:#ffffff;border-radius:6px;text-decoration:none;font-size:14px;font-weight:600;">' . esc_html__( 'View Analytics →', 'allfeedback' ) . '</a>';
 
 		return $html;
 	}
 
-	/**
-	 * Build a response-count trend badge (pill with % change).
-	 *
-	 * @param  int $thisWeek This week's count.
-	 * @param  int $lastWeek Last week's count.
-	 * @return string HTML span badge, or empty string when last week is 0.
-	 * @since  1.0.0
-	 */
-	private function buildCountTrend( int $thisWeek, int $lastWeek ): string {
+	/** Pill badge showing % change vs last week. */
+	private function trendBadge( int $thisWeek, int $lastWeek ): string {
 		if ( $lastWeek === 0 ) {
 			return '';
 		}
-
 		$pct = (int) round( ( $thisWeek - $lastWeek ) / $lastWeek * 100 );
 		$up  = $pct >= 0;
-
 		return sprintf(
-			'<span style="display:inline-block;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600;background:%s;color:%s;">%s%d%% %s</span>',
+			'<span style="display:inline-block;padding:4px 12px;border-radius:99px;font-size:12px;font-weight:600;background:%s;color:%s;">%s%d%% %s</span>',
 			$up ? '#dcfce7' : '#fee2e2',
 			$up ? '#16a34a' : '#dc2626',
 			$up ? '+' : '',
@@ -199,44 +223,50 @@ class WeeklyDigestNotification {
 		);
 	}
 
-	/**
-	 * Build an inline score trend indicator (e.g. "↑ vs 7.9").
-	 *
-	 * @param  float $thisWeek This week's average score.
-	 * @param  float $lastWeek Last week's average score.
-	 * @return string HTML span.
-	 * @since  1.0.0
-	 */
-	private function buildScoreTrend( float $thisWeek, float $lastWeek ): string {
-		$up = $thisWeek >= $lastWeek;
-
+	/** Inline ↑/↓ indicator for a numeric score. */
+	private function scoreTrend( float $now, float $prev ): string {
+		$up = $now >= $prev;
 		return sprintf(
-			'<span style="font-size:11px;font-weight:500;color:%s;">%s %s %.1f</span>',
+			'<span style="font-size:11px;color:%s;">%s %.1f</span>',
 			$up ? '#16a34a' : '#dc2626',
 			$up ? '↑' : '↓',
-			esc_html__( 'vs', 'allfeedback' ),
-			$lastWeek
+			$prev
 		);
 	}
 
-	/**
-	 * Build an inline completion/abandonment rate trend indicator.
-	 *
-	 * @param  float $thisWeek This week's rate (0–100).
-	 * @param  float $lastWeek Last week's rate (0–100).
-	 * @return string HTML span.
-	 * @since  1.0.0
-	 */
-	private function buildRateTrend( float $thisWeek, float $lastWeek ): string {
-		$diff = $thisWeek - $lastWeek;
-		$up   = $diff >= 0;
-
+	/** Inline ↑/↓ indicator for a percentage rate. */
+	private function rateTrend( float $now, float $prev ): string {
+		$up = $now >= $prev;
 		return sprintf(
-			'<span style="font-size:11px;font-weight:500;color:%s;">%s %s %.0f%%</span>',
+			'<span style="font-size:11px;color:%s;">%s %.0f%%</span>',
 			$up ? '#16a34a' : '#dc2626',
 			$up ? '↑' : '↓',
-			esc_html__( 'vs', 'allfeedback' ),
-			$lastWeek
+			$prev
 		);
+	}
+
+	/** Single two-column stat row. */
+	private function statRow( string $label, string $value, string $trend, bool $hasBorder ): string {
+		$border = $hasBorder ? 'border-bottom:1px solid #f3f4f6;' : '';
+		return '<tr>'
+			. '<td style="padding:11px 0;font-size:13px;color:#374151;' . $border . '">' . $label . '</td>'
+			. '<td style="padding:11px 0;font-size:13px;font-weight:600;color:#111827;text-align:right;' . $border . '">'
+			. $value . ( $trend !== '' ? ' ' . $trend : '' )
+			. '</td></tr>';
+	}
+
+	/**
+	 * Return NPS category label + pill colours for a given avg score.
+	 *
+	 * @return array{text: string, bg: string, color: string}
+	 */
+	private function npsLabel( float $score ): array {
+		if ( $score >= 9 ) {
+			return [ 'text' => __( 'Promoter', 'allfeedback' ),  'bg' => '#dcfce7', 'color' => '#16a34a' ];
+		}
+		if ( $score >= 7 ) {
+			return [ 'text' => __( 'Passive', 'allfeedback' ),   'bg' => '#fef9c3', 'color' => '#ca8a04' ];
+		}
+		return     [ 'text' => __( 'Detractor', 'allfeedback' ), 'bg' => '#fee2e2', 'color' => '#dc2626' ];
 	}
 }

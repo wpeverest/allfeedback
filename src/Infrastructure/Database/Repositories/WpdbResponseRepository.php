@@ -695,6 +695,76 @@ class WpdbResponseRepository implements ResponseRepository {
 	}
 
 	/**
+	 * Same as getOverviewStats() but scoped to a specific set of survey IDs.
+	 *
+	 * @param  int[] $surveyIds Survey primary keys to include.
+	 * @return array{total_feedback: int, this_week_count: int, last_week_count: int, avg_score: float|null, this_week_avg_score: float|null, last_week_avg_score: float|null}
+	 * @since  1.0.0
+	 */
+	public function getOverviewStatsForSurveys( array $surveyIds ): array {
+		if ( empty( $surveyIds ) ) {
+			return [
+				'total_feedback'      => 0,
+				'this_week_count'     => 0,
+				'last_week_count'     => 0,
+				'avg_score'           => null,
+				'this_week_avg_score' => null,
+				'last_week_avg_score' => null,
+			];
+		}
+
+		global $wpdb;
+
+		$placeholders = implode( ',', array_fill( 0, count( $surveyIds ), '%d' ) );
+
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT
+					COUNT(*)                                                                                  AS total_feedback,
+					SUM(DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL 6 DAY))                             AS this_week_count,
+					SUM(DATE(created_at) BETWEEN DATE_SUB(CURDATE(), INTERVAL 13 DAY)
+					                         AND DATE_SUB(CURDATE(), INTERVAL 7 DAY))                        AS last_week_count,
+					COUNT(score)                                                                              AS score_count,
+					COALESCE(SUM(score), 0)                                                                   AS score_sum,
+					COUNT(CASE WHEN score IS NOT NULL
+					           AND DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+					           THEN 1 END)                                                                    AS this_week_score_count,
+					COALESCE(SUM(CASE WHEN DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+					               THEN score ELSE NULL END), 0)                                              AS this_week_score_sum,
+					COUNT(CASE WHEN score IS NOT NULL
+					           AND DATE(created_at) BETWEEN DATE_SUB(CURDATE(), INTERVAL 13 DAY)
+					                                    AND DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+					           THEN 1 END)                                                                    AS last_week_score_count,
+					COALESCE(SUM(CASE WHEN DATE(created_at) BETWEEN DATE_SUB(CURDATE(), INTERVAL 13 DAY)
+					                                            AND DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+					               THEN score ELSE NULL END), 0)                                              AS last_week_score_sum
+				FROM {$this->table}
+				WHERE survey_id IN ({$placeholders})",
+				...$surveyIds
+			),
+			ARRAY_A
+		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+
+		$scoreCount   = (int) ( $row['score_count']           ?? 0 );
+		$scoreSum     = (float) ( $row['score_sum']           ?? 0 );
+		$twScoreCount = (int) ( $row['this_week_score_count'] ?? 0 );
+		$twScoreSum   = (float) ( $row['this_week_score_sum'] ?? 0 );
+		$lwScoreCount = (int) ( $row['last_week_score_count'] ?? 0 );
+		$lwScoreSum   = (float) ( $row['last_week_score_sum'] ?? 0 );
+
+		return [
+			'total_feedback'      => (int) ( $row['total_feedback']  ?? 0 ),
+			'this_week_count'     => (int) ( $row['this_week_count'] ?? 0 ),
+			'last_week_count'     => (int) ( $row['last_week_count'] ?? 0 ),
+			'avg_score'           => $scoreCount   > 0 ? round( $scoreSum   / $scoreCount,   2 ) : null,
+			'this_week_avg_score' => $twScoreCount > 0 ? round( $twScoreSum / $twScoreCount, 2 ) : null,
+			'last_week_avg_score' => $lwScoreCount > 0 ? round( $lwScoreSum / $lwScoreCount, 2 ) : null,
+		];
+	}
+
+	/**
 	 * Count all responses within a date range (inclusive).
 	 *
 	 * @param  string $dateFrom Start date Y-m-d.
@@ -947,6 +1017,51 @@ class WpdbResponseRepository implements ResponseRepository {
 		}
 
 		return [ $where, $params ];
+	}
+
+	/**
+	 * Return this-week response count and average score per survey in one query.
+	 *
+	 * @param  int[] $surveyIds Survey primary keys to include.
+	 * @return array<int, array{this_week_count: int, avg_score: float|null}> Keyed by survey ID.
+	 * @since  1.0.0
+	 */
+	public function getWeeklyStatsBySurveyIds( array $surveyIds ): array {
+		if ( empty( $surveyIds ) ) {
+			return [];
+		}
+
+		global $wpdb;
+
+		$placeholders = implode( ',', array_fill( 0, count( $surveyIds ), '%d' ) );
+
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT
+					survey_id,
+					COUNT(*)                                            AS this_week_count,
+					AVG(CASE WHEN score IS NOT NULL THEN score END)     AS avg_score
+				FROM {$this->table}
+				WHERE survey_id IN ({$placeholders})
+				  AND DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+				GROUP BY survey_id",
+				...$surveyIds
+			),
+			ARRAY_A
+		) ?: [];
+		// phpcs:enable
+
+		$result = [];
+		foreach ( $rows as $row ) {
+			$id            = (int) $row['survey_id'];
+			$result[ $id ] = [
+				'this_week_count' => (int) $row['this_week_count'],
+				'avg_score'       => $row['avg_score'] !== null ? round( (float) $row['avg_score'], 1 ) : null,
+			];
+		}
+
+		return $result;
 	}
 
 	/**

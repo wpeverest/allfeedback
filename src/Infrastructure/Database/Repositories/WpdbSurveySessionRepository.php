@@ -142,15 +142,15 @@ class WpdbSurveySessionRepository implements SurveySessionRepository {
 			$wpdb->prepare(
 				"SELECT
 					ROUND(
-						SUM(submitted_at IS NOT NULL)
+						SUM(started_at IS NOT NULL AND submitted_at IS NOT NULL)
 						/ NULLIF(SUM(started_at IS NOT NULL), 0) * 100
 					, 2)                                                                                    AS completion_rate,
 					ROUND(
-						SUM(submitted_at IS NOT NULL AND DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL 6 DAY))
+						SUM(started_at IS NOT NULL AND submitted_at IS NOT NULL AND DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL 6 DAY))
 						/ NULLIF(SUM(started_at IS NOT NULL AND DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)), 0) * 100
 					, 2)                                                                                    AS this_week_completion_rate,
 					ROUND(
-						SUM(submitted_at IS NOT NULL
+						SUM(started_at IS NOT NULL AND submitted_at IS NOT NULL
 						    AND DATE(created_at) BETWEEN DATE_SUB(CURDATE(), INTERVAL 13 DAY)
 						                             AND DATE_SUB(CURDATE(), INTERVAL 7 DAY))
 						/ NULLIF(SUM(started_at IS NOT NULL
@@ -207,6 +207,108 @@ class WpdbSurveySessionRepository implements SurveySessionRepository {
 			'abandonment_rate'            => isset( $row['abandonment_rate'] )            ? (float) $row['abandonment_rate']            : null,
 			'this_week_abandonment_rate'  => isset( $row['this_week_abandonment_rate'] )  ? (float) $row['this_week_abandonment_rate']  : null,
 			'last_week_abandonment_rate'  => isset( $row['last_week_abandonment_rate'] )  ? (float) $row['last_week_abandonment_rate']  : null,
+		];
+	}
+
+	/**
+	 * Same as getOverviewSessionStats() but scoped to a specific set of survey IDs.
+	 *
+	 * @param  int[] $surveyIds Survey primary keys to include.
+	 * @return array{completion_rate: float|null, this_week_completion_rate: float|null, last_week_completion_rate: float|null, abandonment_rate: float|null, this_week_abandonment_rate: float|null, last_week_abandonment_rate: float|null}
+	 * @since  1.0.0
+	 */
+	public function getOverviewSessionStatsForSurveys( array $surveyIds ): array {
+		if ( empty( $surveyIds ) ) {
+			return [
+				'completion_rate'            => null,
+				'this_week_completion_rate'  => null,
+				'last_week_completion_rate'  => null,
+				'abandonment_rate'           => null,
+				'this_week_abandonment_rate' => null,
+				'last_week_abandonment_rate' => null,
+			];
+		}
+
+		global $wpdb;
+
+		$t            = self::ABANDON_TIMEOUT_MINUTES;
+		$placeholders = implode( ',', array_fill( 0, count( $surveyIds ), '%d' ) );
+
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+		$params = array_merge( [ $t, $t, $t ], $surveyIds, [ $t ] );
+		$row    = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT
+					ROUND(
+						SUM(started_at IS NOT NULL AND submitted_at IS NOT NULL)
+						/ NULLIF(SUM(started_at IS NOT NULL), 0) * 100
+					, 2)                                                                                    AS completion_rate,
+					ROUND(
+						SUM(started_at IS NOT NULL AND submitted_at IS NOT NULL AND DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL 6 DAY))
+						/ NULLIF(SUM(started_at IS NOT NULL AND DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)), 0) * 100
+					, 2)                                                                                    AS this_week_completion_rate,
+					ROUND(
+						SUM(started_at IS NOT NULL AND submitted_at IS NOT NULL
+						    AND DATE(created_at) BETWEEN DATE_SUB(CURDATE(), INTERVAL 13 DAY)
+						                             AND DATE_SUB(CURDATE(), INTERVAL 7 DAY))
+						/ NULLIF(SUM(started_at IS NOT NULL
+						             AND DATE(created_at) BETWEEN DATE_SUB(CURDATE(), INTERVAL 13 DAY)
+						                                      AND DATE_SUB(CURDATE(), INTERVAL 7 DAY)), 0) * 100
+					, 2)                                                                                    AS last_week_completion_rate,
+					ROUND(
+						SUM(
+							abandoned_at IS NOT NULL
+							OR (started_at IS NOT NULL AND submitted_at IS NULL
+							    AND last_active_at < DATE_SUB(NOW(), INTERVAL %d MINUTE))
+						)
+						/ NULLIF(SUM(started_at IS NOT NULL), 0) * 100
+					, 2)                                                                                    AS abandonment_rate,
+					ROUND(
+						SUM(
+							DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+							AND (
+								abandoned_at IS NOT NULL
+								OR (started_at IS NOT NULL AND submitted_at IS NULL
+								    AND last_active_at < DATE_SUB(NOW(), INTERVAL %d MINUTE))
+							)
+						)
+						/ NULLIF(SUM(started_at IS NOT NULL AND DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)), 0) * 100
+					, 2)                                                                                    AS this_week_abandonment_rate,
+					ROUND(
+						SUM(
+							DATE(created_at) BETWEEN DATE_SUB(CURDATE(), INTERVAL 13 DAY)
+							                     AND DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+							AND (
+								abandoned_at IS NOT NULL
+								OR (started_at IS NOT NULL AND submitted_at IS NULL
+								    AND last_active_at < DATE_SUB(NOW(), INTERVAL %d MINUTE))
+							)
+						)
+						/ NULLIF(SUM(started_at IS NOT NULL
+						             AND DATE(created_at) BETWEEN DATE_SUB(CURDATE(), INTERVAL 13 DAY)
+						                                      AND DATE_SUB(CURDATE(), INTERVAL 7 DAY)), 0) * 100
+					, 2)                                                                                    AS last_week_abandonment_rate
+				FROM `{$this->table}`
+				WHERE survey_id IN ({$placeholders})
+				  AND (
+				  	   abandoned_at IS NOT NULL
+				  	   OR started_at   IS NOT NULL
+				  	   OR submitted_at IS NOT NULL
+				  	   OR last_active_at < DATE_SUB(NOW(), INTERVAL %d MINUTE)
+				  )",
+				...$params
+			),
+			ARRAY_A
+		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+
+		return [
+			'completion_rate'            => isset( $row['completion_rate'] )            ? (float) $row['completion_rate']            : null,
+			'this_week_completion_rate'  => isset( $row['this_week_completion_rate'] )  ? (float) $row['this_week_completion_rate']  : null,
+			'last_week_completion_rate'  => isset( $row['last_week_completion_rate'] )  ? (float) $row['last_week_completion_rate']  : null,
+			'abandonment_rate'           => isset( $row['abandonment_rate'] )           ? (float) $row['abandonment_rate']           : null,
+			'this_week_abandonment_rate' => isset( $row['this_week_abandonment_rate'] ) ? (float) $row['this_week_abandonment_rate'] : null,
+			'last_week_abandonment_rate' => isset( $row['last_week_abandonment_rate'] ) ? (float) $row['last_week_abandonment_rate'] : null,
 		];
 	}
 

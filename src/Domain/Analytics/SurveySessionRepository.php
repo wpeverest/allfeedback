@@ -85,6 +85,21 @@ interface SurveySessionRepository {
 	public function getOverviewSessionStats(): array;
 
 	/**
+	 * Same as getOverviewSessionStats() but scoped to a specific set of survey IDs.
+	 *
+	 * Used by the weekly digest to restrict completion/abandonment stats to
+	 * currently-published surveys only.
+	 *
+	 * Keys: completion_rate, this_week_completion_rate, last_week_completion_rate,
+	 *       abandonment_rate, this_week_abandonment_rate, last_week_abandonment_rate.
+	 *
+	 * @param  int[] $surveyIds Survey primary keys to include.
+	 * @return array{completion_rate: float|null, this_week_completion_rate: float|null, last_week_completion_rate: float|null, abandonment_rate: float|null, this_week_abandonment_rate: float|null, last_week_abandonment_rate: float|null}
+	 * @since  1.0.0
+	 */
+	public function getOverviewSessionStatsForSurveys( array $surveyIds ): array;
+
+	/**
 	 * Return full session analytics for one survey with week-over-week windows in one query.
 	 *
 	 * Returns the same base metrics as getAnalytics() plus this-week/last-week slices

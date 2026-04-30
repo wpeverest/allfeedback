@@ -270,4 +270,27 @@ interface ResponseRepository {
 	 * @since  1.0.0
 	 */
 	public function countByDateGlobal( string $dateFrom, string $dateTo ): array;
+
+	/**
+	 * Return this-week response count and average score per survey in one query.
+	 *
+	 * "This week" = last 7 days (DATE >= CURDATE() - 6).
+	 * Surveys with no responses this week are omitted from the result.
+	 *
+	 * @param  int[] $surveyIds Survey primary keys to include.
+	 * @return array<int, array{this_week_count: int, avg_score: float|null}> Keyed by survey ID.
+	 * @since  1.0.0
+	 */
+	public function getWeeklyStatsBySurveyIds( array $surveyIds ): array;
+
+	/**
+	 * Same as getOverviewStats() but scoped to a specific set of survey IDs.
+	 *
+	 * Used by the weekly digest to restrict site-wide stats to currently-published surveys only.
+	 *
+	 * @param  int[] $surveyIds Survey primary keys to include.
+	 * @return array{total_feedback: int, this_week_count: int, last_week_count: int, avg_score: float|null, this_week_avg_score: float|null, last_week_avg_score: float|null}
+	 * @since  1.0.0
+	 */
+	public function getOverviewStatsForSurveys( array $surveyIds ): array;
 }
