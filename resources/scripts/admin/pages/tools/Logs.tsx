@@ -4,7 +4,7 @@ import { Tooltip } from '@/admin/components/Tooltip';
 import { logQuery, logsQuery } from '@/admin/queries/logs';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { __ } from '@wordpress/i18n';
 import {
@@ -100,12 +100,10 @@ function triggerDownload(filename: string, content: string): void {
 
 const FilterTab = ({
 	label,
-	count,
 	active,
 	onClick,
 }: {
 	label: string;
-	count: number;
 	active: boolean;
 	onClick: () => void;
 }) => (
@@ -113,21 +111,13 @@ const FilterTab = ({
 		type="button"
 		onClick={onClick}
 		className={cn(
-			'flex items-center gap-1.5 rounded-full border px-3.5 py-1 text-sm font-medium transition-colors',
+			'rounded-full border px-3.5 py-1 text-sm font-medium transition-colors',
 			active
 				? 'border-primary bg-primary/10 text-primary'
 				: 'border-border/60 text-muted-foreground hover:border-border hover:text-foreground bg-transparent',
 		)}
 	>
 		{label}
-		<span
-			className={cn(
-				'text-2xs font-semibold',
-				active ? 'text-primary' : 'text-muted-foreground/60',
-			)}
-		>
-			{count}
-		</span>
 	</button>
 );
 
@@ -379,25 +369,6 @@ const Logs = () => {
 
 	const files = listData?.logs ?? [];
 
-	const fileDetailQueries = useQueries({
-		queries: files.map((file) => ({
-			...logQuery(file.id),
-			enabled: files.length > 0,
-		})),
-	});
-
-	// Aggregate parsed lines from all loaded files for filter-tab counts.
-	const allLines = useMemo<ParsedLine[]>(() => {
-		return fileDetailQueries
-			.filter((q) => q.data !== undefined)
-			.flatMap((q) => parseLines(q.data!.lines));
-	}, [fileDetailQueries]);
-
-	const countFor = (level: LogLevel | 'ALL') =>
-		level === 'ALL'
-			? allLines.length
-			: allLines.filter((l) => l.level === level).length;
-
 	const totalBytes = files.reduce((sum, f) => sum + f.bytes, 0);
 
 	const handleDeleteAll = () => {
@@ -518,13 +489,12 @@ const Logs = () => {
 			</div>
 
 			{/* filter tabs */}
-			{allLines.length > 0 && (
+			{files.length > 0 && (
 				<div className="border-border/50 flex flex-wrap items-center gap-2 border-b px-6 py-3.5">
 					{FILTERS.map((f) => (
 						<FilterTab
 							key={f.key}
 							label={f.label}
-							count={countFor(f.key)}
 							active={activeFilter === f.key}
 							onClick={() => setActiveFilter(f.key)}
 						/>
@@ -552,22 +522,6 @@ const Logs = () => {
 				)}
 			</div>
 
-			{/* footer */}
-			{allLines.length > 0 && (
-				<div className="border-border/50 border-t px-6 py-3 text-right">
-					<span className="text-muted-foreground/80 text-xs">
-						{countFor(activeFilter).toLocaleString()}{' '}
-						{__('lines', 'allfeedback')}
-						{activeFilter !== 'ALL' && (
-							<>
-								{' '}
-								· {allLines.length.toLocaleString()}{' '}
-								{__('total', 'allfeedback')}
-							</>
-						)}
-					</span>
-				</div>
-			)}
 		</div>
 	);
 };
