@@ -61,7 +61,7 @@ trait Hooks {
 	 * @since  1.0.0
 	 */
 	public function doAction( string $hookName, mixed ...$args ): void {
-		do_action_ref_array( $hookName, $args );
+		do_action( $hookName, ...$args );
 	}
 
 	/**
@@ -110,6 +110,6 @@ trait Hooks {
 	 * @since  1.0.0
 	 */
 	public function applyFilters( string $hookName, mixed $value, mixed ...$args ): mixed {
-		return apply_filters_ref_array( $hookName, array_merge( [ $value ], $args ) );
+		return apply_filters( $hookName, $value, ...$args );
 	}
 }

@@ -182,6 +182,10 @@ class AdminServiceProvider implements ServiceProvider {
 	 * @since  1.0.0
 	 */
 	public function maybeRedirectToWizard(): void {
+		if ( wp_doing_ajax() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
+			return;
+		}
+
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}

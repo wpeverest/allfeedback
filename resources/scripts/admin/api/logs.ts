@@ -2,16 +2,19 @@ import { request, toQuery } from './client';
 import type { PaginationParams } from './client';
 
 export type LogFile = {
-	id:      string;
-	name:    string;
-	size:    string;
-	bytes:   number;
-	entries: number;
-	date:    string;
+	id:    string;
+	name:  string;
+	size:  string;
+	bytes: number;
+	date:  string;
 };
 
 export type LogFileDetail = LogFile & {
-	content: string;
+	lines:       string[];
+	total_lines: number;
+	page:        number;
+	per_page:    number;
+	pages:       number;
 };
 
 export type LogListResponse = {

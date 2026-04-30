@@ -10,6 +10,7 @@ use AllFeedback\Application\Response\Pipes\ResponseContext;
 use AllFeedback\Application\Response\Pipes\ValidateConsentIfRequired;
 use AllFeedback\Application\Response\Pipes\ValidateResponseData;
 use AllFeedback\Application\Response\Pipes\ValidateSurveyIsActive;
+use AllFeedback\Application\Response\Pipes\PipeInterface;
 use AllFeedback\Core\Exceptions\NotFoundException;
 use AllFeedback\Domain\Response\Response;
 use AllFeedback\Domain\Response\ResponseRepository;
@@ -85,8 +86,8 @@ class SubmitResponseService {
 	/**
 	 * Execute a sequential pipeline of pipe objects against a shared context.
 	 *
-	 * @param  array           $pipes   Ordered list of pipe objects exposing execute().
-	 * @param  ResponseContext $context Mutable context passed through the pipeline.
+	 * @param  array<PipeInterface> $pipes   Ordered list of pipe objects.
+	 * @param  ResponseContext      $context Mutable context passed through the pipeline.
 	 * @return void
 	 * @since  1.0.0
 	 */

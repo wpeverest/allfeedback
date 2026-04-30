@@ -172,12 +172,6 @@ abstract class RestController {
 	public function adminPermission(): bool {
 		$capability = (string) apply_filters( 'allfeedback_required_capability', 'manage_options' );
 
-		// Enforce a manage_options floor so the filter cannot silently downgrade
-		// access to subscriber-level capabilities.
-		if ( ! current_user_can( 'manage_options' ) ) {
-			return false;
-		}
-
 		return current_user_can( $capability );
 	}
 

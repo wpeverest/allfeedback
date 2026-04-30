@@ -252,7 +252,7 @@ class Migrator {
 		global $wpdb;
 		$table = $this->tableName();
 
-		$rows = $wpdb->get_results( "SELECT name, batch, ran_at FROM {$table}", ARRAY_A ) ?: [];
+		$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT name, batch, ran_at FROM %i', $table ), ARRAY_A ) ?: [];
 
 		$ranMap = [];
 		foreach ( $rows as $row ) {
@@ -306,7 +306,7 @@ class Migrator {
 	private function currentBatch(): int {
 		global $wpdb;
 		$table = $this->tableName();
-		return (int) $wpdb->get_var( "SELECT COALESCE(MAX(batch), 0) FROM {$table}" );
+		return (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COALESCE(MAX(batch), 0) FROM %i', $table ) );
 	}
 
 	/**
@@ -318,7 +318,7 @@ class Migrator {
 	private function getRanNames(): array {
 		global $wpdb;
 		$table = $this->tableName();
-		return $wpdb->get_col( "SELECT name FROM {$table}" ) ?: [];
+		return $wpdb->get_col( $wpdb->prepare( 'SELECT name FROM %i', $table ) ) ?: [];
 	}
 
 	/**
@@ -426,6 +426,16 @@ class Migrator {
 		/** @var class-string<Migration> */
 		$fqcn = 'AllFeedback\\Database\\Migrations\\' . $className;
 
-		return new $fqcn();
+		if ( ! class_exists( $fqcn ) ) {
+			throw new \RuntimeException( "Migration class {$fqcn} not found in {$filePath}." );
+		}
+
+		$instance = new $fqcn();
+
+		if ( ! $instance instanceof Migration ) {
+			throw new \RuntimeException( "{$fqcn} must extend Migration." );
+		}
+
+		return $instance;
 	}
 }

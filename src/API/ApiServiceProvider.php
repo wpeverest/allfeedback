@@ -7,6 +7,7 @@ namespace AllFeedback\API;
 defined( 'ABSPATH' ) || exit;
 
 use AllFeedback\API\Controllers\V1\AnalyticsController;
+use AllFeedback\API\Controllers\V1\BootstrapController;
 use AllFeedback\API\Controllers\V1\DevToolsController;
 use AllFeedback\API\Controllers\V1\ContentSearchController;
 use AllFeedback\API\Controllers\V1\FormAnalyticsController;
@@ -93,6 +94,7 @@ class ApiServiceProvider implements ServiceProvider {
 	 */
 	public function registerRoutes(): void {
 		$controllers = [
+			BootstrapController::class,     // /bootstrap                      — admin, single page-load request
 			SubmitController::class,        // /surveys/{id}/submit            — public, nonce-gated
 			AnalyticsController::class,     // /surveys/{id}/analytics[/event] — public POST, admin GET
 			SurveyStateController::class,   // /surveys/{id}/state             — logged-in users only

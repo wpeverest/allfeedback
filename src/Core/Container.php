@@ -191,12 +191,17 @@ class Container {
 
 		foreach ( $iterator as $file ) {
 			if ( $file->isDir() ) {
-				rmdir( $file->getPathname() );
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir
+				@rmdir( $file->getPathname() );
 			} else {
-				unlink( $file->getPathname() );
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_unlink
+				if ( ! @unlink( $file->getPathname() ) ) {
+					error_log( 'AllFeedback: failed to delete cache file: ' . $file->getPathname() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				}
 			}
 		}
 
-		rmdir( $dir );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir
+		@rmdir( $dir );
 	}
 }

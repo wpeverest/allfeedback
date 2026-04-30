@@ -70,9 +70,8 @@ const FILTERS: { key: LogLevel | 'ALL'; label: string }[] = [
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
-function parseLines(content: string): ParsedLine[] {
-	return content
-		.split(/\r?\n/)
+function parseLines(lines: string[]): ParsedLine[] {
+	return lines
 		.filter((l) => l.trim())
 		.map((raw, i) => {
 			const m = raw.match(ENTRY_RE);
@@ -260,18 +259,18 @@ const LogFileSection = ({
 	});
 
 	const lines = useMemo(
-		() => (detail ? parseLines(detail.content) : []),
+		() => (detail ? parseLines(detail.lines) : []),
 		[detail],
 	);
 
 	const handleDownload = () => {
 		if (detail) {
-			triggerDownload(file.name, detail.content);
+			triggerDownload(file.name, detail.lines.join('\n'));
 			return;
 		}
 		logsApi
 			.get(file.id)
-			.then((d: LogFileDetail) => triggerDownload(file.name, d.content))
+			.then((d: LogFileDetail) => triggerDownload(file.name, d.lines.join('\n')))
 			.catch(() =>
 				toast.error(__('Failed to download log file.', 'allfeedback')),
 			);
@@ -299,7 +298,7 @@ const LogFileSection = ({
 					{file.name}
 				</span>
 				<span className="text-muted-foreground/60 text-sm">
-					{file.entries} {__('entries', 'allfeedback')} · {file.size}
+					{detail?.total_lines ?? '—'} {__('entries', 'allfeedback')} · {file.size}
 				</span>
 
 				<div
@@ -391,7 +390,7 @@ const Logs = () => {
 	const allLines = useMemo<ParsedLine[]>(() => {
 		return fileDetailQueries
 			.filter((q) => q.data !== undefined)
-			.flatMap((q) => parseLines(q.data!.content));
+			.flatMap((q) => parseLines(q.data!.lines));
 	}, [fileDetailQueries]);
 
 	const countFor = (level: LogLevel | 'ALL') =>

@@ -14,7 +14,7 @@ use AllFeedback\Core\Exceptions\ValidationException;
  * @package AllFeedback\Application\Response\Pipes
  * @since   1.0.0
  */
-class ValidateConsentIfRequired {
+class ValidateConsentIfRequired implements PipeInterface {
 
 	/**
 	 * Reject the submission when the survey requires consent and the respondent

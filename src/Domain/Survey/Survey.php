@@ -91,11 +91,12 @@ class Survey extends Entity {
 		private int $createdBy = 0,
 		?SurveyStatus $status = null,
 		int $responseCount = 0,
+		?DateTimeImmutable $createdAt = null,
 	) {
 		$this->targeting     = $targeting;
 		$this->status        = $status ?? SurveyStatus::Draft;
 		$this->responseCount = $responseCount;
-		$this->createdAt     = new DateTimeImmutable();
+		$this->createdAt     = $createdAt ?? new DateTimeImmutable();
 	}
 
 	/**
@@ -131,9 +132,8 @@ class Survey extends Entity {
 		?string $conflictReason = null,
 		array $targeting = [],
 	): self {
-		$survey                 = new self( $title, $description, $formSchema, $settings, $styling, $targeting, $createdBy, $status, $responseCount );
+		$survey                 = new self( $title, $description, $formSchema, $settings, $styling, $targeting, $createdBy, $status, $responseCount, $createdAt );
 		$survey->id             = $id;
-		$survey->createdAt      = $createdAt;
 		$survey->updatedAt      = $updatedAt;
 		$survey->conflictReason = $conflictReason;
 		return $survey;

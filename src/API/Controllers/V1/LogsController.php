@@ -133,6 +133,7 @@ class LogsController extends RestController {
 					'methods'             => \WP_REST_Server::READABLE,
 					'callback'            => [ $this, 'show' ],
 					'permission_callback' => [ $this, 'adminPermission' ],
+					'args'                => $this->paginationArgs( 100, 500 ),
 				],
 				[
 					'methods'             => \WP_REST_Server::DELETABLE,
@@ -169,13 +170,19 @@ class LogsController extends RestController {
 			);
 		}
 
+		// Stat each file once — avoids redundant syscalls inside usort + prepareItem.
+		$stats = [];
+		foreach ( $files as $f ) {
+			$stats[ $f ] = [ 'mtime' => (int) filemtime( $f ), 'size' => (int) filesize( $f ) ];
+		}
+
 		usort(
 			$files,
-			static function ( string $a, string $b ) use ( $orderby, $order ): int {
+			static function ( string $a, string $b ) use ( $orderby, $order, $stats ): int {
 				$result = match ( $orderby ) {
-					'size' => filesize( $a ) - filesize( $b ),
+					'size' => $stats[ $a ]['size'] - $stats[ $b ]['size'],
 					'name' => strcmp( basename( $a ), basename( $b ) ),
-					default => filemtime( $a ) - filemtime( $b ),
+					default => $stats[ $a ]['mtime'] - $stats[ $b ]['mtime'],
 				};
 				return $order === 'asc' ? $result : -$result;
 			}
@@ -187,7 +194,7 @@ class LogsController extends RestController {
 		$files = array_slice( $files, ( $page - 1 ) * $perPage, $perPage );
 
 		return $this->successResponse( [
-			'logs'  => array_map( [ $this, 'prepareItem' ], $files ),
+			'logs'  => array_map( fn( string $f ) => $this->prepareItem( $f, $stats[ $f ] ), $files ),
 			'total' => $total,
 			'page'  => $page,
 			'pages' => $pages,
@@ -210,9 +217,19 @@ class LogsController extends RestController {
 			return $this->notFoundResponse( __( 'Log file', 'allfeedback' ) );
 		}
 
-		$item            = $this->prepareItem( $file );
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
-		$item['content'] = file_get_contents( $file ) ?: '';
+		$page    = max( 1, (int) ( $request->get_param( 'page' ) ?? 1 ) );
+		$perPage = min( 500, max( 10, (int) ( $request->get_param( 'per_page' ) ?? 100 ) ) );
+
+		$stat = [ 'mtime' => (int) filemtime( $file ), 'size' => (int) filesize( $file ) ];
+		$item = $this->prepareItem( $file, $stat );
+
+		[ 'lines' => $lines, 'total' => $total ] = $this->readLines( $file, $page, $perPage );
+
+		$item['lines']       = $lines;
+		$item['total_lines'] = $total;
+		$item['page']        = $page;
+		$item['per_page']    = $perPage;
+		$item['pages']       = (int) ceil( $total / $perPage );
 
 		return $this->successResponse( $item );
 	}
@@ -331,52 +348,67 @@ class LogsController extends RestController {
 	/**
 	 * Build the metadata array for a single log file.
 	 *
-	 * @param  string $file Absolute path to the log file.
+	 * Accepts pre-computed stat data to avoid redundant syscalls when called
+	 * in a loop (e.g. from index()).
+	 *
+	 * @param  string               $file Absolute path to the log file.
+	 * @param  array{mtime:int,size:int}|null $stat Pre-computed stat, or null to stat now.
 	 * @return array<string, mixed>
 	 * @since  1.0.0
 	 */
-	private function prepareItem( string $file ): array {
-		$bytes   = (int) filesize( $file );
-		$kb      = round( $bytes / 1024, 2 );
-		$entries = $this->countEntries( $file );
+	private function prepareItem( string $file, ?array $stat = null ): array {
+		$stat ??= [ 'mtime' => (int) filemtime( $file ), 'size' => (int) filesize( $file ) ];
 
 		return [
-			'id'      => basename( $file, '.log' ),
-			'name'    => basename( $file ),
-			'size'    => $kb . ' KB',
-			'bytes'   => $bytes,
-			'entries' => $entries,
-			'date'    => gmdate( 'c', (int) filemtime( $file ) ),
+			'id'    => basename( $file, '.log' ),
+			'name'  => basename( $file ),
+			'size'  => round( $stat['size'] / 1024, 2 ) . ' KB',
+			'bytes' => $stat['size'],
+			'date'  => gmdate( 'c', $stat['mtime'] ),
 		];
 	}
 
 	/**
-	 * Count the number of log entries (lines) in a file.
+	 * Read a paginated slice of lines from a log file without loading it all into memory.
 	 *
-	 * Each entry is exactly one line, so line count = entry count.
-	 * Uses a memory-efficient line counter rather than loading the file.
+	 * Streams the file line-by-line, skipping lines before the requested page
+	 * and stopping once the page is full. Total line count is tracked in the
+	 * same single pass — no second read needed.
 	 *
-	 * @param  string $file Absolute path to the log file.
-	 * @return int
+	 * @param  string $file    Absolute path to the log file.
+	 * @param  int    $page    1-based page number.
+	 * @param  int    $perPage Lines per page.
+	 * @return array{lines: string[], total: int}
 	 * @since  1.0.0
 	 */
-	private function countEntries( string $file ): int {
-		$count  = 0;
+	private function readLines( string $file, int $page, int $perPage ): array {
 		$handle = @fopen( $file, 'r' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
 
 		if ( ! is_resource( $handle ) ) {
-			return 0;
+			return [ 'lines' => [], 'total' => 0 ];
 		}
+
+		$offset = ( $page - 1 ) * $perPage;
+		$lines  = [];
+		$total  = 0;
 
 		while ( ! feof( $handle ) ) {
 			$line = fgets( $handle );
-			if ( $line !== false && trim( $line ) !== '' ) {
-				++$count;
+			if ( $line === false ) {
+				break;
 			}
+			$line = rtrim( $line );
+			if ( $line === '' ) {
+				continue;
+			}
+			if ( $total >= $offset && count( $lines ) < $perPage ) {
+				$lines[] = $line;
+			}
+			++$total;
 		}
 
 		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
 
-		return $count;
+		return [ 'lines' => $lines, 'total' => $total ];
 	}
 }

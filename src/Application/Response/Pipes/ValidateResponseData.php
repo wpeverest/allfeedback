@@ -14,7 +14,7 @@ use AllFeedback\Core\Exceptions\ValidationException;
  * @package AllFeedback\Application\Response\Pipes
  * @since   1.0.0
  */
-class ValidateResponseData {
+class ValidateResponseData implements PipeInterface {
 
 	/**
 	 * Reject the submission when response_data is empty.
