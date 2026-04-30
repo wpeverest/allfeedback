@@ -32,7 +32,7 @@ import {
 	useQuery,
 	useQueryClient,
 } from '@tanstack/react-query';
-import { useNavigate, useRouterState, useSearch } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { __, _n, sprintf } from '@wordpress/i18n';
 import { format } from 'date-fns';
 import {
@@ -149,7 +149,6 @@ const Responses = () => {
 		placeholderData: keepPreviousData,
 	});
 
-	const isNavigating = useRouterState({ select: (s) => s.isLoading });
 	const activeQuery =
 		selectedSurveyId === null ? allResponsesResult : surveyResponsesResult;
 	const { data, isLoading, isError, isFetching } = activeQuery;
@@ -478,7 +477,7 @@ const Responses = () => {
 			<div
 				className={cn(
 					'border-border bg-card rounded-xl border transition-opacity',
-					(isFetching || isNavigating) && 'pointer-events-none opacity-60',
+					isFetching && !isLoading && 'pointer-events-none opacity-50',
 				)}
 			>
 			<div className="overflow-x-auto">
@@ -489,7 +488,7 @@ const Responses = () => {
 									<Checkbox
 										checked={someChecked ? 'indeterminate' : allChecked}
 										onCheckedChange={toggleAll}
-										disabled={filtered.length === 0}
+										disabled={isLoading || filtered.length === 0}
 									/>
 								</th>
 								<th className="w-16 px-4 py-4 text-left">
