@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
-const genId = (): string => typeof crypto?.randomUUID === 'function' ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36);
+const genId = (): string => Math.random().toString(36).slice(2) + Date.now().toString(36);
 
 const TypingBubbleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 	<svg
@@ -267,12 +267,12 @@ const WidgetBody = ({
 								<polyline points="20 6 9 17 4 12" />
 							</svg>
 						</div>
-						<p className="allfb-thankyou__title">
+						<p className="allfb-thankyou__title !my-0">
 							{settings.thankYouEnabled && settings.thankYouTitle
 								? settings.thankYouTitle
 								: __('Thank you!', 'allfeedback')}
 						</p>
-						<p className="allfb-thankyou__desc">
+						<p className="allfb-thankyou__desc !my-0">
 							{settings.thankYouEnabled && settings.thankYouDescription
 								? settings.thankYouDescription
 								: __('Your response has been recorded.', 'allfeedback')}

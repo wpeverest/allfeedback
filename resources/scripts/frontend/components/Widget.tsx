@@ -86,7 +86,7 @@ export const Widget = ( { cfg, surveyConfig, stateManager }: WidgetProps ) => {
 
 	const initSession = useCallback( () => {
 		if ( sessionIdRef.current !== '' ) return;
-		const sid = crypto.randomUUID();
+		const sid = Math.random().toString( 36 ).slice( 2 ) + Date.now().toString( 36 );
 		sessionIdRef.current = sid;
 		void trackEvent( cfg.restUrl, cfg.nonce, surveyConfig.id, 'viewed', sid, getGuestId() );
 	}, [ cfg, surveyConfig.id ] );

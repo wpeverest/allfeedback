@@ -40,7 +40,7 @@ function checkFrequency( surveyConfig: SurveyConfig, stateManager: StateManager 
 
 function initWidget( cfg: AllfbConfig, surveyConfig: SurveyConfig, stateManager: StateManager ): void {
 	const container = document.createElement( 'div' );
-	document.body.appendChild( container );
+	document.documentElement.appendChild( container );
 
 	createRoot( container ).render(
 		<StrictMode>

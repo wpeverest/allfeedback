@@ -7,7 +7,7 @@ function getOrCreateVisitorId(): string {
 	const KEY = 'allfb_visitor_id';
 	let id = localStorage.getItem( KEY );
 	if ( ! id ) {
-		id = crypto.randomUUID();
+		id = Math.random().toString( 36 ).slice( 2 ) + Date.now().toString( 36 );
 		try { localStorage.setItem( KEY, id ); } catch { /* storage blocked */ }
 	}
 	return id;
