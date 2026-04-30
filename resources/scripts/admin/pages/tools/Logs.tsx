@@ -164,7 +164,7 @@ const LogCodeViewer = ({
 	return (
 		<div className="flex flex-col">
 			{/* Scrollable code table */}
-			<div className="bg-muted/40 max-h-[520px] overflow-auto">
+			<div className="bg-muted/40 max-h-[520px] overflow-auto" style={{ scrollbarGutter: 'stable' }}>
 				<table className="w-full min-w-full border-collapse">
 					<tbody>
 						{visible.map((line) => (
