@@ -237,6 +237,7 @@ export const Widget = ( { cfg, surveyConfig, stateManager }: WidgetProps ) => {
 							submitNonce={ cfg.submitNonce }
 							sessionId={ sessionIdRef.current }
 							onSubmit={ handleSubmit }
+							onAutoClose={ close }
 						/>
 					) }
 				</div>

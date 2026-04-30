@@ -603,7 +603,7 @@
     background:      transparent;
     color:           var(--allfb-muted);
 
-    &:hover         { background: color-mix(in srgb, var(--allfb-border) 25%, transparent); }
+    &:hover:not(:disabled) { background: color-mix(in srgb, var(--allfb-border) 25%, transparent); }
     &:focus-visible { outline: 2px solid var(--allfb-color); outline-offset: 2px; }
     &:disabled      { opacity: 0.55; cursor: not-allowed; }
 

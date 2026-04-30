@@ -6,11 +6,12 @@ import { SurveyForm } from './SurveyForm';
 type PanelStatus = 'loading' | 'loaded' | 'submitted' | 'error';
 
 interface SurveyPanelProps {
-	cfg:         AllfbConfig;
-	surveyId:    number;
-	submitNonce: string;
-	sessionId?:  string;
-	onSubmit?:   () => void;
+	cfg:          AllfbConfig;
+	surveyId:     number;
+	submitNonce:  string;
+	sessionId?:   string;
+	onSubmit?:    () => void;
+	onAutoClose?: () => void;
 }
 
 const ThankYou = ( { title, description }: { title: string; description: string } ) => (
@@ -25,9 +26,10 @@ const ThankYou = ( { title, description }: { title: string; description: string 
 	</div>
 );
 
-export const SurveyPanel = ( { cfg, surveyId, submitNonce, sessionId, onSubmit }: SurveyPanelProps ) => {
-	const [ status, setStatus ] = useState<PanelStatus>( 'loading' );
-	const [ survey, setSurvey ] = useState<Survey | null>( null );
+export const SurveyPanel = ( { cfg, surveyId, submitNonce, sessionId, onSubmit, onAutoClose }: SurveyPanelProps ) => {
+	const [ status,       setStatus       ] = useState<PanelStatus>( 'loading' );
+	const [ survey,       setSurvey       ] = useState<Survey | null>( null );
+	const [ hasSubmitted, setHasSubmitted ] = useState( false );
 
 	useEffect( () => {
 		let cancelled = false;
@@ -54,7 +56,13 @@ export const SurveyPanel = ( { cfg, surveyId, submitNonce, sessionId, onSubmit }
 
 	const handleSuccess = () => {
 		onSubmit?.();
-		setStatus( 'submitted' );
+		const ss = normalizeSettings( survey?.settings );
+		if ( ! ss.thankYouEnabled ) {
+			setHasSubmitted( true );
+			onAutoClose?.();
+		} else {
+			setStatus( 'submitted' );
+		}
 	};
 
 	if ( status === 'loading' ) {
@@ -83,6 +91,7 @@ export const SurveyPanel = ( { cfg, surveyId, submitNonce, sessionId, onSubmit }
 				submitNonce={ submitNonce }
 				sessionId={ sessionId }
 				onSuccess={ handleSuccess }
+				alreadySubmitted={ hasSubmitted }
 			/>
 		);
 	}

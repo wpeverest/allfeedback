@@ -14,14 +14,15 @@ function getOrCreateVisitorId(): string {
 }
 
 interface SurveyFormProps {
-	cfg:         AllfbConfig;
-	survey:      Survey;
-	submitNonce: string;
-	sessionId?:  string;
-	onSuccess:   () => void;
+	cfg:               AllfbConfig;
+	survey:            Survey;
+	submitNonce:       string;
+	sessionId?:        string;
+	onSuccess:         () => void;
+	alreadySubmitted?: boolean;
 }
 
-export const SurveyForm = ( { cfg, survey, submitNonce, sessionId, onSuccess }: SurveyFormProps ) => {
+export const SurveyForm = ( { cfg, survey, submitNonce, sessionId, onSuccess, alreadySubmitted = false }: SurveyFormProps ) => {
 	const sections    = activeSections( parseSections( survey.form_schema ) );
 	const ss          = normalizeSettings( survey.settings );
 	const totalSteps  = sections.length;
@@ -176,10 +177,10 @@ export const SurveyForm = ( { cfg, survey, submitNonce, sessionId, onSuccess }: 
 					<button
 						type="button"
 						className="allfb-btn allfb-btn--primary"
-						disabled={ isSubmitting }
+						disabled={ isSubmitting || alreadySubmitted }
 						onClick={ handleSubmit }
 					>
-						{ isSubmitting ? 'Submitting…' : ss.submitLabel }
+						{ alreadySubmitted ? 'Already submitted' : isSubmitting ? 'Submitting…' : ss.submitLabel }
 					</button>
 				) : (
 					<button type="button" className="allfb-btn allfb-btn--primary" onClick={ handleNext }>
