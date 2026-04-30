@@ -180,15 +180,24 @@ export const ColorPicker = ( { value, onChange, className }: ColorPickerProps ) 
 					<button
 						type="button"
 						aria-label={ __( 'Open color picker', 'allfeedback' ) }
-						className="group relative shrink-0 overflow-hidden focus-visible:outline-none"
-						style={{ width: 30, height: 30, backgroundColor: value }}
+						className="relative shrink-0 overflow-hidden focus-visible:outline-none"
+						style={{
+							width:           36,
+							height:          30,
+							backgroundColor: value,
+							borderRight:     '1px solid rgba(0,0,0,0.10)',
+							boxShadow:       'inset 0 0 0 1px rgba(255,255,255,0.15)',
+						}}
 					>
-						{/* Darkening overlay on hover */}
-						<span className="absolute inset-0 bg-black/0 transition-all duration-150 group-hover:bg-black/22" />
-						{/* Palette icon — centred, scales up on hover */}
+						{/* Palette icon */}
 						<Palette
-							className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white transition-all duration-150 drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] group-hover:scale-110"
-							style={{ width: 12, height: 12, opacity: open ? 1 : 0.65 }}
+							className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white"
+							style={{
+								width:      14,
+								height:     14,
+								opacity:    0.85,
+								filter:     'drop-shadow(0 1px 2px rgba(0,0,0,0.55))',
+							}}
 						/>
 					</button>
 				</PopoverTrigger>
@@ -200,7 +209,12 @@ export const ColorPicker = ( { value, onChange, className }: ColorPickerProps ) 
 			{/* Format value input */}
 			<input
 				value={ draft }
-				onChange={ ( e ) => setDraft( e.target.value ) }
+				onChange={ ( e ) => {
+					const v = e.target.value;
+					setDraft( v );
+					const parsed = parseValue( v, format );
+					if ( parsed ) commit( parsed );
+				} }
 				onBlur={ handleBlur }
 				onKeyDown={ ( e ) => { if ( e.key === 'Enter' ) ( e.target as HTMLInputElement ).blur(); } }
 				spellCheck={ false }
@@ -212,8 +226,8 @@ export const ColorPicker = ( { value, onChange, className }: ColorPickerProps ) 
 			<button
 				type="button"
 				onClick={ cycleFormat }
-				className="shrink-0 bg-muted/40 font-semibold text-[10px] uppercase tracking-wider text-muted-foreground/60 transition-colors hover:bg-muted/70 hover:text-foreground/80 focus-visible:outline-none"
-				style={{ height: 30, padding: '0 9px' }}
+				className="shrink-0 bg-muted/40 font-bold uppercase tracking-widest transition-colors hover:bg-muted/70 focus-visible:outline-none"
+				style={{ height: 30, padding: '0 9px', fontSize: 'var(--text-xs)', color: 'var(--color-foreground)' }}
 			>
 				{ format }
 			</button>
@@ -293,42 +307,44 @@ const SaturationPicker = ( {
 	const markerY = ( 1 - vv ) * 100;
 
 	return (
-		<div className="w-56 select-none overflow-hidden rounded-xl">
+		<div className="select-none overflow-hidden rounded-xl" style={{ width: 220 }}>
 
 			{/* ── Gradient canvas ──────────────────────────────────────────── */}
-			<div
-				ref={ areaRef }
-				onMouseDown={ ( e ) => { draggingRef.current = true; handleCanvasMove( e ); } }
-				className="relative cursor-crosshair"
-				style={{
-					height:     172,
-					background: `linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, hsl(${ Math.round( h ) }, 100%, 50%))`,
-					boxShadow:  'inset 0 -1px 0 rgba(0,0,0,0.12)',
-				}}
-			>
-				{/* Subtle top highlight for depth */}
+			<div className="p-3 pb-0 bg-white">
 				<div
-					className="pointer-events-none absolute inset-x-0 top-0"
-					style={{ height: 48, background: 'linear-gradient(to bottom, rgba(255,255,255,0.07) 0%, transparent 100%)' }}
-				/>
-
-				{/* Marker — filled with the live colour so you can see exactly what's selected */}
-				<div
-					className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-full"
+					ref={ areaRef }
+					onMouseDown={ ( e ) => { draggingRef.current = true; handleCanvasMove( e ); } }
+					className="relative cursor-crosshair rounded-lg overflow-hidden"
 					style={{
-						left:            `${ markerX }%`,
-						top:             `${ markerY }%`,
-						width:           14,
-						height:          14,
-						backgroundColor: hex,
-						border:          '2.5px solid white',
-						boxShadow:       '0 0 0 1px rgba(0,0,0,0.22), 0 1px 5px rgba(0,0,0,0.18)',
+						height:     200,
+						background: `linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, hsl(${ Math.round( h ) }, 100%, 50%))`,
+						boxShadow:  'inset 0 0 0 1px rgba(0,0,0,0.10)',
 					}}
-				/>
+				>
+					{/* Subtle top highlight for depth */}
+					<div
+						className="pointer-events-none absolute inset-x-0 top-0"
+						style={{ height: 48, background: 'linear-gradient(to bottom, rgba(255,255,255,0.07) 0%, transparent 100%)' }}
+					/>
+
+					{/* Marker */}
+					<div
+						className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-full"
+						style={{
+							left:            `${ markerX }%`,
+							top:             `${ markerY }%`,
+							width:           14,
+							height:          14,
+							backgroundColor: hex,
+							border:          '2.5px solid white',
+							boxShadow:       '0 0 0 1px rgba(0,0,0,0.22), 0 1px 5px rgba(0,0,0,0.18)',
+						}}
+					/>
+				</div>
 			</div>
 
 			{/* ── Hue slider ───────────────────────────────────────────────── */}
-			<div className="bg-white px-3 pt-3 pb-2.5">
+			<div className="bg-white px-4 pt-3.5 pb-3">
 				<HueSlider
 					value={ h }
 					onChange={ ( nh ) => { setH( nh ); emit( nh, s, l ); } }
@@ -336,14 +352,14 @@ const SaturationPicker = ( {
 			</div>
 
 			{/* ── Value row ────────────────────────────────────────────────── */}
-			<div className="flex items-center gap-2 border-t border-border/[0.12] bg-white px-3 pb-3 pt-2.5">
+			<div className="flex items-center gap-2.5 border-t border-border/[0.12] bg-white px-4 pb-4 pt-3">
 
 				{/* Live swatch */}
 				<div
 					className="shrink-0 rounded-md"
 					style={{
-						width:           28,
-						height:          28,
+						width:           32,
+						height:          32,
 						backgroundColor: hex,
 						boxShadow:       'inset 0 0 0 1px rgba(0,0,0,0.12)',
 					}}
@@ -351,7 +367,7 @@ const SaturationPicker = ( {
 
 				{/* Editable hex input with '#' prefix */}
 				<div className="relative min-w-0 flex-1">
-					<span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 select-none font-mono text-[11px] text-foreground/30">
+					<span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 select-none font-mono text-[11px] text-foreground/30">
 						#
 					</span>
 					<input
@@ -368,7 +384,7 @@ const SaturationPicker = ( {
 						maxLength={ 6 }
 						spellCheck={ false }
 						className="w-full rounded-md border border-border/40 bg-muted/30 font-mono text-[11px] uppercase text-foreground/70 outline-none transition-colors focus:border-primary/50 focus:bg-white"
-						style={{ height: 28, paddingLeft: 18, paddingRight: 7, boxSizing: 'border-box' }}
+						style={{ height: 32, paddingLeft: 20, paddingRight: 8, boxSizing: 'border-box' }}
 					/>
 				</div>
 
@@ -377,7 +393,7 @@ const SaturationPicker = ( {
 					type="button"
 					onClick={ onDone }
 					className="shrink-0 rounded-md border border-primary/25 font-medium text-[11px] text-primary transition-colors hover:border-primary hover:bg-primary hover:text-white focus-visible:outline-none"
-					style={{ height: 28, padding: '0 10px' }}
+					style={{ height: 32, padding: '0 14px' }}
 				>
 					{ __( 'Done', 'allfeedback' ) }
 				</button>
