@@ -62,11 +62,20 @@ class Survey extends Entity {
 	private ?DateTimeImmutable $updatedAt = null;
 
 	/**
+	 * Targeting rules controlling where/when the survey is displayed.
+	 *
+	 * @var array<mixed>
+	 * @since 1.0.0
+	 */
+	private array $targeting;
+
+	/**
 	 * @param  string            $title         Human-readable survey title.
 	 * @param  string            $description   Optional survey description.
 	 * @param  array<mixed>      $formSchema    Structured form field definitions.
 	 * @param  array<mixed>      $settings      Survey display and behaviour settings.
 	 * @param  array<mixed>      $styling       Visual customisation overrides.
+	 * @param  array<mixed>      $targeting     Targeting rules.
 	 * @param  int               $createdBy     WordPress user ID of the author.
 	 * @param  SurveyStatus|null $status        Initial status; defaults to Draft.
 	 * @param  int               $responseCount Seed value for the response counter.
@@ -78,10 +87,12 @@ class Survey extends Entity {
 		private array $formSchema = [],
 		private array $settings = [],
 		private array $styling = [],
+		array $targeting = [],
 		private int $createdBy = 0,
 		?SurveyStatus $status = null,
 		int $responseCount = 0,
 	) {
+		$this->targeting     = $targeting;
 		$this->status        = $status ?? SurveyStatus::Draft;
 		$this->responseCount = $responseCount;
 		$this->createdAt     = new DateTimeImmutable();
@@ -118,8 +129,9 @@ class Survey extends Entity {
 		?DateTimeImmutable $updatedAt = null,
 		array $styling = [],
 		?string $conflictReason = null,
+		array $targeting = [],
 	): self {
-		$survey                 = new self( $title, $description, $formSchema, $settings, $styling, $createdBy, $status, $responseCount );
+		$survey                 = new self( $title, $description, $formSchema, $settings, $styling, $targeting, $createdBy, $status, $responseCount );
 		$survey->id             = $id;
 		$survey->createdAt      = $createdAt;
 		$survey->updatedAt      = $updatedAt;
@@ -238,6 +250,28 @@ class Survey extends Entity {
 	}
 
 	/**
+	 * Return the targeting rules array.
+	 *
+	 * @return array<mixed>
+	 * @since  1.0.0
+	 */
+	public function getTargeting(): array {
+		return $this->targeting;
+	}
+
+	/**
+	 * Replace the targeting rules and record a modification timestamp.
+	 *
+	 * @param  array<mixed> $targeting New targeting rules.
+	 * @return void
+	 * @since  1.0.0
+	 */
+	public function setTargeting( array $targeting ): void {
+		$this->targeting = $targeting;
+		$this->touch();
+	}
+
+	/**
 	 * Return the current lifecycle status.
 	 *
 	 * @return SurveyStatus
@@ -245,6 +279,18 @@ class Survey extends Entity {
 	 */
 	public function getStatus(): SurveyStatus {
 		return $this->status;
+	}
+
+	/**
+	 * Transition the survey to the given status by string value.
+	 *
+	 * @param  string $status Status string matching a SurveyStatus case value.
+	 * @return void
+	 * @since  1.0.0
+	 */
+	public function setStatus( string $status ): void {
+		$this->status = SurveyStatus::from( $status );
+		$this->touch();
 	}
 
 	/**
@@ -377,6 +423,7 @@ class Survey extends Entity {
 			'form_schema'    => $this->formSchema,
 			'settings'       => $this->settings,
 			'styling'        => $this->styling,
+			'targeting'      => $this->targeting,
 			'status'         => $this->status->value,
 			'response_count' => $this->responseCount,
 			'created_by'     => $this->createdBy,

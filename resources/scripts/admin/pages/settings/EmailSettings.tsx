@@ -588,11 +588,6 @@ const EmailSettings = () => {
 				<PreviewModal
 					tabs={[
 						{
-							key:   'response',
-							label: __( 'Response alert', 'allfeedback' ),
-							html:  buildResponseAlertHtml( values.from_name, values.to_email ),
-						},
-						{
 							key:   'digest',
 							label: __( 'Weekly digest', 'allfeedback' ),
 							html:  buildWeeklyDigestHtml( values.from_name ),

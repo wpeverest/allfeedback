@@ -9,6 +9,7 @@ defined( 'ABSPATH' ) || exit;
 use AllFeedback\Core\Exceptions\ValidationException;
 use AllFeedback\Domain\Survey\Survey;
 use AllFeedback\Domain\Survey\SurveyRepository;
+use AllFeedback\Domain\Survey\SurveyStatus;
 
 /**
  * Use-case service: create a new survey aggregate and persist it.
@@ -48,8 +49,8 @@ class CreateSurveyService {
 			formSchema: $dto->formSchema,
 			settings: $dto->settings,
 			targeting: $dto->targeting,
-			status: $dto->status,
-			userId: $userId,
+			createdBy: $userId,
+			status: SurveyStatus::tryFrom( $dto->status ) ?? SurveyStatus::Draft,
 		);
 
 		$survey = $this->repository->save( $survey );

@@ -8,7 +8,6 @@ defined( 'ABSPATH' ) || exit;
 
 use AllFeedback\Core\Contracts\ServiceProviderInterface;
 use AllFeedback\Core\Jobs\Contracts\JobDispatcher;
-use AllFeedback\Domain\Response\Response;
 use AllFeedback\Domain\Survey\Survey;
 use AllFeedback\Traits\Hooks;
 
@@ -61,27 +60,8 @@ class NotificationServiceProvider implements ServiceProviderInterface {
 	 * @since  1.0.0
 	 */
 	public function boot(): void {
-		$this->addAction( 'allfeedback:response:submitted', [ $this, 'onResponseSubmitted' ] );
-		$this->addAction( 'allfeedback:survey:activated',   [ $this, 'onSurveyActivated' ] );
-		$this->addAction( 'init',                           [ $this, 'scheduleWeeklyDigest' ] );
-	}
-
-	/**
-	 * Queue the admin alert job when a response is submitted.
-	 *
-	 * @param  Response $response Newly submitted response aggregate.
-	 * @return void
-	 * @since  1.0.0
-	 */
-	public function onResponseSubmitted( Response $response ): void {
-		$this->dispatcher->dispatch(
-			SendNotificationJob::class,
-			new SendNotificationJobPayload(
-				notificationType: 'new_response_alert',
-				surveyId:         $response->getSurveyId(),
-				responseId:       (int) $response->getId(),
-			)
-		);
+		$this->addAction( 'allfeedback:survey:activated', [ $this, 'onSurveyActivated' ] );
+		$this->addAction( 'init',                         [ $this, 'scheduleWeeklyDigest' ] );
 	}
 
 	/**
