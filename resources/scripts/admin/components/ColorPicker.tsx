@@ -5,6 +5,7 @@ import {
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { __ } from '@wordpress/i18n';
+import { Pipette } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 // ── Color utilities ──────────────────────────────────────────────────────────
@@ -78,11 +79,32 @@ function parseValue( input: string, fmt: ColorFormat ): string | null {
 	return rgbToHex( r, g, b );
 }
 
+// ── Slider Tailwind classes ──────────────────────────────────────────────────
+
+const RANGE_CLS = [
+	'w-full cursor-pointer appearance-none rounded-full',
+	// webkit track
+	'[&::-webkit-slider-runnable-track]:h-2.5 [&::-webkit-slider-runnable-track]:rounded-full',
+	// webkit thumb — margin-top centres the 16px thumb on the 10px track: (10-16)/2 = -3px
+	'[&::-webkit-slider-thumb]:appearance-none',
+	'[&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4',
+	'[&::-webkit-slider-thumb]:mt-[-3px]',
+	'[&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white',
+	'[&::-webkit-slider-thumb]:shadow-[0_0_0_1.5px_rgba(0,0,0,0.18),0_1px_4px_rgba(0,0,0,0.22)]',
+	'[&::-webkit-slider-thumb]:cursor-pointer',
+	// moz track + thumb
+	'[&::-moz-range-track]:h-2.5 [&::-moz-range-track]:rounded-full',
+	'[&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4',
+	'[&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-none',
+	'[&::-moz-range-thumb]:bg-white',
+	'[&::-moz-range-thumb]:shadow-[0_0_0_1.5px_rgba(0,0,0,0.18),0_1px_4px_rgba(0,0,0,0.22)]',
+].join( ' ' );
+
 // ────────────────────────────────────────────────────────────────────────────
 
 interface ColorPickerProps {
-	value:     string;
-	onChange:  ( v: string ) => void;
+	value:      string;
+	onChange:   ( v: string ) => void;
 	className?: string;
 }
 
@@ -111,20 +133,23 @@ export const ColorPicker = ( { value, onChange, className }: ColorPickerProps ) 
 	return (
 		<div
 			className={ cn(
-				'inline-flex items-stretch overflow-hidden rounded-md border border-border/50 bg-background shadow-sm transition-colors focus-within:border-primary/40 focus-within:ring-1 focus-within:ring-primary/10',
+				'inline-flex items-stretch overflow-hidden rounded-lg border border-border/50 bg-background shadow-sm transition-colors focus-within:border-primary/40 focus-within:ring-1 focus-within:ring-primary/10',
 				className,
 			) }
 			style={{ height: 30 }}
 		>
-			{/* Swatch → opens popover picker */}
+			{/* Swatch → opens popover */}
 			<Popover open={ open } onOpenChange={ setOpen }>
 				<PopoverTrigger asChild>
 					<button
 						type="button"
 						aria-label={ __( 'Open color picker', 'allfeedback' ) }
-						className="shrink-0 transition-opacity hover:opacity-80 focus-visible:outline-none"
+						className="group relative shrink-0 overflow-hidden focus-visible:outline-none"
 						style={{ width: 30, height: 30, backgroundColor: value }}
-					/>
+					>
+						<span className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/20" />
+						<Pipette className="absolute right-0.5 bottom-0.5 size-2.5 text-white opacity-70 transition-opacity drop-shadow-[0_0_2px_rgba(0,0,0,0.5)] group-hover:opacity-100" />
+					</button>
 				</PopoverTrigger>
 				<PopoverContent className="w-auto p-0" align="start" sideOffset={ 6 }>
 					<SaturationPicker
@@ -159,7 +184,7 @@ export const ColorPicker = ( { value, onChange, className }: ColorPickerProps ) 
 	);
 };
 
-// ── Saturation / lightness canvas + hue slider ───────────────────────────────
+// ── Saturation / lightness 2-D canvas + hue slider ───────────────────────────
 
 const SaturationPicker = ( {
 	hex,
@@ -177,6 +202,9 @@ const SaturationPicker = ( {
 	const [ s, setS ] = useState( hsl0.s );
 	const [ l, setL ] = useState( hsl0.l );
 
+	// Store without '#' so we can show a '#' prefix label in the input
+	const [ hexDraft, setHexDraft ] = useState( hex.replace( '#', '' ).toUpperCase() );
+
 	const areaRef     = useRef<HTMLDivElement>( null );
 	const draggingRef = useRef( false );
 
@@ -187,6 +215,7 @@ const SaturationPicker = ( {
 		setH( next.h );
 		setS( next.s );
 		setL( next.l );
+		setHexDraft( hex.replace( '#', '' ).toUpperCase() );
 	}, [ hex ] );
 
 	const emit = ( nh: number, ns: number, nl: number ) => {
@@ -221,80 +250,112 @@ const SaturationPicker = ( {
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [ h ] );
 
-	// Marker position: convert HSL → HSV for 2D canvas coordinate
+	// Convert HSL → HSV to get correct 2-D marker position
 	const vv      = l / 100 + ( s / 100 ) * Math.min( l / 100, 1 - l / 100 );
 	const sv      = vv === 0 ? 0 : 2 * ( 1 - ( l / 100 ) / vv );
 	const markerX = clamp( sv, 0, 1 ) * 100;
 	const markerY = ( 1 - vv ) * 100;
 
 	return (
-		<div className="w-60 overflow-hidden rounded-xl ring-1 ring-inset ring-white/10">
-			{/* 2-D saturation / lightness canvas */}
+		<div className="w-56 select-none overflow-hidden rounded-xl">
+
+			{/* ── 2-D gradient canvas ─────────────────────────────────────── */}
 			<div
 				ref={ areaRef }
 				onMouseDown={ ( e ) => { draggingRef.current = true; handleAreaMove( e ); } }
-				className="relative cursor-crosshair select-none"
+				className="relative cursor-crosshair"
 				style={{
-					height: 180,
-					background: `linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, hsl(${ Math.round( h ) }, 100%, 50%))`,
+					height: 168,
+					background: [
+						'linear-gradient(to top, #000 0%, transparent 100%)',
+						`linear-gradient(to right, #fff 0%, hsl(${ Math.round( h ) }, 100%, 50%) 100%)`,
+					].join( ', ' ),
+					boxShadow: 'inset 0 -1px 0 rgba(0,0,0,0.10)',
 				}}
 			>
-				{/* Marker ring */}
 				<div
-					className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-md"
+					className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-full"
 					style={{
-						left:   `${ markerX }%`,
-						top:    `${ markerY }%`,
-						width:  14,
-						height: 14,
-						boxShadow: '0 0 0 1.5px rgba(0,0,0,0.25), 0 2px 4px rgba(0,0,0,0.35)',
+						left:      `${ markerX }%`,
+						top:       `${ markerY }%`,
+						width:     14,
+						height:    14,
+						border:    '2.5px solid white',
+						boxShadow: '0 0 0 1px rgba(0,0,0,0.25), 0 1px 4px rgba(0,0,0,0.18)',
 					}}
 				/>
 			</div>
 
-			{/* Controls */}
-			<div className="space-y-3 border-t border-border/30 bg-white px-3 py-3">
-				{/* Hue slider row */}
-				<div className="flex items-center gap-2.5">
-					{/* Color preview swatch */}
-					<div
-						className="shrink-0 rounded-md"
-						style={{ width: 28, height: 28, backgroundColor: hex, boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.10)' }}
-					/>
-					{/* Hue rainbow slider */}
+			{/* ── Hue slider ──────────────────────────────────────────────── */}
+			<div className="bg-white px-3 py-3">
+				<input
+					type="range"
+					min={ 0 }
+					max={ 360 }
+					value={ Math.round( h ) }
+					onChange={ ( e ) => {
+						const nh = Number( e.target.value );
+						setH( nh );
+						emit( nh, s, l );
+					} }
+					className={ RANGE_CLS }
+					style={{
+						display:    'block',
+						width:      '100%',
+						height:     10,
+						background: 'linear-gradient(to right,#f00 0%,#ff0 17%,#0f0 33%,#0ff 50%,#00f 67%,#f0f 83%,#f00 100%)',
+						boxSizing:  'border-box',
+					}}
+				/>
+			</div>
+
+			{/* ── Value row ───────────────────────────────────────────────── */}
+			<div
+				className="flex items-center gap-2 px-3 pb-3 pt-0"
+			>
+				{/* Live colour swatch */}
+				<div
+					className="shrink-0 rounded-md"
+					style={{
+						width:           28,
+						height:          28,
+						backgroundColor: hex,
+						boxShadow:       'inset 0 0 0 1px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08)',
+					}}
+				/>
+
+				{/* Editable hex input with '#' prefix */}
+				<div className="relative min-w-0 flex-1">
+					<span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 select-none font-mono text-[11px] text-foreground/30">
+						#
+					</span>
 					<input
-						type="range"
-						min={ 0 }
-						max={ 360 }
-						value={ Math.round( h ) }
+						type="text"
+						value={ hexDraft }
 						onChange={ ( e ) => {
-							const nh = Number( e.target.value );
-							setH( nh );
-							emit( nh, s, l );
+							const val = e.target.value.replace( '#', '' ).toUpperCase();
+							setHexDraft( val );
+							const parsed = parseValue( '#' + val, 'HEX' );
+							if ( parsed ) onChange( parsed );
 						} }
-						className="h-3 flex-1 cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-md"
-						style={{
-							background: 'linear-gradient(to right, #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%)',
-						}}
+						onBlur={ () => setHexDraft( hex.replace( '#', '' ).toUpperCase() ) }
+						onKeyDown={ ( e ) => { if ( e.key === 'Enter' ) ( e.target as HTMLInputElement ).blur(); } }
+						maxLength={ 6 }
+						spellCheck={ false }
+						className="w-full rounded-md border border-border/40 bg-muted/30 font-mono text-[11px] uppercase text-foreground/70 outline-none transition-colors focus:border-primary/50 focus:bg-white"
+						style={{ height: 28, paddingLeft: 18, paddingRight: 7, boxSizing: 'border-box' }}
 					/>
 				</div>
 
-				{/* Hex value + Done */}
-				<div className="flex items-center gap-2">
-					<div className="flex flex-1 items-center gap-1.5 rounded-md border border-border/40 bg-muted/50 px-2.5 py-1">
-						<span className="text-[10px] font-medium text-foreground/30 uppercase tracking-wide">Hex</span>
-						<span className="font-mono text-[12px] text-foreground/70 select-all">
-							{ hex.toUpperCase() }
-						</span>
-					</div>
-					<button
-						type="button"
-						onClick={ onDone }
-						className="shrink-0 rounded-md bg-primary px-3 py-1 text-[12px] font-medium text-white transition-colors hover:bg-primary/90 focus-visible:outline-none"
-					>
-						{ __( 'Done', 'allfeedback' ) }
-					</button>
-				</div>
+				{/* Done */}
+				<button
+					type="button"
+					onClick={ onDone }
+					className="shrink-0 rounded-md border border-primary/25 font-medium text-[11px] text-primary transition-colors hover:bg-primary hover:text-white hover:border-primary focus-visible:outline-none"
+					style={{ height: 28, padding: '0 10px' }}
+				>
+					{ __( 'Done', 'allfeedback' ) }
+				</button>
 			</div>
 		</div>
 	);
