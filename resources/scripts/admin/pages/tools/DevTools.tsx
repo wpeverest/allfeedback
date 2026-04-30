@@ -1,6 +1,8 @@
 import { Button } from '@/components/ui/button';
 import apiFetch from '@wordpress/api-fetch';
 import { __, sprintf } from '@wordpress/i18n';
+import { useQueryClient } from '@tanstack/react-query';
+import { Link, useNavigate } from '@tanstack/react-router';
 import {
 	AlertTriangle,
 	CheckCircle2,
@@ -12,11 +14,12 @@ import {
 	Wand2,
 } from 'lucide-react';
 import { useState } from 'react';
-import { Link } from '@tanstack/react-router';
 
 type Status = 'idle' | 'seeding' | 'clearing' | 'done' | 'error';
 
 const DevTools = () => {
+	const queryClient = useQueryClient();
+	const navigate = useNavigate();
 	const [surveys, setSurveys] = useState(5);
 	const [perSurvey, setPerSurvey] = useState(500);
 	const [status, setStatus] = useState<Status>('idle');
@@ -48,6 +51,7 @@ const DevTools = () => {
 				method: 'POST',
 				data: { surveys, responses_per_survey: perSurvey },
 			});
+			await queryClient.invalidateQueries();
 			setStatus('done');
 			setMessage(
 				sprintf(
@@ -57,6 +61,7 @@ const DevTools = () => {
 					res.data.sessions,
 				),
 			);
+			void navigate({ to: '/analytics', search: { formId: undefined } });
 		} catch (e: unknown) {
 			setStatus('error');
 			setMessage(
@@ -265,7 +270,7 @@ const DevTools = () => {
 						);
 					})}
 				</div>
-				<Link to="/wizard/" className="block text-sm text-primary/70 hover:text-primary transition-colors">
+				<Link to="/wizard" className="block text-sm text-primary/70 hover:text-primary transition-colors">
 					{__('→ Open Setup Wizard', 'allfeedback')}
 				</Link>
 			</div>
