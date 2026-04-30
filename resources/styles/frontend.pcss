@@ -585,39 +585,41 @@
 }
 
 /* ── Buttons ──────────────────────────────────────────────────────────────── */
-.allfb-btn {
-  display:         inline-flex;
-  align-items:     center;
-  justify-content: center;
-  flex:            1;
-  min-width:       0;
-  padding:         9px 18px;
-  font-size:       13px;
-  font-weight:     600;
-  font-family:     var(--allfb-font);
-  border:          1px solid var(--allfb-border);
-  border-radius:   8px;
-  cursor:          pointer;
-  transition:      background 0.15s, border-color 0.15s, color 0.15s;
-  background:      transparent;
-  color:           var(--allfb-muted);
+.allfb-widget, .allfb-embed, .allfb-preview-panel {
+  .allfb-btn {
+    display:         inline-flex;
+    align-items:     center;
+    justify-content: center;
+    flex:            1;
+    min-width:       0;
+    padding:         9px 18px;
+    font-size:       13px;
+    font-weight:     600;
+    font-family:     var(--allfb-font);
+    border:          1px solid var(--allfb-border);
+    border-radius:   8px;
+    cursor:          pointer;
+    transition:      background 0.15s, border-color 0.15s, color 0.15s;
+    background:      transparent;
+    color:           var(--allfb-muted);
 
-  &:hover         { background: color-mix(in srgb, var(--allfb-border) 25%, transparent); }
-  &:focus-visible { outline: 2px solid var(--allfb-color); outline-offset: 2px; }
-  &:disabled      { opacity: 0.55; cursor: not-allowed; }
+    &:hover         { background: color-mix(in srgb, var(--allfb-border) 25%, transparent); }
+    &:focus-visible { outline: 2px solid var(--allfb-color); outline-offset: 2px; }
+    &:disabled      { opacity: 0.55; cursor: not-allowed; }
 
-  &--primary {
-    background:   var(--allfb-color);
-    border-color: var(--allfb-color);
-    color:        #fff;
-    &:hover:not(:disabled) { background: var(--allfb-color-dark); border-color: var(--allfb-color-dark); }
-  }
+    &--primary {
+      background:   var(--allfb-color);
+      border-color: var(--allfb-color);
+      color:        #fff;
+      &:hover:not(:disabled) { background: var(--allfb-color-dark); border-color: var(--allfb-color-dark); }
+    }
 
-  &--secondary {
-    background:   transparent;
-    border-color: var(--allfb-border);
-    color:        var(--allfb-muted);
-    &:hover { background: color-mix(in srgb, var(--allfb-border) 30%, transparent); }
+    &--secondary {
+      background:   transparent;
+      border-color: var(--allfb-border);
+      color:        var(--allfb-muted);
+      &:hover { background: color-mix(in srgb, var(--allfb-border) 30%, transparent); }
+    }
   }
 }
 
