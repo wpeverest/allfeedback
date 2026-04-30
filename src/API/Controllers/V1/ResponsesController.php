@@ -74,14 +74,7 @@ class ResponsesController extends RestController {
 					'permission_callback' => [ $this, 'adminPermission' ],
 					'args'                => array_merge(
 						$this->paginationArgs( defaultPerPage: 20, maxPerPage: 100 ),
-						[
-							'date_from' => $this->argString(
-								description: __( 'Filter responses on or after this date (Y-m-d).', 'allfeedback' ),
-							),
-							'date_to'   => $this->argString(
-								description: __( 'Filter responses on or before this date (Y-m-d).', 'allfeedback' ),
-							),
-						]
+						$this->responseFilterArgs()
 					),
 				],
 			]
@@ -152,14 +145,7 @@ class ResponsesController extends RestController {
 					'args'                => array_merge(
 						$this->idArg(),
 						$this->paginationArgs( defaultPerPage: 20, maxPerPage: 100 ),
-						[
-							'date_from' => $this->argString(
-								description: __( 'Filter responses on or after this date (Y-m-d).', 'allfeedback' ),
-							),
-							'date_to'   => $this->argString(
-								description: __( 'Filter responses on or before this date (Y-m-d).', 'allfeedback' ),
-							),
-						]
+						$this->responseFilterArgs()
 					),
 				],
 				'schema' => [ $this, 'getPublicItemSchema' ],
@@ -252,12 +238,20 @@ class ResponsesController extends RestController {
 		$perPage  = min( 100, max( 1, (int) ( $request->get_param( 'per_page' ) ?? 20 ) ) );
 		$dateFrom = sanitize_text_field( (string) ( $request->get_param( 'date_from' ) ?? '' ) );
 		$dateTo   = sanitize_text_field( (string) ( $request->get_param( 'date_to' ) ?? '' ) );
+		$search   = sanitize_text_field( (string) ( $request->get_param( 'search' ) ?? '' ) );
+		$sortBy   = sanitize_key( (string) ( $request->get_param( 'sort_by' ) ?? 'created_at' ) );
+		$order    = strtoupper( sanitize_key( (string) ( $request->get_param( 'order' ) ?? 'DESC' ) ) ) === 'ASC' ? 'ASC' : 'DESC';
+		$isRead   = $request->get_param( 'is_read' );
 
 		$filter = new ResponseFilter(
 			dateFrom: $dateFrom !== '' ? $dateFrom : null,
 			dateTo:   $dateTo !== '' ? $dateTo : null,
 			page:     $page,
 			perPage:  $perPage,
+			search:   $search !== '' ? $search : null,
+			orderBy:  $sortBy,
+			order:    $order,
+			isRead:   $isRead !== null ? (bool) $isRead : null,
 		);
 
 		$responses = $this->responseRepository->findAll( $filter );
@@ -289,21 +283,8 @@ class ResponsesController extends RestController {
 			return $this->errorResponse( __( 'No response IDs provided.', 'allfeedback' ), 422 );
 		}
 
-		$deleted = 0;
-		$failed  = [];
-
-		foreach ( $ids as $id ) {
-			if ( $this->responseRepository->findById( $id ) === null ) {
-				$failed[] = $id;
-				continue;
-			}
-
-			if ( $this->responseRepository->delete( $id ) ) {
-				++$deleted;
-			} else {
-				$failed[] = $id;
-			}
-		}
+		$failed  = $this->responseRepository->deleteMany( $ids );
+		$deleted = count( $ids ) - count( $failed );
 
 		$this->logger->info(
 			'Global bulk response deletion completed.',
@@ -396,12 +377,20 @@ class ResponsesController extends RestController {
 		$perPage  = min( 100, max( 1, (int) ( $request->get_param( 'per_page' ) ?? 20 ) ) );
 		$dateFrom = sanitize_text_field( (string) ( $request->get_param( 'date_from' ) ?? '' ) );
 		$dateTo   = sanitize_text_field( (string) ( $request->get_param( 'date_to' ) ?? '' ) );
+		$search   = sanitize_text_field( (string) ( $request->get_param( 'search' ) ?? '' ) );
+		$sortBy   = sanitize_key( (string) ( $request->get_param( 'sort_by' ) ?? 'created_at' ) );
+		$order    = strtoupper( sanitize_key( (string) ( $request->get_param( 'order' ) ?? 'DESC' ) ) ) === 'ASC' ? 'ASC' : 'DESC';
+		$isRead   = $request->get_param( 'is_read' );
 
 		$filter = new ResponseFilter(
 			dateFrom: $dateFrom !== '' ? $dateFrom : null,
 			dateTo:   $dateTo !== '' ? $dateTo : null,
 			page:     $page,
 			perPage:  $perPage,
+			search:   $search !== '' ? $search : null,
+			orderBy:  $sortBy,
+			order:    $order,
+			isRead:   $isRead !== null ? (bool) $isRead : null,
 		);
 
 		$responses = $this->responseRepository->findBySurveyId( $surveyId, $filter );
@@ -499,13 +488,16 @@ class ResponsesController extends RestController {
 			[ 'response_id' => $responseId, 'survey_id' => $surveyId, 'user_id' => get_current_user_id() ]
 		);
 
-		$updated = $this->responseRepository->findById( $responseId );
-
-		if ( $updated === null ) {
-			return $this->errorResponse( __( 'Response not found after update.', 'allfeedback' ), 500 );
+		// Build the return payload from the already-loaded $response + applied changes.
+		$prepared = $this->prepareResponse( $response );
+		if ( array_key_exists( 'response_data', $updatePayload ) ) {
+			$prepared['response_data'] = json_decode( $updatePayload['response_data'], true );
+		}
+		if ( array_key_exists( 'is_read', $updatePayload ) ) {
+			$prepared['is_read'] = (bool) $updatePayload['is_read'];
 		}
 
-		return $this->successResponse( $this->prepareResponse( $updated ) );
+		return $this->successResponse( $prepared );
 	}
 
 	/**
@@ -530,23 +522,8 @@ class ResponsesController extends RestController {
 			return $this->notFoundResponse( __( 'Survey', 'allfeedback' ) );
 		}
 
-		$deleted = 0;
-		$failed  = [];
-
-		foreach ( $ids as $id ) {
-			$response = $this->responseRepository->findById( $id );
-
-			if ( $response === null || $response->getSurveyId() !== $surveyId ) {
-				$failed[] = $id;
-				continue;
-			}
-
-			if ( $this->responseRepository->delete( $id ) ) {
-				++$deleted;
-			} else {
-				$failed[] = $id;
-			}
-		}
+		$failed  = $this->responseRepository->deleteManyBySurveyId( $ids, $surveyId );
+		$deleted = count( $ids ) - count( $failed );
 
 		$this->logger->info(
 			'Bulk response deletion completed.',
@@ -691,6 +668,43 @@ class ResponsesController extends RestController {
 			'ip_address'    => $response->getIpAddress(),
 			'is_read'       => $response->isRead(),
 			'created_at'    => $response->getCreatedAt()->format( 'Y-m-d H:i:s' ),
+		];
+	}
+
+	/**
+	 * Shared filter args for response list endpoints (search, date range, read status, sort).
+	 *
+	 * @return array<string, mixed>
+	 * @since  1.0.0
+	 */
+	private function responseFilterArgs(): array {
+		return [
+			'date_from' => $this->argString(
+				description: __( 'Filter responses on or after this date (Y-m-d).', 'allfeedback' ),
+			),
+			'date_to'   => $this->argString(
+				description: __( 'Filter responses on or before this date (Y-m-d).', 'allfeedback' ),
+			),
+			'search'    => $this->argString(
+				description: __( 'Search term to match against response data.', 'allfeedback' ),
+			),
+			'sort_by'   => [
+				'description' => __( 'Column to sort by.', 'allfeedback' ),
+				'type'        => 'string',
+				'enum'        => [ 'id', 'created_at', 'score' ],
+				'default'     => 'created_at',
+			],
+			'order'     => [
+				'description' => __( 'Sort direction.', 'allfeedback' ),
+				'type'        => 'string',
+				'enum'        => [ 'ASC', 'DESC' ],
+				'default'     => 'DESC',
+			],
+			'is_read'   => [
+				'description' => __( 'Filter by read status. Omit to return all.', 'allfeedback' ),
+				'type'        => 'boolean',
+				'required'    => false,
+			],
 		];
 	}
 

@@ -1,4 +1,4 @@
-import type { SurveyResponse } from '@/admin/api/surveys';
+import type { ResponseListResponse, SurveyResponse } from '@/admin/api/surveys';
 import { surveysApi } from '@/admin/api/surveys';
 import {
 	allResponsesQuery,
@@ -32,7 +32,7 @@ import {
 	useQuery,
 	useQueryClient,
 } from '@tanstack/react-query';
-import { useNavigate, useRouterState, useSearch } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { __, _n, sprintf } from '@wordpress/i18n';
 import { format } from 'date-fns';
 import {
@@ -114,7 +114,7 @@ const Responses = () => {
 
 	useEffect(() => {
 		setPage(1);
-	}, [debouncedSearch]);
+	}, [debouncedSearch, readFilter]);
 
 	const { data: surveysData } = useQuery({
 		...surveysQuery({ per_page: 100 }),
@@ -126,7 +126,16 @@ const Responses = () => {
 		allSurveys.map((s) => [s.id, s.title]),
 	);
 
-	const queryParams = { page, per_page: perPage };
+	const serverSortBy =
+		sortBy === 'id' || sortBy === 'created_at' ? sortBy : undefined;
+
+	const queryParams = {
+		page,
+		per_page: perPage,
+		...(debouncedSearch.trim() && { search: debouncedSearch.trim() }),
+		...(readFilter !== 'all' && { is_read: readFilter === 'read' }),
+		...(serverSortBy && { sort_by: serverSortBy, order }),
+	};
 
 	const allResponsesResult = useQuery({
 		...allResponsesQuery(queryParams),
@@ -140,7 +149,6 @@ const Responses = () => {
 		placeholderData: keepPreviousData,
 	});
 
-	const isNavigating = useRouterState({ select: (s) => s.isLoading });
 	const activeQuery =
 		selectedSurveyId === null ? allResponsesResult : surveyResponsesResult;
 	const { data, isLoading, isError, isFetching } = activeQuery;
@@ -150,7 +158,9 @@ const Responses = () => {
 	const showForm = selectedSurveyId === null;
 	const numCols = showForm ? 6 : 5;
 
-	const sorted = [...responses].sort((a, b) => {
+	// id/created_at sort and search/readFilter are handled server-side.
+	// response/form columns require client-side sort (JSON parse / title lookup).
+	const filtered = [...responses].sort((a, b) => {
 		if (sortBy === 'response') {
 			const va = getResponseSummary(a.response_data).toLowerCase();
 			const vb = getResponseSummary(b.response_data).toLowerCase();
@@ -161,25 +171,8 @@ const Responses = () => {
 			const vb = (surveyTitleMap[b.survey_id] ?? '').toLowerCase();
 			return order === 'DESC' ? vb.localeCompare(va) : va.localeCompare(vb);
 		}
-		const valA = sortBy === 'id' ? a.id : new Date(a.created_at).getTime();
-		const valB = sortBy === 'id' ? b.id : new Date(b.created_at).getTime();
-		return order === 'DESC' ? valB - valA : valA - valB;
+		return 0;
 	});
-
-	const byReadFilter =
-		readFilter === 'read'
-			? sorted.filter((r) => r.is_read)
-			: readFilter === 'unread'
-				? sorted.filter((r) => !r.is_read)
-				: sorted;
-
-	const filtered = debouncedSearch.trim()
-		? byReadFilter.filter((r) =>
-				getResponseSummary(r.response_data)
-					.toLowerCase()
-					.includes(debouncedSearch.toLowerCase()),
-			)
-		: byReadFilter;
 
 	const allChecked =
 		filtered.length > 0 && filtered.every((r) => checked.includes(r.id));
@@ -199,11 +192,29 @@ const Responses = () => {
 		});
 	};
 
+	const patchListReadStatus = (ids: number[] | number, isRead: boolean) => {
+		const idSet = new Set(Array.isArray(ids) ? ids : [ids]);
+		queryClient.setQueriesData<ResponseListResponse>(
+			{ predicate: (q) => q.queryKey[0] === 'responses' && q.queryKey[1] !== 'unread-count' },
+			(old) => {
+				if (!old?.responses) return old;
+				return { ...old, responses: old.responses.map((r) => idSet.has(r.id) ? { ...r, is_read: isRead } : r) };
+			},
+		);
+		void queryClient.invalidateQueries({ queryKey: ['responses', 'unread-count'] });
+	};
+
+	const invalidateActiveList = () => {
+		const key = selectedSurveyId === null ? ['responses', 'all'] : ['responses', selectedSurveyId];
+		void queryClient.invalidateQueries({ queryKey: key });
+		void queryClient.invalidateQueries({ queryKey: ['responses', 'unread-count'] });
+	};
+
 	const deleteMutation = useMutation({
 		mutationFn: ({ id, surveyId }: { id: number; surveyId: number }) =>
 			surveysApi.deleteResponse(surveyId, id),
 		onSuccess: (_, { id }) => {
-			void queryClient.invalidateQueries({ queryKey: ['responses'] });
+			invalidateActiveList();
 			setChecked((prev) => prev.filter((i) => i !== id));
 			setConfirmDelete(null);
 			toast.success(__('Response deleted.', 'allfeedback'));
@@ -218,8 +229,8 @@ const Responses = () => {
 
 	const bulkDeleteMutation = useMutation({
 		mutationFn: (ids: number[]) => surveysApi.bulkDeleteResponses(ids),
-		onSuccess: (result, ids) => {
-			void queryClient.invalidateQueries({ queryKey: ['responses'] });
+		onSuccess: (result) => {
+			invalidateActiveList();
 			setChecked([]);
 			setBulkConfirmOpen(false);
 			const count = result.deleted;
@@ -266,8 +277,9 @@ const Responses = () => {
 			surveyId: number;
 			isRead: boolean;
 		}) => surveysApi.updateResponse(surveyId, id, { is_read: isRead }),
-		onSuccess: (_, { isRead }) => {
-			void queryClient.invalidateQueries({ queryKey: ['responses'] });
+		onSuccess: (_, { id, isRead }) => {
+			patchListReadStatus(id, isRead);
+			invalidateActiveList();
 			toast.success(
 				isRead
 					? __('Marked as read.', 'allfeedback')
@@ -286,8 +298,10 @@ const Responses = () => {
 			isRead
 				? surveysApi.bulkMarkResponsesRead(ids)
 				: surveysApi.bulkMarkResponsesUnread(ids),
-		onSuccess: (result, { isRead }) => {
-			void queryClient.invalidateQueries({ queryKey: ['responses'] });
+		onSuccess: (result, { ids, isRead }) => {
+			const successIds = ids.filter((id) => !result.failed.includes(id));
+			patchListReadStatus(successIds, isRead);
+			invalidateActiveList();
 			setChecked([]);
 			toast.success(
 				isRead
@@ -463,7 +477,7 @@ const Responses = () => {
 			<div
 				className={cn(
 					'border-border bg-card rounded-xl border transition-opacity',
-					(isFetching || isNavigating) && 'pointer-events-none opacity-60',
+					isFetching && !isLoading && 'pointer-events-none opacity-50',
 				)}
 			>
 			<div className="overflow-x-auto">
@@ -474,7 +488,7 @@ const Responses = () => {
 									<Checkbox
 										checked={someChecked ? 'indeterminate' : allChecked}
 										onCheckedChange={toggleAll}
-										disabled={filtered.length === 0}
+										disabled={isLoading || filtered.length === 0}
 									/>
 								</th>
 								<th className="w-16 px-4 py-4 text-left">
@@ -521,41 +535,31 @@ const Responses = () => {
 								</tr>
 							)}
 
-							{!isLoading && !isError && responses.length === 0 && (
+							{!isLoading && !isError && filtered.length === 0 && (
 								<tr>
 									<td colSpan={numCols}>
-										<EmptyState
-											icon={MessageSquare}
-											title={__('No responses yet', 'allfeedback')}
-											description={__(
-												'Responses will appear here once visitors submit forms.',
-												'allfeedback',
-											)}
-										/>
-									</td>
-								</tr>
-							)}
-
-							{!isLoading &&
-								!isError &&
-								responses.length > 0 &&
-								filtered.length === 0 && (
-									<tr>
-										<td colSpan={numCols}>
+										{debouncedSearch.trim() || readFilter !== 'all' ? (
 											<EmptyState
 												icon={MessageSquare}
-												title={__(
-													'No responses match your search',
-													'allfeedback',
-												)}
+												title={__('No responses match your filter', 'allfeedback')}
 												description={__(
-													'Try a different keyword.',
+													'Try a different search or status filter.',
 													'allfeedback',
 												)}
 											/>
-										</td>
-									</tr>
-								)}
+										) : (
+											<EmptyState
+												icon={MessageSquare}
+												title={__('No responses yet', 'allfeedback')}
+												description={__(
+													'Responses will appear here once visitors submit forms.',
+													'allfeedback',
+												)}
+											/>
+										)}
+									</td>
+								</tr>
+							)}
 
 							{!isLoading &&
 								!isError &&
@@ -566,7 +570,7 @@ const Responses = () => {
 										<tr
 											key={response.id}
 											className={cn(
-												'border-border border-b transition-colors last:border-0',
+												'border-border border-b transition-colors last:border-b-0',
 												!response.is_read && !isSelected
 													? 'border-l-primary/50 border-l-[3px]'
 													: 'border-l-[3px] border-l-transparent',

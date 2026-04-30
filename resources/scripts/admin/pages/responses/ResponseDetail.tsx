@@ -1,4 +1,4 @@
-import type { SurveyFormSchemaField } from '@/admin/api/surveys';
+import type { ResponseListResponse, SurveyFormSchemaField } from '@/admin/api/surveys';
 import { surveysApi } from '@/admin/api/surveys';
 import { Tooltip } from '@/admin/components/Tooltip';
 import { FIELD_TYPES } from '@/admin/pages/forms/builder/fieldTypes';
@@ -522,7 +522,7 @@ const ResponseDetail = () => {
 	const { data: responsesListData } = useQuery({
 		...surveyResponsesQuery(surveyId, { per_page: 100, page: 1 }),
 		enabled: surveyId > 0,
-		staleTime: 60_000,
+		staleTime: Infinity, // never re-fetch during the session; invalidated by mutations
 	});
 
 	const {
@@ -589,35 +589,34 @@ const ResponseDetail = () => {
 	};
 
 	const autoMarkRef = useRef(false);
-	const isMountedRef = useRef(true);
-	useEffect(
-		() => () => {
-			isMountedRef.current = false;
-		},
-		[],
-	);
+
+	const patchDetailReadStatus = (rid: number, isRead: boolean) => {
+		queryClient.setQueryData(
+			['responses', surveyId, rid] as const,
+			(old: typeof response) => old ? { ...old, is_read: isRead } : old,
+		);
+		queryClient.setQueriesData<ResponseListResponse>(
+			{ predicate: (q) => q.queryKey[0] === 'responses' && q.queryKey[1] !== 'unread-count' },
+			(old) => {
+				if (!old?.responses) return old;
+				return { ...old, responses: old.responses.map((r) => r.id === rid ? { ...r, is_read: isRead } : r) };
+			},
+		);
+		void queryClient.invalidateQueries({ queryKey: ['responses', 'unread-count'] });
+	};
 
 	const markReadMutation = useMutation({
 		mutationFn: (isRead: boolean) =>
 			surveysApi.updateResponse(surveyId, Number(responseId), {
 				is_read: isRead,
 			}),
-		onSuccess: (updatedResponse, isRead) => {
-			if (isMountedRef.current) {
-				void queryClient.invalidateQueries({ queryKey: ['responses'] });
-				if (!autoMarkRef.current) {
-					toast.success(
-						isRead
-							? __('Marked as read.', 'allfeedback')
-							: __('Marked as unread.', 'allfeedback'),
-					);
-				}
-			} else if (!autoMarkRef.current) {
-				void queryClient.invalidateQueries({ queryKey: ['responses'] });
-			} else {
-				queryClient.setQueryData(
-					['responses', surveyId, Number(responseId)] as const,
-					updatedResponse,
+		onSuccess: (_, isRead) => {
+			patchDetailReadStatus(Number(responseId), isRead);
+			if (!autoMarkRef.current) {
+				toast.success(
+					isRead
+						? __('Marked as read.', 'allfeedback')
+						: __('Marked as unread.', 'allfeedback'),
 				);
 			}
 			autoMarkRef.current = false;
@@ -627,7 +626,9 @@ const ResponseDetail = () => {
 	const deleteMutation = useMutation({
 		mutationFn: () => surveysApi.deleteResponse(surveyId, Number(responseId)),
 		onSuccess: () => {
-			void queryClient.invalidateQueries({ queryKey: ['responses'] });
+			void queryClient.invalidateQueries({ queryKey: ['responses', surveyId] });
+			void queryClient.invalidateQueries({ queryKey: ['responses', 'all'] });
+			void queryClient.invalidateQueries({ queryKey: ['responses', 'unread-count'] });
 			setConfirmDeleteOpen(false);
 			toast.success(__('Response deleted.', 'allfeedback'));
 			void navigate({ to: '/responses', search: { surveyId } });
@@ -650,7 +651,15 @@ const ResponseDetail = () => {
 				response_data: data,
 			}),
 		onSuccess: (updated) => {
-			void queryClient.invalidateQueries({ queryKey: ['responses'] });
+			const rid = Number(responseId);
+			queryClient.setQueryData(['responses', surveyId, rid] as const, updated);
+			queryClient.setQueriesData<ResponseListResponse>(
+				{ predicate: (q) => q.queryKey[0] === 'responses' && q.queryKey[1] !== 'unread-count' },
+				(old) => {
+					if (!old?.responses) return old;
+					return { ...old, responses: old.responses.map((r) => r.id === rid ? { ...r, ...updated } : r) };
+				},
+			);
 			form.reset({
 				response_data: (updated.response_data ?? {}) as Record<string, unknown>,
 			});

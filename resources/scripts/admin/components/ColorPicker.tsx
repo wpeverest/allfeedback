@@ -5,7 +5,7 @@ import {
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { __ } from '@wordpress/i18n';
-import { Palette } from 'lucide-react';
+import { Check, Copy, Palette } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 // ── Color utilities ──────────────────────────────────────────────────────────
@@ -202,7 +202,7 @@ export const ColorPicker = ( { value, onChange, className }: ColorPickerProps ) 
 					</button>
 				</PopoverTrigger>
 				<PopoverContent className="w-auto p-0" align="start" sideOffset={ 6 }>
-					<SaturationPicker hex={ value } onChange={ commit } onDone={ () => setOpen( false ) } />
+					<SaturationPicker hex={ value } onChange={ commit } />
 				</PopoverContent>
 			</Popover>
 
@@ -240,12 +240,11 @@ export const ColorPicker = ( { value, onChange, className }: ColorPickerProps ) 
 const SaturationPicker = ( {
 	hex,
 	onChange,
-	onDone,
 }: {
 	hex:      string;
 	onChange: ( hex: string ) => void;
-	onDone:   () => void;
 } ) => {
+	const [ copied, setCopied ] = useState( false );
 	const rgb0 = hexToRgb( hex ) ?? { r: 99, g: 102, b: 241 };
 	const hsl0 = rgbToHsl( rgb0.r, rgb0.g, rgb0.b );
 
@@ -388,14 +387,32 @@ const SaturationPicker = ( {
 					/>
 				</div>
 
-				{/* Done */}
+				{/* Copy hex */}
 				<button
 					type="button"
-					onClick={ onDone }
-					className="shrink-0 rounded-md border border-primary/25 font-medium text-[11px] text-primary transition-colors hover:border-primary hover:bg-primary hover:text-white focus-visible:outline-none"
-					style={{ height: 32, padding: '0 14px' }}
+					aria-label={ __( 'Copy hex value', 'allfeedback' ) }
+					onClick={ () => {
+						const text = hex.toUpperCase();
+						const done = () => { setCopied( true ); setTimeout( () => setCopied( false ), 1500 ); };
+						if ( navigator.clipboard && window.isSecureContext ) {
+							void navigator.clipboard.writeText( text ).then( done );
+						} else {
+							const el = document.createElement( 'textarea' );
+							el.value = text;
+							el.style.cssText = 'position:fixed;left:-9999px;top:-9999px';
+							document.body.appendChild( el );
+							el.focus();
+							el.select();
+							try { document.execCommand( 'copy' ); done(); } finally { document.body.removeChild( el ); }
+						}
+					} }
+					className="shrink-0 cursor-pointer rounded-md border border-border/50 transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-none"
+					style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
 				>
-					{ __( 'Done', 'allfeedback' ) }
+					{ copied
+						? <Check style={{ width: 13, height: 13, color: 'var(--color-primary)' }} />
+						: <Copy style={{ width: 13, height: 13, color: 'var(--color-foreground)', opacity: 0.55 }} />
+					}
 				</button>
 			</div>
 		</div>

@@ -26,9 +26,10 @@ final class ResponseFilter extends QueryFilter {
 	 * @param  string|null $dateTo   Upper bound for created_at (Y-m-d format).
 	 * @param  int         $page     1-based page number.
 	 * @param  int         $perPage  Results per page.
-	 * @param  string|null $search   Optional full-text search string.
-	 * @param  string      $orderBy  Column to order by. Default 'date'.
+	 * @param  string|null $search   Optional full-text search string (LIKE on response_data).
+	 * @param  string      $orderBy  Column to order by. Default 'created_at'.
 	 * @param  string      $order    Sort direction: ASC | DESC.
+	 * @param  bool|null   $isRead   Restrict to read (true), unread (false), or both (null).
 	 * @since  1.0.0
 	 */
 	public function __construct(
@@ -39,8 +40,9 @@ final class ResponseFilter extends QueryFilter {
 		int $page = 1,
 		int $perPage = 20,
 		?string $search = null,
-		string $orderBy = 'date',
+		string $orderBy = 'created_at',
 		string $order = 'DESC',
+		public readonly ?bool $isRead = null,
 	) {
 		parent::__construct( $page, $perPage, $search, $orderBy, $order );
 	}

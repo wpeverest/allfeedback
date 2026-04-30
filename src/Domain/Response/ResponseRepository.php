@@ -98,6 +98,31 @@ interface ResponseRepository {
 	public function delete( int $id ): bool;
 
 	/**
+	 * Bulk-delete multiple Responses by their primary keys in a single query.
+	 *
+	 * Returns a list of IDs that were not found (and therefore not deleted), so
+	 * callers can report partial failures without firing N individual queries.
+	 *
+	 * @param  int[] $ids Response primary keys to delete.
+	 * @return int[]      IDs that were not found in the database.
+	 * @since  1.0.0
+	 */
+	public function deleteMany( array $ids ): array;
+
+	/**
+	 * Bulk-delete multiple Responses that belong to a specific survey.
+	 *
+	 * Returns a list of IDs that either did not exist or did not belong to the
+	 * given survey (and therefore were not deleted).
+	 *
+	 * @param  int[] $ids      Response primary keys to delete.
+	 * @param  int   $surveyId Only delete responses belonging to this survey.
+	 * @return int[]           IDs that were not deleted.
+	 * @since  1.0.0
+	 */
+	public function deleteManyBySurveyId( array $ids, int $surveyId ): array;
+
+	/**
 	 * Permanently remove all Responses belonging to a given Survey.
 	 *
 	 * @param  int $surveyId Survey primary key.
