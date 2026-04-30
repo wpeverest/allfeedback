@@ -113,6 +113,7 @@ const buildResponseAlertHtml = ( fromName: string, toEmail: string ): string => 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Email Preview</title>
+  <base target="_blank">
 </head>
 <body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f5;padding:32px 16px;">
@@ -168,6 +169,7 @@ const buildWeeklyDigestHtml = ( fromName: string ): string => {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Email Preview</title>
+  <base target="_blank">
 </head>
 <body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f5;padding:32px 16px;">
@@ -306,7 +308,7 @@ const PreviewModal = ( {
 						<iframe
 							key={tab.key}
 							srcDoc={tab.html}
-							sandbox="allow-same-origin"
+							sandbox="allow-same-origin allow-popups"
 							className="absolute inset-0 w-full h-full border-0"
 							title={tab.label}
 							onLoad={() => markLoaded( tab.key )}
