@@ -289,6 +289,91 @@ class WpdbResponseRepository implements ResponseRepository {
 	}
 
 	/**
+	 * Bulk-delete multiple Responses by their primary keys in a single query.
+	 *
+	 * @param  int[] $ids Response primary keys to delete.
+	 * @return int[]      IDs that were not found in the database.
+	 * @since  1.0.0
+	 */
+	public function deleteMany( array $ids ): array {
+		if ( empty( $ids ) ) {
+			return [];
+		}
+
+		global $wpdb;
+
+		$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+
+		$existingIds = array_map(
+			'intval',
+			$wpdb->get_col( // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+				$wpdb->prepare(
+					"SELECT id FROM {$this->table} WHERE id IN ({$placeholders})", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+					...$ids
+				)
+			)
+		);
+
+		$missingIds = array_values( array_diff( $ids, $existingIds ) );
+
+		if ( ! empty( $existingIds ) ) {
+			$deletePlaceholders = implode( ',', array_fill( 0, count( $existingIds ), '%d' ) );
+			$wpdb->query( // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+				$wpdb->prepare(
+					"DELETE FROM {$this->table} WHERE id IN ({$deletePlaceholders})", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+					...$existingIds
+				)
+			);
+			delete_transient( self::UNREAD_CACHE_KEY );
+		}
+
+		return $missingIds;
+	}
+
+	/**
+	 * Bulk-delete multiple Responses that belong to a specific survey.
+	 *
+	 * @param  int[] $ids      Response primary keys to delete.
+	 * @param  int   $surveyId Only delete responses belonging to this survey.
+	 * @return int[]           IDs that were not deleted (not found or wrong survey).
+	 * @since  1.0.0
+	 */
+	public function deleteManyBySurveyId( array $ids, int $surveyId ): array {
+		if ( empty( $ids ) ) {
+			return [];
+		}
+
+		global $wpdb;
+
+		$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+
+		$validIds = array_map(
+			'intval',
+			$wpdb->get_col( // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+				$wpdb->prepare(
+					"SELECT id FROM {$this->table} WHERE id IN ({$placeholders}) AND survey_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+					...[ ...$ids, $surveyId ]
+				)
+			)
+		);
+
+		$failedIds = array_values( array_diff( $ids, $validIds ) );
+
+		if ( ! empty( $validIds ) ) {
+			$deletePlaceholders = implode( ',', array_fill( 0, count( $validIds ), '%d' ) );
+			$wpdb->query( // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+				$wpdb->prepare(
+					"DELETE FROM {$this->table} WHERE id IN ({$deletePlaceholders})", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+					...$validIds
+				)
+			);
+			delete_transient( self::UNREAD_CACHE_KEY );
+		}
+
+		return $failedIds;
+	}
+
+	/**
 	 * Permanently remove all Responses belonging to a given Survey.
 	 *
 	 * @param  int $surveyId Survey primary key.
@@ -974,6 +1059,8 @@ class WpdbResponseRepository implements ResponseRepository {
 	 * @since  1.0.0
 	 */
 	private function buildFilterQuery( int $surveyId, ResponseFilter $filter ): array {
+		global $wpdb;
+
 		$where  = [ 'survey_id = %d' ];
 		$params = [ $surveyId ];
 
@@ -992,6 +1079,16 @@ class WpdbResponseRepository implements ResponseRepository {
 			$params[] = $filter->dateTo;
 		}
 
+		if ( $filter->search !== null && $filter->search !== '' ) {
+			$where[]  = 'response_data LIKE %s';
+			$params[] = '%' . $wpdb->esc_like( $filter->search ) . '%';
+		}
+
+		if ( $filter->isRead !== null ) {
+			$where[]  = 'is_read = %d';
+			$params[] = $filter->isRead ? 1 : 0;
+		}
+
 		return [ $where, $params ];
 	}
 
@@ -1003,6 +1100,8 @@ class WpdbResponseRepository implements ResponseRepository {
 	 * @since  1.0.0
 	 */
 	private function buildGlobalFilterQuery( ResponseFilter $filter ): array {
+		global $wpdb;
+
 		$where  = [];
 		$params = [];
 
@@ -1014,6 +1113,16 @@ class WpdbResponseRepository implements ResponseRepository {
 		if ( $filter->dateTo !== null && $filter->dateTo !== '' ) {
 			$where[]  = 'DATE(created_at) <= %s';
 			$params[] = $filter->dateTo;
+		}
+
+		if ( $filter->search !== null && $filter->search !== '' ) {
+			$where[]  = 'response_data LIKE %s';
+			$params[] = '%' . $wpdb->esc_like( $filter->search ) . '%';
+		}
+
+		if ( $filter->isRead !== null ) {
+			$where[]  = 'is_read = %d';
+			$params[] = $filter->isRead ? 1 : 0;
 		}
 
 		return [ $where, $params ];

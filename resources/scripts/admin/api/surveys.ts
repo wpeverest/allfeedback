@@ -104,6 +104,10 @@ export type ResponseListResponse = PaginatedMeta & {
 export type ResponseListParams = PaginationParams & {
 	date_from?: string;
 	date_to?:   string;
+	search?:    string;
+	sort_by?:   'id' | 'created_at' | 'score';
+	order?:     'ASC' | 'DESC';
+	is_read?:   boolean;
 };
 
 export type DeleteResponseResult = {

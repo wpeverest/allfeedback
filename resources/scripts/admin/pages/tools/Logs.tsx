@@ -380,19 +380,21 @@ const Logs = () => {
 
 	const files = listData?.logs ?? [];
 
-	const fileDetailQueries = useQueries({
+	// Subscribe to each file's cache entry without triggering fetches (enabled: false).
+	// When LogFileSection opens a file and fetches it, these subscriptions react to
+	// the new cache data so filter-tab counts update without any extra network calls.
+	const cachedFileQueries = useQueries({
 		queries: files.map((file) => ({
 			...logQuery(file.id),
-			enabled: files.length > 0,
+			enabled: false,
 		})),
 	});
 
-	// Aggregate parsed lines from all loaded files for filter-tab counts.
 	const allLines = useMemo<ParsedLine[]>(() => {
-		return fileDetailQueries
+		return cachedFileQueries
 			.filter((q) => q.data !== undefined)
 			.flatMap((q) => parseLines(q.data!.content));
-	}, [fileDetailQueries]);
+	}, [cachedFileQueries]);
 
 	const countFor = (level: LogLevel | 'ALL') =>
 		level === 'ALL'
