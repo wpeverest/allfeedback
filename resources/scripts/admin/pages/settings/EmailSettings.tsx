@@ -100,6 +100,11 @@ const escHtml = ( s: string ): string =>
  * Build a full HTML document for the individual response-alert email preview.
  * Includes a sample NPS score badge (Promoter · 9/10) and CTA button.
  */
+const adminHashUrl = ( hash: string ): string => {
+	const base = __ALLFB_ADMIN__.adminUrl ?? '';
+	return `${base}#${hash}`;
+};
+
 const buildResponseAlertHtml = ( fromName: string, toEmail: string ): string => {
 	const siteName = escHtml( fromName.trim() || __( 'Your Site', 'allfeedback' ) );
 	const today    = new Date().toLocaleString( undefined, {
@@ -132,7 +137,7 @@ const buildResponseAlertHtml = ( fromName: string, toEmail: string ): string => 
             <p style="margin:0 0 8px 0;"><strong>Response ID:</strong> #42</p>
             <p style="margin:0 0 16px 0;"><strong>Submitted at:</strong> ${escHtml( today )}</p>
             ${toEmail ? `<p style="margin:0 0 20px 0;color:#6b7280;font-size:13px;">Delivered to: ${escHtml( toEmail )}</p>` : ''}
-            <a href="#" style="display:inline-block;padding:10px 24px;background:#6366f1;color:#ffffff;border-radius:6px;text-decoration:none;font-size:14px;font-weight:600;">View Response &rarr;</a>
+            <a href="${adminHashUrl('/responses')}" style="display:inline-block;padding:10px 24px;background:#6366f1;color:#ffffff;border-radius:6px;text-decoration:none;font-size:14px;font-weight:600;pointer-events:none;cursor:default;">View Response &rarr;</a>
           </td>
         </tr>
         <tr>
@@ -214,7 +219,7 @@ const buildWeeklyDigestHtml = ( fromName: string ): string => {
               </tr>
             </table>
 
-            <a href="#" style="display:inline-block;padding:10px 24px;background:#6366f1;color:#ffffff;border-radius:6px;text-decoration:none;font-size:14px;font-weight:600;">View Analytics &rarr;</a>
+            <a href="${adminHashUrl('/analytics')}" style="display:inline-block;padding:10px 24px;background:#6366f1;color:#ffffff;border-radius:6px;text-decoration:none;font-size:14px;font-weight:600;pointer-events:none;cursor:default;">View Analytics &rarr;</a>
           </td>
         </tr>
         <tr>
