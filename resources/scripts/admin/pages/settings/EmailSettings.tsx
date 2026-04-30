@@ -241,8 +241,10 @@ const PreviewModal = ( {
 	tabs:    PreviewTab[];
 	onClose: () => void;
 } ) => {
-	const [active, setActive] = useState( tabs[0]?.key ?? '' );
-	const current = tabs.find( ( t ) => t.key === active ) ?? tabs[0];
+	const [active, setActive]   = useState( tabs[0]?.key ?? '' );
+	const [loaded, setLoaded]   = useState<Set<string>>( new Set() );
+	const markLoaded = ( key: string ) =>
+		setLoaded( ( prev ) => new Set( [...prev, key] ) );
 
 	useEffect( () => {
 		const onKey = ( e: KeyboardEvent ) => { if ( e.key === 'Escape' ) onClose(); };
@@ -255,7 +257,7 @@ const PreviewModal = ( {
 			role="dialog"
 			aria-modal="true"
 			aria-label={__( 'Email preview', 'allfeedback' )}
-			className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+			className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
 			onClick={onClose}
 		>
 			<div
@@ -277,20 +279,21 @@ const PreviewModal = ( {
 					</button>
 				</div>
 
-				{/* Tab bar — sits in body, above iframe */}
+				{/* Tab bar */}
 				{tabs.length > 1 && (
-					<div className="flex shrink-0 items-center gap-1 bg-[#f4f4f5] px-4 pt-2.5 pb-0">
+					<div className="flex shrink-0 items-center bg-[#f4f4f5] px-5 pt-2 pb-0 gap-4">
 						{tabs.map( ( tab ) => (
 							<button
 								key={tab.key}
 								type="button"
 								onClick={() => setActive( tab.key )}
 								className={cn(
-									'rounded-full px-4 py-1.5 text-xs font-medium transition-all',
+									'mr-5 py-2.5 text-[13px] font-medium transition-colors',
 									active === tab.key
-										? 'bg-white text-foreground shadow-sm ring-1 ring-black/[0.06]'
-										: 'text-foreground/50 hover:text-foreground/80',
+										? 'text-foreground'
+										: 'text-muted-foreground hover:text-foreground',
 								)}
+								style={active === tab.key ? { boxShadow: 'inset 0 -2px 0 var(--primary)' } : undefined}
 							>
 								{tab.label}
 							</button>
@@ -298,13 +301,25 @@ const PreviewModal = ( {
 					</div>
 				)}
 
-				<iframe
-					key={active}
-					srcDoc={current?.html ?? ''}
-					sandbox="allow-same-origin"
-					className="flex-1 w-full border-0"
-					title={current?.label ?? ''}
-				/>
+				<div className="relative flex-1 min-h-0">
+					{tabs.map( ( tab ) => (
+						<iframe
+							key={tab.key}
+							srcDoc={tab.html}
+							sandbox="allow-same-origin"
+							className="absolute inset-0 w-full h-full border-0"
+							title={tab.label}
+							onLoad={() => markLoaded( tab.key )}
+							style={{ display: tab.key === active ? 'block' : 'none' }}
+						/>
+					) )}
+					{/* Spinner shown until the active iframe first paints */}
+					{!loaded.has( active ) && (
+						<div className="absolute inset-0 flex items-center justify-center bg-[#f4f4f5]">
+							<Loader2 className="size-8 animate-spin text-primary" />
+						</div>
+					)}
+				</div>
 			</div>
 		</div>
 	);
