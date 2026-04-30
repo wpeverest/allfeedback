@@ -5,8 +5,8 @@ import {
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { __ } from '@wordpress/i18n';
-import { Pipette } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { Palette } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 // ── Color utilities ──────────────────────────────────────────────────────────
 
@@ -79,26 +79,62 @@ function parseValue( input: string, fmt: ColorFormat ): string | null {
 	return rgbToHex( r, g, b );
 }
 
-// ── Slider Tailwind classes ──────────────────────────────────────────────────
+// ── Custom drag-based hue slider ─────────────────────────────────────────────
+// Native <input type="range"> is unreliable in WP admin due to stylesheet overrides.
+// This custom implementation gives pixel-perfect control over track and thumb styling.
 
-const RANGE_CLS = [
-	'w-full cursor-pointer appearance-none rounded-full',
-	// webkit track
-	'[&::-webkit-slider-runnable-track]:h-2.5 [&::-webkit-slider-runnable-track]:rounded-full',
-	// webkit thumb — margin-top centres the 16px thumb on the 10px track: (10-16)/2 = -3px
-	'[&::-webkit-slider-thumb]:appearance-none',
-	'[&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4',
-	'[&::-webkit-slider-thumb]:mt-[-3px]',
-	'[&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white',
-	'[&::-webkit-slider-thumb]:shadow-[0_0_0_1.5px_rgba(0,0,0,0.18),0_1px_4px_rgba(0,0,0,0.22)]',
-	'[&::-webkit-slider-thumb]:cursor-pointer',
-	// moz track + thumb
-	'[&::-moz-range-track]:h-2.5 [&::-moz-range-track]:rounded-full',
-	'[&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4',
-	'[&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-none',
-	'[&::-moz-range-thumb]:bg-white',
-	'[&::-moz-range-thumb]:shadow-[0_0_0_1.5px_rgba(0,0,0,0.18),0_1px_4px_rgba(0,0,0,0.22)]',
-].join( ' ' );
+const HueSlider = ( {
+	value,
+	onChange,
+}: {
+	value:    number;
+	onChange: ( h: number ) => void;
+} ) => {
+	const trackRef  = useRef<HTMLDivElement>( null );
+	const dragging  = useRef( false );
+
+	const moveTo = useCallback( ( clientX: number ) => {
+		const el = trackRef.current;
+		if ( ! el ) return;
+		const rect = el.getBoundingClientRect();
+		onChange( clamp( ( clientX - rect.left ) / rect.width, 0, 1 ) * 360 );
+	}, [ onChange ] );
+
+	useEffect( () => {
+		const move = ( e: MouseEvent ) => { if ( dragging.current ) moveTo( e.clientX ); };
+		const up   = () => { dragging.current = false; };
+		window.addEventListener( 'mousemove', move );
+		window.addEventListener( 'mouseup',   up );
+		return () => {
+			window.removeEventListener( 'mousemove', move );
+			window.removeEventListener( 'mouseup',   up );
+		};
+	}, [ moveTo ] );
+
+	return (
+		<div
+			ref={ trackRef }
+			className="relative w-full cursor-pointer select-none rounded-full"
+			style={{
+				height:     12,
+				background: 'linear-gradient(to right,#f00 0%,#ff0 17%,#0f0 33%,#0ff 50%,#00f 67%,#f0f 83%,#f00 100%)',
+				boxShadow:  'inset 0 0 0 1px rgba(0,0,0,0.08)',
+			}}
+			onMouseDown={ ( e ) => { dragging.current = true; moveTo( e.clientX ); } }
+		>
+			{/* Thumb — centred on the track, 20 px diameter */}
+			<div
+				className="pointer-events-none absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white"
+				style={{
+					left:      `${ ( value / 360 ) * 100 }%`,
+					width:     20,
+					height:    20,
+					boxShadow: '0 0 0 1.5px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.18)',
+				}}
+			/>
+		</div>
+	);
+};
 
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -138,7 +174,7 @@ export const ColorPicker = ( { value, onChange, className }: ColorPickerProps ) 
 			) }
 			style={{ height: 30 }}
 		>
-			{/* Swatch → opens popover */}
+			{/* Swatch trigger */}
 			<Popover open={ open } onOpenChange={ setOpen }>
 				<PopoverTrigger asChild>
 					<button
@@ -147,20 +183,21 @@ export const ColorPicker = ( { value, onChange, className }: ColorPickerProps ) 
 						className="group relative shrink-0 overflow-hidden focus-visible:outline-none"
 						style={{ width: 30, height: 30, backgroundColor: value }}
 					>
-						<span className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/20" />
-						<Pipette className="absolute right-0.5 bottom-0.5 size-2.5 text-white opacity-70 transition-opacity drop-shadow-[0_0_2px_rgba(0,0,0,0.5)] group-hover:opacity-100" />
+						{/* Darkening overlay on hover */}
+						<span className="absolute inset-0 bg-black/0 transition-all duration-150 group-hover:bg-black/22" />
+						{/* Palette icon — centred, scales up on hover */}
+						<Palette
+							className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white transition-all duration-150 drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] group-hover:scale-110"
+							style={{ width: 12, height: 12, opacity: open ? 1 : 0.65 }}
+						/>
 					</button>
 				</PopoverTrigger>
 				<PopoverContent className="w-auto p-0" align="start" sideOffset={ 6 }>
-					<SaturationPicker
-						hex={ value }
-						onChange={ commit }
-						onDone={ () => setOpen( false ) }
-					/>
+					<SaturationPicker hex={ value } onChange={ commit } onDone={ () => setOpen( false ) } />
 				</PopoverContent>
 			</Popover>
 
-			{/* Text input */}
+			{/* Format value input */}
 			<input
 				value={ draft }
 				onChange={ ( e ) => setDraft( e.target.value ) }
@@ -171,7 +208,7 @@ export const ColorPicker = ( { value, onChange, className }: ColorPickerProps ) 
 				style={{ width: 124, height: 30, padding: '0 8px', boxSizing: 'border-box' }}
 			/>
 
-			{/* Format switcher */}
+			{/* Format cycle button */}
 			<button
 				type="button"
 				onClick={ cycleFormat }
@@ -184,7 +221,7 @@ export const ColorPicker = ( { value, onChange, className }: ColorPickerProps ) 
 	);
 };
 
-// ── Saturation / lightness 2-D canvas + hue slider ───────────────────────────
+// ── 2-D gradient canvas + hue slider ────────────────────────────────────────
 
 const SaturationPicker = ( {
 	hex,
@@ -202,7 +239,6 @@ const SaturationPicker = ( {
 	const [ s, setS ] = useState( hsl0.s );
 	const [ l, setL ] = useState( hsl0.l );
 
-	// Store without '#' so we can show a '#' prefix label in the input
 	const [ hexDraft, setHexDraft ] = useState( hex.replace( '#', '' ).toUpperCase() );
 
 	const areaRef     = useRef<HTMLDivElement>( null );
@@ -223,7 +259,7 @@ const SaturationPicker = ( {
 		onChange( rgbToHex( r, g, b ) );
 	};
 
-	const handleAreaMove = ( e: MouseEvent | React.MouseEvent ) => {
+	const handleCanvasMove = ( e: MouseEvent | React.MouseEvent ) => {
 		const el = areaRef.current;
 		if ( ! el ) return;
 		const rect = el.getBoundingClientRect();
@@ -239,7 +275,7 @@ const SaturationPicker = ( {
 	};
 
 	useEffect( () => {
-		const move = ( e: MouseEvent ) => { if ( draggingRef.current ) handleAreaMove( e ); };
+		const move = ( e: MouseEvent ) => { if ( draggingRef.current ) handleCanvasMove( e ); };
 		const up   = () => { draggingRef.current = false; };
 		window.addEventListener( 'mousemove', move );
 		window.addEventListener( 'mouseup',   up );
@@ -250,7 +286,7 @@ const SaturationPicker = ( {
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [ h ] );
 
-	// Convert HSL → HSV to get correct 2-D marker position
+	// Convert HSL → HSV for correct 2-D marker position
 	const vv      = l / 100 + ( s / 100 ) * Math.min( l / 100, 1 - l / 100 );
 	const sv      = vv === 0 ? 0 : 2 * ( 1 - ( l / 100 ) / vv );
 	const markerX = clamp( sv, 0, 1 ) * 100;
@@ -259,68 +295,57 @@ const SaturationPicker = ( {
 	return (
 		<div className="w-56 select-none overflow-hidden rounded-xl">
 
-			{/* ── 2-D gradient canvas ─────────────────────────────────────── */}
+			{/* ── Gradient canvas ──────────────────────────────────────────── */}
 			<div
 				ref={ areaRef }
-				onMouseDown={ ( e ) => { draggingRef.current = true; handleAreaMove( e ); } }
+				onMouseDown={ ( e ) => { draggingRef.current = true; handleCanvasMove( e ); } }
 				className="relative cursor-crosshair"
 				style={{
-					height: 168,
-					background: [
-						'linear-gradient(to top, #000 0%, transparent 100%)',
-						`linear-gradient(to right, #fff 0%, hsl(${ Math.round( h ) }, 100%, 50%) 100%)`,
-					].join( ', ' ),
-					boxShadow: 'inset 0 -1px 0 rgba(0,0,0,0.10)',
+					height:     172,
+					background: `linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, hsl(${ Math.round( h ) }, 100%, 50%))`,
+					boxShadow:  'inset 0 -1px 0 rgba(0,0,0,0.12)',
 				}}
 			>
+				{/* Subtle top highlight for depth */}
+				<div
+					className="pointer-events-none absolute inset-x-0 top-0"
+					style={{ height: 48, background: 'linear-gradient(to bottom, rgba(255,255,255,0.07) 0%, transparent 100%)' }}
+				/>
+
+				{/* Marker — filled with the live colour so you can see exactly what's selected */}
 				<div
 					className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-full"
 					style={{
-						left:      `${ markerX }%`,
-						top:       `${ markerY }%`,
-						width:     14,
-						height:    14,
-						border:    '2.5px solid white',
-						boxShadow: '0 0 0 1px rgba(0,0,0,0.25), 0 1px 4px rgba(0,0,0,0.18)',
+						left:            `${ markerX }%`,
+						top:             `${ markerY }%`,
+						width:           14,
+						height:          14,
+						backgroundColor: hex,
+						border:          '2.5px solid white',
+						boxShadow:       '0 0 0 1px rgba(0,0,0,0.22), 0 1px 5px rgba(0,0,0,0.18)',
 					}}
 				/>
 			</div>
 
-			{/* ── Hue slider ──────────────────────────────────────────────── */}
-			<div className="bg-white px-3 py-3">
-				<input
-					type="range"
-					min={ 0 }
-					max={ 360 }
-					value={ Math.round( h ) }
-					onChange={ ( e ) => {
-						const nh = Number( e.target.value );
-						setH( nh );
-						emit( nh, s, l );
-					} }
-					className={ RANGE_CLS }
-					style={{
-						display:    'block',
-						width:      '100%',
-						height:     10,
-						background: 'linear-gradient(to right,#f00 0%,#ff0 17%,#0f0 33%,#0ff 50%,#00f 67%,#f0f 83%,#f00 100%)',
-						boxSizing:  'border-box',
-					}}
+			{/* ── Hue slider ───────────────────────────────────────────────── */}
+			<div className="bg-white px-3 pt-3 pb-2.5">
+				<HueSlider
+					value={ h }
+					onChange={ ( nh ) => { setH( nh ); emit( nh, s, l ); } }
 				/>
 			</div>
 
-			{/* ── Value row ───────────────────────────────────────────────── */}
-			<div
-				className="flex items-center gap-2 px-3 pb-3 pt-0"
-			>
-				{/* Live colour swatch */}
+			{/* ── Value row ────────────────────────────────────────────────── */}
+			<div className="flex items-center gap-2 border-t border-border/[0.12] bg-white px-3 pb-3 pt-2.5">
+
+				{/* Live swatch */}
 				<div
 					className="shrink-0 rounded-md"
 					style={{
 						width:           28,
 						height:          28,
 						backgroundColor: hex,
-						boxShadow:       'inset 0 0 0 1px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08)',
+						boxShadow:       'inset 0 0 0 1px rgba(0,0,0,0.12)',
 					}}
 				/>
 
@@ -351,7 +376,7 @@ const SaturationPicker = ( {
 				<button
 					type="button"
 					onClick={ onDone }
-					className="shrink-0 rounded-md border border-primary/25 font-medium text-[11px] text-primary transition-colors hover:bg-primary hover:text-white hover:border-primary focus-visible:outline-none"
+					className="shrink-0 rounded-md border border-primary/25 font-medium text-[11px] text-primary transition-colors hover:border-primary hover:bg-primary hover:text-white focus-visible:outline-none"
 					style={{ height: 28, padding: '0 10px' }}
 				>
 					{ __( 'Done', 'allfeedback' ) }
