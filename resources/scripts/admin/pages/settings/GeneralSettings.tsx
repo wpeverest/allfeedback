@@ -1,5 +1,4 @@
 import type { Settings } from '@/admin/api/settings';
-import { Tooltip } from '@/admin/components/Tooltip';
 import { useSettingsDirty } from '@/admin/pages/settings/Settings';
 import { settingsQuery } from '@/admin/queries/settings';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -8,7 +7,8 @@ import { cn } from '@/lib/utils';
 import { useForm, useStore } from '@tanstack/react-form';
 import { useQuery } from '@tanstack/react-query';
 import { __ } from '@wordpress/i18n';
-import { Globe, Lock, MessageSquare, Pipette, Settings2 } from 'lucide-react';
+import { ColorPicker } from '@/admin/components/ColorPicker';
+import { Globe, Lock, MessageSquare, Settings2 } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 
 const DEFAULT_WIDGET_COLOR = '#6366F1';
@@ -32,73 +32,6 @@ const Row = ({
 	</div>
 );
 
-const COLOR_PRESETS = ['#6366F1', '#3B82F6', '#10B981', '#F59E0B', '#EF4444'];
-
-const ColorPicker = ({
-	value,
-	onChange,
-}: {
-	value: string;
-	onChange: (v: string) => void;
-}) => {
-	const isPreset = COLOR_PRESETS.includes(value);
-
-	return (
-		<div className="space-y-2.5">
-			<div className="flex flex-wrap items-center gap-1.5">
-				{COLOR_PRESETS.map((color) => (
-					<button
-						key={color}
-						type="button"
-						onClick={() => onChange(color)}
-						className={cn(
-							'size-7 rounded-lg border-2 transition-all duration-150',
-							value === color
-								? 'border-foreground/30 scale-110 shadow-sm'
-								: 'hover:border-foreground/10 border-transparent hover:scale-105',
-						)}
-						style={{ backgroundColor: color }}
-					/>
-				))}
-
-				<Tooltip content={__('Custom color', 'allfeedback')}>
-					<label
-						className={cn(
-							'relative flex size-7 cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 transition-all duration-150',
-							!isPreset
-								? 'border-foreground/30 bg-muted text-muted-foreground scale-110 shadow-sm'
-								: 'border-border/60 bg-muted text-muted-foreground/50 hover:border-border hover:text-muted-foreground border-dashed',
-						)}
-					>
-						<Pipette className="size-3.5" />
-						{!isPreset && (
-							<span
-								className="absolute right-0.5 bottom-0.5 size-2 rounded-full border border-white/60"
-								style={{ backgroundColor: value }}
-							/>
-						)}
-						<input
-							type="color"
-							value={value}
-							onChange={(e) => onChange(e.target.value)}
-							className="absolute inset-0 cursor-pointer opacity-0"
-						/>
-					</label>
-				</Tooltip>
-			</div>
-
-			<div className="flex items-center gap-2">
-				<div
-					className="border-border/60 size-4 rounded border"
-					style={{ backgroundColor: value }}
-				/>
-				<code className="text-foreground/80 text-xs">
-					{value.toUpperCase()}
-				</code>
-			</div>
-		</div>
-	);
-};
 
 type Position = Settings['general']['widget']['position'];
 
@@ -252,18 +185,12 @@ const GeneralSettingsSkeleton = () => (
 				<Skeleton className="h-px flex-1" />
 			</div>
 
-			<div className="flex items-start gap-4">
-				<Skeleton className="mt-2 h-4 w-[40%] shrink-0" />
-				<div className="min-w-0 flex-1 space-y-2.5">
-					<div className="flex items-center gap-1.5">
-						{[...Array(6)].map((_, i) => (
-							<Skeleton key={i} className="size-7 rounded-lg" />
-						))}
-					</div>
-					<div className="flex items-center gap-2">
-						<Skeleton className="size-4 rounded" />
-						<Skeleton className="h-3 w-16" />
-					</div>
+			<div className="flex items-center gap-4">
+				<Skeleton className="h-4 w-[40%] shrink-0" />
+				<div className="flex items-center gap-1.5">
+					<Skeleton className="size-6 rounded" />
+					<Skeleton className="h-6 w-[90px] rounded-md" />
+					<Skeleton className="h-6 w-10 rounded-md" />
 				</div>
 			</div>
 
@@ -395,8 +322,8 @@ const GeneralSettings = () => {
 				{sharedIsDirty && !isSaving && <UnsavedChangesBadge />}
 			</div>
 
-			<div className="space-y-4 p-6">
-				<Row label={__('Widget color', 'allfeedback')} top>
+			<div className="space-y-8 p-6">
+				<Row label={__('Widget color', 'allfeedback')}>
 					<ColorPicker
 						value={values.widget_color}
 						onChange={(v) => form.setFieldValue('widget_color', v)}

@@ -140,6 +140,7 @@ interface WidgetBodyProps {
 	isLastStep: boolean;
 	currentFields: FormField[];
 	isSubmitted: boolean;
+	hasSubmitted: boolean;
 	fieldValues: Record<string, string | string[]>;
 	fieldErrors: Record<string, string>;
 	submitError: string;
@@ -169,6 +170,7 @@ const WidgetBody = ({
 	isLastStep,
 	currentFields,
 	isSubmitted,
+	hasSubmitted,
 	fieldValues,
 	fieldErrors,
 	submitError,
@@ -354,12 +356,14 @@ const WidgetBody = ({
 								<button
 									type="button"
 									className="allfb-btn allfb-btn--primary"
-									disabled={isSubmitting}
+									disabled={isSubmitting || hasSubmitted}
 									onClick={onSubmit}
 								>
-									{isSubmitting
-										? __('Submitting\u2026', 'allfeedback')
-										: settings.submitLabel || __('Submit', 'allfeedback')}
+									{hasSubmitted
+										? __('Already submitted', 'allfeedback')
+										: isSubmitting
+											? __('Submitting\u2026', 'allfeedback')
+											: settings.submitLabel || __('Submit', 'allfeedback')}
 								</button>
 							) : (
 								<button
@@ -434,6 +438,7 @@ const PreviewPanel = ({
 	const [submitError, setSubmitError] = useState('');
 	const [currentStep, setCurrentStep] = useState(0);
 	const [isSubmitted, setIsSubmitted] = useState(false);
+	const [hasSubmitted, setHasSubmitted] = useState(false);
 
 	const stepIndex = Math.min(currentStep, Math.max(0, totalSteps - 1));
 	const isLastStep = stepIndex === totalSteps - 1;
@@ -442,7 +447,12 @@ const PreviewPanel = ({
 	const submitMutation = useMutation({
 		mutationFn: (data: SubmitFormData) => surveysApi.submit(surveyId!, data),
 		onSuccess: () => {
-			setIsSubmitted(true);
+			if (settings.thankYouEnabled) {
+				setIsSubmitted(true);
+			} else {
+				setHasSubmitted(true);
+				setIsMinimized(true);
+			}
 			setSubmitError('');
 				void queryClient.invalidateQueries({ queryKey: ['responses'] });
 
@@ -547,7 +557,12 @@ const PreviewPanel = ({
 				session_id: sessionIdRef.current,
 			});
 		} else {
-			setIsSubmitted(true);
+			if (settings.thankYouEnabled) {
+				setIsSubmitted(true);
+			} else {
+				setHasSubmitted(true);
+				setIsMinimized(true);
+			}
 			toast.success(__('Form preview submitted successfully.', 'allfeedback'));
 		}
 	};
@@ -558,6 +573,7 @@ const PreviewPanel = ({
 		setIsClosed(false);
 		setIsMinimized(false);
 		setIsSubmitted(false);
+		setHasSubmitted(false);
 		setFieldValues({});
 		setFieldErrors({});
 		setSubmitError('');
@@ -572,6 +588,7 @@ const PreviewPanel = ({
 		isLastStep,
 		currentFields,
 		isSubmitted,
+		hasSubmitted,
 		fieldValues,
 		fieldErrors,
 		submitError,
@@ -600,7 +617,7 @@ const PreviewPanel = ({
 		},
 	};
 
-	const needsReset = isSubmitted || (viewMode === 'page' && isClosed);
+	const needsReset = isSubmitted || isClosed || hasSubmitted;
 
 	const adminTotalPages = totalSteps + 1;
 	const adminCurrentPage = isSubmitted ? totalSteps : stepIndex;
