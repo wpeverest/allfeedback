@@ -3,6 +3,7 @@ import {
 	wizardApi,
 	type WizardCompletePayload,
 } from '@/admin/api/wizard';
+import { ColorPicker } from '@/admin/components/ColorPicker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -30,7 +31,6 @@ import {
 	Lock,
 	MessageSquare,
 	Palette,
-	Pipette,
 	Rocket,
 	Users,
 	Wand2,
@@ -217,8 +217,6 @@ function StepTemplate({
 	);
 }
 
-const COLOR_PRESETS = ['#6366F1', '#3B82F6', '#10B981', '#F59E0B', '#EF4444'];
-
 type PositionValue = WizardCompletePayload['position'];
 
 const ALL_POSITIONS: { value: PositionValue; label: string }[] = [
@@ -228,67 +226,6 @@ const ALL_POSITIONS: { value: PositionValue; label: string }[] = [
 ];
 
 const BOTTOM_POSITIONS = ALL_POSITIONS.filter((p) => p.value !== 'side-tab');
-
-function ColorPicker({
-	value,
-	onChange,
-}: {
-	value: string;
-	onChange: (v: string) => void;
-}) {
-	const isPreset = COLOR_PRESETS.includes(value);
-	return (
-		<div className="space-y-2.5">
-			<div className="flex flex-wrap items-center gap-1.5">
-				{COLOR_PRESETS.map((color) => (
-					<button
-						key={color}
-						type="button"
-						onClick={() => onChange(color)}
-						className={cn(
-							'size-7 rounded-lg border-2 transition-all duration-150',
-							value === color
-								? 'border-foreground/30 scale-110 shadow-sm'
-								: 'hover:border-foreground/10 border-transparent hover:scale-105',
-						)}
-						style={{ backgroundColor: color }}
-					/>
-				))}
-				<label
-					className={cn(
-						'relative flex size-7 cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 transition-all duration-150',
-						!isPreset
-							? 'bg-muted text-muted-foreground border-foreground/30 scale-110 shadow-sm'
-							: 'border-border/60 bg-muted text-muted-foreground/50 hover:border-border hover:text-muted-foreground border-dashed',
-					)}
-				>
-					<Pipette className="size-3.5" />
-					{!isPreset && (
-						<span
-							className="absolute right-0.5 bottom-0.5 size-2 rounded-full border border-white/60"
-							style={{ backgroundColor: value }}
-						/>
-					)}
-					<input
-						type="color"
-						value={value}
-						onChange={(e) => onChange(e.target.value)}
-						className="absolute inset-0 cursor-pointer opacity-0"
-					/>
-				</label>
-			</div>
-			<div className="flex items-center gap-2">
-				<div
-					className="border-border/60 size-4 rounded border"
-					style={{ backgroundColor: value }}
-				/>
-				<code className="text-muted-foreground/70 text-xs">
-					{value.toUpperCase()}
-				</code>
-			</div>
-		</div>
-	);
-}
 
 function BrowserPreview({
 	color,
