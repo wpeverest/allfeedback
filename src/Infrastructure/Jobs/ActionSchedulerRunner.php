@@ -101,7 +101,8 @@ class ActionSchedulerRunner {
 		}
 
 		try {
-			/** @var Job $job */ // phpcs:ignore Generic.Commenting.DocComment.MissingShort -- inline type hint			$job     = $this->container->get( $class );
+			/** @var Job $job */
+			$job     = $this->container->get( $class );
 			$payload = $class::payloadFromArray( $payload_data );
 			$job->handle( $payload );
 		} catch ( \Throwable $e ) {
