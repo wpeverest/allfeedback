@@ -149,6 +149,8 @@ class WizardController extends RestController {
 		$position        = sanitize_key( (string) ( $request->get_param( 'position' ) ?? '' ) );
 		$template_id     = sanitize_key( (string) ( $request->get_param( 'template' ) ?? 'nps' ) );
 		$admin_email     = sanitize_email( (string) ( $request->get_param( 'admin_email' ) ?? '' ) );
+		$from_name       = sanitize_text_field( (string) ( $request->get_param( 'from_name' ) ?? '' ) );
+		$from_email      = sanitize_email( (string) ( $request->get_param( 'from_email' ) ?? '' ) );
 
 		// Apply widget appearance settings immediately.
 		$widget = (array) $this->settings_manager->get( 'general.widget' );
@@ -164,14 +166,34 @@ class WizardController extends RestController {
 			)
 		);
 
+		// Persist email delivery settings when provided.
+		if ( $admin_email !== '' || $from_name !== '' || $from_email !== '' ) {
+			$delivery = (array) $this->settings_manager->get( 'email.delivery' );
+			$this->settings_manager->setSection(
+				'email',
+				'delivery',
+				array_merge(
+					$delivery,
+					array_filter(
+						[
+							'to_email'   => $admin_email !== '' ? $admin_email : null,
+							'from_name'  => $from_name !== '' ? $from_name : null,
+							'from_email' => $from_email !== '' ? $from_email : null,
+						]
+					)
+				)
+			);
+		}
+
 		// Build and persist the sanitised wizard data payload.
 		$wizard_data = [
-			'template'        => $template_id,
-			'admin_email'     => $admin_email,
-			'notif_frequency' => sanitize_key( (string) ( $request->get_param( 'notif_frequency' ) ?? 'instant' ) ),
-			'consent'         => (bool) $request->get_param( 'consent' ),
-			'anonymize_ip'    => (bool) $request->get_param( 'anonymize_ip' ),
-			'retention'       => sanitize_key( (string) ( $request->get_param( 'retention' ) ?? '12m' ) ),
+			'template'     => $template_id,
+			'admin_email'  => $admin_email,
+			'from_name'    => $from_name,
+			'from_email'   => $from_email,
+			'consent'      => (bool) $request->get_param( 'consent' ),
+			'anonymize_ip' => (bool) $request->get_param( 'anonymize_ip' ),
+			'retention'    => sanitize_key( (string) ( $request->get_param( 'retention' ) ?? '12m' ) ),
 		];
 
 		update_option( self::OPTION_DATA, $wizard_data, false );
@@ -328,14 +350,19 @@ class WizardController extends RestController {
 				values:      [ 'bottom-right', 'bottom-left', 'side-tab' ],
 				default:     'bottom-right',
 			),
-			'admin_email'     => $this->argString(
+			'admin_email' => $this->argString(
 				description: __( 'Email address for admin notifications.', 'allfeedback' ),
 				sanitize:    'sanitize_email',
 			),
-			'notif_frequency' => $this->argEnum(
-				description: __( 'How often to receive email notification digests.', 'allfeedback' ),
-				values:      [ 'instant', 'daily', 'weekly' ],
-				default:     'instant',
+			'from_name'   => $this->argString(
+				description: __( 'Sender name shown in the recipient\'s inbox.', 'allfeedback' ),
+				sanitize:    'sanitize_text_field',
+				default:     '',
+			),
+			'from_email'  => $this->argString(
+				description: __( 'Sender email address used when dispatching emails.', 'allfeedback' ),
+				sanitize:    'sanitize_email',
+				default:     '',
 			),
 			'consent'         => $this->argBoolean(
 				description: __( 'Show a consent notice to visitors before recording responses.', 'allfeedback' ),

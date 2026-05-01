@@ -5,14 +5,16 @@ export type WizardStatus = {
 };
 
 export type WizardCompletePayload = {
-	template:        string;
-	brand_color:     string;
-	position:        string;
-	admin_email:     string;
-	notif_frequency: string;
-	consent:         boolean;
-	anonymize_ip:    boolean;
-	retention:       string;
+	template:     string;
+	brand_color:  string;
+	position:     string;
+	shape:        'circle' | 'rounded' | 'pill';
+	admin_email:  string;
+	from_name:    string;
+	from_email:   string;
+	consent:      boolean;
+	anonymize_ip: boolean;
+	retention:    string;
 };
 
 export const wizardApi = {
