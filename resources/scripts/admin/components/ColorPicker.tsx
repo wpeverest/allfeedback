@@ -335,9 +335,7 @@ const SaturationPicker = ( {
 		}
 	};
 
-	const prefix = innerFormat === 'HEX' ? '#' : null;
-
-	return (
+return (
 		<div className="select-none overflow-hidden rounded-xl" style={{ width: 280 }}>
 
 			<div className="flex items-center gap-1.5 bg-white px-4 pt-3.5 pb-3">
@@ -424,25 +422,20 @@ const SaturationPicker = ( {
 				/>
 
 				<div className="relative min-w-0 flex-1 overflow-hidden rounded-md border border-border/40 bg-muted/30 transition-colors focus-within:bg-white" style={{ height: 28 }}>
-					{ prefix && (
-						<span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 select-none font-mono text-[11px] text-foreground/30">
-							{ prefix }
-						</span>
-					) }
 					<input
 						type="text"
 						value={ draft }
 						onChange={ ( e ) => {
 							const raw = e.target.value;
 							setDraft( raw );
-							const parsed = parseValue( innerFormat === 'HEX' ? '#' + raw.replace( '#', '' ) : raw, innerFormat );
+							const parsed = parseValue( raw, innerFormat );
 							if ( parsed ) onChange( parsed );
 						} }
 						onBlur={ () => setDraft( formatValue( hex, innerFormat ) ) }
 						onKeyDown={ ( e ) => { if ( e.key === 'Enter' ) ( e.target as HTMLInputElement ).blur(); } }
 						spellCheck={ false }
 						className="h-full w-full bg-transparent font-mono text-[11px] uppercase text-foreground/70 outline-none"
-						style={{ paddingLeft: prefix ? 18 : 8, paddingRight: 40, boxSizing: 'border-box', border: 'none' }}
+						style={{ paddingLeft: 8, paddingRight: 40, boxSizing: 'border-box', border: 'none' }}
 					/>
 					<button
 						type="button"

@@ -1,8 +1,10 @@
+import { type Settings } from '@/admin/api/settings';
 import {
 	WIZARD_STATUS_QUERY_KEY,
 	wizardApi,
 	type WizardCompletePayload,
 } from '@/admin/api/wizard';
+import { settingsQuery } from '@/admin/queries/settings';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
@@ -90,6 +92,17 @@ export default function SetupWizard() {
 			try {
 				const res = await wizardApi.complete(state);
 				queryClient.setQueryData(WIZARD_STATUS_QUERY_KEY, { status: 'completed' });
+				queryClient.setQueryData<Settings>(settingsQuery().queryKey, (old) => ({
+					...( old ?? {} as Settings ),
+					general: {
+						...( old?.general ?? {} as Settings['general'] ),
+						widget: {
+							...( old?.general?.widget ?? {} as Settings['general']['widget'] ),
+							color:    state.brand_color,
+							position: state.position as Settings['general']['widget']['position'],
+						},
+					},
+				}));
 				if (target === 'editor' && res.id) {
 					navigate({ to: '/builder', search: { id: res.id, new: true } });
 				} else {
