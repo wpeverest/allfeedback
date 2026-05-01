@@ -146,7 +146,8 @@ class FrontendServiceProvider implements ServiceProvider {
 			return '';
 		}
 
-		/** @var SurveyRepository $repo */ // phpcs:ignore Generic.Commenting.DocComment.MissingShort -- inline type hint		$repo   = $this->container->get( SurveyRepository::class );
+		/** @var SurveyRepository $repo */ // phpcs:ignore Generic.Commenting.DocComment.MissingShort -- inline type hint
+		$repo   = $this->container->get( SurveyRepository::class );
 		$survey = $repo->findById( $survey_id );
 
 		if ( $survey === null || ! $survey->getStatus()->isPublished() ) {
@@ -175,17 +176,20 @@ class FrontendServiceProvider implements ServiceProvider {
 	 * @since  1.0.0
 	 */
 	public function enqueueAssets(): void {
-		/** @var array<string, mixed> $global_widget_settings */ // phpcs:ignore Generic.Commenting.DocComment.MissingShort -- inline type hint		$global_widget_settings = (array) $this->settings_manager->get( 'general.widget' );
-		$survey_ids = $this->targeting_engine->resolveAllForCurrentPage();
+		/** @var array<string, mixed> $global_widget_settings */ // phpcs:ignore Generic.Commenting.DocComment.MissingShort -- inline type hint
+		$global_widget_settings = (array) $this->settings_manager->get( 'general.widget' );
+		$survey_ids             = $this->targeting_engine->resolveAllForCurrentPage();
 
 		if ( empty( $survey_ids ) && ! $this->pageHasEmbed() ) {
 			return;
 		}
 
-		/** @var array<int, array<string, mixed>> $survey_configs */ // phpcs:ignore Generic.Commenting.DocComment.MissingShort -- inline type hint		$survey_configs = [];
+		/** @var array<int, array<string, mixed>> $survey_configs */ // phpcs:ignore Generic.Commenting.DocComment.MissingShort -- inline type hint
+		$survey_configs = [];
 
 		if ( ! empty( $survey_ids ) ) {
-			/** @var SurveyRepository $repo */ // phpcs:ignore Generic.Commenting.DocComment.MissingShort -- inline type hint			$repo         = $this->container->get( SurveyRepository::class );
+			/** @var SurveyRepository $repo */ // phpcs:ignore Generic.Commenting.DocComment.MissingShort -- inline type hint
+			$repo         = $this->container->get( SurveyRepository::class );
 			$is_logged_in = is_user_logged_in();
 			$current_user = $is_logged_in ? get_current_user_id() : 0;
 
@@ -240,7 +244,8 @@ class FrontendServiceProvider implements ServiceProvider {
 
 		$widget_settings = $global_widget_settings;
 		if ( ! empty( $survey_ids ) ) {
-			/** @var SurveyRepository $repo */ // phpcs:ignore Generic.Commenting.DocComment.MissingShort -- inline type hint			$repo   = $this->container->get( SurveyRepository::class );
+			/** @var SurveyRepository $repo */ // phpcs:ignore Generic.Commenting.DocComment.MissingShort -- inline type hint
+			$repo   = $this->container->get( SurveyRepository::class );
 			$survey = $repo->findById( $survey_ids[0] );
 			if ( $survey !== null ) {
 				$widget_settings = $this->mergeFormDisplaySettings( $global_widget_settings, $survey->getSettings() );
