@@ -1,4 +1,10 @@
 <?php
+/**
+ * Admin service provider.
+ *
+ * @package AllFeedback\Admin
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -49,17 +55,19 @@ class AdminServiceProvider implements ServiceProvider {
 	private const MENU_SLUG = 'allfeedback';
 
 	/**
+	 * Constructor.
+	 *
 	 * @param  Container          $container          DI container.
-	 * @param  AssetManager       $assetManager       Asset enqueueing helper.
-	 * @param  ResponseRepository $responseRepository Response repository for unread count badge.
-	 * @param  SettingsManager    $settingsManager    Plugin settings.
+	 * @param  AssetManager       $asset_manager       Asset enqueueing helper.
+	 * @param  ResponseRepository $response_repository Response repository for unread count badge.
+	 * @param  SettingsManager    $settings_manager    Plugin settings.
 	 * @since  1.0.0
 	 */
 	public function __construct(
 		private readonly Container $container,
-		private readonly AssetManager $assetManager,
-		private readonly ResponseRepository $responseRepository,
-		private readonly SettingsManager $settingsManager,
+		private readonly AssetManager $asset_manager,
+		private readonly ResponseRepository $response_repository,
+		private readonly SettingsManager $settings_manager,
 	) {}
 
 	/**
@@ -78,11 +86,11 @@ class AdminServiceProvider implements ServiceProvider {
 	 * @since  1.0.0
 	 */
 	public function boot(): void {
-		$this->addAction( 'admin_menu',                           [ $this, 'registerMenus'         ] );
-		$this->addAction( 'allfeedback:enqueue-assets:admin',     [ $this, 'enqueueAssets'         ] );
-		$this->addAction( 'admin_footer',                         [ $this, 'inlineMenuHighlight'   ] );
-		$this->addAction( 'in_admin_header',                      [ $this, 'suppressAdminNotices'  ] );
-		$this->addAction( 'admin_init',                           [ $this, 'maybeRedirectToWizard' ] );
+		$this->addAction( 'admin_menu', [ $this, 'registerMenus' ] );
+		$this->addAction( 'allfeedback:enqueue-assets:admin', [ $this, 'enqueueAssets' ] );
+		$this->addAction( 'admin_footer', [ $this, 'inlineMenuHighlight' ] );
+		$this->addAction( 'in_admin_header', [ $this, 'suppressAdminNotices' ] );
+		$this->addAction( 'admin_init', [ $this, 'maybeRedirectToWizard' ] );
 	}
 
 	/**
@@ -97,11 +105,11 @@ class AdminServiceProvider implements ServiceProvider {
 	 * @since  1.0.0
 	 */
 	public function registerMenus(): void {
-		$mountPoint = static function (): void {
+		$mount_point = static function (): void {
 			echo '<div id="' . esc_attr( self::MOUNT_ID ) . '"></div>';
 		};
 
-		$menu_icon = 'data:image/svg+xml;base64,' . base64_encode(
+		$menu_icon = 'data:image/svg+xml;base64,' . base64_encode( // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- encoding an SVG data URI, not obfuscating code
 			'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'
 			. '<path fill="white" d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>'
 			. '</svg>'
@@ -112,7 +120,7 @@ class AdminServiceProvider implements ServiceProvider {
 			menu_title: __( 'AllFeedback', 'allfeedback' ),
 			capability: 'manage_options',
 			menu_slug:  self::MENU_SLUG,
-			callback:   $mountPoint,
+			callback:   $mount_point,
 			icon_url:   $menu_icon,
 			position:   30,
 		);
@@ -123,7 +131,7 @@ class AdminServiceProvider implements ServiceProvider {
 			menu_title:  __( 'Analytics', 'allfeedback' ),
 			capability:  'manage_options',
 			menu_slug:   self::MENU_SLUG . '#/analytics',
-			callback:    $mountPoint,
+			callback:    $mount_point,
 		);
 
 		add_submenu_page(
@@ -132,26 +140,26 @@ class AdminServiceProvider implements ServiceProvider {
 			menu_title:  __( 'All Forms', 'allfeedback' ),
 			capability:  'manage_options',
 			menu_slug:   self::MENU_SLUG . '#/forms',
-			callback:    $mountPoint,
+			callback:    $mount_point,
 		);
 
-		$unreadCount    = $this->responseRepository->countUnread();
-		$responsesTitle = __( 'Responses', 'allfeedback' );
+		$unread_count    = $this->response_repository->countUnread();
+		$responses_title = __( 'Responses', 'allfeedback' );
 
-		if ( $unreadCount > 0 ) {
-			$responsesTitle .= sprintf(
+		if ( $unread_count > 0 ) {
+			$responses_title .= sprintf(
 				' <span class="awaiting-mod count-%1$d"><span class="pending-count">%1$d</span></span>',
-				$unreadCount
+				$unread_count
 			);
 		}
 
 		add_submenu_page(
 			parent_slug: self::MENU_SLUG,
 			page_title:  __( 'Responses', 'allfeedback' ),
-			menu_title:  $responsesTitle,
+			menu_title:  $responses_title,
 			capability:  'manage_options',
 			menu_slug:   self::MENU_SLUG . '#/responses',
-			callback:    $mountPoint,
+			callback:    $mount_point,
 		);
 
 		add_submenu_page(
@@ -160,7 +168,7 @@ class AdminServiceProvider implements ServiceProvider {
 			menu_title:  __( 'Settings', 'allfeedback' ),
 			capability:  'manage_options',
 			menu_slug:   self::MENU_SLUG . '#/settings',
-			callback:    $mountPoint,
+			callback:    $mount_point,
 		);
 
 		add_submenu_page(
@@ -169,7 +177,7 @@ class AdminServiceProvider implements ServiceProvider {
 			menu_title:  __( 'Tools', 'allfeedback' ),
 			capability:  'manage_options',
 			menu_slug:   self::MENU_SLUG . '#/tools',
-			callback:    $mountPoint,
+			callback:    $mount_point,
 		);
 
 		remove_submenu_page( self::MENU_SLUG, self::MENU_SLUG );
@@ -285,27 +293,27 @@ class AdminServiceProvider implements ServiceProvider {
 
 		global $wpdb;
 
-		$isAdmin = current_user_can( 'manage_options' );
-		$widget  = (array) $this->settingsManager->get( 'general.widget' );
+		$is_admin = current_user_can( 'manage_options' );
+		$widget   = (array) $this->settings_manager->get( 'general.widget' );
 
 		// Diagnostic system info is only resolved and exposed for administrators.
-		$curlStr = null;
-		if ( $isAdmin && function_exists( 'curl_version' ) ) {
-			$cv      = curl_version();
-			$curlStr = $cv['version'] . ( ! empty( $cv['ssl_version'] ) ? ', ' . $cv['ssl_version'] : '' );
+		$curl_str = null;
+		if ( $is_admin && function_exists( 'curl_version' ) ) {
+			$cv       = curl_version();
+			$curl_str = $cv['version'] . ( ! empty( $cv['ssl_version'] ) ? ', ' . $cv['ssl_version'] : '' );
 		}
 
-		$adminData = $this->applyFilters(
+		$admin_data = $this->applyFilters(
 			'allfeedback:admin:script_data',
 			[
 				'adminUrl'        => admin_url( 'admin.php' ),
-				'adminEmail'      => $isAdmin ? sanitize_email( (string) get_option( 'admin_email', '' ) ) : null,
-				'widgetColor'     => $widget['color']    ?? '#6366f1',
+				'adminEmail'      => $is_admin ? sanitize_email( (string) get_option( 'admin_email', '' ) ) : null,
+				'widgetColor'     => $widget['color'] ?? '#6366f1',
 				'widgetPosition'  => $widget['position'] ?? 'bottom-right',
 				'pluginUrl'       => Constants::url(),
 				'buildUrl'        => Constants::url( 'resources/build/' ),
 				'currentUserId'   => get_current_user_id(),
-				'isAdmin'         => $isAdmin,
+				'isAdmin'         => $is_admin,
 				'nonce'           => wp_create_nonce( 'wp_rest' ),
 				'submitNonce'     => wp_create_nonce( 'allfeedback_submit' ),
 				'version'         => Constants::VERSION,
@@ -313,42 +321,42 @@ class AdminServiceProvider implements ServiceProvider {
 				'siteUrl'         => get_site_url(),
 				'wpVersion'       => get_bloginfo( 'version' ),
 				'isMultisite'     => is_multisite(),
-				'wpMemoryLimit'   => $isAdmin ? ( defined( 'WP_MEMORY_LIMIT' ) ? WP_MEMORY_LIMIT : 'N/A' ) : null,
-				'debug'           => $isAdmin ? ( defined( 'WP_DEBUG' ) && WP_DEBUG ) : null,
-				'wpCron'          => $isAdmin ? ! ( defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON ) : null,
+				'wpMemoryLimit'   => $is_admin ? ( defined( 'WP_MEMORY_LIMIT' ) ? WP_MEMORY_LIMIT : 'N/A' ) : null,
+				'debug'           => $is_admin ? ( defined( 'WP_DEBUG' ) && WP_DEBUG ) : null,
+				'wpCron'          => $is_admin ? ! ( defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON ) : null,
 				'language'        => get_locale(),
-				'extObjectCache'  => $isAdmin ? wp_using_ext_object_cache() : null,
-				'serverInfo'      => $isAdmin ? ( isset( $_SERVER['SERVER_SOFTWARE'] ) ? sanitize_text_field( wp_unslash( $_SERVER['SERVER_SOFTWARE'] ) ) : 'N/A' ) : null,
-				'mysqlVersion'    => $isAdmin ? $wpdb->db_version() : null,
-				'phpVersion'      => $isAdmin ? PHP_VERSION : null,
-				'defaultTimezone' => $isAdmin ? date_default_timezone_get() : null,
-				'phpPostMaxSize'  => $isAdmin ? ( ini_get( 'post_max_size' ) ?: 'N/A' ) : null,
-				'phpTimeLimit'    => $isAdmin ? ( ini_get( 'max_execution_time' ) ?: 'N/A' ) : null,
-				'curlVersion'     => $curlStr,
-				'hasFsockopen'    => $isAdmin ? ( function_exists( 'fsockopen' ) || function_exists( 'curl_init' ) ) : null,
-				'hasGzip'         => $isAdmin ? function_exists( 'gzopen' ) : null,
-				'hasDomDocument'  => $isAdmin ? class_exists( 'DOMDocument' ) : null,
-				'hasMultibyte'    => $isAdmin ? function_exists( 'mb_strtolower' ) : null,
+				'extObjectCache'  => $is_admin ? wp_using_ext_object_cache() : null,
+				'serverInfo'      => $is_admin ? ( isset( $_SERVER['SERVER_SOFTWARE'] ) ? sanitize_text_field( wp_unslash( $_SERVER['SERVER_SOFTWARE'] ) ) : 'N/A' ) : null,
+				'mysqlVersion'    => $is_admin ? $wpdb->db_version() : null,
+				'phpVersion'      => $is_admin ? PHP_VERSION : null,
+				'defaultTimezone' => $is_admin ? date_default_timezone_get() : null,
+				'phpPostMaxSize'  => $is_admin ? ( ini_get( 'post_max_size' ) !== false ? ini_get( 'post_max_size' ) : 'N/A' ) : null,
+				'phpTimeLimit'    => $is_admin ? ( ini_get( 'max_execution_time' ) !== false ? ini_get( 'max_execution_time' ) : 'N/A' ) : null,
+				'curlVersion'     => $curl_str,
+				'hasFsockopen'    => $is_admin ? ( function_exists( 'fsockopen' ) || function_exists( 'curl_init' ) ) : null,
+				'hasGzip'         => $is_admin ? function_exists( 'gzopen' ) : null,
+				'hasDomDocument'  => $is_admin ? class_exists( 'DOMDocument' ) : null,
+				'hasMultibyte'    => $is_admin ? function_exists( 'mb_strtolower' ) : null,
 				'wizardStatus'    => get_option( 'allfeedback_wizard_status', 'not_started' ),
 			]
 		);
 
-		$this->assetManager->enqueueScript(
+		$this->asset_manager->enqueueScript(
 			handle:   'admin',
 			src:      'admin.js',
 			localize: [
 				'object_name' => '__ALLFB_ADMIN__',
-				'data'        => $adminData,
+				'data'        => $admin_data,
 			]
 		);
 
-		$this->assetManager->enqueueStyle(
+		$this->asset_manager->enqueueStyle(
 			handle: 'admin',
 			src:    'admin.css'
 		);
 
 		if ( is_rtl() ) {
-			$this->assetManager->enqueueStyle(
+			$this->asset_manager->enqueueStyle(
 				handle: 'admin-rtl',
 				src:    'admin.rtl.css'
 			);

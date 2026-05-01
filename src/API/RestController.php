@@ -1,4 +1,10 @@
 <?php
+/**
+ * Rest controller.
+ *
+ * @package AllFeedback\API
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -40,7 +46,7 @@ abstract class RestController {
 	 * @var string
 	 * @since 1.0.0
 	 */
-	protected string $restBase = '';
+	protected string $rest_base = '';
 
 	/**
 	 * Register all REST routes for this controller.
@@ -88,16 +94,16 @@ abstract class RestController {
 	/**
 	 * Build a 404 Not Found WP_Error.
 	 *
-	 * @param  string $resource Optional resource name to include in the message.
+	 * @param  string $resource_name Optional resource name to include in the message.
 	 * @return \WP_Error
 	 * @since  1.0.0
 	 */
-	protected function notFoundResponse( string $resource = '' ): \WP_Error {
-		$message = $resource
+	protected function notFoundResponse( string $resource_name = '' ): \WP_Error {
+		$message = $resource_name
 			? sprintf(
 				/* translators: %s: Resource name */
 				__( '%s not found.', 'allfeedback' ),
-				$resource
+				$resource_name
 			)
 			: __( 'Resource not found.', 'allfeedback' );
 
@@ -127,7 +133,8 @@ abstract class RestController {
 	 */
 	protected function exceptionToResponse( \Throwable $e ): \WP_Error {
 		if ( $e instanceof NotFoundException ) {
-			return $this->errorResponse( $e->getMessage() ?: __( 'Resource not found.', 'allfeedback' ), 404 );
+			$not_found_msg = $e->getMessage();
+			return $this->errorResponse( $not_found_msg !== '' ? $not_found_msg : __( 'Resource not found.', 'allfeedback' ), 404 );
 		}
 
 		if ( $e instanceof ValidationException ) {
@@ -192,16 +199,16 @@ abstract class RestController {
 	 * @param  bool     $required    Whether the argument is required.
 	 * @param  int      $min         Minimum acceptable value.
 	 * @param  int|null $max         Maximum acceptable value (null = no upper bound).
-	 * @param  mixed    $default     Default value (null = no default).
+	 * @param  mixed    $default     Fallback value (null = no default).
 	 * @return array<string, mixed>
 	 * @since  1.0.0
 	 */
 	protected function argInteger(
 		string $description,
-		bool $required   = false,
-		int $min         = 0,
-		?int $max        = null,
-		mixed $default   = null,
+		bool $required = false,
+		int $min = 0,
+		?int $max = null,
+		mixed $default = null, // phpcs:ignore Universal.NamingConventions.NoReservedKeywordParameterNames.defaultFound -- named arg used by callers
 	): array {
 		$arg = [
 			'description'       => $description,
@@ -225,20 +232,20 @@ abstract class RestController {
 	 *
 	 * @param  string          $description Human-readable description.
 	 * @param  bool            $required    Whether the argument is required.
-	 * @param  int|null        $minLength   Minimum string length.
-	 * @param  int|null        $maxLength   Maximum string length.
+	 * @param  int|null        $min_length   Minimum string length.
+	 * @param  int|null        $max_length   Maximum string length.
 	 * @param  string|callable $sanitize    Sanitize callback (default sanitize_text_field).
-	 * @param  mixed           $default     Default value (null = no default).
+	 * @param  mixed           $default     Fallback value (null = no default).
 	 * @return array<string, mixed>
 	 * @since  1.0.0
 	 */
 	protected function argString(
 		string $description,
-		bool $required           = false,
-		?int $minLength          = null,
-		?int $maxLength          = null,
+		bool $required = false,
+		?int $min_length = null,
+		?int $max_length = null,
 		string|callable $sanitize = 'sanitize_text_field',
-		mixed $default           = null,
+		mixed $default = null, // phpcs:ignore Universal.NamingConventions.NoReservedKeywordParameterNames.defaultFound -- named arg used by callers
 	): array {
 		$arg = [
 			'description'       => $description,
@@ -247,11 +254,11 @@ abstract class RestController {
 			'sanitize_callback' => $sanitize,
 			'validate_callback' => 'rest_validate_request_arg',
 		];
-		if ( $minLength !== null ) {
-			$arg['minLength'] = $minLength;
+		if ( $min_length !== null ) {
+			$arg['minLength'] = $min_length;
 		}
-		if ( $maxLength !== null ) {
-			$arg['maxLength'] = $maxLength;
+		if ( $max_length !== null ) {
+			$arg['maxLength'] = $max_length;
 		}
 		if ( $default !== null ) {
 			$arg['default'] = $default;
@@ -264,14 +271,14 @@ abstract class RestController {
 	 *
 	 * @param  string $description Human-readable description.
 	 * @param  bool   $required    Whether the argument is required.
-	 * @param  bool   $default     Default value.
+	 * @param  bool   $default     Fallback value.
 	 * @return array<string, mixed>
 	 * @since  1.0.0
 	 */
 	protected function argBoolean(
 		string $description,
 		bool $required = false,
-		bool $default  = false,
+		bool $default = false, // phpcs:ignore Universal.NamingConventions.NoReservedKeywordParameterNames.defaultFound -- named arg used by callers
 	): array {
 		return [
 			'description'       => $description,
@@ -290,16 +297,16 @@ abstract class RestController {
 	 * @param  string[]        $values      Allowed enum values.
 	 * @param  bool            $required    Whether the argument is required.
 	 * @param  string|callable $sanitize    Sanitize callback (default sanitize_key).
-	 * @param  mixed           $default     Default value (null = no default).
+	 * @param  mixed           $default     Fallback value (null = no default).
 	 * @return array<string, mixed>
 	 * @since  1.0.0
 	 */
 	protected function argEnum(
 		string $description,
 		array $values,
-		bool $required           = false,
+		bool $required = false,
 		string|callable $sanitize = 'sanitize_key',
-		mixed $default           = null,
+		mixed $default = null, // phpcs:ignore Universal.NamingConventions.NoReservedKeywordParameterNames.defaultFound -- named arg used by callers
 	): array {
 		$arg = [
 			'description'       => $description,
@@ -318,12 +325,12 @@ abstract class RestController {
 	/**
 	 * Return standard pagination arguments (page + per_page).
 	 *
-	 * @param  int $defaultPerPage Items per page to use when the arg is absent.
-	 * @param  int $maxPerPage     Hard upper limit on per_page.
+	 * @param  int $default_per_page Items per page to use when the arg is absent.
+	 * @param  int $max_per_page     Hard upper limit on per_page.
 	 * @return array<string, array<string, mixed>>
 	 * @since  1.0.0
 	 */
-	protected function paginationArgs( int $defaultPerPage = 20, int $maxPerPage = 100 ): array {
+	protected function paginationArgs( int $default_per_page = 20, int $max_per_page = 100 ): array {
 		return [
 			'page'     => $this->argInteger(
 				description: __( 'Current page of the collection (1-based).', 'allfeedback' ),
@@ -334,11 +341,11 @@ abstract class RestController {
 				description: sprintf(
 					/* translators: %d: maximum items per page */
 					__( 'Maximum results per page (max %d).', 'allfeedback' ),
-					$maxPerPage
+					$max_per_page
 				),
 				min:         1,
-				max:         $maxPerPage,
-				default:     $defaultPerPage,
+				max:         $max_per_page,
+				default:     $default_per_page,
 			),
 		];
 	}
@@ -353,7 +360,7 @@ abstract class RestController {
 	protected function idArg( string $description = '' ): array {
 		return [
 			'id' => [
-				'description'       => $description ?: __( 'Unique identifier for the resource.', 'allfeedback' ),
+				'description'       => $description !== '' ? $description : __( 'Unique identifier for the resource.', 'allfeedback' ),
 				'type'              => 'integer',
 				'required'          => true,
 				'minimum'           => 1,

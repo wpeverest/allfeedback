@@ -1,4 +1,10 @@
 <?php
+/**
+ * Wpdb response repository.
+ *
+ * @package AllFeedback\Infrastructure\Database\Repositories
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -14,7 +20,7 @@ use DateTimeImmutable;
 // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
 
 /**
- * wpdb-backed implementation of ResponseRepository.
+ * Wpdb-backed implementation of ResponseRepository.
  *
  * Persists Response aggregates to the custom `{prefix}af_responses` table.
  * The response_data JSON column is encoded on write and decoded on read so that
@@ -24,6 +30,8 @@ use DateTimeImmutable;
  * @since   1.0.0
  */
 class WpdbResponseRepository implements ResponseRepository {
+
+	// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- $this->table is a trusted class property, never user input
 
 	/**
 	 * Fully-qualified table name including the wpdb prefix.
@@ -55,6 +63,8 @@ class WpdbResponseRepository implements ResponseRepository {
 	];
 
 	/**
+	 * Constructor.
+	 *
 	 * @since  1.0.0
 	 */
 	public function __construct() {
@@ -99,17 +109,17 @@ class WpdbResponseRepository implements ResponseRepository {
 
 		return Response::reconstitute(
 			id: (int) $wpdb->insert_id,
-			surveyId: $response->getSurveyId(),
-			responseData: $response->getResponseData(),
+			survey_id: $response->getSurveyId(),
+			response_data: $response->getResponseData(),
 			score: $response->getScore(),
-			pageUrl: $response->getPageUrl(),
-			deviceType: $response->getDeviceType(),
-			ipHash: $response->getIpHash(),
-			ipAddress: $response->getIpAddress(),
-			userId: $response->getUserId(),
-			guestToken: $response->getGuestToken(),
-			consentGiven: $response->isConsentGiven(),
-			createdAt: $response->getCreatedAt(),
+			page_url: $response->getPageUrl(),
+			device_type: $response->getDeviceType(),
+			ip_hash: $response->getIpHash(),
+			ip_address: $response->getIpAddress(),
+			user_id: $response->getUserId(),
+			guest_token: $response->getGuestToken(),
+			consent_given: $response->isConsentGiven(),
+			created_at: $response->getCreatedAt(),
 		);
 	}
 
@@ -137,28 +147,29 @@ class WpdbResponseRepository implements ResponseRepository {
 	/**
 	 * Retrieve all Responses for a given Survey, applying the filter.
 	 *
-	 * @param  int            $surveyId Survey primary key.
+	 * @param  int            $survey_id Survey primary key.
 	 * @param  ResponseFilter $filter   Query constraints and pagination.
 	 * @return Response[]
 	 * @since  1.0.0
 	 */
-	public function findBySurveyId( int $surveyId, ResponseFilter $filter ): array {
+	public function findBySurveyId( int $survey_id, ResponseFilter $filter ): array {
 		global $wpdb;
 
-		[ $where, $params ] = $this->buildFilterQuery( $surveyId, $filter );
+		[ $where, $params ] = $this->buildFilterQuery( $survey_id, $filter );
 
-		$orderBy = in_array( $filter->orderBy, self::ALLOWED_ORDERBY, true ) ? $filter->orderBy : 'created_at';
-		$order   = strtoupper( $filter->order ) === 'ASC' ? 'ASC' : 'DESC';
-		$limit   = max( 1, $filter->perPage );
-		$offset  = max( 0, ( $filter->page - 1 ) * $limit );
+		$order_by = in_array( $filter->order_by, self::ALLOWED_ORDERBY, true ) ? $filter->order_by : 'created_at';
+		$order    = strtoupper( $filter->order ) === 'ASC' ? 'ASC' : 'DESC';
+		$limit    = max( 1, $filter->per_page );
+		$offset   = max( 0, ( $filter->page - 1 ) * $limit );
 
-		$whereClause = 'WHERE ' . implode( ' AND ', $where );
-		$sql         = "SELECT * FROM {$this->table} {$whereClause} ORDER BY {$orderBy} {$order} LIMIT %d OFFSET %d"; // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$where_clause = 'WHERE ' . implode( ' AND ', $where );
+		$sql          = "SELECT * FROM {$this->table} {$where_clause} ORDER BY {$order_by} {$order} LIMIT %d OFFSET %d"; // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		$params[] = $limit;
 		$params[] = $offset;
 
-		$rows = $wpdb->get_results( $wpdb->prepare( $sql, ...$params ), ARRAY_A ) ?: []; // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$rows = $wpdb->get_results( $wpdb->prepare( $sql, ...$params ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$rows = $rows !== null && $rows !== false ? $rows : [];
 
 		return array_map( [ $this, 'hydrate' ], $rows );
 	}
@@ -166,18 +177,18 @@ class WpdbResponseRepository implements ResponseRepository {
 	/**
 	 * Count all Responses for a given Survey, applying the filter.
 	 *
-	 * @param  int            $surveyId Survey primary key.
+	 * @param  int            $survey_id Survey primary key.
 	 * @param  ResponseFilter $filter   Query constraints.
 	 * @return int
 	 * @since  1.0.0
 	 */
-	public function countBySurveyId( int $surveyId, ResponseFilter $filter ): int {
+	public function countBySurveyId( int $survey_id, ResponseFilter $filter ): int {
 		global $wpdb;
 
-		[ $where, $params ] = $this->buildFilterQuery( $surveyId, $filter );
+		[ $where, $params ] = $this->buildFilterQuery( $survey_id, $filter );
 
-		$whereClause = 'WHERE ' . implode( ' AND ', $where );
-		$sql         = "SELECT COUNT(*) FROM {$this->table} {$whereClause}"; // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$where_clause = 'WHERE ' . implode( ' AND ', $where );
+		$sql          = "SELECT COUNT(*) FROM {$this->table} {$where_clause}"; // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		if ( $params !== [] ) {
 			return (int) $wpdb->get_var( $wpdb->prepare( $sql, ...$params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
@@ -198,18 +209,19 @@ class WpdbResponseRepository implements ResponseRepository {
 
 		[ $where, $params ] = $this->buildGlobalFilterQuery( $filter );
 
-		$orderBy = in_array( $filter->orderBy, self::ALLOWED_ORDERBY, true ) ? $filter->orderBy : 'created_at';
-		$order   = strtoupper( $filter->order ) === 'ASC' ? 'ASC' : 'DESC';
-		$limit   = max( 1, $filter->perPage );
-		$offset  = max( 0, ( $filter->page - 1 ) * $limit );
+		$order_by = in_array( $filter->order_by, self::ALLOWED_ORDERBY, true ) ? $filter->order_by : 'created_at';
+		$order    = strtoupper( $filter->order ) === 'ASC' ? 'ASC' : 'DESC';
+		$limit    = max( 1, $filter->per_page );
+		$offset   = max( 0, ( $filter->page - 1 ) * $limit );
 
-		$whereClause = $where !== [] ? 'WHERE ' . implode( ' AND ', $where ) : '';
-		$sql         = "SELECT * FROM {$this->table} {$whereClause} ORDER BY {$orderBy} {$order} LIMIT %d OFFSET %d"; // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$where_clause = $where !== [] ? 'WHERE ' . implode( ' AND ', $where ) : '';
+		$sql          = "SELECT * FROM {$this->table} {$where_clause} ORDER BY {$order_by} {$order} LIMIT %d OFFSET %d"; // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		$params[] = $limit;
 		$params[] = $offset;
 
-		$rows = $wpdb->get_results( $wpdb->prepare( $sql, ...$params ), ARRAY_A ) ?: []; // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$rows = $wpdb->get_results( $wpdb->prepare( $sql, ...$params ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$rows = $rows !== null && $rows !== false ? $rows : [];
 
 		return array_map( [ $this, 'hydrate' ], $rows );
 	}
@@ -226,8 +238,8 @@ class WpdbResponseRepository implements ResponseRepository {
 
 		[ $where, $params ] = $this->buildGlobalFilterQuery( $filter );
 
-		$whereClause = $where !== [] ? 'WHERE ' . implode( ' AND ', $where ) : '';
-		$sql         = "SELECT COUNT(*) FROM {$this->table} {$whereClause}"; // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$where_clause = $where !== [] ? 'WHERE ' . implode( ' AND ', $where ) : '';
+		$sql          = "SELECT COUNT(*) FROM {$this->table} {$where_clause}"; // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		if ( $params !== [] ) {
 			return (int) $wpdb->get_var( $wpdb->prepare( $sql, ...$params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
@@ -304,7 +316,7 @@ class WpdbResponseRepository implements ResponseRepository {
 
 		$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
 
-		$existingIds = array_map(
+		$existing_ids = array_map(
 			'intval',
 			$wpdb->get_col( // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 				$wpdb->prepare(
@@ -314,31 +326,31 @@ class WpdbResponseRepository implements ResponseRepository {
 			)
 		);
 
-		$missingIds = array_values( array_diff( $ids, $existingIds ) );
+		$missing_ids = array_values( array_diff( $ids, $existing_ids ) );
 
-		if ( ! empty( $existingIds ) ) {
-			$deletePlaceholders = implode( ',', array_fill( 0, count( $existingIds ), '%d' ) );
+		if ( ! empty( $existing_ids ) ) {
+			$delete_placeholders = implode( ',', array_fill( 0, count( $existing_ids ), '%d' ) );
 			$wpdb->query( // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 				$wpdb->prepare(
-					"DELETE FROM {$this->table} WHERE id IN ({$deletePlaceholders})", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
-					...$existingIds
+					"DELETE FROM {$this->table} WHERE id IN ({$delete_placeholders})", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+					...$existing_ids
 				)
 			);
 			delete_transient( self::UNREAD_CACHE_KEY );
 		}
 
-		return $missingIds;
+		return $missing_ids;
 	}
 
 	/**
 	 * Bulk-delete multiple Responses that belong to a specific survey.
 	 *
 	 * @param  int[] $ids      Response primary keys to delete.
-	 * @param  int   $surveyId Only delete responses belonging to this survey.
+	 * @param  int   $survey_id Only delete responses belonging to this survey.
 	 * @return int[]           IDs that were not deleted (not found or wrong survey).
 	 * @since  1.0.0
 	 */
-	public function deleteManyBySurveyId( array $ids, int $surveyId ): array {
+	public function deleteManyBySurveyId( array $ids, int $survey_id ): array {
 		if ( empty( $ids ) ) {
 			return [];
 		}
@@ -347,42 +359,42 @@ class WpdbResponseRepository implements ResponseRepository {
 
 		$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
 
-		$validIds = array_map(
+		$valid_ids = array_map(
 			'intval',
 			$wpdb->get_col( // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 				$wpdb->prepare(
 					"SELECT id FROM {$this->table} WHERE id IN ({$placeholders}) AND survey_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
-					...[ ...$ids, $surveyId ]
+					...[ ...$ids, $survey_id ]
 				)
 			)
 		);
 
-		$failedIds = array_values( array_diff( $ids, $validIds ) );
+		$failed_ids = array_values( array_diff( $ids, $valid_ids ) );
 
-		if ( ! empty( $validIds ) ) {
-			$deletePlaceholders = implode( ',', array_fill( 0, count( $validIds ), '%d' ) );
+		if ( ! empty( $valid_ids ) ) {
+			$delete_placeholders = implode( ',', array_fill( 0, count( $valid_ids ), '%d' ) );
 			$wpdb->query( // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 				$wpdb->prepare(
-					"DELETE FROM {$this->table} WHERE id IN ({$deletePlaceholders})", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
-					...$validIds
+					"DELETE FROM {$this->table} WHERE id IN ({$delete_placeholders})", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+					...$valid_ids
 				)
 			);
 			delete_transient( self::UNREAD_CACHE_KEY );
 		}
 
-		return $failedIds;
+		return $failed_ids;
 	}
 
 	/**
 	 * Permanently remove all Responses belonging to a given Survey.
 	 *
-	 * @param  int $surveyId Survey primary key.
+	 * @param  int $survey_id Survey primary key.
 	 * @return bool True on success.
 	 * @since  1.0.0
 	 */
-	public function deleteBySurveyId( int $surveyId ): bool {
+	public function deleteBySurveyId( int $survey_id ): bool {
 		global $wpdb;
-		$result = $wpdb->delete( $this->table, [ 'survey_id' => $surveyId ], [ '%d' ] );
+		$result = $wpdb->delete( $this->table, [ 'survey_id' => $survey_id ], [ '%d' ] );
 
 		if ( $result !== false ) {
 			delete_transient( self::UNREAD_CACHE_KEY );
@@ -410,18 +422,16 @@ class WpdbResponseRepository implements ResponseRepository {
 
 		global $wpdb;
 
-		$surveysTable = $wpdb->prefix . 'af_surveys';
+		$surveys_table = $wpdb->prefix . 'af_surveys';
 
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$count = (int) $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT COUNT(*) FROM {$this->table}
 				 WHERE is_read = 0
-				   AND survey_id IN (SELECT id FROM {$surveysTable} WHERE status != %s)",
+				   AND survey_id IN (SELECT id FROM {$surveys_table} WHERE status != %s)",
 				'trashed'
 			)
 		);
-		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		set_transient( self::UNREAD_CACHE_KEY, $count, 5 * MINUTE_IN_SECONDS );
 
@@ -432,26 +442,25 @@ class WpdbResponseRepository implements ResponseRepository {
 	 * Return true if a response from the given IP hash already exists for
 	 * the survey within the look-back window.
 	 *
-	 * @param  int    $surveyId    Survey to check against.
-	 * @param  string $ipHash      HMAC hash of the visitor IP.
-	 * @param  int    $windowHours Look-back window in hours (0 = all-time).
+	 * @param  int    $survey_id    Survey to check against.
+	 * @param  string $ip_hash      HMAC hash of the visitor IP.
+	 * @param  int    $window_hours Look-back window in hours (0 = all-time).
 	 * @return bool
 	 * @since  1.0.0
 	 */
-	public function existsByIpHash( int $surveyId, string $ipHash, int $windowHours = 0 ): bool {
+	public function existsByIpHash( int $survey_id, string $ip_hash, int $window_hours = 0 ): bool {
 		global $wpdb;
 
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		if ( $windowHours > 0 ) {
+		if ( $window_hours > 0 ) {
 			$count = (int) $wpdb->get_var(
 				$wpdb->prepare(
 					"SELECT COUNT(*) FROM {$this->table}
 					 WHERE survey_id = %d
 					   AND ip_hash   = %s
 					   AND created_at >= DATE_SUB( NOW(), INTERVAL %d HOUR )",
-					$surveyId,
-					$ipHash,
-					$windowHours
+					$survey_id,
+					$ip_hash,
+					$window_hours
 				)
 			);
 		} else {
@@ -459,12 +468,11 @@ class WpdbResponseRepository implements ResponseRepository {
 				$wpdb->prepare(
 					"SELECT COUNT(*) FROM {$this->table}
 					 WHERE survey_id = %d AND ip_hash = %s",
-					$surveyId,
-					$ipHash
+					$survey_id,
+					$ip_hash
 				)
 			);
 		}
-		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		return $count > 0;
 	}
@@ -472,12 +480,12 @@ class WpdbResponseRepository implements ResponseRepository {
 	/**
 	 * Bulk-update is_read for a set of response IDs in two queries (find existing + UPDATE IN).
 	 *
-	 * @param  int[]  $ids    Response primary keys to update.
-	 * @param  bool   $isRead Target read state.
+	 * @param  int[] $ids    Response primary keys to update.
+	 * @param  bool  $is_read Target read state.
 	 * @return int[]          IDs from $ids that were not found in the database.
 	 * @since  1.0.0
 	 */
-	public function bulkUpdateReadStatus( array $ids, bool $isRead ): array {
+	public function bulkUpdateReadStatus( array $ids, bool $is_read ): array {
 		if ( empty( $ids ) ) {
 			return [];
 		}
@@ -486,55 +494,54 @@ class WpdbResponseRepository implements ResponseRepository {
 
 		$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
 
-		$existingIds = $wpdb->get_col( // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$existing_ids = $wpdb->get_col( // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 			$wpdb->prepare(
 				"SELECT id FROM {$this->table} WHERE id IN ({$placeholders})", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 				...$ids
 			)
 		);
 
-		$existingIds = array_map( 'intval', $existingIds );
-		$missingIds  = array_values( array_diff( $ids, $existingIds ) );
+		$existing_ids = array_map( 'intval', $existing_ids );
+		$missing_ids  = array_values( array_diff( $ids, $existing_ids ) );
 
-		if ( ! empty( $existingIds ) ) {
-			$updatePlaceholders = implode( ',', array_fill( 0, count( $existingIds ), '%d' ) );
+		if ( ! empty( $existing_ids ) ) {
+			$update_placeholders = implode( ',', array_fill( 0, count( $existing_ids ), '%d' ) );
 			$wpdb->query( // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 				$wpdb->prepare(
-					"UPDATE {$this->table} SET is_read = %d WHERE id IN ({$updatePlaceholders})", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
-					$isRead ? 1 : 0,
-					...$existingIds
+					"UPDATE {$this->table} SET is_read = %d WHERE id IN ({$update_placeholders})", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
+					$is_read ? 1 : 0,
+					...$existing_ids
 				)
 			);
 
 			delete_transient( self::UNREAD_CACHE_KEY );
 		}
 
-		return $missingIds;
+		return $missing_ids;
 	}
 
 	/**
 	 * Return true if a logged-in user has already submitted a response for this survey.
 	 *
-	 * @param  int $surveyId    Survey to check against.
-	 * @param  int $userId      WordPress user ID.
-	 * @param  int $windowHours Look-back window in hours (0 = all-time).
+	 * @param  int $survey_id    Survey to check against.
+	 * @param  int $user_id      WordPress user ID.
+	 * @param  int $window_hours Look-back window in hours (0 = all-time).
 	 * @return bool
 	 * @since  1.0.0
 	 */
-	public function existsByUserId( int $surveyId, int $userId, int $windowHours = 0 ): bool {
+	public function existsByUserId( int $survey_id, int $user_id, int $window_hours = 0 ): bool {
 		global $wpdb;
 
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		if ( $windowHours > 0 ) {
+		if ( $window_hours > 0 ) {
 			$count = (int) $wpdb->get_var(
 				$wpdb->prepare(
 					"SELECT COUNT(*) FROM {$this->table}
 					 WHERE survey_id = %d
 					   AND user_id   = %d
 					   AND created_at >= DATE_SUB( NOW(), INTERVAL %d HOUR )",
-					$surveyId,
-					$userId,
-					$windowHours
+					$survey_id,
+					$user_id,
+					$window_hours
 				)
 			);
 		} else {
@@ -542,12 +549,11 @@ class WpdbResponseRepository implements ResponseRepository {
 				$wpdb->prepare(
 					"SELECT COUNT(*) FROM {$this->table}
 					 WHERE survey_id = %d AND user_id = %d",
-					$surveyId,
-					$userId
+					$survey_id,
+					$user_id
 				)
 			);
 		}
-		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		return $count > 0;
 	}
@@ -555,26 +561,25 @@ class WpdbResponseRepository implements ResponseRepository {
 	/**
 	 * Return true if a guest visitor UUID has already submitted a response for this survey.
 	 *
-	 * @param  int    $surveyId    Survey to check against.
-	 * @param  string $guestToken  UUID stored in the visitor's localStorage.
-	 * @param  int    $windowHours Look-back window in hours (0 = all-time).
+	 * @param  int    $survey_id    Survey to check against.
+	 * @param  string $guest_token  UUID stored in the visitor's localStorage.
+	 * @param  int    $window_hours Look-back window in hours (0 = all-time).
 	 * @return bool
 	 * @since  1.0.0
 	 */
-	public function existsByGuestToken( int $surveyId, string $guestToken, int $windowHours = 0 ): bool {
+	public function existsByGuestToken( int $survey_id, string $guest_token, int $window_hours = 0 ): bool {
 		global $wpdb;
 
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		if ( $windowHours > 0 ) {
+		if ( $window_hours > 0 ) {
 			$count = (int) $wpdb->get_var(
 				$wpdb->prepare(
 					"SELECT COUNT(*) FROM {$this->table}
 					 WHERE survey_id   = %d
 					   AND guest_token = %s
 					   AND created_at >= DATE_SUB( NOW(), INTERVAL %d HOUR )",
-					$surveyId,
-					$guestToken,
-					$windowHours
+					$survey_id,
+					$guest_token,
+					$window_hours
 				)
 			);
 		} else {
@@ -582,12 +587,11 @@ class WpdbResponseRepository implements ResponseRepository {
 				$wpdb->prepare(
 					"SELECT COUNT(*) FROM {$this->table}
 					 WHERE survey_id = %d AND guest_token = %s",
-					$surveyId,
-					$guestToken
+					$survey_id,
+					$guest_token
 				)
 			);
 		}
-		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		return $count > 0;
 	}
@@ -595,14 +599,13 @@ class WpdbResponseRepository implements ResponseRepository {
 	/**
 	 * Aggregate score statistics for a survey using SQL.
 	 *
-	 * @param  int $surveyId Survey primary key.
+	 * @param  int $survey_id Survey primary key.
 	 * @return array{total: int, score_count: int, score_sum: float, promoters: int, passives: int, detractors: int}
 	 * @since  1.0.0
 	 */
-	public function aggregateScoreStats( int $surveyId ): array {
+	public function aggregateScoreStats( int $survey_id ): array {
 		global $wpdb;
 
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$row = $wpdb->get_row(
 			$wpdb->prepare(
 				"SELECT
@@ -614,11 +617,10 @@ class WpdbResponseRepository implements ResponseRepository {
 					SUM(CASE WHEN score < 7 AND score IS NOT NULL THEN 1 ELSE 0 END) AS detractors
 				 FROM {$this->table}
 				 WHERE survey_id = %d",
-				$surveyId
+				$survey_id
 			),
 			ARRAY_A
 		);
-		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		return [
 			'total'       => (int) ( $row['total'] ?? 0 ),
@@ -633,14 +635,13 @@ class WpdbResponseRepository implements ResponseRepository {
 	/**
 	 * Count scored responses grouped by integer score (0–10) for a survey.
 	 *
-	 * @param  int $surveyId Survey primary key.
+	 * @param  int $survey_id Survey primary key.
 	 * @return array<int, int> score => count (only scores with at least one response)
 	 * @since  1.0.0
 	 */
-	public function countByScore( int $surveyId ): array {
+	public function countByScore( int $survey_id ): array {
 		global $wpdb;
 
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT CAST(score AS UNSIGNED) AS s, COUNT(*) AS cnt
@@ -648,11 +649,11 @@ class WpdbResponseRepository implements ResponseRepository {
 				 WHERE survey_id = %d AND score IS NOT NULL AND score BETWEEN 0 AND 10
 				 GROUP BY s
 				 ORDER BY s ASC",
-				$surveyId
+				$survey_id
 			),
 			ARRAY_A
-		) ?: [];
-		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		);
+		$rows = $rows !== null && $rows !== false ? $rows : [];
 
 		$result = [];
 		foreach ( $rows as $row ) {
@@ -665,25 +666,24 @@ class WpdbResponseRepository implements ResponseRepository {
 	/**
 	 * Count responses grouped by device_type for a survey using SQL.
 	 *
-	 * @param  int $surveyId Survey primary key.
+	 * @param  int $survey_id Survey primary key.
 	 * @return array<string, int>
 	 * @since  1.0.0
 	 */
-	public function countByDevice( int $surveyId ): array {
+	public function countByDevice( int $survey_id ): array {
 		global $wpdb;
 
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT COALESCE(device_type, 'unknown') AS device, COUNT(*) AS cnt
 				 FROM {$this->table}
 				 WHERE survey_id = %d
 				 GROUP BY device",
-				$surveyId
+				$survey_id
 			),
 			ARRAY_A
-		) ?: [];
-		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		);
+		$rows = $rows !== null && $rows !== false ? $rows : [];
 
 		$result = [];
 		foreach ( $rows as $row ) {
@@ -696,14 +696,13 @@ class WpdbResponseRepository implements ResponseRepository {
 	/**
 	 * Count responses grouped by date (Y-m-d) for a survey using SQL.
 	 *
-	 * @param  int $surveyId Survey primary key.
+	 * @param  int $survey_id Survey primary key.
 	 * @return array<string, int>
 	 * @since  1.0.0
 	 */
-	public function countByDate( int $surveyId ): array {
+	public function countByDate( int $survey_id ): array {
 		global $wpdb;
 
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT DATE(created_at) AS d, COUNT(*) AS cnt
@@ -711,11 +710,11 @@ class WpdbResponseRepository implements ResponseRepository {
 				 WHERE survey_id = %d
 				 GROUP BY d
 				 ORDER BY d ASC",
-				$surveyId
+				$survey_id
 			),
 			ARRAY_A
-		) ?: [];
-		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		);
+		$rows = $rows !== null && $rows !== false ? $rows : [];
 
 		$result = [];
 		foreach ( $rows as $row ) {
@@ -736,7 +735,6 @@ class WpdbResponseRepository implements ResponseRepository {
 	public function getOverviewStats(): array {
 		global $wpdb;
 
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$row = $wpdb->get_row(
 			"SELECT
 				COUNT(*)                                                                                  AS total_feedback,
@@ -760,34 +758,33 @@ class WpdbResponseRepository implements ResponseRepository {
 			FROM {$this->table}",
 			ARRAY_A
 		);
-		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
-		$scoreCount      = (int) ( $row['score_count']           ?? 0 );
-		$scoreSum        = (float) ( $row['score_sum']           ?? 0 );
-		$twScoreCount    = (int) ( $row['this_week_score_count'] ?? 0 );
-		$twScoreSum      = (float) ( $row['this_week_score_sum'] ?? 0 );
-		$lwScoreCount    = (int) ( $row['last_week_score_count'] ?? 0 );
-		$lwScoreSum      = (float) ( $row['last_week_score_sum'] ?? 0 );
+		$score_count    = (int) ( $row['score_count'] ?? 0 );
+		$score_sum      = (float) ( $row['score_sum'] ?? 0 );
+		$tw_score_count = (int) ( $row['this_week_score_count'] ?? 0 );
+		$tw_score_sum   = (float) ( $row['this_week_score_sum'] ?? 0 );
+		$lw_score_count = (int) ( $row['last_week_score_count'] ?? 0 );
+		$lw_score_sum   = (float) ( $row['last_week_score_sum'] ?? 0 );
 
 		return [
-			'total_feedback'       => (int) ( $row['total_feedback']  ?? 0 ),
+			'total_feedback'       => (int) ( $row['total_feedback'] ?? 0 ),
 			'this_week_count'      => (int) ( $row['this_week_count'] ?? 0 ),
 			'last_week_count'      => (int) ( $row['last_week_count'] ?? 0 ),
-			'avg_score'            => $scoreCount   > 0 ? round( $scoreSum   / $scoreCount,   2 ) : null,
-			'this_week_avg_score'  => $twScoreCount > 0 ? round( $twScoreSum / $twScoreCount, 2 ) : null,
-			'last_week_avg_score'  => $lwScoreCount > 0 ? round( $lwScoreSum / $lwScoreCount, 2 ) : null,
+			'avg_score'            => $score_count > 0 ? round( $score_sum / $score_count, 2 ) : null,
+			'this_week_avg_score'  => $tw_score_count > 0 ? round( $tw_score_sum / $tw_score_count, 2 ) : null,
+			'last_week_avg_score'  => $lw_score_count > 0 ? round( $lw_score_sum / $lw_score_count, 2 ) : null,
 		];
 	}
 
 	/**
 	 * Same as getOverviewStats() but scoped to a specific set of survey IDs.
 	 *
-	 * @param  int[] $surveyIds Survey primary keys to include.
+	 * @param  int[] $survey_ids Survey primary keys to include.
 	 * @return array{total_feedback: int, this_week_count: int, last_week_count: int, avg_score: float|null, this_week_avg_score: float|null, last_week_avg_score: float|null}
 	 * @since  1.0.0
 	 */
-	public function getOverviewStatsForSurveys( array $surveyIds ): array {
-		if ( empty( $surveyIds ) ) {
+	public function getOverviewStatsForSurveys( array $survey_ids ): array {
+		if ( empty( $survey_ids ) ) {
 			return [
 				'total_feedback'      => 0,
 				'this_week_count'     => 0,
@@ -800,9 +797,8 @@ class WpdbResponseRepository implements ResponseRepository {
 
 		global $wpdb;
 
-		$placeholders = implode( ',', array_fill( 0, count( $surveyIds ), '%d' ) );
+		$placeholders = implode( ',', array_fill( 0, count( $survey_ids ), '%d' ) );
 
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 		$row = $wpdb->get_row(
 			$wpdb->prepare(
 				"SELECT
@@ -826,45 +822,44 @@ class WpdbResponseRepository implements ResponseRepository {
 					               THEN score ELSE NULL END), 0)                                              AS last_week_score_sum
 				FROM {$this->table}
 				WHERE survey_id IN ({$placeholders})",
-				...$surveyIds
+				...$survey_ids
 			),
 			ARRAY_A
 		);
-		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 
-		$scoreCount   = (int) ( $row['score_count']           ?? 0 );
-		$scoreSum     = (float) ( $row['score_sum']           ?? 0 );
-		$twScoreCount = (int) ( $row['this_week_score_count'] ?? 0 );
-		$twScoreSum   = (float) ( $row['this_week_score_sum'] ?? 0 );
-		$lwScoreCount = (int) ( $row['last_week_score_count'] ?? 0 );
-		$lwScoreSum   = (float) ( $row['last_week_score_sum'] ?? 0 );
+		$score_count    = (int) ( $row['score_count'] ?? 0 );
+		$score_sum      = (float) ( $row['score_sum'] ?? 0 );
+		$tw_score_count = (int) ( $row['this_week_score_count'] ?? 0 );
+		$tw_score_sum   = (float) ( $row['this_week_score_sum'] ?? 0 );
+		$lw_score_count = (int) ( $row['last_week_score_count'] ?? 0 );
+		$lw_score_sum   = (float) ( $row['last_week_score_sum'] ?? 0 );
 
 		return [
-			'total_feedback'      => (int) ( $row['total_feedback']  ?? 0 ),
+			'total_feedback'      => (int) ( $row['total_feedback'] ?? 0 ),
 			'this_week_count'     => (int) ( $row['this_week_count'] ?? 0 ),
 			'last_week_count'     => (int) ( $row['last_week_count'] ?? 0 ),
-			'avg_score'           => $scoreCount   > 0 ? round( $scoreSum   / $scoreCount,   2 ) : null,
-			'this_week_avg_score' => $twScoreCount > 0 ? round( $twScoreSum / $twScoreCount, 2 ) : null,
-			'last_week_avg_score' => $lwScoreCount > 0 ? round( $lwScoreSum / $lwScoreCount, 2 ) : null,
+			'avg_score'           => $score_count > 0 ? round( $score_sum / $score_count, 2 ) : null,
+			'this_week_avg_score' => $tw_score_count > 0 ? round( $tw_score_sum / $tw_score_count, 2 ) : null,
+			'last_week_avg_score' => $lw_score_count > 0 ? round( $lw_score_sum / $lw_score_count, 2 ) : null,
 		];
 	}
 
 	/**
 	 * Count all responses within a date range (inclusive).
 	 *
-	 * @param  string $dateFrom Start date Y-m-d.
-	 * @param  string $dateTo   End date Y-m-d.
+	 * @param  string $date_from Start date Y-m-d.
+	 * @param  string $date_to   End date Y-m-d.
 	 * @return int
 	 * @since  1.0.0
 	 */
-	public function countAllInDateRange( string $dateFrom, string $dateTo ): int {
+	public function countAllInDateRange( string $date_from, string $date_to ): int {
 		global $wpdb;
 
 		return (int) $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT COUNT(*) FROM {$this->table} WHERE DATE(created_at) >= %s AND DATE(created_at) <= %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$dateFrom,
-				$dateTo
+				$date_from,
+				$date_to
 			)
 		);
 	}
@@ -872,28 +867,28 @@ class WpdbResponseRepository implements ResponseRepository {
 	/**
 	 * Aggregate score statistics across every survey, optionally filtered by date range.
 	 *
-	 * @param  string|null $dateFrom Optional start date Y-m-d.
-	 * @param  string|null $dateTo   Optional end date Y-m-d.
+	 * @param  string|null $date_from Optional start date Y-m-d.
+	 * @param  string|null $date_to   Optional end date Y-m-d.
 	 * @return array{total: int, score_count: int, score_sum: float, avg_score: float|null, promoters: int, passives: int, detractors: int}
 	 * @since  1.0.0
 	 */
-	public function getGlobalScoreStats( ?string $dateFrom = null, ?string $dateTo = null ): array {
+	public function getGlobalScoreStats( ?string $date_from = null, ?string $date_to = null ): array {
 		global $wpdb;
 
 		$where  = [];
 		$params = [];
 
-		if ( $dateFrom !== null ) {
+		if ( $date_from !== null ) {
 			$where[]  = 'DATE(created_at) >= %s';
-			$params[] = $dateFrom;
+			$params[] = $date_from;
 		}
 
-		if ( $dateTo !== null ) {
+		if ( $date_to !== null ) {
 			$where[]  = 'DATE(created_at) <= %s';
-			$params[] = $dateTo;
+			$params[] = $date_to;
 		}
 
-		$whereClause = $where !== [] ? 'WHERE ' . implode( ' AND ', $where ) : '';
+		$where_clause = $where !== [] ? 'WHERE ' . implode( ' AND ', $where ) : '';
 
 		$sql = "SELECT
 					COUNT(*)                                                                         AS total,
@@ -902,21 +897,21 @@ class WpdbResponseRepository implements ResponseRepository {
 					SUM(CASE WHEN score >= 9              THEN 1 ELSE 0 END)                         AS promoters,
 					SUM(CASE WHEN score >= 7 AND score < 9 THEN 1 ELSE 0 END)                        AS passives,
 					SUM(CASE WHEN score < 7 AND score IS NOT NULL THEN 1 ELSE 0 END)                 AS detractors
-				FROM {$this->table} {$whereClause}"; // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				FROM {$this->table} {$where_clause}"; // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		$row = $params !== []
 			? $wpdb->get_row( $wpdb->prepare( $sql, ...$params ), ARRAY_A ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 			: $wpdb->get_row( $sql, ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 
-		$total      = (int) ( $row['total'] ?? 0 );
-		$scoreCount = (int) ( $row['score_count'] ?? 0 );
-		$scoreSum   = (float) ( $row['score_sum'] ?? 0 );
+		$total       = (int) ( $row['total'] ?? 0 );
+		$score_count = (int) ( $row['score_count'] ?? 0 );
+		$score_sum   = (float) ( $row['score_sum'] ?? 0 );
 
 		return [
 			'total'       => $total,
-			'score_count' => $scoreCount,
-			'score_sum'   => $scoreSum,
-			'avg_score'   => $scoreCount > 0 ? round( $scoreSum / $scoreCount, 2 ) : null,
+			'score_count' => $score_count,
+			'score_sum'   => $score_sum,
+			'avg_score'   => $score_count > 0 ? round( $score_sum / $score_count, 2 ) : null,
 			'promoters'   => (int) ( $row['promoters'] ?? 0 ),
 			'passives'    => (int) ( $row['passives'] ?? 0 ),
 			'detractors'  => (int) ( $row['detractors'] ?? 0 ),
@@ -935,7 +930,8 @@ class WpdbResponseRepository implements ResponseRepository {
 		$rows = $wpdb->get_results(
 			"SELECT COALESCE(device_type, 'unknown') AS device, COUNT(*) AS cnt FROM {$this->table} GROUP BY device", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.NoCaching
 			ARRAY_A
-		) ?: [];
+		);
+		$rows = $rows !== null && $rows !== false ? $rows : [];
 
 		$result = [];
 		foreach ( $rows as $row ) {
@@ -948,22 +944,23 @@ class WpdbResponseRepository implements ResponseRepository {
 	/**
 	 * Count responses grouped by date across every survey, within a date range.
 	 *
-	 * @param  string $dateFrom Start date Y-m-d.
-	 * @param  string $dateTo   End date Y-m-d.
+	 * @param  string $date_from Start date Y-m-d.
+	 * @param  string $date_to   End date Y-m-d.
 	 * @return array<string, int>
 	 * @since  1.0.0
 	 */
-	public function countByDateGlobal( string $dateFrom, string $dateTo ): array {
+	public function countByDateGlobal( string $date_from, string $date_to ): array {
 		global $wpdb;
 
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT DATE(created_at) AS d, COUNT(*) AS cnt FROM {$this->table} WHERE DATE(created_at) >= %s AND DATE(created_at) <= %s GROUP BY d ORDER BY d ASC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$dateFrom,
-				$dateTo
+				$date_from,
+				$date_to
 			),
 			ARRAY_A
-		) ?: [];
+		);
+		$rows = $rows !== null && $rows !== false ? $rows : [];
 
 		$result = [];
 		foreach ( $rows as $row ) {
@@ -976,20 +973,19 @@ class WpdbResponseRepository implements ResponseRepository {
 	/**
 	 * Aggregate score statistics for multiple surveys in a single query, keyed by survey_id.
 	 *
-	 * @param  int[] $surveyIds Survey primary keys.
+	 * @param  int[] $survey_ids Survey primary keys.
 	 * @return array<int, array{total: int, score_count: int, score_sum: float, promoters: int, passives: int, detractors: int}>
 	 * @since  1.0.0
 	 */
-	public function aggregateScoreStatsForAllSurveys( array $surveyIds ): array {
-		if ( empty( $surveyIds ) ) {
+	public function aggregateScoreStatsForAllSurveys( array $survey_ids ): array {
+		if ( empty( $survey_ids ) ) {
 			return [];
 		}
 
 		global $wpdb;
 
-		$placeholders = implode( ',', array_fill( 0, count( $surveyIds ), '%d' ) );
+		$placeholders = implode( ',', array_fill( 0, count( $survey_ids ), '%d' ) );
 
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT
@@ -1003,11 +999,11 @@ class WpdbResponseRepository implements ResponseRepository {
 				FROM {$this->table}
 				WHERE survey_id IN ({$placeholders})
 				GROUP BY survey_id",
-				...$surveyIds
+				...$survey_ids
 			),
 			ARRAY_A
-		) ?: [];
-		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+		);
+		$rows = $rows !== null && $rows !== false ? $rows : [];
 
 		$result = [];
 		foreach ( $rows as $row ) {
@@ -1035,48 +1031,48 @@ class WpdbResponseRepository implements ResponseRepository {
 	private function hydrate( array $row ): Response {
 		return Response::reconstitute(
 			id: (int) $row['id'],
-			surveyId: (int) $row['survey_id'],
-			responseData: $this->decodeJson( (string) ( $row['response_data'] ?? '' ) ),
+			survey_id: (int) $row['survey_id'],
+			response_data: $this->decodeJson( (string) ( $row['response_data'] ?? '' ) ),
 			score: isset( $row['score'] ) && $row['score'] !== null ? (float) $row['score'] : null,
-			pageUrl: $row['page_url'] ?? null,
-			deviceType: $row['device_type'] ?? null,
-			ipHash: $row['ip_hash'] ?? null,
-			ipAddress: $row['ip_address'] ?? null,
-			userId: isset( $row['user_id'] ) && $row['user_id'] !== null ? (int) $row['user_id'] : null,
-			guestToken: $row['guest_token'] ?? null,
-			consentGiven: (bool) ( $row['consent_given'] ?? false ),
-			createdAt: new DateTimeImmutable( (string) $row['created_at'] ),
-			isRead: (bool) ( $row['is_read'] ?? false ),
+			page_url: $row['page_url'] ?? null,
+			device_type: $row['device_type'] ?? null,
+			ip_hash: $row['ip_hash'] ?? null,
+			ip_address: $row['ip_address'] ?? null,
+			user_id: isset( $row['user_id'] ) && $row['user_id'] !== null ? (int) $row['user_id'] : null,
+			guest_token: $row['guest_token'] ?? null,
+			consent_given: (bool) ( $row['consent_given'] ?? false ),
+			created_at: new DateTimeImmutable( (string) $row['created_at'] ),
+			is_read: (bool) ( $row['is_read'] ?? false ),
 		);
 	}
 
 	/**
 	 * Build the WHERE conditions and parameter list for a response query.
 	 *
-	 * @param  int            $surveyId Survey primary key constraint.
+	 * @param  int            $survey_id Survey primary key constraint.
 	 * @param  ResponseFilter $filter   Additional query constraints.
 	 * @return array{0: string[], 1: mixed[]}
 	 * @since  1.0.0
 	 */
-	private function buildFilterQuery( int $surveyId, ResponseFilter $filter ): array {
+	private function buildFilterQuery( int $survey_id, ResponseFilter $filter ): array {
 		global $wpdb;
 
 		$where  = [ 'survey_id = %d' ];
-		$params = [ $surveyId ];
+		$params = [ $survey_id ];
 
-		if ( $filter->userId !== null ) {
+		if ( $filter->user_id !== null ) {
 			$where[]  = 'user_id = %d';
-			$params[] = $filter->userId;
+			$params[] = $filter->user_id;
 		}
 
-		if ( $filter->dateFrom !== null && $filter->dateFrom !== '' ) {
+		if ( $filter->date_from !== null && $filter->date_from !== '' ) {
 			$where[]  = 'DATE(created_at) >= %s';
-			$params[] = $filter->dateFrom;
+			$params[] = $filter->date_from;
 		}
 
-		if ( $filter->dateTo !== null && $filter->dateTo !== '' ) {
+		if ( $filter->date_to !== null && $filter->date_to !== '' ) {
 			$where[]  = 'DATE(created_at) <= %s';
-			$params[] = $filter->dateTo;
+			$params[] = $filter->date_to;
 		}
 
 		if ( $filter->search !== null && $filter->search !== '' ) {
@@ -1084,9 +1080,9 @@ class WpdbResponseRepository implements ResponseRepository {
 			$params[] = '%' . $wpdb->esc_like( $filter->search ) . '%';
 		}
 
-		if ( $filter->isRead !== null ) {
+		if ( $filter->is_read !== null ) {
 			$where[]  = 'is_read = %d';
-			$params[] = $filter->isRead ? 1 : 0;
+			$params[] = $filter->is_read ? 1 : 0;
 		}
 
 		return [ $where, $params ];
@@ -1105,14 +1101,14 @@ class WpdbResponseRepository implements ResponseRepository {
 		$where  = [];
 		$params = [];
 
-		if ( $filter->dateFrom !== null && $filter->dateFrom !== '' ) {
+		if ( $filter->date_from !== null && $filter->date_from !== '' ) {
 			$where[]  = 'DATE(created_at) >= %s';
-			$params[] = $filter->dateFrom;
+			$params[] = $filter->date_from;
 		}
 
-		if ( $filter->dateTo !== null && $filter->dateTo !== '' ) {
+		if ( $filter->date_to !== null && $filter->date_to !== '' ) {
 			$where[]  = 'DATE(created_at) <= %s';
-			$params[] = $filter->dateTo;
+			$params[] = $filter->date_to;
 		}
 
 		if ( $filter->search !== null && $filter->search !== '' ) {
@@ -1120,9 +1116,9 @@ class WpdbResponseRepository implements ResponseRepository {
 			$params[] = '%' . $wpdb->esc_like( $filter->search ) . '%';
 		}
 
-		if ( $filter->isRead !== null ) {
+		if ( $filter->is_read !== null ) {
 			$where[]  = 'is_read = %d';
-			$params[] = $filter->isRead ? 1 : 0;
+			$params[] = $filter->is_read ? 1 : 0;
 		}
 
 		return [ $where, $params ];
@@ -1131,18 +1127,18 @@ class WpdbResponseRepository implements ResponseRepository {
 	/**
 	 * Return this-week response count and average score per survey in one query.
 	 *
-	 * @param  int[] $surveyIds Survey primary keys to include.
+	 * @param  int[] $survey_ids Survey primary keys to include.
 	 * @return array<int, array{this_week_count: int, avg_score: float|null}> Keyed by survey ID.
 	 * @since  1.0.0
 	 */
-	public function getWeeklyStatsBySurveyIds( array $surveyIds ): array {
-		if ( empty( $surveyIds ) ) {
+	public function getWeeklyStatsBySurveyIds( array $survey_ids ): array {
+		if ( empty( $survey_ids ) ) {
 			return [];
 		}
 
 		global $wpdb;
 
-		$placeholders = implode( ',', array_fill( 0, count( $surveyIds ), '%d' ) );
+		$placeholders = implode( ',', array_fill( 0, count( $survey_ids ), '%d' ) );
 
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
 		$rows = $wpdb->get_results(
@@ -1155,11 +1151,11 @@ class WpdbResponseRepository implements ResponseRepository {
 				WHERE survey_id IN ({$placeholders})
 				  AND DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
 				GROUP BY survey_id",
-				...$surveyIds
+				...$survey_ids
 			),
 			ARRAY_A
-		) ?: [];
-		// phpcs:enable
+		);
+		$rows = $rows !== null && $rows !== false ? $rows : [];
 
 		$result = [];
 		foreach ( $rows as $row ) {

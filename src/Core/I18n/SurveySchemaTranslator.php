@@ -1,4 +1,10 @@
 <?php
+/**
+ * Survey schema translator.
+ *
+ * @package AllFeedback\Core\I18n
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -44,12 +50,12 @@ class SurveySchemaTranslator {
 	 * Register every field label in the given schema with WPML and Polylang
 	 * so they appear in the translation interface.
 	 *
-	 * @param  int          $surveyId The primary key of the survey being registered.
+	 * @param  int          $survey_id The primary key of the survey being registered.
 	 * @param  SurveySchema $schema   The schema whose field labels should be registered.
 	 * @return void
 	 * @since  1.0.0
 	 */
-	public function registerStrings( int $surveyId, SurveySchema $schema ): void {
+	public function registerStrings( int $survey_id, SurveySchema $schema ): void {
 		foreach ( $schema->getFields() as $index => $field ) {
 			$label = $field->getLabelRaw();
 
@@ -57,7 +63,7 @@ class SurveySchemaTranslator {
 				continue;
 			}
 
-			$name = $this->stringName( $surveyId, $index );
+			$name = $this->stringName( $survey_id, $index );
 
 			if ( function_exists( 'icl_register_string' ) ) {
 				call_user_func( 'icl_register_string', self::WPML_CONTEXT, $name, $label );
@@ -76,12 +82,12 @@ class SurveySchemaTranslator {
 	 * When neither multilingual plugin is active, the original schema is
 	 * returned unchanged.
 	 *
-	 * @param  int          $surveyId The primary key of the survey being translated.
+	 * @param  int          $survey_id The primary key of the survey being translated.
 	 * @param  SurveySchema $schema   The schema to translate.
 	 * @return SurveySchema
 	 * @since  1.0.0
 	 */
-	public function translate( int $surveyId, SurveySchema $schema ): SurveySchema {
+	public function translate( int $survey_id, SurveySchema $schema ): SurveySchema {
 		if ( $schema->isEmpty() ) {
 			return $schema;
 		}
@@ -90,7 +96,7 @@ class SurveySchemaTranslator {
 		$fields = [];
 
 		foreach ( $schema->getFields() as $index => $field ) {
-			$fields[] = $this->translateField( $surveyId, $index, $field, $locale );
+			$fields[] = $this->translateField( $survey_id, $index, $field, $locale );
 		}
 
 		return new SurveySchema( $fields, $schema->getVersion() );
@@ -99,7 +105,7 @@ class SurveySchemaTranslator {
 	/**
 	 * Translate a single field label and return a (possibly new) field instance.
 	 *
-	 * @param  int         $surveyId The survey primary key.
+	 * @param  int         $survey_id The survey primary key.
 	 * @param  int         $index    Zero-based field index within the schema.
 	 * @param  SurveyField $field    The field whose label should be translated.
 	 * @param  string      $locale   The current WordPress locale string.
@@ -107,7 +113,7 @@ class SurveySchemaTranslator {
 	 * @since  1.0.0
 	 */
 	private function translateField(
-		int $surveyId,
+		int $survey_id,
 		int $index,
 		SurveyField $field,
 		string $locale
@@ -119,7 +125,7 @@ class SurveySchemaTranslator {
 		}
 
 		if ( is_string( $label ) && $label !== '' ) {
-			$name = $this->stringName( $surveyId, $index );
+			$name = $this->stringName( $survey_id, $index );
 
 			if ( function_exists( 'icl_t' ) ) {
 				$translated = call_user_func( 'icl_t', self::WPML_CONTEXT, $name, $label );
@@ -167,12 +173,12 @@ class SurveySchemaTranslator {
 	 * Build the unique string name used when registering and retrieving a
 	 * field label translation with WPML or Polylang.
 	 *
-	 * @param  int $surveyId   Survey primary key.
-	 * @param  int $fieldIndex Zero-based field index within the schema.
+	 * @param  int $survey_id   Survey primary key.
+	 * @param  int $field_index Zero-based field index within the schema.
 	 * @return string
 	 * @since  1.0.0
 	 */
-	private function stringName( int $surveyId, int $fieldIndex ): string {
-		return "allfeedback_survey_{$surveyId}_field_{$fieldIndex}_label";
+	private function stringName( int $survey_id, int $field_index ): string {
+		return "allfeedback_survey_{$survey_id}_field_{$field_index}_label";
 	}
 }

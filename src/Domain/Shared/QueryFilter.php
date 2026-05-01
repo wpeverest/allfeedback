@@ -1,4 +1,10 @@
 <?php
+/**
+ * Query filter.
+ *
+ * @package AllFeedback\Domain\Shared
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -18,18 +24,20 @@ defined( 'ABSPATH' ) || exit;
 abstract class QueryFilter {
 
 	/**
+	 * Constructor.
+	 *
 	 * @param  int         $page    1-based page number.
-	 * @param  int         $perPage Results per page.
+	 * @param  int         $per_page Results per page.
 	 * @param  string|null $search  Optional full-text search string.
-	 * @param  string      $orderBy Column to order by. Default 'date'.
+	 * @param  string      $order_by Column to order by. Default 'date'.
 	 * @param  string      $order   Sort direction: ASC | DESC.
 	 * @since  1.0.0
 	 */
 	public function __construct(
 		public readonly int $page = 1,
-		public readonly int $perPage = 20,
+		public readonly int $per_page = 20,
 		public readonly ?string $search = null,
-		public readonly string $orderBy = 'date',
+		public readonly string $order_by = 'date',
 		public readonly string $order = 'DESC',
 	) {}
 }

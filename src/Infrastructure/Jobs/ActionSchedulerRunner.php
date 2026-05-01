@@ -1,4 +1,10 @@
 <?php
+/**
+ * Action scheduler runner.
+ *
+ * @package AllFeedback\Infrastructure\Jobs
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -37,6 +43,8 @@ class ActionSchedulerRunner {
 	public const HOOK = 'allfeedback/run_job';
 
 	/**
+	 * Constructor.
+	 *
 	 * @param  ContainerInterface $container DI container used to resolve job instances.
 	 * @param  Logger             $logger    Logger for recording malformed or failed jobs.
 	 * @since  1.0.0
@@ -59,23 +67,24 @@ class ActionSchedulerRunner {
 	/**
 	 * Decode the job data, resolve the class, and execute the job.
 	 *
-	 * @param  string $jobData JSON-encoded job class and payload from Action Scheduler.
+	 * @param  string $job_data JSON-encoded job class and payload from Action Scheduler.
 	 * @return void
+	 * @throws \Throwable If the job itself throws.
 	 * @since  1.0.0
 	 */
-	public function run( string $jobData ): void {
-		$data = json_decode( $jobData, true );
+	public function run( string $job_data ): void {
+		$data = json_decode( $job_data, true );
 
 		if ( ! is_array( $data ) || empty( $data['class'] ) ) {
 			$this->logger->error(
 				'AllFeedback JobRunner: received malformed job data.',
-				[ 'data' => $jobData ]
+				[ 'data' => $job_data ]
 			);
 			return;
 		}
 
-		$class       = $data['class'];
-		$payloadData = $data['payload'] ?? [];
+		$class        = $data['class'];
+		$payload_data = $data['payload'] ?? [];
 
 		if ( ! class_exists( $class ) ) {
 			$this->logger->error(
@@ -92,9 +101,8 @@ class ActionSchedulerRunner {
 		}
 
 		try {
-			/** @var Job $job */
-			$job     = $this->container->get( $class );
-			$payload = $class::payloadFromArray( $payloadData );
+			/** @var Job $job */ // phpcs:ignore Generic.Commenting.DocComment.MissingShort -- inline type hint			$job     = $this->container->get( $class );
+			$payload = $class::payloadFromArray( $payload_data );
 			$job->handle( $payload );
 		} catch ( \Throwable $e ) {
 			$this->logger->error(

@@ -1,4 +1,10 @@
 <?php
+/**
+ * Pipe interface.
+ *
+ * @package AllFeedback\Application\Response\Pipes
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 

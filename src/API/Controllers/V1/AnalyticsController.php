@@ -1,4 +1,10 @@
 <?php
+/**
+ * Analytics controller.
+ *
+ * @package AllFeedback\API\Controllers\V1
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -28,16 +34,18 @@ class AnalyticsController extends RestController {
 	 * @var string
 	 * @since 1.0.0
 	 */
-	protected string $restBase = 'surveys';
+	protected string $rest_base = 'surveys';
 
 	/**
-	 * @param  TrackSessionEventService  $trackService       Use-case service for recording events.
-	 * @param  SurveySessionRepository   $sessionRepository  Session repository for aggregate queries.
+	 * Constructor.
+	 *
+	 * @param  TrackSessionEventService $track_service       Use-case service for recording events.
+	 * @param  SurveySessionRepository  $session_repository  Session repository for aggregate queries.
 	 * @since  1.0.0
 	 */
 	public function __construct(
-		private readonly TrackSessionEventService $trackService,
-		private readonly SurveySessionRepository $sessionRepository,
+		private readonly TrackSessionEventService $track_service,
+		private readonly SurveySessionRepository $session_repository,
 	) {}
 
 	/**
@@ -49,7 +57,7 @@ class AnalyticsController extends RestController {
 	public function registerRoutes(): void {
 		register_rest_route(
 			$this->namespace,
-			'/' . $this->restBase . '/(?P<id>\d+)/analytics/event',
+			'/' . $this->rest_base . '/(?P<id>\d+)/analytics/event',
 			[
 				'methods'             => \WP_REST_Server::CREATABLE,
 				'callback'            => [ $this, 'trackEvent' ],
@@ -60,7 +68,7 @@ class AnalyticsController extends RestController {
 
 		register_rest_route(
 			$this->namespace,
-			'/' . $this->restBase . '/(?P<id>\d+)/analytics',
+			'/' . $this->rest_base . '/(?P<id>\d+)/analytics',
 			[
 				'methods'             => \WP_REST_Server::READABLE,
 				'callback'            => [ $this, 'getAnalytics' ],
@@ -78,21 +86,23 @@ class AnalyticsController extends RestController {
 	 * @since  1.0.0
 	 */
 	public function trackEvent( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
-		$surveyId  = (int) $request->get_param( 'id' );
-		$event     = sanitize_key( (string) $request->get_param( 'event' ) );
-		$sessionId = sanitize_text_field( (string) ( $request->get_param( 'session_id' ) ?? '' ) );
-		$guestId   = sanitize_text_field( (string) ( $request->get_param( 'guest_id' ) ?? '' ) ) ?: null;
-		$userId    = get_current_user_id() ?: null;
+		$survey_id    = (int) $request->get_param( 'id' );
+		$event        = sanitize_key( (string) $request->get_param( 'event' ) );
+		$session_id   = sanitize_text_field( (string) ( $request->get_param( 'session_id' ) ?? '' ) );
+		$guest_id_raw = sanitize_text_field( (string) ( $request->get_param( 'guest_id' ) ?? '' ) );
+		$guest_id     = $guest_id_raw !== '' ? $guest_id_raw : null;
+		$user_id_raw  = get_current_user_id();
+		$user_id      = $user_id_raw !== 0 ? $user_id_raw : null;
 
-		if ( $sessionId === '' ) {
+		if ( $session_id === '' ) {
 			return $this->errorResponse( __( 'session_id is required.', 'allfeedback' ), 400 );
 		}
 
-		if ( ! $this->checkAnalyticsRateLimit( $sessionId ) ) {
+		if ( ! $this->checkAnalyticsRateLimit( $session_id ) ) {
 			return $this->successResponse( null );
 		}
 
-		$this->trackService->execute( $surveyId, $event, $sessionId, $userId, $guestId );
+		$this->track_service->execute( $survey_id, $event, $session_id, $user_id, $guest_id );
 
 		return $this->successResponse( null );
 	}
@@ -104,13 +114,13 @@ class AnalyticsController extends RestController {
 	 * (default 60) per 5-minute window. Excess events are silently dropped so
 	 * the widget's UX is unaffected.
 	 *
-	 * @param  string $sessionId Client-generated session UUID.
+	 * @param  string $session_id Client-generated session UUID.
 	 * @return bool True when under the limit; false when exceeded.
 	 * @since  1.0.0
 	 */
-	private function checkAnalyticsRateLimit( string $sessionId ): bool {
+	private function checkAnalyticsRateLimit( string $session_id ): bool {
 		$limit = max( 1, (int) apply_filters( 'allfeedback_analytics_rate_limit', 60 ) );
-		$key   = 'allfb_al_' . substr( hash( 'sha256', $sessionId ), 0, 16 );
+		$key   = 'allfb_al_' . substr( hash( 'sha256', $session_id ), 0, 16 );
 		$count = (int) get_transient( $key );
 
 		if ( $count >= $limit ) {
@@ -129,8 +139,8 @@ class AnalyticsController extends RestController {
 	 * @since  1.0.0
 	 */
 	public function getAnalytics( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
-		$surveyId = (int) $request->get_param( 'id' );
-		$metrics  = $this->sessionRepository->getAnalytics( $surveyId );
+		$survey_id = (int) $request->get_param( 'id' );
+		$metrics   = $this->session_repository->getAnalytics( $survey_id );
 
 		return $this->successResponse( $metrics );
 	}
@@ -151,11 +161,11 @@ class AnalyticsController extends RestController {
 			'session_id' => $this->argString(
 				description: __( 'Client-generated session UUID (v4).', 'allfeedback' ),
 				required:    true,
-				maxLength:   36,
+				max_length:   36,
 			),
 			'guest_id'   => $this->argString(
 				description: __( 'Persistent guest visitor token from localStorage.', 'allfeedback' ),
-				maxLength:   36,
+				max_length:   36,
 			),
 		];
 	}

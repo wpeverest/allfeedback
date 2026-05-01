@@ -1,4 +1,10 @@
 <?php
+/**
+ * Mailer.
+ *
+ * @package AllFeedback\Infrastructure\Mail
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -13,7 +19,6 @@ use AllFeedback\Traits\Hooks;
 /**
  * Thin wrapper around wp_mail() with HTML layout, header normalisation,
  * and filter extensibility.
-
  *
  * @package AllFeedback\Infrastructure\Mail
  * @since   1.0.0
@@ -23,6 +28,8 @@ class Mailer {
 	use Hooks;
 
 	/**
+	 * Constructor.
+	 *
 	 * @param  SettingsManager $settings Plugin settings for sender name and address.
 	 * @param  Logger          $logger   Logger for recording send failures.
 	 * @since  1.0.0
@@ -47,34 +54,43 @@ class Mailer {
 	 * @since  1.0.0
 	 */
 	public function send( string $to, string $subject, string $body, array $headers = [] ): bool {
-		$senderName  = sanitize_text_field(
-			(string) ( $this->settings->get( 'email.delivery.from_name' ) ?: get_bloginfo( 'name' ) )
+		$from_name_setting  = $this->settings->get( 'email.delivery.from_name' );
+		$sender_name        = sanitize_text_field(
+			(string) ( $from_name_setting !== null && $from_name_setting !== '' ? $from_name_setting : get_bloginfo( 'name' ) )
 		);
-		$senderEmail = sanitize_email(
-			(string) ( $this->settings->get( 'email.delivery.from_email' ) ?: get_option( 'admin_email' ) )
+		$from_email_setting = $this->settings->get( 'email.delivery.from_email' );
+		$sender_email       = sanitize_email(
+			(string) ( $from_email_setting !== null && $from_email_setting !== '' ? $from_email_setting : get_option( 'admin_email' ) )
 		);
-		$replyTo = sanitize_email(
-			(string) ( $this->settings->get( 'email.delivery.reply_to' ) ?: '' )
+		$reply_to_setting   = $this->settings->get( 'email.delivery.reply_to' );
+		$reply_to           = sanitize_email(
+			(string) ( $reply_to_setting !== null && $reply_to_setting !== '' ? $reply_to_setting : '' )
 		);
 
 		$headers[] = 'Content-Type: text/html; charset=UTF-8';
-		$headers[] = sprintf( 'From: %s <%s>', $senderName, $senderEmail );
+		$headers[] = sprintf( 'From: %s <%s>', $sender_name, $sender_email );
 
-		if ( $replyTo !== '' ) {
-			$headers[] = 'Reply-To: ' . $replyTo;
+		if ( $reply_to !== '' ) {
+			$headers[] = 'Reply-To: ' . $reply_to;
 		}
 
-		$headers  = (array) $this->applyFilters( 'allfeedback:mail:headers', $headers, $to, $subject );
-		$htmlBody = $this->wrapInLayout( $body, $subject );
-		$htmlBody = (string) $this->applyFilters( 'allfeedback:mail:body', $htmlBody, $to, $subject );
+		$headers   = (array) $this->applyFilters( 'allfeedback:mail:headers', $headers, $to, $subject );
+		$html_body = $this->wrapInLayout( $body, $subject );
+		$html_body = (string) $this->applyFilters( 'allfeedback:mail:body', $html_body, $to, $subject );
 
-		$sent = wp_mail( $to, $subject, $htmlBody, $headers );
+		$sent = wp_mail( $to, $subject, $html_body, $headers );
 
 		if ( $sent ) {
 			$this->doAction( 'allfeedback:mail:sent', $to, $subject );
 		} else {
 			$this->doAction( 'allfeedback:mail:failed', $to, $subject );
-			$this->logger->error( 'Failed to send email', [ 'to' => $to, 'subject' => $subject ] );
+			$this->logger->error(
+				'Failed to send email',
+				[
+					'to' => $to,
+					'subject' => $subject,
+				]
+			);
 		}
 
 		return $sent;
@@ -109,9 +125,9 @@ class Mailer {
 	 * @since  1.0.0
 	 */
 	private function wrapInLayout( string $body, string $subject ): string {
-		$siteName   = esc_html( get_bloginfo( 'name' ) );
-		$brandColor = (string) $this->applyFilters( 'allfeedback:mail:brand_color', '#6366f1' );
-		$bodyHtml   = nl2br( $body );
+		$site_name   = esc_html( get_bloginfo( 'name' ) );
+		$brand_color = (string) $this->applyFilters( 'allfeedback:mail:brand_color', '#6366f1' );
+		$body_html   = nl2br( $body );
 
 		return '<!DOCTYPE html>'
 			. '<html lang="' . esc_attr( get_bloginfo( 'language' ) ) . '">'
@@ -124,15 +140,15 @@ class Mailer {
 			. '<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f5;padding:32px 16px;">'
 			. '<tr><td align="center">'
 			. '<table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:8px;overflow:hidden;max-width:600px;width:100%;">'
-			. '<tr><td style="background-color:' . esc_attr( $brandColor ) . ';padding:20px 32px;">'
-			. '<h1 style="margin:0;color:#ffffff;font-size:16px;font-weight:600;">' . $siteName . '</h1>'
+			. '<tr><td style="background-color:' . esc_attr( $brand_color ) . ';padding:20px 32px;">'
+			. '<h1 style="margin:0;color:#ffffff;font-size:16px;font-weight:600;">' . $site_name . '</h1>'
 			. '</td></tr>'
 			. '<tr><td style="padding:32px;color:#374151;font-size:14px;line-height:1.6;">'
-			. $bodyHtml
+			. $body_html
 			. '</td></tr>'
 			. '<tr><td style="padding:16px 32px;border-top:1px solid #e5e7eb;">'
 			. '<table width="100%" cellpadding="0" cellspacing="0"><tr>'
-			. '<td style="color:#9ca3af;font-size:12px;">&copy; ' . $siteName . '</td>'
+			. '<td style="color:#9ca3af;font-size:12px;">&copy; ' . $site_name . '</td>'
 			. '<td align="right" style="color:#9ca3af;font-size:11px;">Powered by <a href="https://allfeedback.io" style="color:#9ca3af;text-decoration:underline;">AllFeedback</a></td>'
 			. '</tr></table>'
 			. '</td></tr>'

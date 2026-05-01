@@ -1,4 +1,10 @@
 <?php
+/**
+ * Template loader.
+ *
+ * @package AllFeedback\Support
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -32,7 +38,7 @@ class TemplateLoader {
 	 * @var string
 	 * @since 1.0.0
 	 */
-	private string $pluginPath;
+	private string $plugin_path;
 
 	/**
 	 * Sub-directory name used when searching active themes.
@@ -40,13 +46,15 @@ class TemplateLoader {
 	 * @var string
 	 * @since 1.0.0
 	 */
-	private string $templatePath = 'allfeedback';
+	private string $template_path = 'allfeedback';
 
 	/**
+	 * Constructor.
+	 *
 	 * @since 1.0.0
 	 */
 	public function __construct() {
-		$this->pluginPath = Constants::path( 'templates/' );
+		$this->plugin_path = Constants::path( 'templates/' );
 	}
 
 	/**
@@ -55,51 +63,51 @@ class TemplateLoader {
 	 * Applies the filter `allfeedback:template:locate` so third-party code can
 	 * override the resolved path.
 	 *
-	 * @param  string $templateName Template file name relative to the template root, e.g. 'survey/widget.php'.
+	 * @param  string $template_name Template file name relative to the template root, e.g. 'survey/widget.php'.
 	 * @return string               Absolute path to the located template, or empty string when not found.
 	 * @since  1.0.0
 	 */
-	public function locateTemplate( string $templateName ): string {
+	public function locateTemplate( string $template_name ): string {
 		$template = locate_template(
 			[
-				trailingslashit( $this->templatePath ) . $templateName,
+				trailingslashit( $this->template_path ) . $template_name,
 			]
 		);
 
 		if ( ! $template ) {
-			$pluginTemplate = $this->pluginPath . $templateName;
-			if ( file_exists( $pluginTemplate ) ) {
-				$template = $pluginTemplate;
+			$plugin_template = $this->plugin_path . $template_name;
+			if ( file_exists( $plugin_template ) ) {
+				$template = $plugin_template;
 			}
 		}
 
-		return $this->applyFilters( 'allfeedback:template:locate', $template, $templateName );
+		return $this->applyFilters( 'allfeedback:template:locate', $template, $template_name );
 	}
 
 	/**
 	 * Locate and include a template file, extracting $args into the local scope.
 	 *
-	 * @param  string               $templateName Template file name relative to the template root.
+	 * @param  string               $template_name Template file name relative to the template root.
 	 * @param  array<string, mixed> $args         Variables to extract into the template scope.
 	 * @return void
 	 * @since  1.0.0
 	 */
-	public function loadTemplate( string $templateName, array $args = [] ): void {
-		$template = $this->locateTemplate( $templateName );
+	public function loadTemplate( string $template_name, array $args = [] ): void {
+		$template = $this->locateTemplate( $template_name );
 
 		if ( ! $template ) {
 			return;
 		}
 
-		$args = $this->applyFilters( 'allfeedback:template:args', $args, $templateName );
+		$args = $this->applyFilters( 'allfeedback:template:args', $args, $template_name );
 
-		$this->doAction( 'allfeedback:template:before', $templateName, $template, $args );
-		$this->doAction( "allfeedback:template:before:{$templateName}", $template, $args );
+		$this->doAction( 'allfeedback:template:before', $template_name, $template, $args );
+		$this->doAction( "allfeedback:template:before:{$template_name}", $template, $args );
 
 		$this->includeTemplate( $template, $args );
 
-		$this->doAction( 'allfeedback:template:after', $templateName, $template, $args );
-		$this->doAction( "allfeedback:template:after:{$templateName}", $template, $args );
+		$this->doAction( 'allfeedback:template:after', $template_name, $template, $args );
+		$this->doAction( "allfeedback:template:after:{$template_name}", $template, $args );
 	}
 
 	/**
@@ -125,26 +133,26 @@ class TemplateLoader {
 	/**
 	 * Capture and return the output of a template as a string.
 	 *
-	 * @param  string               $templateName Template file name relative to the template root.
+	 * @param  string               $template_name Template file name relative to the template root.
 	 * @param  array<string, mixed> $args         Variables to extract into the template scope.
 	 * @return string                             Rendered HTML output.
 	 * @since  1.0.0
 	 */
-	public function getTemplateContent( string $templateName, array $args = [] ): string {
+	public function getTemplateContent( string $template_name, array $args = [] ): string {
 		ob_start();
-		$this->loadTemplate( $templateName, $args );
+		$this->loadTemplate( $template_name, $args );
 		return ob_get_clean();
 	}
 
 	/**
 	 * Return true when a template file can be located for the given name.
 	 *
-	 * @param  string $templateName Template file name relative to the template root.
+	 * @param  string $template_name Template file name relative to the template root.
 	 * @return bool
 	 * @since  1.0.0
 	 */
-	public function templateExists( string $templateName ): bool {
-		return ! empty( $this->locateTemplate( $templateName ) );
+	public function templateExists( string $template_name ): bool {
+		return ! empty( $this->locateTemplate( $template_name ) );
 	}
 
 	/**
@@ -155,7 +163,7 @@ class TemplateLoader {
 	 * @since  1.0.0
 	 */
 	public function setTemplatePath( string $path ): void {
-		$this->templatePath = $path;
+		$this->template_path = $path;
 	}
 
 	/**
@@ -165,7 +173,7 @@ class TemplateLoader {
 	 * @since  1.0.0
 	 */
 	public function getTemplatePath(): string {
-		return $this->templatePath;
+		return $this->template_path;
 	}
 
 	/**
@@ -177,8 +185,8 @@ class TemplateLoader {
 	 * @since  1.0.0
 	 */
 	private function loadFirstTemplate( array $templates, array $args = [] ): void {
-		foreach ( $templates as $templateName ) {
-			$template = $this->locateTemplate( $templateName );
+		foreach ( $templates as $template_name ) {
+			$template = $this->locateTemplate( $template_name );
 
 			if ( $template ) {
 				$this->includeTemplate( $template, $args );

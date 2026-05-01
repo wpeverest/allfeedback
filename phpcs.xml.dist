@@ -22,10 +22,17 @@
     <rule ref="WordPress-Extra">
         <!-- Allow short array syntax [] -->
         <exclude name="Generic.Arrays.DisallowShortArraySyntax"/>
+        <exclude name="Universal.Arrays.DisallowShortArraySyntax"/>
         <!-- Allow modern alignment -->
         <exclude name="WordPress.Arrays.MultipleStatementAlignment"/>
         <!-- Don't require Yoda conditions -->
         <exclude name="WordPress.PHP.YodaConditions"/>
+        <!--
+            PSR-12 class methods use camelCase (getContainer, registerRoutes, addAction…).
+            Renaming them to snake_case would shadow WP globals (add_action, add_filter)
+            and break PSR-12 OOP conventions. Class-method naming is opt-out here.
+        -->
+        <exclude name="WordPress.NamingConventions.ValidFunctionName.MethodNameInvalid"/>
     </rule>
 
     <!-- Documentation standard -->
@@ -42,7 +49,7 @@
         </properties>
     </rule>
 
-    <!-- Enforce the plugin's global prefix -->
+    <!-- Enforce the plugin's global prefix; "af" is intentionally short for internal use -->
     <rule ref="WordPress.NamingConventions.PrefixAllGlobals">
         <properties>
             <property name="prefixes" type="array">
@@ -51,12 +58,14 @@
                 <element value="AllFeedback"/>
             </property>
         </properties>
+        <exclude name="WordPress.NamingConventions.PrefixAllGlobals.ShortPrefixPassed"/>
     </rule>
 
-    <!-- Relaxed file-name rules (PSR-4 class names differ from WP convention) -->
+    <!-- PSR-4 class filenames use PascalCase — exclude WP's hyphenated-lowercase rule -->
     <rule ref="WordPress.Files.FileName">
         <properties>
             <property name="strict_class_file_names" value="false"/>
         </properties>
+        <exclude name="WordPress.Files.FileName.NotHyphenatedLowercase"/>
     </rule>
 </ruleset>

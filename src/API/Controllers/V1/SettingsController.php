@@ -1,4 +1,10 @@
 <?php
+/**
+ * Settings controller.
+ *
+ * @package AllFeedback\API\Controllers\V1
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -47,18 +53,21 @@ class SettingsController extends RestController {
 	/**
 	 * REST resource slug.
 	 *
+	 * @var string
 	 * @since 1.0.0
 	 */
-	protected string $restBase = 'settings';
+	protected string $rest_base = 'settings';
 
 	/**
-	 * @param  SettingsManager $settingsManager Plugin-wide settings store.
+	 * Constructor.
+	 *
+	 * @param  SettingsManager $settings_manager Plugin-wide settings store.
 	 * @param  Mailer          $mailer          Email dispatcher for the test-email endpoint.
 	 * @param  Logger          $logger          Structured logger.
 	 * @since  1.0.0
 	 */
 	public function __construct(
-		private readonly SettingsManager $settingsManager,
+		private readonly SettingsManager $settings_manager,
 		private readonly Mailer $mailer,
 		private readonly Logger $logger,
 	) {}
@@ -72,7 +81,7 @@ class SettingsController extends RestController {
 	public function registerRoutes(): void {
 		register_rest_route(
 			$this->namespace,
-			'/' . $this->restBase,
+			'/' . $this->rest_base,
 			[
 				[
 					'methods'             => \WP_REST_Server::READABLE,
@@ -91,7 +100,7 @@ class SettingsController extends RestController {
 
 		register_rest_route(
 			$this->namespace,
-			'/' . $this->restBase . '/test-email',
+			'/' . $this->rest_base . '/test-email',
 			[
 				'methods'             => \WP_REST_Server::CREATABLE,
 				'callback'            => [ $this, 'testEmail' ],
@@ -112,7 +121,7 @@ class SettingsController extends RestController {
 	 * @since  1.0.0
 	 */
 	public function index( \WP_REST_Request $request ): \WP_REST_Response {
-		return $this->successResponse( $this->settingsManager->all() );
+		return $this->successResponse( $this->settings_manager->all() );
 	}
 
 	/**
@@ -135,7 +144,7 @@ class SettingsController extends RestController {
 			return $this->errorResponse( __( 'No settings provided.', 'allfeedback' ), 422 );
 		}
 
-		$this->settingsManager->setMultiple( $body );
+		$this->settings_manager->setMultiple( $body );
 
 		$this->logger->info(
 			'Plugin settings updated.',
@@ -145,7 +154,7 @@ class SettingsController extends RestController {
 			]
 		);
 
-		return $this->successResponse( $this->settingsManager->all() );
+		return $this->successResponse( $this->settings_manager->all() );
 	}
 
 	/**
@@ -163,29 +172,36 @@ class SettingsController extends RestController {
 	 * @since  1.0.0
 	 */
 	public function testEmail( \WP_REST_Request $request ): \WP_REST_Response {
-		$to = (string) ( $this->settingsManager->get( 'email.delivery.to_email' ) ?: get_option( 'admin_email' ) );
+		$to_email_setting = $this->settings_manager->get( 'email.delivery.to_email' );
+		$to               = (string) ( $to_email_setting !== null && $to_email_setting !== '' ? $to_email_setting : get_option( 'admin_email' ) );
 
-		$siteName = get_bloginfo( 'name' );
+		$site_name = get_bloginfo( 'name' );
 
 		$subject = sprintf(
 			/* translators: %s: site name */
 			__( '[%s] Test email from AllFeedback', 'allfeedback' ),
-			$siteName
+			$site_name
 		);
 
-		$body = implode( "\n\n", [
-			__( 'This is a test email sent from AllFeedback to verify your email delivery settings.', 'allfeedback' ),
-			__( 'If you received this message, your configuration is working correctly.', 'allfeedback' ),
-			/* translators: %s: site name */
-			sprintf( __( 'Site: %s', 'allfeedback' ), esc_html( $siteName ) ),
-		] );
+		$body = implode(
+			"\n\n",
+			[
+				__( 'This is a test email sent from AllFeedback to verify your email delivery settings.', 'allfeedback' ),
+				__( 'If you received this message, your configuration is working correctly.', 'allfeedback' ),
+				/* translators: %s: site name */
+				sprintf( __( 'Site: %s', 'allfeedback' ), esc_html( $site_name ) ),
+			]
+		);
 
 		$sent = $this->mailer->send( $to, $subject, $body );
 
 		if ( ! $sent ) {
 			$this->logger->warning(
 				'Test email delivery failed.',
-				[ 'to' => $to, 'user_id' => get_current_user_id() ]
+				[
+					'to' => $to,
+					'user_id' => get_current_user_id(),
+				]
 			);
 		}
 
@@ -202,34 +218,34 @@ class SettingsController extends RestController {
 	 * @since  1.0.0
 	 */
 	public function getPublicItemSchema(): array {
-		$pageProperties = [];
+		$page_properties = [];
 
-		foreach ( $this->settingsManager->getSchema() as $page => $pageDef ) {
-			$sectionProperties = [];
+		foreach ( $this->settings_manager->getSchema() as $page => $page_def ) {
+			$section_properties = [];
 
-			foreach ( $pageDef['sections'] as $section => $sectionDef ) {
-				$fieldProperties = [];
+			foreach ( $page_def['sections'] as $section => $section_def ) {
+				$field_properties = [];
 
-				foreach ( $sectionDef['properties'] as $field => $propDef ) {
-					$fieldProperties[ $field ] = array_merge(
+				foreach ( $section_def['properties'] as $field => $prop_def ) {
+					$field_properties[ $field ] = array_merge(
 						[ 'context' => [ 'view', 'edit' ] ],
-						$propDef
+						$prop_def
 					);
 				}
 
-				$sectionProperties[ $section ] = [
+				$section_properties[ $section ] = [
 					'type'        => 'object',
 					'context'     => [ 'view', 'edit' ],
-					'description' => $sectionDef['description'] ?? '',
-					'properties'  => $fieldProperties,
+					'description' => $section_def['description'] ?? '',
+					'properties'  => $field_properties,
 				];
 			}
 
-			$pageProperties[ $page ] = [
+			$page_properties[ $page ] = [
 				'type'        => 'object',
 				'context'     => [ 'view', 'edit' ],
-				'description' => $pageDef['description'] ?? '',
-				'properties'  => $sectionProperties,
+				'description' => $page_def['description'] ?? '',
+				'properties'  => $section_properties,
 			];
 		}
 
@@ -237,7 +253,7 @@ class SettingsController extends RestController {
 			'$schema'    => 'http://json-schema.org/draft-04/schema#',
 			'title'      => 'allfeedback_settings',
 			'type'       => 'object',
-			'properties' => $pageProperties,
+			'properties' => $page_properties,
 		];
 	}
 
@@ -255,24 +271,24 @@ class SettingsController extends RestController {
 	 * @since  1.0.0
 	 */
 	private function settingsArgs(): array {
-		$schema = $this->settingsManager->getSchema();
+		$schema = $this->settings_manager->getSchema();
 		$args   = [];
 
-		foreach ( $schema as $page => $pageDef ) {
-			$sectionArgs = [];
+		foreach ( $schema as $page => $page_def ) {
+			$section_args = [];
 
-			foreach ( $pageDef['sections'] as $section => $sectionDef ) {
-				$fieldArgs = [];
+			foreach ( $page_def['sections'] as $section => $section_def ) {
+				$field_args = [];
 
-				foreach ( $sectionDef['properties'] as $field => $propDef ) {
-					$fieldArgs[ $field ] = $this->buildFieldArg( $propDef );
+				foreach ( $section_def['properties'] as $field => $prop_def ) {
+					$field_args[ $field ] = $this->buildFieldArg( $prop_def );
 				}
 
-				$sectionArgs[ $section ] = [
+				$section_args[ $section ] = [
 					'type'              => 'object',
 					'required'          => false,
-					'description'       => $sectionDef['description'] ?? '',
-					'properties'        => $fieldArgs,
+					'description'       => $section_def['description'] ?? '',
+					'properties'        => $field_args,
 					'validate_callback' => 'rest_validate_request_arg',
 				];
 			}
@@ -280,8 +296,8 @@ class SettingsController extends RestController {
 			$args[ $page ] = [
 				'type'              => 'object',
 				'required'          => false,
-				'description'       => $pageDef['description'] ?? '',
-				'properties'        => $sectionArgs,
+				'description'       => $page_def['description'] ?? '',
+				'properties'        => $section_args,
 				'validate_callback' => 'rest_validate_request_arg',
 			];
 		}
@@ -298,12 +314,12 @@ class SettingsController extends RestController {
 	 *   type: string + enum    → sanitize_key + enum list
 	 *   type: string (no enum) → sanitize_text_field
 	 *
-	 * @param  array<string, mixed> $propDef Schema property definition.
+	 * @param  array<string, mixed> $prop_def Schema property definition.
 	 * @return array<string, mixed> WP REST arg descriptor.
 	 * @since  1.0.0
 	 */
-	private function buildFieldArg( array $propDef ): array {
-		$type = $propDef['type'] ?? 'string';
+	private function buildFieldArg( array $prop_def ): array {
+		$type = $prop_def['type'] ?? 'string';
 
 		if ( $type === 'boolean' ) {
 			return [
@@ -319,19 +335,19 @@ class SettingsController extends RestController {
 				'sanitize_callback' => 'absint',
 				'validate_callback' => 'rest_validate_request_arg',
 			];
-			if ( isset( $propDef['minimum'] ) ) {
-				$arg['minimum'] = (int) $propDef['minimum'];
+			if ( isset( $prop_def['minimum'] ) ) {
+				$arg['minimum'] = (int) $prop_def['minimum'];
 			}
-			if ( isset( $propDef['maximum'] ) ) {
-				$arg['maximum'] = (int) $propDef['maximum'];
+			if ( isset( $prop_def['maximum'] ) ) {
+				$arg['maximum'] = (int) $prop_def['maximum'];
 			}
 			return $arg;
 		}
 
-		if ( isset( $propDef['enum'] ) ) {
+		if ( isset( $prop_def['enum'] ) ) {
 			return [
 				'type'              => 'string',
-				'enum'              => $propDef['enum'],
+				'enum'              => $prop_def['enum'],
 				'sanitize_callback' => 'sanitize_key',
 				'validate_callback' => 'rest_validate_request_arg',
 			];

@@ -1,4 +1,10 @@
 <?php
+/**
+ * Notification context.
+ *
+ * @package AllFeedback\Infrastructure\Mail
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -21,6 +27,8 @@ use AllFeedback\Domain\Survey\Survey;
 final class NotificationContext {
 
 	/**
+	 * Constructor.
+	 *
 	 * @param  Survey        $survey   The survey the notification relates to.
 	 * @param  Response|null $response The submitted response, or null for survey-only contexts.
 	 * @since  1.0.0

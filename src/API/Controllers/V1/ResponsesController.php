@@ -1,4 +1,10 @@
 <?php
+/**
+ * Responses controller.
+ *
+ * @package AllFeedback\API\Controllers\V1
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -43,17 +49,19 @@ class ResponsesController extends RestController {
 	 * @var string
 	 * @since 1.0.0
 	 */
-	protected string $restBase = 'surveys';
+	protected string $rest_base = 'surveys';
 
 	/**
-	 * @param  SurveyRepository   $surveyRepository   Repository for survey lookups.
-	 * @param  ResponseRepository $responseRepository Repository for response reads and writes.
+	 * Constructor.
+	 *
+	 * @param  SurveyRepository   $survey_repository   Repository for survey lookups.
+	 * @param  ResponseRepository $response_repository Repository for response reads and writes.
 	 * @param  Logger             $logger             Structured logger.
 	 * @since  1.0.0
 	 */
 	public function __construct(
-		private readonly SurveyRepository $surveyRepository,
-		private readonly ResponseRepository $responseRepository,
+		private readonly SurveyRepository $survey_repository,
+		private readonly ResponseRepository $response_repository,
 		private readonly Logger $logger,
 	) {}
 
@@ -73,7 +81,7 @@ class ResponsesController extends RestController {
 					'callback'            => [ $this, 'indexAll' ],
 					'permission_callback' => [ $this, 'adminPermission' ],
 					'args'                => array_merge(
-						$this->paginationArgs( defaultPerPage: 20, maxPerPage: 100 ),
+						$this->paginationArgs( default_per_page: 20, max_per_page: 100 ),
 						$this->responseFilterArgs()
 					),
 				],
@@ -136,7 +144,7 @@ class ResponsesController extends RestController {
 
 		register_rest_route(
 			$this->namespace,
-			'/' . $this->restBase . '/(?P<id>\d+)/responses',
+			'/' . $this->rest_base . '/(?P<id>\d+)/responses',
 			[
 				[
 					'methods'             => \WP_REST_Server::READABLE,
@@ -144,7 +152,7 @@ class ResponsesController extends RestController {
 					'permission_callback' => [ $this, 'adminPermission' ],
 					'args'                => array_merge(
 						$this->idArg(),
-						$this->paginationArgs( defaultPerPage: 20, maxPerPage: 100 ),
+						$this->paginationArgs( default_per_page: 20, max_per_page: 100 ),
 						$this->responseFilterArgs()
 					),
 				],
@@ -154,7 +162,7 @@ class ResponsesController extends RestController {
 
 		register_rest_route(
 			$this->namespace,
-			'/' . $this->restBase . '/(?P<id>\d+)/responses/delete',
+			'/' . $this->rest_base . '/(?P<id>\d+)/responses/delete',
 			[
 				'methods'             => \WP_REST_Server::DELETABLE,
 				'callback'            => [ $this, 'destroyMany' ],
@@ -179,7 +187,7 @@ class ResponsesController extends RestController {
 
 		register_rest_route(
 			$this->namespace,
-			'/' . $this->restBase . '/(?P<id>\d+)/responses/(?P<rid>\d+)',
+			'/' . $this->rest_base . '/(?P<id>\d+)/responses/(?P<rid>\d+)',
 			[
 				[
 					'methods'             => \WP_REST_Server::READABLE,
@@ -234,35 +242,35 @@ class ResponsesController extends RestController {
 	 * @since  1.0.0
 	 */
 	public function indexAll( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
-		$page     = max( 1, (int) ( $request->get_param( 'page' ) ?? 1 ) );
-		$perPage  = min( 100, max( 1, (int) ( $request->get_param( 'per_page' ) ?? 20 ) ) );
-		$dateFrom = sanitize_text_field( (string) ( $request->get_param( 'date_from' ) ?? '' ) );
-		$dateTo   = sanitize_text_field( (string) ( $request->get_param( 'date_to' ) ?? '' ) );
-		$search   = sanitize_text_field( (string) ( $request->get_param( 'search' ) ?? '' ) );
-		$sortBy   = sanitize_key( (string) ( $request->get_param( 'sort_by' ) ?? 'created_at' ) );
-		$order    = strtoupper( sanitize_key( (string) ( $request->get_param( 'order' ) ?? 'DESC' ) ) ) === 'ASC' ? 'ASC' : 'DESC';
-		$isRead   = $request->get_param( 'is_read' );
+		$page      = max( 1, (int) ( $request->get_param( 'page' ) ?? 1 ) );
+		$per_page  = min( 100, max( 1, (int) ( $request->get_param( 'per_page' ) ?? 20 ) ) );
+		$date_from = sanitize_text_field( (string) ( $request->get_param( 'date_from' ) ?? '' ) );
+		$date_to   = sanitize_text_field( (string) ( $request->get_param( 'date_to' ) ?? '' ) );
+		$search    = sanitize_text_field( (string) ( $request->get_param( 'search' ) ?? '' ) );
+		$sort_by   = sanitize_key( (string) ( $request->get_param( 'sort_by' ) ?? 'created_at' ) );
+		$order     = strtoupper( sanitize_key( (string) ( $request->get_param( 'order' ) ?? 'DESC' ) ) ) === 'ASC' ? 'ASC' : 'DESC';
+		$is_read   = $request->get_param( 'is_read' );
 
 		$filter = new ResponseFilter(
-			dateFrom: $dateFrom !== '' ? $dateFrom : null,
-			dateTo:   $dateTo !== '' ? $dateTo : null,
+			date_from: $date_from !== '' ? $date_from : null,
+			date_to:   $date_to !== '' ? $date_to : null,
 			page:     $page,
-			perPage:  $perPage,
+			per_page:  $per_page,
 			search:   $search !== '' ? $search : null,
-			orderBy:  $sortBy,
+			order_by:  $sort_by,
 			order:    $order,
-			isRead:   $isRead !== null ? (bool) $isRead : null,
+			is_read:   $is_read !== null ? (bool) $is_read : null,
 		);
 
-		$responses = $this->responseRepository->findAll( $filter );
-		$total     = $this->responseRepository->countAll( $filter );
+		$responses = $this->response_repository->findAll( $filter );
+		$total     = $this->response_repository->countAll( $filter );
 
 		return $this->successResponse(
 			[
 				'responses' => array_map( [ $this, 'prepareResponse' ], $responses ),
 				'total'     => $total,
 				'page'      => $page,
-				'per_page'  => $perPage,
+				'per_page'  => $per_page,
 			]
 		);
 	}
@@ -283,7 +291,7 @@ class ResponsesController extends RestController {
 			return $this->errorResponse( __( 'No response IDs provided.', 'allfeedback' ), 422 );
 		}
 
-		$failed  = $this->responseRepository->deleteMany( $ids );
+		$failed  = $this->response_repository->deleteMany( $ids );
 		$deleted = count( $ids ) - count( $failed );
 
 		$this->logger->info(
@@ -340,7 +348,7 @@ class ResponsesController extends RestController {
 	 * @since  1.0.0
 	 */
 	public function unreadCount(): \WP_REST_Response {
-		return $this->successResponse( [ 'count' => $this->responseRepository->countUnread() ] );
+		return $this->successResponse( [ 'count' => $this->response_repository->countUnread() ] );
 	}
 
 	/**
@@ -353,55 +361,55 @@ class ResponsesController extends RestController {
 	 * @since  1.0.0
 	 */
 	public function index( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
-		$surveyId = (int) $request->get_param( 'id' );
+		$survey_id = (int) $request->get_param( 'id' );
 
-		$survey = $this->surveyRepository->findById( $surveyId );
+		$survey = $this->survey_repository->findById( $survey_id );
 
 		if ( $survey === null ) {
 			return $this->notFoundResponse( __( 'Survey', 'allfeedback' ) );
 		}
 
 		if ( $survey->getStatus()->isTrashed() ) {
-			$perPage = min( 100, max( 1, (int) ( $request->get_param( 'per_page' ) ?? 20 ) ) );
+			$per_page = min( 100, max( 1, (int) ( $request->get_param( 'per_page' ) ?? 20 ) ) );
 			return $this->successResponse(
 				[
 					'responses' => [],
 					'total'     => 0,
 					'page'      => 1,
-					'per_page'  => $perPage,
+					'per_page'  => $per_page,
 				]
 			);
 		}
 
-		$page     = max( 1, (int) ( $request->get_param( 'page' ) ?? 1 ) );
-		$perPage  = min( 100, max( 1, (int) ( $request->get_param( 'per_page' ) ?? 20 ) ) );
-		$dateFrom = sanitize_text_field( (string) ( $request->get_param( 'date_from' ) ?? '' ) );
-		$dateTo   = sanitize_text_field( (string) ( $request->get_param( 'date_to' ) ?? '' ) );
-		$search   = sanitize_text_field( (string) ( $request->get_param( 'search' ) ?? '' ) );
-		$sortBy   = sanitize_key( (string) ( $request->get_param( 'sort_by' ) ?? 'created_at' ) );
-		$order    = strtoupper( sanitize_key( (string) ( $request->get_param( 'order' ) ?? 'DESC' ) ) ) === 'ASC' ? 'ASC' : 'DESC';
-		$isRead   = $request->get_param( 'is_read' );
+		$page      = max( 1, (int) ( $request->get_param( 'page' ) ?? 1 ) );
+		$per_page  = min( 100, max( 1, (int) ( $request->get_param( 'per_page' ) ?? 20 ) ) );
+		$date_from = sanitize_text_field( (string) ( $request->get_param( 'date_from' ) ?? '' ) );
+		$date_to   = sanitize_text_field( (string) ( $request->get_param( 'date_to' ) ?? '' ) );
+		$search    = sanitize_text_field( (string) ( $request->get_param( 'search' ) ?? '' ) );
+		$sort_by   = sanitize_key( (string) ( $request->get_param( 'sort_by' ) ?? 'created_at' ) );
+		$order     = strtoupper( sanitize_key( (string) ( $request->get_param( 'order' ) ?? 'DESC' ) ) ) === 'ASC' ? 'ASC' : 'DESC';
+		$is_read   = $request->get_param( 'is_read' );
 
 		$filter = new ResponseFilter(
-			dateFrom: $dateFrom !== '' ? $dateFrom : null,
-			dateTo:   $dateTo !== '' ? $dateTo : null,
+			date_from: $date_from !== '' ? $date_from : null,
+			date_to:   $date_to !== '' ? $date_to : null,
 			page:     $page,
-			perPage:  $perPage,
+			per_page:  $per_page,
 			search:   $search !== '' ? $search : null,
-			orderBy:  $sortBy,
+			order_by:  $sort_by,
 			order:    $order,
-			isRead:   $isRead !== null ? (bool) $isRead : null,
+			is_read:   $is_read !== null ? (bool) $is_read : null,
 		);
 
-		$responses = $this->responseRepository->findBySurveyId( $surveyId, $filter );
-		$total     = $this->responseRepository->countBySurveyId( $surveyId, $filter );
+		$responses = $this->response_repository->findBySurveyId( $survey_id, $filter );
+		$total     = $this->response_repository->countBySurveyId( $survey_id, $filter );
 
 		return $this->successResponse(
 			[
 				'responses' => array_map( [ $this, 'prepareResponse' ], $responses ),
 				'total'     => $total,
 				'page'      => $page,
-				'per_page'  => $perPage,
+				'per_page'  => $per_page,
 			]
 		);
 	}
@@ -417,12 +425,12 @@ class ResponsesController extends RestController {
 	 * @since  1.0.0
 	 */
 	public function show( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
-		$surveyId   = (int) $request->get_param( 'id' );
-		$responseId = (int) $request->get_param( 'rid' );
+		$survey_id   = (int) $request->get_param( 'id' );
+		$response_id = (int) $request->get_param( 'rid' );
 
-		$response = $this->responseRepository->findById( $responseId );
+		$response = $this->response_repository->findById( $response_id );
 
-		if ( $response === null || $response->getSurveyId() !== $surveyId ) {
+		if ( $response === null || $response->getSurveyId() !== $survey_id ) {
 			return $this->notFoundResponse( __( 'Response', 'allfeedback' ) );
 		}
 
@@ -440,61 +448,69 @@ class ResponsesController extends RestController {
 	 * @since  1.0.0
 	 */
 	public function update( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
-		$surveyId   = (int) $request->get_param( 'id' );
-		$responseId = (int) $request->get_param( 'rid' );
+		$survey_id   = (int) $request->get_param( 'id' );
+		$response_id = (int) $request->get_param( 'rid' );
 
-		$response = $this->responseRepository->findById( $responseId );
+		$response = $this->response_repository->findById( $response_id );
 
-		if ( $response === null || $response->getSurveyId() !== $surveyId ) {
+		if ( $response === null || $response->getSurveyId() !== $survey_id ) {
 			return $this->notFoundResponse( __( 'Response', 'allfeedback' ) );
 		}
 
-		$updatePayload = [];
+		$update_payload = [];
 
-		$rawData = $request->get_param( 'response_data' );
-		if ( $rawData !== null ) {
-			if ( $rawData instanceof \stdClass ) {
-				$rawData = (array) $rawData;
+		$raw_data = $request->get_param( 'response_data' );
+		if ( $raw_data !== null ) {
+			if ( $raw_data instanceof \stdClass ) {
+				$raw_data = (array) $raw_data;
 			}
 
-			$responseDataJson = wp_json_encode( $rawData );
+			$response_data_json = wp_json_encode( $raw_data );
 
-			if ( $responseDataJson === false ) {
+			if ( $response_data_json === false ) {
 				return $this->errorResponse( __( 'Invalid response_data: could not encode as JSON.', 'allfeedback' ), 400 );
 			}
 
-			$updatePayload['response_data'] = $responseDataJson;
+			$update_payload['response_data'] = $response_data_json;
 		}
 
-		$isRead = $request->get_param( 'is_read' );
-		if ( $isRead !== null ) {
-			$updatePayload['is_read'] = $isRead ? 1 : 0;
+		$is_read = $request->get_param( 'is_read' );
+		if ( $is_read !== null ) {
+			$update_payload['is_read'] = $is_read ? 1 : 0;
 		}
 
-		if ( empty( $updatePayload ) ) {
+		if ( empty( $update_payload ) ) {
 			return $this->successResponse( $this->prepareResponse( $response ) );
 		}
 
-		if ( ! $this->responseRepository->update( $responseId, $updatePayload ) ) {
+		if ( ! $this->response_repository->update( $response_id, $update_payload ) ) {
 			$this->logger->error(
 				'Response update failed at DB layer.',
-				[ 'response_id' => $responseId, 'survey_id' => $surveyId, 'user_id' => get_current_user_id() ]
+				[
+					'response_id' => $response_id,
+					'survey_id' => $survey_id,
+					'user_id' => get_current_user_id(),
+				]
 			);
 			return $this->errorResponse( __( 'Failed to update the response.', 'allfeedback' ), 500 );
 		}
 
 		$this->logger->info(
 			'Response updated.',
-			[ 'response_id' => $responseId, 'survey_id' => $surveyId, 'user_id' => get_current_user_id() ]
+			[
+				'response_id' => $response_id,
+				'survey_id' => $survey_id,
+				'user_id' => get_current_user_id(),
+			]
 		);
 
 		// Build the return payload from the already-loaded $response + applied changes.
 		$prepared = $this->prepareResponse( $response );
-		if ( array_key_exists( 'response_data', $updatePayload ) ) {
-			$prepared['response_data'] = json_decode( $updatePayload['response_data'], true );
+		if ( array_key_exists( 'response_data', $update_payload ) ) {
+			$prepared['response_data'] = json_decode( $update_payload['response_data'], true );
 		}
-		if ( array_key_exists( 'is_read', $updatePayload ) ) {
-			$prepared['is_read'] = (bool) $updatePayload['is_read'];
+		if ( array_key_exists( 'is_read', $update_payload ) ) {
+			$prepared['is_read'] = (bool) $update_payload['is_read'];
 		}
 
 		return $this->successResponse( $prepared );
@@ -511,24 +527,24 @@ class ResponsesController extends RestController {
 	 * @since  1.0.0
 	 */
 	public function destroyMany( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
-		$surveyId = (int) $request->get_param( 'id' );
-		$ids      = array_values( array_filter( array_map( 'absint', (array) ( $request->get_param( 'ids' ) ?? [] ) ) ) );
+		$survey_id = (int) $request->get_param( 'id' );
+		$ids       = array_values( array_filter( array_map( 'absint', (array) ( $request->get_param( 'ids' ) ?? [] ) ) ) );
 
 		if ( empty( $ids ) ) {
 			return $this->errorResponse( __( 'No response IDs provided.', 'allfeedback' ), 422 );
 		}
 
-		if ( $this->surveyRepository->findById( $surveyId ) === null ) {
+		if ( $this->survey_repository->findById( $survey_id ) === null ) {
 			return $this->notFoundResponse( __( 'Survey', 'allfeedback' ) );
 		}
 
-		$failed  = $this->responseRepository->deleteManyBySurveyId( $ids, $surveyId );
+		$failed  = $this->response_repository->deleteManyBySurveyId( $ids, $survey_id );
 		$deleted = count( $ids ) - count( $failed );
 
 		$this->logger->info(
 			'Bulk response deletion completed.',
 			[
-				'survey_id'     => $surveyId,
+				'survey_id'     => $survey_id,
 				'requested'     => $ids,
 				'deleted_count' => $deleted,
 				'failed'        => $failed,
@@ -555,31 +571,44 @@ class ResponsesController extends RestController {
 	 * @since  1.0.0
 	 */
 	public function destroy( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
-		$surveyId   = (int) $request->get_param( 'id' );
-		$responseId = (int) $request->get_param( 'rid' );
+		$survey_id   = (int) $request->get_param( 'id' );
+		$response_id = (int) $request->get_param( 'rid' );
 
-		$response = $this->responseRepository->findById( $responseId );
+		$response = $this->response_repository->findById( $response_id );
 
-		if ( $response === null || $response->getSurveyId() !== $surveyId ) {
+		if ( $response === null || $response->getSurveyId() !== $survey_id ) {
 			return $this->notFoundResponse( __( 'Response', 'allfeedback' ) );
 		}
 
-		if ( ! $this->responseRepository->delete( $responseId ) ) {
+		if ( ! $this->response_repository->delete( $response_id ) ) {
 			$this->logger->error(
 				'Response deletion failed at DB layer.',
-				[ 'response_id' => $responseId, 'survey_id' => $surveyId, 'user_id' => get_current_user_id() ]
+				[
+					'response_id' => $response_id,
+					'survey_id' => $survey_id,
+					'user_id' => get_current_user_id(),
+				]
 			);
 			return $this->errorResponse( __( 'Failed to delete the response.', 'allfeedback' ), 500 );
 		}
 
-		$this->surveyRepository->decrementResponseCount( $surveyId );
+		$this->survey_repository->decrementResponseCount( $survey_id );
 
 		$this->logger->info(
 			'Response deleted.',
-			[ 'response_id' => $responseId, 'survey_id' => $surveyId, 'user_id' => get_current_user_id() ]
+			[
+				'response_id' => $response_id,
+				'survey_id' => $survey_id,
+				'user_id' => get_current_user_id(),
+			]
 		);
 
-		return $this->successResponse( [ 'deleted' => true, 'id' => $responseId ] );
+		return $this->successResponse(
+			[
+				'deleted' => true,
+				'id' => $response_id,
+			]
+		);
 	}
 
 	/**
@@ -655,12 +684,12 @@ class ResponsesController extends RestController {
 	 * @since  1.0.0
 	 */
 	private function prepareResponse( Response $response ): array {
-		$responseData = $response->getResponseData();
+		$response_data = $response->getResponseData();
 
 		return [
 			'id'            => $response->getId(),
 			'survey_id'     => $response->getSurveyId(),
-			'response_data' => $responseData !== [] ? $responseData : null,
+			'response_data' => $response_data !== [] ? $response_data : null,
 			'score'         => $response->getScore() !== null ? (int) $response->getScore() : null,
 			'page_url'      => $response->getPageUrl(),
 			'device_type'   => $response->getDeviceType(),
@@ -751,24 +780,24 @@ class ResponsesController extends RestController {
 	 * response that exists. Non-existent IDs are counted as failures.
 	 *
 	 * @param  \WP_REST_Request $request Full request data.
-	 * @param  bool             $isRead  True = mark as read, false = mark as unread.
+	 * @param  bool             $is_read  True = mark as read, false = mark as unread.
 	 * @return \WP_REST_Response|\WP_Error
 	 * @since  1.0.0
 	 */
-	private function bulkSetReadStatus( \WP_REST_Request $request, bool $isRead ): \WP_REST_Response|\WP_Error {
+	private function bulkSetReadStatus( \WP_REST_Request $request, bool $is_read ): \WP_REST_Response|\WP_Error {
 		$ids = array_values( array_filter( array_map( 'absint', (array) ( $request->get_param( 'ids' ) ?? [] ) ) ) );
 
 		if ( empty( $ids ) ) {
 			return $this->errorResponse( __( 'No response IDs provided.', 'allfeedback' ), 422 );
 		}
 
-		$failed  = $this->responseRepository->bulkUpdateReadStatus( $ids, $isRead );
+		$failed  = $this->response_repository->bulkUpdateReadStatus( $ids, $is_read );
 		$updated = count( $ids ) - count( $failed );
 
 		$this->logger->info(
 			'Bulk response read-status update.',
 			[
-				'is_read'       => $isRead,
+				'is_read'       => $is_read,
 				'requested'     => $ids,
 				'updated_count' => $updated,
 				'failed'        => $failed,

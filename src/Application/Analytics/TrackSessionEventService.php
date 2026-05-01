@@ -1,4 +1,10 @@
 <?php
+/**
+ * Track session event service.
+ *
+ * @package AllFeedback\Application\Analytics
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -22,72 +28,74 @@ use DateTimeImmutable;
 class TrackSessionEventService {
 
 	/**
-	 * @param  SurveySessionRepository $sessionRepository Persistence layer for session aggregates.
+	 * Constructor.
+	 *
+	 * @param  SurveySessionRepository $session_repository Persistence layer for session aggregates.
 	 * @since  1.0.0
 	 */
 	public function __construct(
-		private readonly SurveySessionRepository $sessionRepository,
+		private readonly SurveySessionRepository $session_repository,
 	) {}
 
 	/**
 	 * Process one analytics event.
 	 *
-	 * @param  int         $surveyId  Target survey.
+	 * @param  int         $survey_id  Target survey.
 	 * @param  string      $event     One of: viewed | started | abandoned | heartbeat.
-	 * @param  string      $sessionId Client-generated UUID (v4).
-	 * @param  int|null    $userId    WordPress user ID, or null for guests.
-	 * @param  string|null $guestId   Persistent guest token from localStorage.
+	 * @param  string      $session_id Client-generated UUID (v4).
+	 * @param  int|null    $user_id    WordPress user ID, or null for guests.
+	 * @param  string|null $guest_id   Persistent guest token from localStorage.
 	 * @return void
 	 * @since  1.0.0
 	 */
 	public function execute(
-		int $surveyId,
+		int $survey_id,
 		string $event,
-		string $sessionId,
-		?int $userId,
-		?string $guestId,
+		string $session_id,
+		?int $user_id,
+		?string $guest_id,
 	): void {
 		$now = new DateTimeImmutable();
 
 		switch ( $event ) {
 			case 'viewed':
-				$existing = $this->sessionRepository->findBySessionId( $sessionId );
+				$existing = $this->session_repository->findBySessionId( $session_id );
 				if ( $existing === null ) {
 					$session = new SurveySession(
-						surveyId: $surveyId,
-						sessionId: $sessionId,
-						userId: $userId,
-						guestId: $guestId,
+						survey_id: $survey_id,
+						session_id: $session_id,
+						user_id: $user_id,
+						guest_id: $guest_id,
 					);
-					$this->sessionRepository->save( $session );
+					$this->session_repository->save( $session );
 				}
 				break;
 
 			case 'started':
-				$session = $this->sessionRepository->findBySessionId( $sessionId );
+				$session = $this->session_repository->findBySessionId( $session_id );
 				if ( $session === null ) {
 					break;
 				}
 				$session->markStarted( $now );
-				$this->sessionRepository->save( $session );
+				$this->session_repository->save( $session );
 				break;
 
 			case 'abandoned':
-				$session = $this->sessionRepository->findBySessionId( $sessionId );
+				$session = $this->session_repository->findBySessionId( $session_id );
 				if ( $session === null || $session->isSubmitted() ) {
 					break;
 				}
 				$session->markAbandoned( $now );
-				$this->sessionRepository->save( $session );
+				$this->session_repository->save( $session );
 				break;
 
 			case 'heartbeat':
-				$session = $this->sessionRepository->findBySessionId( $sessionId );
+				$session = $this->session_repository->findBySessionId( $session_id );
 				if ( $session === null ) {
 					break;
 				}
 				$session->touchActive( $now );
-				$this->sessionRepository->save( $session );
+				$this->session_repository->save( $session );
 				break;
 		}
 	}

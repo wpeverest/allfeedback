@@ -1,4 +1,10 @@
 <?php
+/**
+ * Bootstrap controller.
+ *
+ * @package AllFeedback\API\Controllers\V1
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -25,19 +31,40 @@ use AllFeedback\Domain\Survey\SurveyRepository;
  */
 class BootstrapController extends RestController {
 
-	protected string $restBase = 'bootstrap';
+	/**
+	 * REST resource slug.
+	 *
+	 * @var string
+	 * @since 1.0.0
+	 */
+	protected string $rest_base = 'bootstrap';
 
+	/**
+	 * Constructor.
+	 *
+	 * @param  SettingsManager         $settings_manager    Plugin settings.
+	 * @param  SurveyRepository        $survey_repository   Survey data access.
+	 * @param  SurveySessionRepository $session_repository  Session analytics data access.
+	 * @param  ResponseRepository      $response_repository Response data access.
+	 * @since  1.0.0
+	 */
 	public function __construct(
-		private readonly SettingsManager $settingsManager,
-		private readonly SurveyRepository $surveyRepository,
-		private readonly SurveySessionRepository $sessionRepository,
-		private readonly ResponseRepository $responseRepository,
+		private readonly SettingsManager $settings_manager,
+		private readonly SurveyRepository $survey_repository,
+		private readonly SurveySessionRepository $session_repository,
+		private readonly ResponseRepository $response_repository,
 	) {}
 
+	/**
+	 * Register REST routes.
+	 *
+	 * @return void
+	 * @since  1.0.0
+	 */
 	public function registerRoutes(): void {
 		register_rest_route(
 			$this->namespace,
-			'/' . $this->restBase,
+			'/' . $this->rest_base,
 			[
 				'methods'             => \WP_REST_Server::READABLE,
 				'callback'            => [ $this, 'getBootstrap' ],
@@ -58,47 +85,57 @@ class BootstrapController extends RestController {
 	 */
 	public function getBootstrap( \WP_REST_Request $request ): \WP_REST_Response {
 		// 1 query — all settings
-		$settings = $this->settingsManager->all();
+		$settings = $this->settings_manager->all();
 
 		// 6 queries — same as /analytics/overview
-		$responseStats = $this->responseRepository->getOverviewStats();
-		$sessionStats  = $this->sessionRepository->getOverviewSessionStats();
-		$surveyStats   = $this->surveyRepository->countPublishedWithNewCount();
+		$response_stats = $this->response_repository->getOverviewStats();
+		$session_stats  = $this->session_repository->getOverviewSessionStats();
+		$survey_stats   = $this->survey_repository->countPublishedWithNewCount();
 
-		return $this->successResponse( [
-			'settings' => $settings,
-			'overview' => [
-				'stats' => [
-					'total_feedback' => [
-						'value'  => $responseStats['total_feedback'],
-						'change' => $this->weekOverWeekChange( $responseStats['this_week_count'], $responseStats['last_week_count'] ),
-					],
-					'completion_rate' => [
-						'value'  => $sessionStats['completion_rate'],
-						'change' => $this->weekOverWeekChange( $sessionStats['this_week_completion_rate'], $sessionStats['last_week_completion_rate'] ),
-					],
-					'abandonment_rate' => [
-						'value'  => $sessionStats['abandonment_rate'],
-						'change' => $this->weekOverWeekChange( $sessionStats['this_week_abandonment_rate'], $sessionStats['last_week_abandonment_rate'] ),
-					],
-					'avg_rating' => [
-						'value'  => $responseStats['avg_score'],
-						'change' => $this->weekOverWeekChange( $responseStats['this_week_avg_score'], $responseStats['last_week_avg_score'] ),
-					],
-					'active_surveys' => [
-						'value'         => $surveyStats['total'],
-						'new_this_week' => $surveyStats['new_this_week'],
-						'change'        => $surveyStats['total'] > 0
-							? round( $surveyStats['new_this_week'] / $surveyStats['total'] * 100, 1 )
-							: null,
+		return $this->successResponse(
+			[
+				'settings' => $settings,
+				'overview' => [
+					'stats' => [
+						'total_feedback' => [
+							'value'  => $response_stats['total_feedback'],
+							'change' => $this->weekOverWeekChange( $response_stats['this_week_count'], $response_stats['last_week_count'] ),
+						],
+						'completion_rate' => [
+							'value'  => $session_stats['completion_rate'],
+							'change' => $this->weekOverWeekChange( $session_stats['this_week_completion_rate'], $session_stats['last_week_completion_rate'] ),
+						],
+						'abandonment_rate' => [
+							'value'  => $session_stats['abandonment_rate'],
+							'change' => $this->weekOverWeekChange( $session_stats['this_week_abandonment_rate'], $session_stats['last_week_abandonment_rate'] ),
+						],
+						'avg_rating' => [
+							'value'  => $response_stats['avg_score'],
+							'change' => $this->weekOverWeekChange( $response_stats['this_week_avg_score'], $response_stats['last_week_avg_score'] ),
+						],
+						'active_surveys' => [
+							'value'         => $survey_stats['total'],
+							'new_this_week' => $survey_stats['new_this_week'],
+							'change'        => $survey_stats['total'] > 0
+								? round( $survey_stats['new_this_week'] / $survey_stats['total'] * 100, 1 )
+								: null,
+						],
 					],
 				],
-			],
-		] );
+			]
+		);
 	}
 
+	/**
+	 * Calculate week-over-week percentage change between two values.
+	 *
+	 * @param  int|float|null $current  Value for the current period.
+	 * @param  int|float|null $previous Value for the previous period.
+	 * @return float|null Percentage change, or null if not computable.
+	 * @since  1.0.0
+	 */
 	private function weekOverWeekChange( int|float|null $current, int|float|null $previous ): ?float {
-		if ( $current === null || $previous === null || $previous == 0 ) {
+		if ( $current === null || $previous === null || $previous === 0 ) {
 			return null;
 		}
 

@@ -1,4 +1,10 @@
 <?php
+/**
+ * Config.
+ *
+ * @package AllFeedback\Support
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -29,6 +35,8 @@ class Config {
 	private array $config;
 
 	/**
+	 * Constructor.
+	 *
 	 * @param  array<string, mixed> $config The config array injected by the DI container
 	 *                                      from the 'config.app' binding in services.php.
 	 * @since  1.0.0
@@ -40,18 +48,18 @@ class Config {
 	/**
 	 * Retrieve a config value using dot notation.
 	 *
-	 * @param  string $key     Dot-separated path, e.g. 'cache.ttl'.
-	 * @param  mixed  $default Returned when the key is not found.
+	 * @param  string $key      Dot-separated path, e.g. 'cache.ttl'.
+	 * @param  mixed  $fallback Fallback when the key is not found.
 	 * @return mixed
 	 * @since  1.0.0
 	 */
-	public function get( string $key, mixed $default = null ): mixed {
+	public function get( string $key, mixed $fallback = null ): mixed {
 		$parts  = explode( '.', $key );
 		$cursor = $this->config;
 
 		foreach ( $parts as $part ) {
 			if ( ! is_array( $cursor ) || ! array_key_exists( $part, $cursor ) ) {
-				return $default;
+				return $fallback;
 			}
 			$cursor = $cursor[ $part ];
 		}

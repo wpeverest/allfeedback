@@ -1,4 +1,10 @@
 <?php
+/**
+ * Event.
+ *
+ * @package AllFeedback\Core\Events
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -20,7 +26,7 @@ abstract class Event {
 	 * @var bool
 	 * @since 1.0.0
 	 */
-	private bool $propagationStopped = false;
+	private bool $propagation_stopped = false;
 
 	/**
 	 * Stop the event from propagating to subsequent listeners.
@@ -29,7 +35,7 @@ abstract class Event {
 	 * @since  1.0.0
 	 */
 	public function stopPropagation(): void {
-		$this->propagationStopped = true;
+		$this->propagation_stopped = true;
 	}
 
 	/**
@@ -39,7 +45,7 @@ abstract class Event {
 	 * @since  1.0.0
 	 */
 	public function isPropagationStopped(): bool {
-		return $this->propagationStopped;
+		return $this->propagation_stopped;
 	}
 
 	/**

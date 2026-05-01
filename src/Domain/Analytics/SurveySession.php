@@ -1,4 +1,10 @@
 <?php
+/**
+ * Survey session.
+ *
+ * @package AllFeedback\Domain\Analytics
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -26,7 +32,7 @@ class SurveySession extends Entity {
 	 * @var DateTimeImmutable
 	 * @since 1.0.0
 	 */
-	private DateTimeImmutable $lastActiveAt;
+	private DateTimeImmutable $last_active_at;
 
 	/**
 	 * Timestamp of when the session record was first created.
@@ -34,36 +40,38 @@ class SurveySession extends Entity {
 	 * @var DateTimeImmutable
 	 * @since 1.0.0
 	 */
-	private DateTimeImmutable $createdAt;
+	private DateTimeImmutable $created_at;
 
 	/**
-	 * @param  int                    $surveyId     Parent survey primary key.
-	 * @param  string                 $sessionId    Client-generated session UUID.
-	 * @param  int|null               $userId       WordPress user ID, or null for guests.
-	 * @param  string|null            $guestId      Persistent guest token, or null.
+	 * Constructor.
+	 *
+	 * @param  int                    $survey_id     Parent survey primary key.
+	 * @param  string                 $session_id    Client-generated session UUID.
+	 * @param  int|null               $user_id       WordPress user ID, or null for guests.
+	 * @param  string|null            $guest_id      Persistent guest token, or null.
 	 * @param  string                 $status       Materialised status: viewed | started | submitted | abandoned.
-	 * @param  DateTimeImmutable|null $startedAt    When the first field interaction occurred.
-	 * @param  DateTimeImmutable|null $submittedAt  When a completed submission was recorded.
-	 * @param  DateTimeImmutable|null $abandonedAt  When the session was abandoned.
-	 * @param  DateTimeImmutable|null $lastActiveAt Last-activity timestamp; defaults to now.
-	 * @param  DateTimeImmutable|null $createdAt    Creation timestamp; defaults to now.
+	 * @param  DateTimeImmutable|null $started_at    When the first field interaction occurred.
+	 * @param  DateTimeImmutable|null $submitted_at  When a completed submission was recorded.
+	 * @param  DateTimeImmutable|null $abandoned_at  When the session was abandoned.
+	 * @param  DateTimeImmutable|null $last_active_at Last-activity timestamp; defaults to now.
+	 * @param  DateTimeImmutable|null $created_at    Creation timestamp; defaults to now.
 	 * @since  1.0.0
 	 */
 	public function __construct(
-		private int $surveyId,
-		private string $sessionId,
-		private ?int $userId,
-		private ?string $guestId,
+		private int $survey_id,
+		private string $session_id,
+		private ?int $user_id,
+		private ?string $guest_id,
 		private string $status = 'viewed',
-		private ?DateTimeImmutable $startedAt = null,
-		private ?DateTimeImmutable $submittedAt = null,
-		private ?DateTimeImmutable $abandonedAt = null,
-		?DateTimeImmutable $lastActiveAt = null,
-		?DateTimeImmutable $createdAt = null,
+		private ?DateTimeImmutable $started_at = null,
+		private ?DateTimeImmutable $submitted_at = null,
+		private ?DateTimeImmutable $abandoned_at = null,
+		?DateTimeImmutable $last_active_at = null,
+		?DateTimeImmutable $created_at = null,
 	) {
-		$now                = new DateTimeImmutable();
-		$this->lastActiveAt = $lastActiveAt ?? $now;
-		$this->createdAt    = $createdAt    ?? $now;
+		$now                  = new DateTimeImmutable();
+		$this->last_active_at = $last_active_at ?? $now;
+		$this->created_at     = $created_at ?? $now;
 	}
 
 	/**
@@ -72,7 +80,8 @@ class SurveySession extends Entity {
 	 * @return int
 	 * @since  1.0.0
 	 */
-	public function getSurveyId(): int { return $this->surveyId; }
+	public function getSurveyId(): int {
+		return $this->survey_id; }
 
 	/**
 	 * Return the client-generated session UUID.
@@ -80,7 +89,8 @@ class SurveySession extends Entity {
 	 * @return string
 	 * @since  1.0.0
 	 */
-	public function getSessionId(): string { return $this->sessionId; }
+	public function getSessionId(): string {
+		return $this->session_id; }
 
 	/**
 	 * Return the WordPress user ID, or null for guests.
@@ -88,7 +98,8 @@ class SurveySession extends Entity {
 	 * @return int|null
 	 * @since  1.0.0
 	 */
-	public function getUserId(): ?int { return $this->userId; }
+	public function getUserId(): ?int {
+		return $this->user_id; }
 
 	/**
 	 * Return the persistent guest token, or null when absent.
@@ -96,7 +107,8 @@ class SurveySession extends Entity {
 	 * @return string|null
 	 * @since  1.0.0
 	 */
-	public function getGuestId(): ?string { return $this->guestId; }
+	public function getGuestId(): ?string {
+		return $this->guest_id; }
 
 	/**
 	 * Return the materialised session status string.
@@ -104,7 +116,8 @@ class SurveySession extends Entity {
 	 * @return string
 	 * @since  1.0.0
 	 */
-	public function getStatus(): string { return $this->status; }
+	public function getStatus(): string {
+		return $this->status; }
 
 	/**
 	 * Return the timestamp of the first field interaction, or null.
@@ -112,7 +125,8 @@ class SurveySession extends Entity {
 	 * @return DateTimeImmutable|null
 	 * @since  1.0.0
 	 */
-	public function getStartedAt(): ?DateTimeImmutable { return $this->startedAt; }
+	public function getStartedAt(): ?DateTimeImmutable {
+		return $this->started_at; }
 
 	/**
 	 * Return the timestamp of a completed submission, or null.
@@ -120,7 +134,8 @@ class SurveySession extends Entity {
 	 * @return DateTimeImmutable|null
 	 * @since  1.0.0
 	 */
-	public function getSubmittedAt(): ?DateTimeImmutable { return $this->submittedAt; }
+	public function getSubmittedAt(): ?DateTimeImmutable {
+		return $this->submitted_at; }
 
 	/**
 	 * Return the timestamp when the session was abandoned, or null.
@@ -128,7 +143,8 @@ class SurveySession extends Entity {
 	 * @return DateTimeImmutable|null
 	 * @since  1.0.0
 	 */
-	public function getAbandonedAt(): ?DateTimeImmutable { return $this->abandonedAt; }
+	public function getAbandonedAt(): ?DateTimeImmutable {
+		return $this->abandoned_at; }
 
 	/**
 	 * Return the last-active timestamp.
@@ -136,7 +152,8 @@ class SurveySession extends Entity {
 	 * @return DateTimeImmutable
 	 * @since  1.0.0
 	 */
-	public function getLastActiveAt(): DateTimeImmutable { return $this->lastActiveAt; }
+	public function getLastActiveAt(): DateTimeImmutable {
+		return $this->last_active_at; }
 
 	/**
 	 * Return the session creation timestamp.
@@ -144,7 +161,8 @@ class SurveySession extends Entity {
 	 * @return DateTimeImmutable
 	 * @since  1.0.0
 	 */
-	public function getCreatedAt(): DateTimeImmutable { return $this->createdAt; }
+	public function getCreatedAt(): DateTimeImmutable {
+		return $this->created_at; }
 
 	/**
 	 * Return true when a submission timestamp has been recorded.
@@ -153,7 +171,7 @@ class SurveySession extends Entity {
 	 * @since  1.0.0
 	 */
 	public function isSubmitted(): bool {
-		return $this->submittedAt !== null;
+		return $this->submitted_at !== null;
 	}
 
 	/**
@@ -179,12 +197,12 @@ class SurveySession extends Entity {
 	 * @since  1.0.0
 	 */
 	public function markStarted( DateTimeImmutable $at ): void {
-		if ( $this->startedAt !== null ) {
+		if ( $this->started_at !== null ) {
 			return;
 		}
-		$this->startedAt    = $at;
-		$this->lastActiveAt = $at;
-		$this->status       = 'started';
+		$this->started_at     = $at;
+		$this->last_active_at = $at;
+		$this->status         = 'started';
 	}
 
 	/**
@@ -197,12 +215,12 @@ class SurveySession extends Entity {
 	 * @since  1.0.0
 	 */
 	public function markSubmitted( DateTimeImmutable $at ): void {
-		if ( $this->submittedAt !== null ) {
+		if ( $this->submitted_at !== null ) {
 			return;
 		}
-		$this->submittedAt  = $at;
-		$this->lastActiveAt = $at;
-		$this->status       = 'submitted';
+		$this->submitted_at   = $at;
+		$this->last_active_at = $at;
+		$this->status         = 'submitted';
 	}
 
 	/**
@@ -215,12 +233,12 @@ class SurveySession extends Entity {
 	 * @since  1.0.0
 	 */
 	public function markAbandoned( DateTimeImmutable $at ): void {
-		if ( $this->submittedAt !== null ) {
+		if ( $this->submitted_at !== null ) {
 			return;
 		}
-		$this->abandonedAt  = $at;
-		$this->lastActiveAt = $at;
-		$this->status       = 'abandoned';
+		$this->abandoned_at   = $at;
+		$this->last_active_at = $at;
+		$this->status         = 'abandoned';
 	}
 
 	/**
@@ -231,7 +249,7 @@ class SurveySession extends Entity {
 	 * @since  1.0.0
 	 */
 	public function touchActive( DateTimeImmutable $at ): void {
-		$this->lastActiveAt = $at;
+		$this->last_active_at = $at;
 	}
 
 	/**
@@ -242,20 +260,25 @@ class SurveySession extends Entity {
 	 * @since  1.0.0
 	 */
 	public static function reconstitute( array $row ): self {
-		$toDate = static fn( ?string $v ): ?DateTimeImmutable =>
-			$v !== null ? DateTimeImmutable::createFromFormat( 'Y-m-d H:i:s', $v ) ?: null : null;
+		$to_date = static function ( ?string $v ): ?DateTimeImmutable {
+			if ( $v === null ) {
+				return null;
+			}
+			$dt = DateTimeImmutable::createFromFormat( 'Y-m-d H:i:s', $v );
+			return $dt !== false ? $dt : null;
+		};
 
 		$session = new self(
-			surveyId:     (int) $row['survey_id'],
-			sessionId:    (string) $row['session_id'],
-			userId:       isset( $row['user_id'] ) && $row['user_id'] !== null ? (int) $row['user_id'] : null,
-			guestId:      $row['guest_id'] !== null ? (string) $row['guest_id'] : null,
+			survey_id:     (int) $row['survey_id'],
+			session_id:    (string) $row['session_id'],
+			user_id:       isset( $row['user_id'] ) && $row['user_id'] !== null ? (int) $row['user_id'] : null,
+			guest_id:      $row['guest_id'] !== null ? (string) $row['guest_id'] : null,
 			status:       (string) $row['status'],
-			startedAt:    $toDate( $row['started_at'] ?? null ),
-			submittedAt:  $toDate( $row['submitted_at'] ?? null ),
-			abandonedAt:  $toDate( $row['abandoned_at'] ?? null ),
-			lastActiveAt: $toDate( $row['last_active_at'] ) ?? new DateTimeImmutable(),
-			createdAt:    $toDate( $row['created_at'] ) ?? new DateTimeImmutable(),
+			started_at:    $to_date( $row['started_at'] ?? null ),
+			submitted_at:  $to_date( $row['submitted_at'] ?? null ),
+			abandoned_at:  $to_date( $row['abandoned_at'] ?? null ),
+			last_active_at: $to_date( $row['last_active_at'] ) ?? new DateTimeImmutable(),
+			created_at:    $to_date( $row['created_at'] ) ?? new DateTimeImmutable(),
 		);
 
 		$session->id = (int) $row['id'];

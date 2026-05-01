@@ -1,4 +1,10 @@
 <?php
+/**
+ * Migrate command.
+ *
+ * @package AllFeedback\CLI
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -25,6 +31,8 @@ use AllFeedback\Infrastructure\Database\Migrator;
 class MigrateCommand {
 
 	/**
+	 * Constructor.
+	 *
 	 * @param  Migrator $migrator Database migrator for running and rolling back migrations.
 	 * @since  1.0.0
 	 */
@@ -94,7 +102,7 @@ class MigrateCommand {
 			return;
 		}
 
-		$tableRows = array_map(
+		$table_rows = array_map(
 			function ( array $row ): array {
 				return [
 					'Migration' => $row['name'],
@@ -106,7 +114,7 @@ class MigrateCommand {
 			$rows
 		);
 
-		\WP_CLI\Utils\format_items( 'table', $tableRows, [ 'Migration', 'Ran', 'Batch', 'Ran At' ] );
+		\WP_CLI\Utils\format_items( 'table', $table_rows, [ 'Migration', 'Ran', 'Batch', 'Ran At' ] );
 	}
 
 	/**
@@ -123,31 +131,31 @@ class MigrateCommand {
 	 *   wp allfeedback migrate rollback --step=2
 	 *
 	 * @param      array<int, string>   $args      Positional arguments (unused).
-	 * @param      array<string, mixed> $assocArgs Associative arguments; accepts `step`.
+	 * @param      array<string, mixed> $assoc_args Associative arguments; accepts `step`.
 	 * @return     void
 	 * @subcommand rollback
 	 * @when       after_wp_load
 	 * @since      1.0.0
 	 */
-	public function rollback( array $args, array $assocArgs ): void {
-		$step = max( 1, (int) ( $assocArgs['step'] ?? 1 ) );
+	public function rollback( array $args, array $assoc_args ): void {
+		$step = max( 1, (int) ( $assoc_args['step'] ?? 1 ) );
 
 		\WP_CLI::confirm(
 			sprintf( 'This will roll back the last %d batch(es). Are you sure?', $step )
 		);
 
-		$rolledBack = $this->migrator->rollback( $step );
+		$rolled_back = $this->migrator->rollback( $step );
 
-		if ( empty( $rolledBack ) ) {
+		if ( empty( $rolled_back ) ) {
 			\WP_CLI::success( 'Nothing to roll back.' );
 			return;
 		}
 
-		foreach ( $rolledBack as $name ) {
+		foreach ( $rolled_back as $name ) {
 			\WP_CLI::log( \WP_CLI::colorize( "%YRolled back:%n {$name}" ) );
 		}
 
-		\WP_CLI::success( sprintf( '%d migration(s) rolled back.', count( $rolledBack ) ) );
+		\WP_CLI::success( sprintf( '%d migration(s) rolled back.', count( $rolled_back ) ) );
 	}
 
 	/**
@@ -165,18 +173,18 @@ class MigrateCommand {
 	public function reset(): void {
 		\WP_CLI::confirm( 'This will roll back ALL migrations and drop all plugin tables. Are you sure?' );
 
-		$rolledBack = $this->migrator->reset();
+		$rolled_back = $this->migrator->reset();
 
-		if ( empty( $rolledBack ) ) {
+		if ( empty( $rolled_back ) ) {
 			\WP_CLI::success( 'Nothing to reset.' );
 			return;
 		}
 
-		foreach ( $rolledBack as $name ) {
+		foreach ( $rolled_back as $name ) {
 			\WP_CLI::log( \WP_CLI::colorize( "%YRolled back:%n {$name}" ) );
 		}
 
-		\WP_CLI::success( sprintf( '%d migration(s) reset.', count( $rolledBack ) ) );
+		\WP_CLI::success( sprintf( '%d migration(s) reset.', count( $rolled_back ) ) );
 	}
 
 	/**

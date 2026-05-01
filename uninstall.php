@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Uninstall
  *
@@ -67,7 +66,7 @@ allfb_delete_directory( $allfeedback_cache_dir );
  *
  * @param string $dir Absolute path to the directory.
  */
-function allfb_delete_directory( string $dir ): void {
+function allfb_delete_directory( string $dir ): void { // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedFunctionFound -- allfb_ is the plugin prefix
 	global $wp_filesystem;
 
 	if ( ! is_dir( $dir ) ) {

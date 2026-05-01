@@ -1,4 +1,10 @@
 <?php
+/**
+ * Surveydto.
+ *
+ * @package AllFeedback\Application\Survey
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -15,18 +21,20 @@ defined( 'ABSPATH' ) || exit;
 class SurveyDTO {
 
 	/**
-	 * @param  string      $title       Survey title.
-	 * @param  string      $description Survey description.
-	 * @param  array<mixed> $formSchema  Structured form field definitions.
+	 * Constructor.
+	 *
+	 * @param  string       $title       Survey title.
+	 * @param  string       $description Survey description.
+	 * @param  array<mixed> $form_schema  Structured form field definitions.
 	 * @param  array<mixed> $settings    Display and behaviour settings.
 	 * @param  array<mixed> $targeting   Targeting rules.
-	 * @param  string      $status      Lifecycle status string.
+	 * @param  string       $status      Lifecycle status string.
 	 * @since  1.0.0
 	 */
 	public function __construct(
 		public readonly string $title,
 		public readonly string $description,
-		public readonly array $formSchema,
+		public readonly array $form_schema,
 		public readonly array $settings,
 		public readonly array $targeting,
 		public readonly string $status,
@@ -43,7 +51,7 @@ class SurveyDTO {
 		return new self(
 			title: $data['title'] ?? '',
 			description: $data['description'] ?? '',
-			formSchema: $data['form_schema'] ?? [],
+			form_schema: $data['form_schema'] ?? [],
 			settings: $data['settings'] ?? [],
 			targeting: $data['targeting'] ?? [],
 			status: $data['status'] ?? 'draft',

@@ -1,4 +1,10 @@
 <?php
+/**
+ * Feature manager.
+ *
+ * @package AllFeedback\Core\Features
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -17,8 +23,8 @@ use AllFeedback\Traits\Hooks;
  *   User allow-list:    `[ 'users'   => [ 1, 42 ] ]`
  *   Percentage rollout: `[ 'percentage' => 20 ]`
  *
-	 * Runtime overrides (useful in tests or CI):
-	 *   `define( 'ALLFEEDBACK_FEATURE_OVERRIDES', [ 'new-dashboard' => true ] );`
+ * Runtime overrides (useful in tests or CI):
+ *   `define( 'ALLFEEDBACK_FEATURE_OVERRIDES', [ 'new-dashboard' => true ] );`
  *
  * @package AllFeedback\Core\Features
  * @since   1.0.0

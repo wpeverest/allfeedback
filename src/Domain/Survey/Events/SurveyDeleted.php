@@ -1,4 +1,10 @@
 <?php
+/**
+ * Survey deleted.
+ *
+ * @package AllFeedback\Domain\Survey\Events
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -17,10 +23,12 @@ use AllFeedback\Core\Events\Event;
 class SurveyDeleted extends Event {
 
 	/**
-	 * @param  int $surveyId Primary key of the deleted survey.
+	 * Constructor.
+	 *
+	 * @param  int $survey_id Primary key of the deleted survey.
 	 * @since  1.0.0
 	 */
 	public function __construct(
-		public readonly int $surveyId,
+		public readonly int $survey_id,
 	) {}
 }

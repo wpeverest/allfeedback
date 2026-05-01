@@ -1,4 +1,10 @@
 <?php
+/**
+ * Survey analytics service.
+ *
+ * @package AllFeedback\Application\Survey
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -19,13 +25,15 @@ use AllFeedback\Domain\Survey\SurveyRepository;
 class SurveyAnalyticsService {
 
 	/**
-	 * @param  SurveyRepository   $surveyRepository   Reads survey aggregates.
-	 * @param  ResponseRepository $responseRepository Provides aggregated response statistics.
+	 * Constructor.
+	 *
+	 * @param  SurveyRepository   $survey_repository   Reads survey aggregates.
+	 * @param  ResponseRepository $response_repository Provides aggregated response statistics.
 	 * @since  1.0.0
 	 */
 	public function __construct(
-		private readonly SurveyRepository $surveyRepository,
-		private readonly ResponseRepository $responseRepository,
+		private readonly SurveyRepository $survey_repository,
+		private readonly ResponseRepository $response_repository,
 	) {}
 
 	/**
@@ -41,7 +49,7 @@ class SurveyAnalyticsService {
 	 *  - response_rate_by_device (array<string, int>)
 	 *  - responses_over_time     (array<string, int>  keyed by date Y-m-d)
 	 *
-	 * @param  int $surveyId ID of the survey to analyse.
+	 * @param  int $survey_id ID of the survey to analyse.
 	 * @return array<string, mixed>
 	 * @throws NotFoundException When no survey exists for the given ID.
 	 * @since  1.0.0
@@ -49,17 +57,17 @@ class SurveyAnalyticsService {
 	/**
 	 * Extract the primary survey type (NPS) from a form schema.
 	 *
-	 * @param  array<mixed> $formSchema Decoded form_schema array.
+	 * @param  array<mixed> $form_schema Decoded form_schema array.
 	 * @return string|null  'NPS' or null.
 	 * @since  1.0.0
 	 */
-	private function extractSurveyType( array $formSchema ): ?string {
-		$primaryTypes = [ 'nps' ];
+	private function extractSurveyType( array $form_schema ): ?string {
+		$primary_types = [ 'nps' ];
 
-		foreach ( (array) ( $formSchema['sections'] ?? [] ) as $section ) {
+		foreach ( (array) ( $form_schema['sections'] ?? [] ) as $section ) {
 			foreach ( (array) ( $section['fields'] ?? [] ) as $field ) {
 				$type = strtolower( (string) ( $field['type'] ?? '' ) );
-				if ( in_array( $type, $primaryTypes, true ) ) {
+				if ( in_array( $type, $primary_types, true ) ) {
 					return strtoupper( $type );
 				}
 			}
@@ -68,44 +76,44 @@ class SurveyAnalyticsService {
 		return null;
 	}
 
-	public function getAnalytics( int $surveyId ): array {
-		$survey = $this->surveyRepository->findById( $surveyId );
+	public function getAnalytics( int $survey_id ): array {
+		$survey = $this->survey_repository->findById( $survey_id );
 
 		if ( $survey === null ) {
-			throw NotFoundException::forResource( esc_html__( 'Survey', 'allfeedback' ), $surveyId ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- $surveyId is a typed int
+			throw NotFoundException::forResource( esc_html__( 'Survey', 'allfeedback' ), $survey_id ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- $survey_id is a typed int
 		}
 
-		$stats          = $this->responseRepository->aggregateScoreStats( $surveyId );
-		$byDevice       = $this->responseRepository->countByDevice( $surveyId );
-		$overTime       = $this->responseRepository->countByDate( $surveyId );
-		$scoreDistrib   = $this->responseRepository->countByScore( $surveyId );
+		$stats          = $this->response_repository->aggregateScoreStats( $survey_id );
+		$by_device       = $this->response_repository->countByDevice( $survey_id );
+		$over_time       = $this->response_repository->countByDate( $survey_id );
+		$score_distrib   = $this->response_repository->countByScore( $survey_id );
 
 		$total      = $stats['total'];
-		$scoreCount = $stats['score_count'];
+		$score_count = $stats['score_count'];
 
-		$averageScore = $scoreCount > 0
-			? round( $stats['score_sum'] / $scoreCount, 2 )
+		$average_score = $score_count > 0
+			? round( $stats['score_sum'] / $score_count, 2 )
 			: null;
 
-		$npsScore = $total > 0
+		$nps_score = $total > 0
 			? round( ( ( $stats['promoters'] - $stats['detractors'] ) / $total ) * 100, 2 )
 			: 0.0;
 
-		$surveyType = $this->extractSurveyType( $survey->getFormSchema() );
+		$survey_type = $this->extractSurveyType( $survey->getFormSchema() );
 
 		return [
 			'total_responses'         => $total,
-			'average_score'           => $averageScore,
+			'average_score'           => $average_score,
 			'nps_score'               => [
-				'score'      => $npsScore,
+				'score'      => $nps_score,
 				'promoters'  => $stats['promoters'],
 				'passives'   => $stats['passives'],
 				'detractors' => $stats['detractors'],
 			],
-			'score_distribution'      => $scoreDistrib,
-			'survey_type'             => $surveyType,
-			'response_rate_by_device' => $byDevice,
-			'responses_over_time'     => $overTime,
+			'score_distribution'      => $score_distrib,
+			'survey_type'             => $survey_type,
+			'response_rate_by_device' => $by_device,
+			'responses_over_time'     => $over_time,
 		];
 	}
 }

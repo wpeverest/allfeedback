@@ -1,4 +1,10 @@
 <?php
+/**
+ * Response.
+ *
+ * @package AllFeedback\Domain\Response
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -27,75 +33,77 @@ class Response extends Entity {
 	 * @var DateTimeImmutable
 	 * @since 1.0.0
 	 */
-	private DateTimeImmutable $createdAt;
+	private DateTimeImmutable $created_at;
 
 	/**
-	 * @param  int         $surveyId     Primary key of the parent survey.
-	 * @param  array<mixed> $responseData Raw key/value payload from the respondent.
+	 * Constructor.
+	 *
+	 * @param  int          $survey_id     Primary key of the parent survey.
+	 * @param  array<mixed> $response_data Raw key/value payload from the respondent.
 	 * @param  float|null   $score        Optional numeric score.
-	 * @param  string|null  $pageUrl      URL of the page on which the survey was shown.
-	 * @param  string|null  $deviceType   Device category: desktop | mobile | tablet.
-	 * @param  string|null  $ipHash       HMAC hash of the visitor IP for analytics.
-	 * @param  string|null  $ipAddress    Raw IP address, null when privacy mode is active.
-	 * @param  int|null     $userId       WordPress user ID, null for anonymous submissions.
-	 * @param  string|null  $guestToken   Persistent guest UUID for duplicate detection.
-	 * @param  bool         $consentGiven Whether the respondent gave explicit consent.
-	 * @param  bool         $isRead       Whether an admin has marked this response as read.
+	 * @param  string|null  $page_url      URL of the page on which the survey was shown.
+	 * @param  string|null  $device_type   Device category: desktop | mobile | tablet.
+	 * @param  string|null  $ip_hash       HMAC hash of the visitor IP for analytics.
+	 * @param  string|null  $ip_address    Raw IP address, null when privacy mode is active.
+	 * @param  int|null     $user_id       WordPress user ID, null for anonymous submissions.
+	 * @param  string|null  $guest_token   Persistent guest UUID for duplicate detection.
+	 * @param  bool         $consent_given Whether the respondent gave explicit consent.
+	 * @param  bool         $is_read       Whether an admin has marked this response as read.
 	 * @since  1.0.0
 	 */
 	public function __construct(
-		private int $surveyId,
-		private array $responseData,
+		private int $survey_id,
+		private array $response_data,
 		private ?float $score = null,
-		private ?string $pageUrl = null,
-		private ?string $deviceType = null,
-		private ?string $ipHash = null,
-		private ?string $ipAddress = null,
-		private ?int $userId = null,
-		private ?string $guestToken = null,
-		private bool $consentGiven = false,
-		private bool $isRead = false,
+		private ?string $page_url = null,
+		private ?string $device_type = null,
+		private ?string $ip_hash = null,
+		private ?string $ip_address = null,
+		private ?int $user_id = null,
+		private ?string $guest_token = null,
+		private bool $consent_given = false,
+		private bool $is_read = false,
 	) {
-		$this->createdAt = new DateTimeImmutable();
+		$this->created_at = new DateTimeImmutable();
 	}
 
 	/**
 	 * Reconstitute a Response from a persistence row.
 	 *
 	 * @param  int               $id           Primary key.
-	 * @param  int               $surveyId     Parent survey ID.
-	 * @param  array<mixed>      $responseData Decoded response payload.
+	 * @param  int               $survey_id     Parent survey ID.
+	 * @param  array<mixed>      $response_data Decoded response payload.
 	 * @param  float|null        $score        Numeric score, or null.
-	 * @param  string|null       $pageUrl      Page URL at submission time.
-	 * @param  string|null       $deviceType   Device category.
-	 * @param  string|null       $ipHash       Hashed IP.
-	 * @param  string|null       $ipAddress    Raw IP address.
-	 * @param  int|null          $userId       WordPress user ID.
-	 * @param  string|null       $guestToken   Guest UUID.
-	 * @param  bool              $consentGiven Consent flag.
-	 * @param  DateTimeImmutable $createdAt    Submission timestamp.
-	 * @param  bool              $isRead       Read flag.
+	 * @param  string|null       $page_url      Page URL at submission time.
+	 * @param  string|null       $device_type   Device category.
+	 * @param  string|null       $ip_hash       Hashed IP.
+	 * @param  string|null       $ip_address    Raw IP address.
+	 * @param  int|null          $user_id       WordPress user ID.
+	 * @param  string|null       $guest_token   Guest UUID.
+	 * @param  bool              $consent_given Consent flag.
+	 * @param  DateTimeImmutable $created_at    Submission timestamp.
+	 * @param  bool              $is_read       Read flag.
 	 * @return self
 	 * @since  1.0.0
 	 */
 	public static function reconstitute(
 		int $id,
-		int $surveyId,
-		array $responseData,
+		int $survey_id,
+		array $response_data,
 		?float $score,
-		?string $pageUrl,
-		?string $deviceType,
-		?string $ipHash,
-		?string $ipAddress,
-		?int $userId,
-		?string $guestToken,
-		bool $consentGiven,
-		DateTimeImmutable $createdAt,
-		bool $isRead = false,
+		?string $page_url,
+		?string $device_type,
+		?string $ip_hash,
+		?string $ip_address,
+		?int $user_id,
+		?string $guest_token,
+		bool $consent_given,
+		DateTimeImmutable $created_at,
+		bool $is_read = false,
 	): self {
-		$response            = new self( $surveyId, $responseData, $score, $pageUrl, $deviceType, $ipHash, $ipAddress, $userId, $guestToken, $consentGiven, $isRead );
-		$response->id        = $id;
-		$response->createdAt = $createdAt;
+		$response             = new self( $survey_id, $response_data, $score, $page_url, $device_type, $ip_hash, $ip_address, $user_id, $guest_token, $consent_given, $is_read );
+		$response->id         = $id;
+		$response->created_at = $created_at;
 		return $response;
 	}
 
@@ -106,7 +114,7 @@ class Response extends Entity {
 	 * @since  1.0.0
 	 */
 	public function getSurveyId(): int {
-		return $this->surveyId;
+		return $this->survey_id;
 	}
 
 	/**
@@ -116,7 +124,7 @@ class Response extends Entity {
 	 * @since  1.0.0
 	 */
 	public function getResponseData(): array {
-		return $this->responseData;
+		return $this->response_data;
 	}
 
 	/**
@@ -136,7 +144,7 @@ class Response extends Entity {
 	 * @since  1.0.0
 	 */
 	public function getPageUrl(): ?string {
-		return $this->pageUrl;
+		return $this->page_url;
 	}
 
 	/**
@@ -146,7 +154,7 @@ class Response extends Entity {
 	 * @since  1.0.0
 	 */
 	public function getDeviceType(): ?string {
-		return $this->deviceType;
+		return $this->device_type;
 	}
 
 	/**
@@ -156,7 +164,7 @@ class Response extends Entity {
 	 * @since  1.0.0
 	 */
 	public function getIpHash(): ?string {
-		return $this->ipHash;
+		return $this->ip_hash;
 	}
 
 	/**
@@ -166,7 +174,7 @@ class Response extends Entity {
 	 * @since  1.0.0
 	 */
 	public function getIpAddress(): ?string {
-		return $this->ipAddress;
+		return $this->ip_address;
 	}
 
 	/**
@@ -176,7 +184,7 @@ class Response extends Entity {
 	 * @since  1.0.0
 	 */
 	public function getUserId(): ?int {
-		return $this->userId;
+		return $this->user_id;
 	}
 
 	/**
@@ -186,7 +194,7 @@ class Response extends Entity {
 	 * @since  1.0.0
 	 */
 	public function getGuestToken(): ?string {
-		return $this->guestToken;
+		return $this->guest_token;
 	}
 
 	/**
@@ -196,7 +204,7 @@ class Response extends Entity {
 	 * @since  1.0.0
 	 */
 	public function isConsentGiven(): bool {
-		return $this->consentGiven;
+		return $this->consent_given;
 	}
 
 	/**
@@ -206,7 +214,7 @@ class Response extends Entity {
 	 * @since  1.0.0
 	 */
 	public function isRead(): bool {
-		return $this->isRead;
+		return $this->is_read;
 	}
 
 	/**
@@ -216,7 +224,7 @@ class Response extends Entity {
 	 * @since  1.0.0
 	 */
 	public function getCreatedAt(): DateTimeImmutable {
-		return $this->createdAt;
+		return $this->created_at;
 	}
 
 	/**
@@ -228,18 +236,18 @@ class Response extends Entity {
 	public function toArray(): array {
 		return [
 			'id'            => $this->id,
-			'survey_id'     => $this->surveyId,
-			'response_data' => $this->responseData,
+			'survey_id'     => $this->survey_id,
+			'response_data' => $this->response_data,
 			'score'         => $this->score,
-			'page_url'      => $this->pageUrl,
-			'device_type'   => $this->deviceType,
-			'ip_hash'       => $this->ipHash,
-			'ip_address'    => $this->ipAddress,
-			'user_id'       => $this->userId,
-			'guest_token'   => $this->guestToken,
-			'consent_given' => $this->consentGiven,
-			'is_read'       => $this->isRead,
-			'created_at'    => $this->createdAt->format( 'Y-m-d H:i:s' ),
+			'page_url'      => $this->page_url,
+			'device_type'   => $this->device_type,
+			'ip_hash'       => $this->ip_hash,
+			'ip_address'    => $this->ip_address,
+			'user_id'       => $this->user_id,
+			'guest_token'   => $this->guest_token,
+			'consent_given' => $this->consent_given,
+			'is_read'       => $this->is_read,
+			'created_at'    => $this->created_at->format( 'Y-m-d H:i:s' ),
 		];
 	}
 }

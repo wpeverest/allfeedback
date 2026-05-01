@@ -1,4 +1,10 @@
 <?php
+/**
+ * Delete survey service.
+ *
+ * @package AllFeedback\Application\Survey
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -18,6 +24,8 @@ use AllFeedback\Domain\Survey\SurveyRepository;
 class DeleteSurveyService {
 
 	/**
+	 * Constructor.
+	 *
 	 * @param  SurveyRepository $repository Persistence layer for survey aggregates.
 	 * @since  1.0.0
 	 */
@@ -42,6 +50,6 @@ class DeleteSurveyService {
 
 		$this->repository->delete( $id );
 
-		do_action( 'allfeedback:survey:deleted', $id, $survey );
+		do_action( 'allfeedback_survey_deleted', $id, $survey );
 	}
 }

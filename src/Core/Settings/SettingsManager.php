@@ -1,4 +1,10 @@
 <?php
+/**
+ * Settings manager.
+ *
+ * @package AllFeedback\Core\Settings
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -162,7 +168,7 @@ class SettingsManager {
 	 * @var array<string, array<string, array<string, mixed>>>|null
 	 * @since 1.0.0
 	 */
-	private ?array $effectiveDefaults = null;
+	private ?array $effective_defaults = null;
 
 	/**
 	 * Return all settings merged with defaults.
@@ -257,13 +263,13 @@ class SettingsManager {
 	 * @since  1.0.0
 	 */
 	public function getDefaults(): array {
-		if ( $this->effectiveDefaults !== null ) {
-			return $this->effectiveDefaults;
+		if ( $this->effective_defaults !== null ) {
+			return $this->effective_defaults;
 		}
 
-		$this->effectiveDefaults = (array) \apply_filters( 'allfeedback_settings_defaults', self::DEFAULTS );
+		$this->effective_defaults = (array) \apply_filters( 'allfeedback_settings_defaults', self::DEFAULTS );
 
-		return $this->effectiveDefaults;
+		return $this->effective_defaults;
 	}
 
 	/**
@@ -375,8 +381,8 @@ class SettingsManager {
 	 */
 	public function reset(): void {
 		\delete_option( self::OPTION_KEY );
-		$this->loaded            = null;
-		$this->effectiveDefaults = null;
+		$this->loaded             = null;
+		$this->effective_defaults = null;
 
 		$this->doAction( 'allfeedback:settings:reset' );
 	}
@@ -584,14 +590,14 @@ class SettingsManager {
 			$merged[ $page ] = [];
 
 			foreach ( $sections as $section => $fields ) {
-				$storedSection = isset( $stored[ $page ][ $section ] )
+				$stored_section = isset( $stored[ $page ][ $section ] )
 					&& is_array( $stored[ $page ][ $section ] )
 					? $stored[ $page ][ $section ]
 					: [];
 
 				$merged[ $page ][ $section ] = array_merge(
 					$fields,
-					array_intersect_key( $storedSection, $fields )
+					array_intersect_key( $stored_section, $fields )
 				);
 			}
 		}
@@ -662,11 +668,11 @@ class SettingsManager {
 	 * @since  1.0.0
 	 */
 	private function persist( array $settings ): void {
-		$toStore = array_intersect_key( $settings, $this->getDefaults() );
+		$to_store = array_intersect_key( $settings, $this->getDefaults() );
 
-		\update_option( self::OPTION_KEY, $toStore, false );
-		$this->loaded = $toStore;
+		\update_option( self::OPTION_KEY, $to_store, false );
+		$this->loaded = $to_store;
 
-		$this->doAction( 'allfeedback:settings:updated', $toStore );
+		$this->doAction( 'allfeedback:settings:updated', $to_store );
 	}
 }

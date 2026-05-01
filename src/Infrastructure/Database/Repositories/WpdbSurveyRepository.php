@@ -1,4 +1,10 @@
 <?php
+/**
+ * Wpdb survey repository.
+ *
+ * @package AllFeedback\Infrastructure\Database\Repositories
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -15,7 +21,7 @@ use DateTimeImmutable;
 // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
 
 /**
- * wpdb-backed implementation of SurveyRepository.
+ * Wpdb-backed implementation of SurveyRepository.
  *
  * Persists Survey aggregates to the custom `{prefix}af_surveys` table.
  * JSON columns (form_schema, settings, targeting) are encoded on write and
@@ -25,6 +31,8 @@ use DateTimeImmutable;
  * @since   1.0.0
  */
 class WpdbSurveyRepository implements SurveyRepository {
+
+	// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- $this->table is a trusted class property, never user input
 
 	/**
 	 * Fully-qualified table name including the wpdb prefix.
@@ -50,6 +58,8 @@ class WpdbSurveyRepository implements SurveyRepository {
 	];
 
 	/**
+	 * Constructor.
+	 *
 	 * @since  1.0.0
 	 */
 	public function __construct() {
@@ -101,18 +111,19 @@ class WpdbSurveyRepository implements SurveyRepository {
 
 		[ $where, $params ] = $this->buildFilterQuery( $filter );
 
-		$orderBy = in_array( $filter->orderBy, self::ALLOWED_ORDERBY, true ) ? $filter->orderBy : 'created_at';
-		$order   = strtoupper( $filter->order ) === 'ASC' ? 'ASC' : 'DESC';
-		$limit   = max( 1, $filter->perPage );
-		$offset  = max( 0, ( $filter->page - 1 ) * $limit );
+		$order_by = in_array( $filter->order_by, self::ALLOWED_ORDERBY, true ) ? $filter->order_by : 'created_at';
+		$order    = strtoupper( $filter->order ) === 'ASC' ? 'ASC' : 'DESC';
+		$limit    = max( 1, $filter->per_page );
+		$offset   = max( 0, ( $filter->page - 1 ) * $limit );
 
-		$whereClause = $where !== [] ? 'WHERE ' . implode( ' AND ', $where ) : '';
-		$sql         = "SELECT * FROM {$this->table} {$whereClause} ORDER BY {$orderBy} {$order} LIMIT %d OFFSET %d"; // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$where_clause = $where !== [] ? 'WHERE ' . implode( ' AND ', $where ) : '';
+		$sql          = "SELECT * FROM {$this->table} {$where_clause} ORDER BY {$order_by} {$order} LIMIT %d OFFSET %d"; // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		$params[] = $limit;
 		$params[] = $offset;
 
-		$rows = $wpdb->get_results( $wpdb->prepare( $sql, ...$params ), ARRAY_A ) ?: []; // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$rows = $wpdb->get_results( $wpdb->prepare( $sql, ...$params ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$rows = $rows !== null && $rows !== false ? $rows : [];
 
 		return array_map( [ $this, 'hydrate' ], $rows );
 	}
@@ -129,8 +140,8 @@ class WpdbSurveyRepository implements SurveyRepository {
 
 		[ $where, $params ] = $this->buildFilterQuery( $filter );
 
-		$whereClause = $where !== [] ? 'WHERE ' . implode( ' AND ', $where ) : '';
-		$sql         = "SELECT COUNT(*) FROM {$this->table} {$whereClause}"; // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$where_clause = $where !== [] ? 'WHERE ' . implode( ' AND ', $where ) : '';
+		$sql          = "SELECT COUNT(*) FROM {$this->table} {$where_clause}"; // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		if ( $params !== [] ) {
 			return (int) $wpdb->get_var( $wpdb->prepare( $sql, ...$params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
@@ -200,11 +211,12 @@ class WpdbSurveyRepository implements SurveyRepository {
 				...$ids
 			),
 			ARRAY_A
-		) ?: [];
+		);
+		$rows = $rows !== null && $rows !== false ? $rows : [];
 
 		$result = [];
 		foreach ( $rows as $row ) {
-			$survey                  = $this->hydrate( $row );
+			$survey                     = $this->hydrate( $row );
 			$result[ $survey->getId() ] = $survey;
 		}
 
@@ -234,7 +246,7 @@ class WpdbSurveyRepository implements SurveyRepository {
 		);
 
 		return [
-			'total'         => (int) ( $row['total']         ?? 0 ),
+			'total'         => (int) ( $row['total'] ?? 0 ),
 			'new_this_week' => (int) ( $row['new_this_week'] ?? 0 ),
 		];
 	}
@@ -264,7 +276,7 @@ class WpdbSurveyRepository implements SurveyRepository {
 				'status'          => $survey->getStatus()->value,
 				'conflict_reason' => $survey->getConflictReason(),
 				'response_count'  => $survey->getResponseCount(),
-				'created_by'      => $survey->getCreatedBy() ?: null,
+				'created_by'      => $survey->getCreatedBy() !== 0 ? $survey->getCreatedBy() : null,
 				'created_at'      => $survey->getCreatedAt()->format( 'Y-m-d H:i:s' ),
 				'updated_at'      => $survey->getUpdatedAt()?->format( 'Y-m-d H:i:s' ),
 			],
@@ -279,15 +291,15 @@ class WpdbSurveyRepository implements SurveyRepository {
 			id: (int) $wpdb->insert_id,
 			title: $survey->getTitle(),
 			description: $survey->getDescription(),
-			formSchema: $survey->getFormSchema(),
+			form_schema: $survey->getFormSchema(),
 			settings: $survey->getSettings(),
 			status: $survey->getStatus(),
-			responseCount: $survey->getResponseCount(),
-			createdBy: $survey->getCreatedBy(),
-			createdAt: $survey->getCreatedAt(),
-			updatedAt: $survey->getUpdatedAt(),
+			response_count: $survey->getResponseCount(),
+			created_by: $survey->getCreatedBy(),
+			created_at: $survey->getCreatedAt(),
+			updated_at: $survey->getUpdatedAt(),
 			styling: $survey->getStyling(),
-			conflictReason: $survey->getConflictReason(),
+			conflict_reason: $survey->getConflictReason(),
 			targeting: $survey->getTargeting(),
 		);
 	}
@@ -343,15 +355,15 @@ class WpdbSurveyRepository implements SurveyRepository {
 			id: (int) $row['id'],
 			title: (string) $row['title'],
 			description: (string) ( $row['description'] ?? '' ),
-			formSchema: $this->decodeJson( (string) ( $row['form_schema'] ?? '' ) ),
+			form_schema: $this->decodeJson( (string) ( $row['form_schema'] ?? '' ) ),
 			settings: $this->decodeJson( (string) ( $row['settings'] ?? '' ) ),
 			status: SurveyStatus::from( $row['status'] ),
-			responseCount: (int) ( $row['response_count'] ?? 0 ),
-			createdBy: (int) ( $row['created_by'] ?? 0 ),
-			createdAt: new DateTimeImmutable( (string) $row['created_at'] ),
-			updatedAt: ! empty( $row['updated_at'] ) ? new DateTimeImmutable( (string) $row['updated_at'] ) : null,
+			response_count: (int) ( $row['response_count'] ?? 0 ),
+			created_by: (int) ( $row['created_by'] ?? 0 ),
+			created_at: new DateTimeImmutable( (string) $row['created_at'] ),
+			updated_at: ! empty( $row['updated_at'] ) ? new DateTimeImmutable( (string) $row['updated_at'] ) : null,
 			styling: $this->decodeJson( (string) ( $row['styling'] ?? '' ) ),
-			conflictReason: isset( $row['conflict_reason'] ) && $row['conflict_reason'] !== '' ? (string) $row['conflict_reason'] : null,
+			conflict_reason: isset( $row['conflict_reason'] ) && $row['conflict_reason'] !== '' ? (string) $row['conflict_reason'] : null,
 			targeting: $this->decodeJson( (string) ( $row['targeting'] ?? '' ) ),
 		);
 	}
@@ -374,9 +386,9 @@ class WpdbSurveyRepository implements SurveyRepository {
 			$params[] = $filter->status->value;
 		}
 
-		if ( $filter->createdBy !== null ) {
+		if ( $filter->created_by !== null ) {
 			$where[]  = 'created_by = %d';
-			$params[] = $filter->createdBy;
+			$params[] = $filter->created_by;
 		}
 
 		if ( $filter->search !== null && $filter->search !== '' ) {
@@ -384,9 +396,9 @@ class WpdbSurveyRepository implements SurveyRepository {
 			$params[] = '%' . $wpdb->esc_like( $filter->search ) . '%';
 		}
 
-		if ( $filter->createdAfter !== null && $filter->createdAfter !== '' ) {
+		if ( $filter->created_after !== null && $filter->created_after !== '' ) {
 			$where[]  = 'DATE(created_at) >= %s';
-			$params[] = $filter->createdAfter;
+			$params[] = $filter->created_after;
 		}
 
 		return [ $where, $params ];

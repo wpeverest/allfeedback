@@ -1,4 +1,10 @@
 <?php
+/**
+ * New response admin notification.
+ *
+ * @package AllFeedback\Infrastructure\Mail\Notifications
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -22,6 +28,8 @@ class NewResponseAdminNotification {
 	use Hooks;
 
 	/**
+	 * Constructor.
+	 *
 	 * @param  Mailer          $mailer   Mailer for dispatching the email.
 	 * @param  SettingsManager $settings Plugin settings.
 	 * @since  1.0.0
@@ -43,8 +51,9 @@ class NewResponseAdminNotification {
 			return false;
 		}
 
-		$to   = (string) ( $this->settings->get( 'email.delivery.to_email' ) ?: get_option( 'admin_email' ) );
-		$vars = $this->buildVars( $context );
+		$to_email_setting = $this->settings->get( 'email.delivery.to_email' );
+		$to               = (string) ( $to_email_setting !== null && $to_email_setting !== '' ? $to_email_setting : get_option( 'admin_email' ) );
+		$vars             = $this->buildVars( $context );
 
 		$subject = (string) $this->applyFilters(
 			'allfeedback:mail:admin_subject',
@@ -56,22 +65,27 @@ class NewResponseAdminNotification {
 			$vars
 		);
 
-		$ctaButton = '<a href="{admin_url}" style="display:inline-block;padding:10px 24px;background:#6366f1;color:#ffffff;border-radius:6px;text-decoration:none;font-size:14px;font-weight:600;">'
+		$cta_button = '<a href="{admin_url}" style="display:inline-block;padding:10px 24px;background:#6366f1;color:#ffffff;border-radius:6px;text-decoration:none;font-size:14px;font-weight:600;">'
 			. esc_html__( 'View Response →', 'allfeedback' )
 			. '</a>';
 
 		$body = $this->mailer->interpolate(
-			implode( "\n\n", array_filter( [
-				__( 'A new response has been submitted for your survey.', 'allfeedback' ),
-				/* translators: %s: survey title */
-				sprintf( __( 'Survey: %s', 'allfeedback' ), '<strong>{survey_title}</strong>' ),
-				$vars['score_badge'] !== '' ? '{score_badge}' : null,
-				/* translators: %s: response ID */
-				sprintf( __( 'Response ID: %s', 'allfeedback' ), '#{response_id}' ),
-				/* translators: %s: submission date and time */
-				sprintf( __( 'Submitted at: %s', 'allfeedback' ), '{submitted_at}' ),
-				$ctaButton,
-			] ) ),
+			implode(
+				"\n\n",
+				array_filter(
+					[
+						__( 'A new response has been submitted for your survey.', 'allfeedback' ),
+						/* translators: %s: survey title */
+						sprintf( __( 'Survey: %s', 'allfeedback' ), '<strong>{survey_title}</strong>' ),
+						$vars['score_badge'] !== '' ? '{score_badge}' : null,
+						/* translators: %s: response ID */
+						sprintf( __( 'Response ID: %s', 'allfeedback' ), '#{response_id}' ),
+						/* translators: %s: submission date and time */
+						sprintf( __( 'Submitted at: %s', 'allfeedback' ), '{submitted_at}' ),
+						$cta_button,
+					]
+				)
+			),
 			$vars
 		);
 
@@ -88,21 +102,21 @@ class NewResponseAdminNotification {
 	 * @since  1.0.0
 	 */
 	private function buildVars( NotificationContext $context ): array {
-		$survey     = $context->getSurvey();
-		$response   = $context->getResponse();
-		$responseId = $response ? (int) $response->getId() : 0;
+		$survey      = $context->getSurvey();
+		$response    = $context->getResponse();
+		$response_id = $response ? (int) $response->getId() : 0;
 
 		return [
 			'survey_title' => esc_html( $survey->getTitle() ),
 			'survey_id'    => (string) $survey->getId(),
-			'response_id'  => $response ? (string) $responseId : '',
+			'response_id'  => $response ? (string) $response_id : '',
 			'submitted_at' => $response
 				? esc_html( $response->getCreatedAt()->format( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) ) )
 				: '',
 			'site_name'    => esc_html( get_bloginfo( 'name' ) ),
 			'site_url'     => esc_url( home_url() ),
 			'score_badge'  => $response ? $this->buildScoreBadge( $response->getScore() ) : '',
-			'admin_url'    => esc_url( admin_url( 'admin.php' ) . '?page=allfeedback#/responses/' . $responseId ),
+			'admin_url'    => esc_url( admin_url( 'admin.php' ) . '?page=allfeedback#/responses/' . $response_id ),
 		];
 	}
 

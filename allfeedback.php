@@ -28,9 +28,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 
 // Absolute path to the main plugin file — mirrors EVF_PLUGIN_FILE convention.
-define( 'AF_PLUGIN_FILE', __FILE__ );
+define( 'AF_PLUGIN_FILE', __FILE__ ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- intentional short prefix
 
-$af_autoloader = __DIR__ . '/vendor/autoload.php';
+$af_autoloader = __DIR__ . '/vendor/autoload.php'; // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- intentional short prefix
 
 if ( ! file_exists( $af_autoloader ) ) {
 	add_action(

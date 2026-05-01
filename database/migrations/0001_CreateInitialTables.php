@@ -1,4 +1,10 @@
 <?php
+/**
+ * Migration: CreateInitialTables.
+ *
+ * @package AllFeedback\Database\Migrations
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -12,8 +18,6 @@ use AllFeedback\Infrastructure\Database\Migration;
  * Migration: CreateInitialTables
  *
  * Creates the af_surveys, af_survey_sessions, and af_responses tables with
- *
-
  *
  * @since 1.0.0
  */

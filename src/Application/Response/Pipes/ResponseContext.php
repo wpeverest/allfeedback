@@ -1,4 +1,10 @@
 <?php
+/**
+ * Response context.
+ *
+ * @package AllFeedback\Application\Response\Pipes
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -34,6 +40,8 @@ class ResponseContext {
 	public array $errors = [];
 
 	/**
+	 * Constructor.
+	 *
 	 * @param  ResponseDTO $dto    The validated response payload.
 	 * @param  Survey      $survey The target survey aggregate.
 	 * @since  1.0.0

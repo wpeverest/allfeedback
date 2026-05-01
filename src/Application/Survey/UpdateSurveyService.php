@@ -1,4 +1,10 @@
 <?php
+/**
+ * Update survey service.
+ *
+ * @package AllFeedback\Application\Survey
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -19,6 +25,8 @@ use AllFeedback\Domain\Survey\SurveyRepository;
 class UpdateSurveyService {
 
 	/**
+	 * Constructor.
+	 *
 	 * @param  SurveyRepository $repository Persistence layer for survey aggregates.
 	 * @since  1.0.0
 	 */
@@ -29,54 +37,54 @@ class UpdateSurveyService {
 	/**
 	 * Apply a partial update to a survey identified by $id.
 	 *
-	 * Only keys present in $rawData are applied; absent keys leave the
+	 * Only keys present in $raw_data are applied; absent keys leave the
 	 * existing field value unchanged.
 	 *
 	 * @param  int                  $id      ID of the survey to update.
-	 * @param  array<string, mixed> $rawData Partial field map from the request.
+	 * @param  array<string, mixed> $raw_data Partial field map from the request.
 	 * @return Survey
 	 * @throws NotFoundException When no survey exists for the given ID.
 	 * @since  1.0.0
 	 */
-	public function execute( int $id, array $rawData ): Survey {
+	public function execute( int $id, array $raw_data ): Survey {
 		$survey = $this->repository->findById( $id );
 
 		if ( $survey === null ) {
 			throw NotFoundException::forResource( esc_html__( 'Survey', 'allfeedback' ), $id ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- $id is a typed int
 		}
 
-		$previousStatus = $survey->getStatus();
+		$previous_status = $survey->getStatus();
 
-		if ( array_key_exists( 'title', $rawData ) ) {
-			$survey->setTitle( (string) $rawData['title'] );
+		if ( array_key_exists( 'title', $raw_data ) ) {
+			$survey->setTitle( (string) $raw_data['title'] );
 		}
 
-		if ( array_key_exists( 'description', $rawData ) ) {
-			$survey->setDescription( (string) $rawData['description'] );
+		if ( array_key_exists( 'description', $raw_data ) ) {
+			$survey->setDescription( (string) $raw_data['description'] );
 		}
 
-		if ( array_key_exists( 'form_schema', $rawData ) ) {
-			$survey->setFormSchema( (array) $rawData['form_schema'] );
+		if ( array_key_exists( 'form_schema', $raw_data ) ) {
+			$survey->setFormSchema( (array) $raw_data['form_schema'] );
 		}
 
-		if ( array_key_exists( 'settings', $rawData ) ) {
-			$survey->setSettings( (array) $rawData['settings'] );
+		if ( array_key_exists( 'settings', $raw_data ) ) {
+			$survey->setSettings( (array) $raw_data['settings'] );
 		}
 
-		if ( array_key_exists( 'targeting', $rawData ) ) {
-			$survey->setTargeting( (array) $rawData['targeting'] );
+		if ( array_key_exists( 'targeting', $raw_data ) ) {
+			$survey->setTargeting( (array) $raw_data['targeting'] );
 		}
 
-		if ( array_key_exists( 'status', $rawData ) ) {
-			$survey->setStatus( (string) $rawData['status'] );
+		if ( array_key_exists( 'status', $raw_data ) ) {
+			$survey->setStatus( (string) $raw_data['status'] );
 		}
 
 		$survey = $this->repository->save( $survey );
 
-		do_action( 'allfeedback:survey:updated', $survey );
+		do_action( 'allfeedback_survey_updated', $survey );
 
-		if ( $survey->getStatus()->isPublished() && ! $previousStatus->isPublished() ) {
-			do_action( 'allfeedback:survey:activated', $survey );
+		if ( $survey->getStatus()->isPublished() && ! $previous_status->isPublished() ) {
+			do_action( 'allfeedback_survey_activated', $survey );
 		}
 
 		return $survey;

@@ -1,4 +1,10 @@
 <?php
+/**
+ * Content search controller.
+ *
+ * @package AllFeedback\API\Controllers\V1
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -30,7 +36,7 @@ class ContentSearchController extends RestController {
 	 * @var string
 	 * @since 1.0.0
 	 */
-	protected string $restBase = 'content-search';
+	protected string $rest_base = 'content-search';
 
 	/**
 	 * Register routes.
@@ -41,7 +47,7 @@ class ContentSearchController extends RestController {
 	public function registerRoutes(): void {
 		register_rest_route(
 			$this->namespace,
-			'/' . $this->restBase,
+			'/' . $this->rest_base,
 			[
 				'methods'             => \WP_REST_Server::READABLE,
 				'callback'            => [ $this, 'search' ],
@@ -64,19 +70,19 @@ class ContentSearchController extends RestController {
 	 * @since  1.0.0
 	 */
 	public function search( \WP_REST_Request $request ): \WP_REST_Response {
-		$search    = sanitize_text_field( (string) ( $request->get_param( 'search' ) ?? '' ) );
-		$page      = max( 1, (int) ( $request->get_param( 'page' )     ?? 1 ) );
-		$perPage   = min( 50, max( 1, (int) ( $request->get_param( 'per_page' ) ?? 20 ) ) );
-		$offset    = ( $page - 1 ) * $perPage;
-		$postTypes = $this->resolvePostTypes( (string) ( $request->get_param( 'post_type' ) ?? '' ) );
+		$search     = sanitize_text_field( (string) ( $request->get_param( 'search' ) ?? '' ) );
+		$page       = max( 1, (int) ( $request->get_param( 'page' ) ?? 1 ) );
+		$per_page   = min( 50, max( 1, (int) ( $request->get_param( 'per_page' ) ?? 20 ) ) );
+		$offset     = ( $page - 1 ) * $per_page;
+		$post_types = $this->resolvePostTypes( (string) ( $request->get_param( 'post_type' ) ?? '' ) );
 
-		$queryArgs = apply_filters(
+		$query_args = apply_filters(
 			'allfeedback_content_search_query_args',
 			[
-				'post_type'              => $postTypes,
+				'post_type'              => $post_types,
 				'post_status'            => 'publish',
 				's'                      => $search,
-				'posts_per_page'         => $perPage,
+				'posts_per_page'         => $per_page,
 				'offset'                 => $offset,
 				'orderby'                => 'title',
 				'order'                  => 'ASC',
@@ -87,7 +93,7 @@ class ContentSearchController extends RestController {
 			$request
 		);
 
-		$query = new \WP_Query( $queryArgs );
+		$query = new \WP_Query( $query_args );
 		$total = (int) $query->found_posts;
 
 		$items = array_map(
@@ -100,7 +106,7 @@ class ContentSearchController extends RestController {
 				'items'    => $items,
 				'total'    => $total,
 				'page'     => $page,
-				'per_page' => $perPage,
+				'per_page' => $per_page,
 			]
 		);
 	}
@@ -152,19 +158,19 @@ class ContentSearchController extends RestController {
 	 * the list of allowed post types, and falls back to all allowed types when
 	 * the intersection is empty.
 	 *
-	 * @param  string $rawParam Raw post_type query param value.
+	 * @param  string $raw_param Raw post_type query param value.
 	 * @return string[]
 	 * @since  1.0.0
 	 */
-	private function resolvePostTypes( string $rawParam ): array {
+	private function resolvePostTypes( string $raw_param ): array {
 		$allowed = (array) apply_filters( 'allfeedback_content_search_post_types', [ 'page', 'post' ] );
 
-		if ( $rawParam === '' ) {
+		if ( $raw_param === '' ) {
 			return $allowed;
 		}
 
 		$requested = array_filter(
-			array_map( 'sanitize_key', explode( ',', $rawParam ) )
+			array_map( 'sanitize_key', explode( ',', $raw_param ) )
 		);
 
 		$intersected = array_values( array_intersect( $requested, $allowed ) );
@@ -180,11 +186,12 @@ class ContentSearchController extends RestController {
 	 * @since  1.0.0
 	 */
 	private function prepareItem( \WP_Post $post ): array {
+		$permalink = get_permalink( $post );
 		return [
 			'id'    => $post->ID,
 			'title' => html_entity_decode( get_the_title( $post ), ENT_QUOTES, 'UTF-8' ),
 			'type'  => $post->post_type,
-			'url'   => get_permalink( $post ) ?: '',
+			'url'   => $permalink !== false ? $permalink : '',
 		];
 	}
 
@@ -196,7 +203,7 @@ class ContentSearchController extends RestController {
 	 */
 	private function searchArgs(): array {
 		return array_merge(
-			$this->paginationArgs( defaultPerPage: 20, maxPerPage: 50 ),
+			$this->paginationArgs( default_per_page: 20, max_per_page: 50 ),
 			[
 				'search'    => $this->argString(
 					description: __( 'Keyword to filter pages/posts by title.', 'allfeedback' ),

@@ -1,4 +1,10 @@
 <?php
+/**
+ * Validate consent if required.
+ *
+ * @package AllFeedback\Application\Response\Pipes
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -27,10 +33,10 @@ class ValidateConsentIfRequired implements PipeInterface {
 	 * @since  1.0.0
 	 */
 	public function execute( ResponseContext $context, \Closure $next ): mixed {
-		$settings        = $context->survey->getSettings();
-		$consentRequired = ! empty( $settings['require_consent'] );
+		$settings         = $context->survey->getSettings();
+		$consent_required = ! empty( $settings['require_consent'] );
 
-		if ( $consentRequired && ! $context->dto->consentGiven ) {
+		if ( $consent_required && ! $context->dto->consent_given ) {
 			throw ValidationException::withErrors(
 				[ 'consent_given' => esc_html__( 'You must provide consent to submit a response to this survey.', 'allfeedback' ) ]
 			);

@@ -1,4 +1,10 @@
 <?php
+/**
+ * Abstract block.
+ *
+ * @package AllFeedback\Frontend\Blocks
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -13,7 +19,7 @@ use AllFeedback\Core\Constants;
  *
  * How to add a new block
  * ──────────────────────
- * 1. Create  resources/scripts/blocks/{slug}/block.json  (editorScript: "file:../../../build/blocks.js")
+ * 1. Create  resources/scripts/blocks/{slug}/block.json  (editor_script: "file:../../../build/blocks.js")
  * 2. Create  resources/scripts/blocks/{slug}/Edit.tsx + index.ts  (exports Edit + metadata from ./block.json)
  * 3. Add     import * as {slug} from './{slug}'  to resources/scripts/blocks/index.ts
  * 4. Create  src/Frontend/Blocks/{Name}Block.php  (extend this class, getSlug() returns '{slug}')
@@ -66,28 +72,28 @@ abstract class AbstractBlock {
 			return;
 		}
 
-		$blockDir = Constants::path( 'resources/scripts/blocks/' . $this->getSlug() );
+		$block_dir = Constants::path( 'resources/scripts/blocks/' . $this->getSlug() );
 
-		if ( ! is_dir( $blockDir ) || ! file_exists( $blockDir . '/block.json' ) ) {
-			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error, WordPress.Security.EscapeOutput.OutputNotEscaped -- internal server path, not rendered as HTML
+		if ( ! is_dir( $block_dir ) || ! file_exists( $block_dir . '/block.json' ) ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error -- internal developer warning
 			trigger_error(
 				sprintf(
 					'AllFeedback block "%s": expected block.json at %s/block.json',
 					static::class,
-					$blockDir
+					$block_dir // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- internal server path, not rendered as HTML
 				),
 				E_USER_WARNING
 			);
 			return;
 		}
 
-		$blockType = register_block_type(
-			$blockDir,
+		$block_type = register_block_type(
+			$block_dir,
 			[ 'render_callback' => [ $this, 'render' ] ]
 		);
 
-		if ( $blockType instanceof \WP_Block_Type ) {
-			$this->afterRegister( $blockType );
+		if ( $block_type instanceof \WP_Block_Type ) {
+			$this->afterRegister( $block_type );
 		}
 	}
 
@@ -96,11 +102,11 @@ abstract class AbstractBlock {
 	 *
 	 * Override in subclasses to inject editor-side data, e.g.:
 	 *
-	 *   wp_add_inline_script($blockType->editor_script_handles[0], '...', 'before');
+	 *   wp_add_inline_script($block_type->editor_script_handles[0], '...', 'before');
 	 *
-	 * @param  \WP_Block_Type $blockType Registered block type object.
+	 * @param  \WP_Block_Type $block_type Registered block type object.
 	 * @return void
 	 * @since  1.0.0
 	 */
-	protected function afterRegister( \WP_Block_Type $blockType ): void {}
+	protected function afterRegister( \WP_Block_Type $block_type ): void {}
 }

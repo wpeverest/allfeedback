@@ -1,4 +1,10 @@
 <?php
+/**
+ * Job payload.
+ *
+ * @package AllFeedback\Core\Jobs\Contracts
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 

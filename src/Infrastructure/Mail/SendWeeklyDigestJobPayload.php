@@ -1,4 +1,10 @@
 <?php
+/**
+ * Send weekly digest job payload.
+ *
+ * @package AllFeedback\Infrastructure\Mail
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 

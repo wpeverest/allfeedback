@@ -1,4 +1,10 @@
 <?php
+/**
+ * All feedback exception.
+ *
+ * @package AllFeedback\Core\Exceptions
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 

@@ -1,4 +1,10 @@
 <?php
+/**
+ * Core service provider.
+ *
+ * @package AllFeedback\Core
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -24,13 +30,15 @@ class CoreServiceProvider implements ServiceProviderInterface {
 	use Hooks;
 
 	/**
-	 * @param  RoleManager $roleManager Handles custom role creation.
+	 * Constructor.
+	 *
+	 * @param  RoleManager $role_manager Handles custom role creation.
 	 * @param  Migrator    $migrator    Runs pending database migrations.
 	 * @param  Logger      $logger      Plugin logger for shutdown handler registration.
 	 * @since  1.0.0
 	 */
 	public function __construct(
-		private readonly RoleManager $roleManager,
+		private readonly RoleManager $role_manager,
 		private readonly Migrator $migrator,
 		private readonly Logger $logger,
 	) {}
@@ -68,7 +76,7 @@ class CoreServiceProvider implements ServiceProviderInterface {
 	public function onActivation(): void {
 		$this->migrator->resetIfTablesMissing( [ 'af_surveys', 'af_responses' ] );
 		$this->migrator->run();
-		$this->roleManager->createRoles();
+		$this->role_manager->createRoles();
 		$this->logger->ensureDirectory();
 		$this->doAction( 'allfeedback:activated:complete' );
 	}

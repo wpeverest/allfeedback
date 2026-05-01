@@ -1,4 +1,10 @@
 <?php
+/**
+ * Validate response data.
+ *
+ * @package AllFeedback\Application\Response\Pipes
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -26,7 +32,7 @@ class ValidateResponseData implements PipeInterface {
 	 * @since  1.0.0
 	 */
 	public function execute( ResponseContext $context, \Closure $next ): mixed {
-		$data = $context->dto->responseData;
+		$data = $context->dto->response_data;
 
 		if ( empty( $data ) ) {
 			throw ValidationException::withErrors(
@@ -34,18 +40,18 @@ class ValidateResponseData implements PipeInterface {
 			);
 		}
 
-		$maxKeys = max( 1, (int) apply_filters( 'allfeedback_response_max_keys', 100 ) );
-		if ( count( $data ) > $maxKeys ) {
+		$max_keys = max( 1, (int) apply_filters( 'allfeedback_response_max_keys', 100 ) );
+		if ( count( $data ) > $max_keys ) {
 			throw ValidationException::withErrors(
 				[ 'response_data' => esc_html__( 'Response data contains too many fields.', 'allfeedback' ) ]
 			);
 		}
 
-		$maxLength = max( 1, (int) apply_filters( 'allfeedback_response_max_value_length', 5000 ) );
+		$max_length = max( 1, (int) apply_filters( 'allfeedback_response_max_value_length', 5000 ) );
 		array_walk_recursive(
 			$data,
-			function ( $value ) use ( $maxLength ): void {
-				if ( is_string( $value ) && mb_strlen( $value ) > $maxLength ) {
+			function ( $value ) use ( $max_length ): void {
+				if ( is_string( $value ) && mb_strlen( $value ) > $max_length ) {
 					throw ValidationException::withErrors(
 						[ 'response_data' => esc_html__( 'A response value exceeds the maximum allowed length.', 'allfeedback' ) ]
 					);

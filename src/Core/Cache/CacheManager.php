@@ -1,4 +1,10 @@
 <?php
+/**
+ * Cache manager.
+ *
+ * @package AllFeedback\Core\Cache
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -33,16 +39,18 @@ class CacheManager {
 	 * @var int
 	 * @since 1.0.0
 	 */
-	private int $defaultTtl;
+	private int $default_ttl;
 
 	/**
+	 * Constructor.
+	 *
 	 * @param  string $prefix     Prefix for all transient keys. Default 'allfeedback_'.
-	 * @param  int    $defaultTtl Default time-to-live in seconds. Default 3600.
+	 * @param  int    $default_ttl Default time-to-live in seconds. Default 3600.
 	 * @since  1.0.0
 	 */
-	public function __construct( string $prefix = 'allfeedback_', int $defaultTtl = 3600 ) {
-		$this->prefix     = $prefix;
-		$this->defaultTtl = $defaultTtl;
+	public function __construct( string $prefix = 'allfeedback_', int $default_ttl = 3600 ) {
+		$this->prefix      = $prefix;
+		$this->default_ttl = $default_ttl;
 	}
 
 	/**
@@ -50,13 +58,13 @@ class CacheManager {
 	 * does not exist or has expired.
 	 *
 	 * @param  string $key     Cache key (without prefix).
-	 * @param  mixed  $default Value to return on cache miss.
+	 * @param  mixed  $fallback Value to return on cache miss.
 	 * @return mixed
 	 * @since  1.0.0
 	 */
-	public function get( string $key, mixed $default = null ): mixed {
+	public function get( string $key, mixed $fallback = null ): mixed {
 		$value = get_transient( $this->prefix . $key );
-		return $value !== false ? $value : $default;
+		return $value !== false ? $value : $fallback;
 	}
 
 	/**
@@ -69,7 +77,7 @@ class CacheManager {
 	 * @since  1.0.0
 	 */
 	public function set( string $key, mixed $value, ?int $ttl = null ): bool {
-		$ttl = $ttl ?? $this->defaultTtl;
+		$ttl = $ttl ?? $this->default_ttl;
 		return set_transient( $this->prefix . $key, $value, $ttl );
 	}
 
@@ -123,8 +131,8 @@ class CacheManager {
 	 * @since  1.0.0
 	 */
 	public function flushTag( string $tag ): void {
-		$tagKey = $this->prefix . 'tag_' . $tag;
-		$keys   = get_transient( $tagKey );
+		$tag_key = $this->prefix . 'tag_' . $tag;
+		$keys    = get_transient( $tag_key );
 
 		if ( is_array( $keys ) ) {
 			foreach ( $keys as $key ) {
@@ -132,7 +140,7 @@ class CacheManager {
 			}
 		}
 
-		delete_transient( $tagKey );
+		delete_transient( $tag_key );
 	}
 
 	/**
@@ -145,12 +153,13 @@ class CacheManager {
 	 */
 	public function tag( string $key, array $tags ): void {
 		foreach ( $tags as $tag ) {
-			$tagKey = $this->prefix . 'tag_' . $tag;
-			$keys   = get_transient( $tagKey ) ?: [];
+			$tag_key  = $this->prefix . 'tag_' . $tag;
+			$keys_raw = get_transient( $tag_key );
+			$keys     = $keys_raw !== false ? $keys_raw : [];
 
 			if ( ! in_array( $key, $keys, true ) ) {
 				$keys[] = $key;
-				set_transient( $tagKey, $keys, $this->defaultTtl );
+				set_transient( $tag_key, $keys, $this->default_ttl );
 			}
 		}
 	}

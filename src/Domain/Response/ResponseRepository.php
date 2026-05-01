@@ -1,4 +1,10 @@
 <?php
+/**
+ * Response repository.
+ *
+ * @package AllFeedback\Domain\Response
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -38,22 +44,22 @@ interface ResponseRepository {
 	/**
 	 * Retrieve all Responses for a given Survey, applying the filter.
 	 *
-	 * @param  int            $surveyId Survey primary key.
+	 * @param  int            $survey_id Survey primary key.
 	 * @param  ResponseFilter $filter   Query constraints and pagination.
 	 * @return Response[]
 	 * @since  1.0.0
 	 */
-	public function findBySurveyId( int $surveyId, ResponseFilter $filter ): array;
+	public function findBySurveyId( int $survey_id, ResponseFilter $filter ): array;
 
 	/**
 	 * Count all Responses for a given Survey, applying the filter.
 	 *
-	 * @param  int            $surveyId Survey primary key.
+	 * @param  int            $survey_id Survey primary key.
 	 * @param  ResponseFilter $filter   Query constraints.
 	 * @return int
 	 * @since  1.0.0
 	 */
-	public function countBySurveyId( int $surveyId, ResponseFilter $filter ): int;
+	public function countBySurveyId( int $survey_id, ResponseFilter $filter ): int;
 
 	/**
 	 * Retrieve all Responses across every survey, applying the filter.
@@ -116,20 +122,20 @@ interface ResponseRepository {
 	 * given survey (and therefore were not deleted).
 	 *
 	 * @param  int[] $ids      Response primary keys to delete.
-	 * @param  int   $surveyId Only delete responses belonging to this survey.
+	 * @param  int   $survey_id Only delete responses belonging to this survey.
 	 * @return int[]           IDs that were not deleted.
 	 * @since  1.0.0
 	 */
-	public function deleteManyBySurveyId( array $ids, int $surveyId ): array;
+	public function deleteManyBySurveyId( array $ids, int $survey_id ): array;
 
 	/**
 	 * Permanently remove all Responses belonging to a given Survey.
 	 *
-	 * @param  int $surveyId Survey primary key.
+	 * @param  int $survey_id Survey primary key.
 	 * @return bool True on success.
 	 * @since  1.0.0
 	 */
-	public function deleteBySurveyId( int $surveyId ): bool;
+	public function deleteBySurveyId( int $survey_id ): bool;
 
 	/**
 	 * Count all unread Responses across every non-trashed Survey.
@@ -145,13 +151,13 @@ interface ResponseRepository {
 	 * Return true if a response from the given IP hash already exists for
 	 * the survey within the look-back window.
 	 *
-	 * @param  int    $surveyId    Survey to check against.
-	 * @param  string $ipHash      HMAC hash of the visitor IP.
-	 * @param  int    $windowHours How far back to look (0 = all-time).
+	 * @param  int    $survey_id    Survey to check against.
+	 * @param  string $ip_hash      HMAC hash of the visitor IP.
+	 * @param  int    $window_hours How far back to look (0 = all-time).
 	 * @return bool
 	 * @since  1.0.0
 	 */
-	public function existsByIpHash( int $surveyId, string $ipHash, int $windowHours = 0 ): bool;
+	public function existsByIpHash( int $survey_id, string $ip_hash, int $window_hours = 0 ): bool;
 
 	/**
 	 * Bulk-update is_read for a set of response IDs in one query.
@@ -159,45 +165,45 @@ interface ResponseRepository {
 	 * Returns a list of IDs from $ids that did not exist in the database (and
 	 * were therefore not updated), so callers can report partial failures.
 	 *
-	 * @param  int[]  $ids    Response primary keys to update.
-	 * @param  bool   $isRead Target read state.
+	 * @param  int[] $ids    Response primary keys to update.
+	 * @param  bool  $is_read Target read state.
 	 * @return int[]          IDs that were not found (missing / not updated).
 	 * @since  1.0.0
 	 */
-	public function bulkUpdateReadStatus( array $ids, bool $isRead ): array;
+	public function bulkUpdateReadStatus( array $ids, bool $is_read ): array;
 
 	/**
 	 * Return true if a logged-in user has already submitted a response for this survey.
 	 *
-	 * @param  int $surveyId    Survey to check against.
-	 * @param  int $userId      WordPress user ID.
-	 * @param  int $windowHours How far back to look (0 = all-time).
+	 * @param  int $survey_id    Survey to check against.
+	 * @param  int $user_id      WordPress user ID.
+	 * @param  int $window_hours How far back to look (0 = all-time).
 	 * @return bool
 	 * @since  1.0.0
 	 */
-	public function existsByUserId( int $surveyId, int $userId, int $windowHours = 0 ): bool;
+	public function existsByUserId( int $survey_id, int $user_id, int $window_hours = 0 ): bool;
 
 	/**
 	 * Return true if a guest visitor UUID has already submitted a response for this survey.
 	 *
-	 * @param  int    $surveyId    Survey to check against.
-	 * @param  string $guestToken  UUID stored in the visitor's localStorage.
-	 * @param  int    $windowHours How far back to look (0 = all-time).
+	 * @param  int    $survey_id    Survey to check against.
+	 * @param  string $guest_token  UUID stored in the visitor's localStorage.
+	 * @param  int    $window_hours How far back to look (0 = all-time).
 	 * @return bool
 	 * @since  1.0.0
 	 */
-	public function existsByGuestToken( int $surveyId, string $guestToken, int $windowHours = 0 ): bool;
+	public function existsByGuestToken( int $survey_id, string $guest_token, int $window_hours = 0 ): bool;
 
 	/**
 	 * Aggregate score statistics for a survey using SQL.
 	 *
 	 * Returns: total, score_count, score_sum, promoters (9-10), passives (7-8), detractors (0-6).
 	 *
-	 * @param  int $surveyId Survey primary key.
+	 * @param  int $survey_id Survey primary key.
 	 * @return array{total: int, score_count: int, score_sum: float, promoters: int, passives: int, detractors: int}
 	 * @since  1.0.0
 	 */
-	public function aggregateScoreStats( int $surveyId ): array;
+	public function aggregateScoreStats( int $survey_id ): array;
 
 	/**
 	 * Count scored responses grouped by integer score (0–10) for a survey.
@@ -205,29 +211,29 @@ interface ResponseRepository {
 	 * Only rows where `score IS NOT NULL AND score BETWEEN 0 AND 10` are counted.
 	 * Scores with zero responses are omitted from the result.
 	 *
-	 * @param  int $surveyId Survey primary key.
+	 * @param  int $survey_id Survey primary key.
 	 * @return array<int, int> score => count
 	 * @since  1.0.0
 	 */
-	public function countByScore( int $surveyId ): array;
+	public function countByScore( int $survey_id ): array;
 
 	/**
 	 * Count responses grouped by device_type for a survey using SQL.
 	 *
-	 * @param  int $surveyId Survey primary key.
+	 * @param  int $survey_id Survey primary key.
 	 * @return array<string, int> device_type => count
 	 * @since  1.0.0
 	 */
-	public function countByDevice( int $surveyId ): array;
+	public function countByDevice( int $survey_id ): array;
 
 	/**
 	 * Count responses grouped by date (Y-m-d) for a survey using SQL.
 	 *
-	 * @param  int $surveyId Survey primary key.
+	 * @param  int $survey_id Survey primary key.
 	 * @return array<string, int> date => count (sorted ascending)
 	 * @since  1.0.0
 	 */
-	public function countByDate( int $surveyId ): array;
+	public function countByDate( int $survey_id ): array;
 
 	/**
 	 * Aggregate score statistics for multiple surveys in a single query.
@@ -235,11 +241,11 @@ interface ResponseRepository {
 	 * Returns an array keyed by survey_id. Each value has the same shape as
 	 * aggregateScoreStats(): total, score_count, score_sum, promoters, passives, detractors.
 	 *
-	 * @param  int[] $surveyIds Survey primary keys to include.
+	 * @param  int[] $survey_ids Survey primary keys to include.
 	 * @return array<int, array{total: int, score_count: int, score_sum: float, promoters: int, passives: int, detractors: int}>
 	 * @since  1.0.0
 	 */
-	public function aggregateScoreStatsForAllSurveys( array $surveyIds ): array;
+	public function aggregateScoreStatsForAllSurveys( array $survey_ids ): array;
 
 	/**
 	 * Return all stats needed for the "all forms" overview panel in one query.
@@ -259,24 +265,24 @@ interface ResponseRepository {
 	/**
 	 * Count all responses that fall within a date range (inclusive).
 	 *
-	 * @param  string $dateFrom Start date Y-m-d.
-	 * @param  string $dateTo   End date Y-m-d.
+	 * @param  string $date_from Start date Y-m-d.
+	 * @param  string $date_to   End date Y-m-d.
 	 * @return int
 	 * @since  1.0.0
 	 */
-	public function countAllInDateRange( string $dateFrom, string $dateTo ): int;
+	public function countAllInDateRange( string $date_from, string $date_to ): int;
 
 	/**
 	 * Aggregate score statistics across every survey, optionally filtered by date range.
 	 *
 	 * Returns: total, score_count, score_sum, avg_score, promoters, passives, detractors.
 	 *
-	 * @param  string|null $dateFrom Optional start date Y-m-d.
-	 * @param  string|null $dateTo   Optional end date Y-m-d.
+	 * @param  string|null $date_from Optional start date Y-m-d.
+	 * @param  string|null $date_to   Optional end date Y-m-d.
 	 * @return array{total: int, score_count: int, score_sum: float, avg_score: float|null, promoters: int, passives: int, detractors: int}
 	 * @since  1.0.0
 	 */
-	public function getGlobalScoreStats( ?string $dateFrom = null, ?string $dateTo = null ): array;
+	public function getGlobalScoreStats( ?string $date_from = null, ?string $date_to = null ): array;
 
 	/**
 	 * Count responses grouped by device_type across every survey.
@@ -289,12 +295,12 @@ interface ResponseRepository {
 	/**
 	 * Count responses grouped by date (Y-m-d) across every survey within a date range.
 	 *
-	 * @param  string $dateFrom Start date Y-m-d.
-	 * @param  string $dateTo   End date Y-m-d.
+	 * @param  string $date_from Start date Y-m-d.
+	 * @param  string $date_to   End date Y-m-d.
 	 * @return array<string, int> date => count (sorted ascending)
 	 * @since  1.0.0
 	 */
-	public function countByDateGlobal( string $dateFrom, string $dateTo ): array;
+	public function countByDateGlobal( string $date_from, string $date_to ): array;
 
 	/**
 	 * Return this-week response count and average score per survey in one query.
@@ -302,20 +308,20 @@ interface ResponseRepository {
 	 * "This week" = last 7 days (DATE >= CURDATE() - 6).
 	 * Surveys with no responses this week are omitted from the result.
 	 *
-	 * @param  int[] $surveyIds Survey primary keys to include.
+	 * @param  int[] $survey_ids Survey primary keys to include.
 	 * @return array<int, array{this_week_count: int, avg_score: float|null}> Keyed by survey ID.
 	 * @since  1.0.0
 	 */
-	public function getWeeklyStatsBySurveyIds( array $surveyIds ): array;
+	public function getWeeklyStatsBySurveyIds( array $survey_ids ): array;
 
 	/**
 	 * Same as getOverviewStats() but scoped to a specific set of survey IDs.
 	 *
 	 * Used by the weekly digest to restrict site-wide stats to currently-published surveys only.
 	 *
-	 * @param  int[] $surveyIds Survey primary keys to include.
+	 * @param  int[] $survey_ids Survey primary keys to include.
 	 * @return array{total_feedback: int, this_week_count: int, last_week_count: int, avg_score: float|null, this_week_avg_score: float|null, last_week_avg_score: float|null}
 	 * @since  1.0.0
 	 */
-	public function getOverviewStatsForSurveys( array $surveyIds ): array;
+	public function getOverviewStatsForSurveys( array $survey_ids ): array;
 }

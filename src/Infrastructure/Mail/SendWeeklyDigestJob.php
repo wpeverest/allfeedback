@@ -1,4 +1,10 @@
 <?php
+/**
+ * Send weekly digest job.
+ *
+ * @package AllFeedback\Infrastructure\Mail
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -22,6 +28,8 @@ use AllFeedback\Infrastructure\Mail\Notifications\WeeklyDigestNotification;
 class SendWeeklyDigestJob extends AbstractJob {
 
 	/**
+	 * Constructor.
+	 *
 	 * @param  WeeklyDigestNotification $notification Weekly digest notification handler.
 	 * @since  1.0.0
 	 */

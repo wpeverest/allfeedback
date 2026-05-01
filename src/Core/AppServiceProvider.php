@@ -1,4 +1,10 @@
 <?php
+/**
+ * App service provider.
+ *
+ * @package AllFeedback\Core
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -32,6 +38,8 @@ class AppServiceProvider implements ServiceProviderInterface {
 	use Hooks;
 
 	/**
+	 * Constructor.
+	 *
 	 * @param  Container $container DI container for resolving service providers.
 	 * @since  1.0.0
 	 */

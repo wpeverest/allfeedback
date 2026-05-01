@@ -1,4 +1,10 @@
 <?php
+/**
+ * Logs controller.
+ *
+ * @package AllFeedback\API\Controllers\V1
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -44,11 +50,14 @@ class LogsController extends RestController {
 	/**
 	 * REST resource slug.
 	 *
+	 * @var string
 	 * @since 1.0.0
 	 */
-	protected string $restBase = 'logs';
+	protected string $rest_base = 'logs';
 
 	/**
+	 * Constructor.
+	 *
 	 * @param  Logger $logger Plugin logger (provides logDir() and entry count helpers).
 	 * @since  1.0.0
 	 */
@@ -65,7 +74,7 @@ class LogsController extends RestController {
 	public function registerRoutes(): void {
 		register_rest_route(
 			$this->namespace,
-			'/' . $this->restBase,
+			'/' . $this->rest_base,
 			[
 				[
 					'methods'             => \WP_REST_Server::READABLE,
@@ -96,7 +105,7 @@ class LogsController extends RestController {
 
 		register_rest_route(
 			$this->namespace,
-			'/' . $this->restBase . '/delete',
+			'/' . $this->rest_base . '/delete',
 			[
 				[
 					'methods'             => \WP_REST_Server::DELETABLE,
@@ -118,7 +127,7 @@ class LogsController extends RestController {
 
 		register_rest_route(
 			$this->namespace,
-			'/' . $this->restBase . '/(?P<id>[a-z0-9_-]+)',
+			'/' . $this->rest_base . '/(?P<id>[a-z0-9_-]+)',
 			[
 				'args' => [
 					'id' => [
@@ -155,11 +164,11 @@ class LogsController extends RestController {
 	 * @since  1.0.0
 	 */
 	public function index( \WP_REST_Request $request ): \WP_REST_Response {
-		$page    = (int) $request->get_param( 'page' );
-		$perPage = (int) $request->get_param( 'per_page' );
-		$orderby = (string) $request->get_param( 'orderby' );
-		$order   = (string) $request->get_param( 'order' );
-		$search  = (string) $request->get_param( 'search' );
+		$page     = (int) $request->get_param( 'page' );
+		$per_page = (int) $request->get_param( 'per_page' );
+		$orderby  = (string) $request->get_param( 'orderby' );
+		$order    = (string) $request->get_param( 'order' );
+		$search   = (string) $request->get_param( 'search' );
 
 		$files = $this->getLogFiles();
 
@@ -173,7 +182,10 @@ class LogsController extends RestController {
 		// Stat each file once — avoids redundant syscalls inside usort + prepareItem.
 		$stats = [];
 		foreach ( $files as $f ) {
-			$stats[ $f ] = [ 'mtime' => (int) filemtime( $f ), 'size' => (int) filesize( $f ) ];
+			$stats[ $f ] = [
+				'mtime' => (int) filemtime( $f ),
+				'size' => (int) filesize( $f ),
+			];
 		}
 
 		usort(
@@ -190,15 +202,17 @@ class LogsController extends RestController {
 
 		$files = array_values( $files );
 		$total = count( $files );
-		$pages = (int) ceil( $total / $perPage );
-		$files = array_slice( $files, ( $page - 1 ) * $perPage, $perPage );
+		$pages = (int) ceil( $total / $per_page );
+		$files = array_slice( $files, ( $page - 1 ) * $per_page, $per_page );
 
-		return $this->successResponse( [
-			'logs'  => array_map( fn( string $f ) => $this->prepareItem( $f, $stats[ $f ] ), $files ),
-			'total' => $total,
-			'page'  => $page,
-			'pages' => $pages,
-		] );
+		return $this->successResponse(
+			[
+				'logs'  => array_map( fn( string $f ) => $this->prepareItem( $f, $stats[ $f ] ), $files ),
+				'total' => $total,
+				'page'  => $page,
+				'pages' => $pages,
+			]
+		);
 	}
 
 	/**
@@ -217,19 +231,22 @@ class LogsController extends RestController {
 			return $this->notFoundResponse( __( 'Log file', 'allfeedback' ) );
 		}
 
-		$page    = max( 1, (int) ( $request->get_param( 'page' ) ?? 1 ) );
-		$perPage = min( 500, max( 10, (int) ( $request->get_param( 'per_page' ) ?? 100 ) ) );
+		$page     = max( 1, (int) ( $request->get_param( 'page' ) ?? 1 ) );
+		$per_page = min( 500, max( 10, (int) ( $request->get_param( 'per_page' ) ?? 100 ) ) );
 
-		$stat = [ 'mtime' => (int) filemtime( $file ), 'size' => (int) filesize( $file ) ];
+		$stat = [
+			'mtime' => (int) filemtime( $file ),
+			'size' => (int) filesize( $file ),
+		];
 		$item = $this->prepareItem( $file, $stat );
 
-		[ 'lines' => $lines, 'total' => $total ] = $this->readLines( $file, $page, $perPage );
+		[ 'lines' => $lines, 'total' => $total ] = $this->readLines( $file, $page, $per_page );
 
 		$item['lines']       = $lines;
 		$item['total_lines'] = $total;
 		$item['page']        = $page;
-		$item['per_page']    = $perPage;
-		$item['pages']       = (int) ceil( $total / $perPage );
+		$item['per_page']    = $per_page;
+		$item['pages']       = (int) ceil( $total / $per_page );
 
 		return $this->successResponse( $item );
 	}
@@ -256,7 +273,12 @@ class LogsController extends RestController {
 			return $this->errorResponse( __( 'Failed to delete log file.', 'allfeedback' ), 500 );
 		}
 
-		return $this->successResponse( [ 'deleted' => true, 'id' => $id ] );
+		return $this->successResponse(
+			[
+				'deleted' => true,
+				'id' => $id,
+			]
+		);
 	}
 
 	/**
@@ -272,8 +294,7 @@ class LogsController extends RestController {
 	 * @since  1.0.0
 	 */
 	public function bulkDelete( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
-		/** @var string[] $ids */
-		$ids = $request->get_param( 'ids' );
+		/** @var string[] $ids */ // phpcs:ignore Generic.Commenting.DocComment.MissingShort -- inline type hint		$ids = $request->get_param( 'ids' );
 
 		if ( empty( $ids ) || ! is_array( $ids ) ) {
 			return $this->errorResponse( __( 'No log IDs provided.', 'allfeedback' ), 422 );
@@ -300,11 +321,13 @@ class LogsController extends RestController {
 			}
 		}
 
-		return $this->successResponse( [
-			'deleted' => $deleted,
-			'skipped' => $skipped,
-			'failed'  => $failed,
-		] );
+		return $this->successResponse(
+			[
+				'deleted' => $deleted,
+				'skipped' => $skipped,
+				'failed'  => $failed,
+			]
+		);
 	}
 
 	/**
@@ -330,15 +353,15 @@ class LogsController extends RestController {
 	 * @since  1.0.0
 	 */
 	private function resolveFile( string $id ): ?string {
-		$logDir = realpath( $this->logger->logDir() );
+		$log_dir = realpath( $this->logger->logDir() );
 
-		if ( $logDir === false ) {
+		if ( $log_dir === false ) {
 			return null;
 		}
 
-		$file = realpath( $logDir . '/' . $id . '.log' );
+		$file = realpath( $log_dir . '/' . $id . '.log' );
 
-		if ( $file === false || strpos( $file, $logDir ) !== 0 || ! is_file( $file ) ) {
+		if ( $file === false || strpos( $file, $log_dir ) !== 0 || ! is_file( $file ) ) {
 			return null;
 		}
 
@@ -351,13 +374,16 @@ class LogsController extends RestController {
 	 * Accepts pre-computed stat data to avoid redundant syscalls when called
 	 * in a loop (e.g. from index()).
 	 *
-	 * @param  string               $file Absolute path to the log file.
+	 * @param  string                         $file Absolute path to the log file.
 	 * @param  array{mtime:int,size:int}|null $stat Pre-computed stat, or null to stat now.
 	 * @return array<string, mixed>
 	 * @since  1.0.0
 	 */
 	private function prepareItem( string $file, ?array $stat = null ): array {
-		$stat ??= [ 'mtime' => (int) filemtime( $file ), 'size' => (int) filesize( $file ) ];
+		$stat ??= [
+			'mtime' => (int) filemtime( $file ),
+			'size' => (int) filesize( $file ),
+		];
 
 		return [
 			'id'    => basename( $file, '.log' ),
@@ -377,18 +403,21 @@ class LogsController extends RestController {
 	 *
 	 * @param  string $file    Absolute path to the log file.
 	 * @param  int    $page    1-based page number.
-	 * @param  int    $perPage Lines per page.
+	 * @param  int    $per_page Lines per page.
 	 * @return array{lines: string[], total: int}
 	 * @since  1.0.0
 	 */
-	private function readLines( string $file, int $page, int $perPage ): array {
-		$handle = @fopen( $file, 'r' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
+	private function readLines( string $file, int $page, int $per_page ): array {
+		$handle = @fopen( $file, 'r' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen, WordPress.PHP.NoSilencedErrors.Discouraged
 
 		if ( ! is_resource( $handle ) ) {
-			return [ 'lines' => [], 'total' => 0 ];
+			return [
+				'lines' => [],
+				'total' => 0,
+			];
 		}
 
-		$offset = ( $page - 1 ) * $perPage;
+		$offset = ( $page - 1 ) * $per_page;
 		$lines  = [];
 		$total  = 0;
 
@@ -401,7 +430,7 @@ class LogsController extends RestController {
 			if ( $line === '' ) {
 				continue;
 			}
-			if ( $total >= $offset && count( $lines ) < $perPage ) {
+			if ( $total >= $offset && count( $lines ) < $per_page ) {
 				$lines[] = $line;
 			}
 			++$total;
@@ -409,6 +438,9 @@ class LogsController extends RestController {
 
 		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
 
-		return [ 'lines' => $lines, 'total' => $total ];
+		return [
+			'lines' => $lines,
+			'total' => $total,
+		];
 	}
 }

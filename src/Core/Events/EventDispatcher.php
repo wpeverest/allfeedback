@@ -1,4 +1,10 @@
 <?php
+/**
+ * Event dispatcher.
+ *
+ * @package AllFeedback\Core\Events
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -38,11 +44,11 @@ class EventDispatcher {
 	 * @since  1.0.0
 	 */
 	public function dispatch( Event $event ): Event {
-		$eventName = $event::class;
+		$event_name = $event::class;
 
-		if ( isset( $this->listeners[ $eventName ] ) ) {
-			foreach ( $this->listeners[ $eventName ] as $listenersAtPriority ) {
-				foreach ( $listenersAtPriority as $listener ) {
+		if ( isset( $this->listeners[ $event_name ] ) ) {
+			foreach ( $this->listeners[ $event_name ] as $listeners_at_priority ) {
+				foreach ( $listeners_at_priority as $listener ) {
 					$listener( $event );
 
 					if ( $event->isPropagationStopped() ) {
@@ -52,7 +58,7 @@ class EventDispatcher {
 			}
 		}
 
-		$this->doAction( "allfeedback:event:{$eventName}", $event );
+		$this->doAction( "allfeedback:event:{$event_name}", $event );
 
 		return $event;
 	}
@@ -60,19 +66,19 @@ class EventDispatcher {
 	/**
 	 * Register a callable listener for a specific event class.
 	 *
-	 * @param  string   $eventClass Fully-qualified event class name.
+	 * @param  string   $event_class Fully-qualified event class name.
 	 * @param  callable $listener   Callable that accepts the event instance.
 	 * @param  int      $priority   Lower numbers run first. Default 10.
 	 * @return void
 	 * @since  1.0.0
 	 */
-	public function listen( string $eventClass, callable $listener, int $priority = 10 ): void {
-		if ( ! isset( $this->listeners[ $eventClass ] ) ) {
-			$this->listeners[ $eventClass ] = [];
+	public function listen( string $event_class, callable $listener, int $priority = 10 ): void {
+		if ( ! isset( $this->listeners[ $event_class ] ) ) {
+			$this->listeners[ $event_class ] = [];
 		}
 
-		$this->listeners[ $eventClass ][ $priority ][] = $listener;
-		ksort( $this->listeners[ $eventClass ] );
+		$this->listeners[ $event_class ][ $priority ][] = $listener;
+		ksort( $this->listeners[ $event_class ] );
 	}
 
 	/**
@@ -83,12 +89,12 @@ class EventDispatcher {
 	 * @since  1.0.0
 	 */
 	public function subscribe( EventSubscriber $subscriber ): void {
-		foreach ( $subscriber->getSubscribedEvents() as $eventClass => $params ) {
+		foreach ( $subscriber->getSubscribedEvents() as $event_class => $params ) {
 			if ( is_string( $params ) ) {
-				$this->listen( $eventClass, [ $subscriber, $params ] );
+				$this->listen( $event_class, [ $subscriber, $params ] );
 			} elseif ( is_array( $params ) ) {
 				$this->listen(
-					$eventClass,
+					$event_class,
 					[ $subscriber, $params[0] ],
 					$params[1] ?? 10
 				);

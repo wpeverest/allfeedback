@@ -1,4 +1,10 @@
 <?php
+/**
+ * Survey state service.
+ *
+ * @package AllFeedback\Application\Survey
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -37,18 +43,18 @@ class SurveyStateService {
 	/**
 	 * Return the display state for a given user + survey combination.
 	 *
-	 * @param  int $userId   WordPress user ID.
-	 * @param  int $surveyId Survey primary key.
+	 * @param  int $user_id   WordPress user ID.
+	 * @param  int $survey_id Survey primary key.
 	 * @return array{impressions: int, submitted: bool, dismissed_at: int|null}
 	 * @since  1.0.0
 	 */
-	public function getState( int $userId, int $surveyId ): array {
-		$raw     = get_user_meta( $userId, self::META_PREFIX . $surveyId, true );
+	public function getState( int $user_id, int $survey_id ): array {
+		$raw     = get_user_meta( $user_id, self::META_PREFIX . $survey_id, true );
 		$decoded = ( is_string( $raw ) && $raw !== '' ) ? json_decode( $raw, true ) : null;
 
 		return [
 			'impressions'  => isset( $decoded['impressions'] ) ? (int) $decoded['impressions'] : 0,
-			'submitted'    => isset( $decoded['submitted'] )   ? (bool) $decoded['submitted']  : false,
+			'submitted'    => isset( $decoded['submitted'] ) ? (bool) $decoded['submitted'] : false,
 			'dismissed_at' => isset( $decoded['dismissed_at'] ) ? (int) $decoded['dismissed_at'] : null,
 		];
 	}
@@ -56,29 +62,29 @@ class SurveyStateService {
 	/**
 	 * Increment the impression counter by one.
 	 *
-	 * @param  int $userId   WordPress user ID.
-	 * @param  int $surveyId Survey primary key.
+	 * @param  int $user_id   WordPress user ID.
+	 * @param  int $survey_id Survey primary key.
 	 * @return void
 	 * @since  1.0.0
 	 */
-	public function recordImpression( int $userId, int $surveyId ): void {
-		$state = $this->getState( $userId, $surveyId );
-		$state['impressions']++;
-		$this->saveState( $userId, $surveyId, $state );
+	public function recordImpression( int $user_id, int $survey_id ): void {
+		$state = $this->getState( $user_id, $survey_id );
+		++$state['impressions'];
+		$this->saveState( $user_id, $survey_id, $state );
 	}
 
 	/**
 	 * Record the timestamp of an explicit panel dismissal (X button click).
 	 *
-	 * @param  int $userId   WordPress user ID.
-	 * @param  int $surveyId Survey primary key.
+	 * @param  int $user_id   WordPress user ID.
+	 * @param  int $survey_id Survey primary key.
 	 * @return void
 	 * @since  1.0.0
 	 */
-	public function recordDismissal( int $userId, int $surveyId ): void {
-		$state = $this->getState( $userId, $surveyId );
+	public function recordDismissal( int $user_id, int $survey_id ): void {
+		$state                 = $this->getState( $user_id, $survey_id );
 		$state['dismissed_at'] = (int) round( microtime( true ) * 1000 );
-		$this->saveState( $userId, $surveyId, $state );
+		$this->saveState( $user_id, $survey_id, $state );
 	}
 
 	/**
@@ -87,27 +93,27 @@ class SurveyStateService {
 	 * Once submitted, the widget will never show again for this user
 	 * regardless of frequency settings.
 	 *
-	 * @param  int $userId   WordPress user ID.
-	 * @param  int $surveyId Survey primary key.
+	 * @param  int $user_id   WordPress user ID.
+	 * @param  int $survey_id Survey primary key.
 	 * @return void
 	 * @since  1.0.0
 	 */
-	public function recordSubmit( int $userId, int $surveyId ): void {
-		$state = $this->getState( $userId, $surveyId );
+	public function recordSubmit( int $user_id, int $survey_id ): void {
+		$state              = $this->getState( $user_id, $survey_id );
 		$state['submitted'] = true;
-		$this->saveState( $userId, $surveyId, $state );
+		$this->saveState( $user_id, $survey_id, $state );
 	}
 
 	/**
 	 * Persist the state array to user_meta as JSON.
 	 *
-	 * @param  int                                                              $userId   WordPress user ID.
-	 * @param  int                                                              $surveyId Survey primary key.
+	 * @param  int                                                              $user_id   WordPress user ID.
+	 * @param  int                                                              $survey_id Survey primary key.
 	 * @param  array{impressions: int, submitted: bool, dismissed_at: int|null} $state    State to persist.
 	 * @return void
 	 * @since  1.0.0
 	 */
-	private function saveState( int $userId, int $surveyId, array $state ): void {
-		update_user_meta( $userId, self::META_PREFIX . $surveyId, wp_json_encode( $state ) );
+	private function saveState( int $user_id, int $survey_id, array $state ): void {
+		update_user_meta( $user_id, self::META_PREFIX . $survey_id, wp_json_encode( $state ) );
 	}
 }

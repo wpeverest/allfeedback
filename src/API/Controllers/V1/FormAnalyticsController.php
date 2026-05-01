@@ -1,4 +1,10 @@
 <?php
+/**
+ * Form analytics controller.
+ *
+ * @package AllFeedback\API\Controllers\V1
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -39,20 +45,22 @@ class FormAnalyticsController extends RestController {
 	 * @var string
 	 * @since 1.0.0
 	 */
-	protected string $restBase = 'analytics';
+	protected string $rest_base = 'analytics';
 
 	/**
-	 * @param  SurveyRepository      $surveyRepository   Reads survey aggregates.
-	 * @param  SurveySessionRepository $sessionRepository  Session metrics repository.
-	 * @param  ResponseRepository    $responseRepository Response score aggregation.
-	 * @param  SurveyAnalyticsService $analyticsService   Full per-survey analytics service.
+	 * Constructor.
+	 *
+	 * @param  SurveyRepository        $survey_repository   Reads survey aggregates.
+	 * @param  SurveySessionRepository $session_repository  Session metrics repository.
+	 * @param  ResponseRepository      $response_repository Response score aggregation.
+	 * @param  SurveyAnalyticsService  $analytics_service   Full per-survey analytics service.
 	 * @since  1.0.0
 	 */
 	public function __construct(
-		private readonly SurveyRepository $surveyRepository,
-		private readonly SurveySessionRepository $sessionRepository,
-		private readonly ResponseRepository $responseRepository,
-		private readonly SurveyAnalyticsService $analyticsService,
+		private readonly SurveyRepository $survey_repository,
+		private readonly SurveySessionRepository $session_repository,
+		private readonly ResponseRepository $response_repository,
+		private readonly SurveyAnalyticsService $analytics_service,
 	) {}
 
 	/**
@@ -64,7 +72,7 @@ class FormAnalyticsController extends RestController {
 	public function registerRoutes(): void {
 		register_rest_route(
 			$this->namespace,
-			'/' . $this->restBase . '/overview',
+			'/' . $this->rest_base . '/overview',
 			[
 				'methods'             => \WP_REST_Server::READABLE,
 				'callback'            => [ $this, 'getOverview' ],
@@ -74,13 +82,13 @@ class FormAnalyticsController extends RestController {
 
 		register_rest_route(
 			$this->namespace,
-			'/' . $this->restBase . '/forms',
+			'/' . $this->rest_base . '/forms',
 			[
 				'methods'             => \WP_REST_Server::READABLE,
 				'callback'            => [ $this, 'listForms' ],
 				'permission_callback' => [ $this, 'adminPermission' ],
 				'args'                => array_merge(
-					$this->paginationArgs( defaultPerPage: 20, maxPerPage: 100 ),
+					$this->paginationArgs( default_per_page: 20, max_per_page: 100 ),
 					$this->listFormsArgs()
 				),
 			]
@@ -88,7 +96,7 @@ class FormAnalyticsController extends RestController {
 
 		register_rest_route(
 			$this->namespace,
-			'/' . $this->restBase . '/forms/(?P<id>\d+)',
+			'/' . $this->rest_base . '/forms/(?P<id>\d+)',
 			[
 				'methods'             => \WP_REST_Server::READABLE,
 				'callback'            => [ $this, 'getFormAnalytics' ],
@@ -112,52 +120,54 @@ class FormAnalyticsController extends RestController {
 	 * @since  1.0.0
 	 */
 	public function getOverview( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
-		$today      = ( new \DateTimeImmutable( 'today' ) )->format( 'Y-m-d' );
-		$chartStart = ( new \DateTimeImmutable( 'today' ) )->modify( '-29 days' )->format( 'Y-m-d' );
+		$today       = ( new \DateTimeImmutable( 'today' ) )->format( 'Y-m-d' );
+		$chart_start = ( new \DateTimeImmutable( 'today' ) )->modify( '-29 days' )->format( 'Y-m-d' );
 
 		// 7 queries total. Date windows are computed inside MySQL (CURDATE()) so
 		// no PHP date arithmetic is needed here — each bundle method is one query.
-		$responseStats   = $this->responseRepository->getOverviewStats();          // 1 — total + WoW counts + score WoW
-		$sessionStats    = $this->sessionRepository->getOverviewSessionStats();    // 1 — completion rate + WoW
-		$surveyStats     = $this->surveyRepository->countPublishedWithNewCount();  // 1 — active + new this week
-		$rawChart        = $this->responseRepository->countByDateGlobal( $chartStart, $today ); // 1
-		$recentRaw       = $this->responseRepository->findAll( new ResponseFilter( perPage: 5 ) ); // 1
-		$deviceBreakdown = $this->responseRepository->countByDeviceGlobal();       // 1
-		$recent          = $this->buildRecentResponses( $recentRaw );              // 1 (findByIds)
+		$response_stats   = $this->response_repository->getOverviewStats();          // 1 — total + WoW counts + score WoW
+		$session_stats    = $this->session_repository->getOverviewSessionStats();    // 1 — completion rate + WoW
+		$survey_stats     = $this->survey_repository->countPublishedWithNewCount();  // 1 — active + new this week
+		$raw_chart        = $this->response_repository->countByDateGlobal( $chart_start, $today ); // 1
+		$recent_raw       = $this->response_repository->findAll( new ResponseFilter( per_page: 5 ) ); // 1
+		$device_breakdown = $this->response_repository->countByDeviceGlobal();       // 1
+		$recent           = $this->buildRecentResponses( $recent_raw );
 
-		$chartData = $this->buildChart( $rawChart, $chartStart, $today );
+		$chart_data = $this->buildChart( $raw_chart, $chart_start, $today );
 
-		return $this->successResponse( [
-			'stats' => [
-				'total_feedback' => [
-					'value'  => $responseStats['total_feedback'],
-					'change' => $this->weekOverWeekChange( $responseStats['this_week_count'], $responseStats['last_week_count'] ),
+		return $this->successResponse(
+			[
+				'stats' => [
+					'total_feedback' => [
+						'value'  => $response_stats['total_feedback'],
+						'change' => $this->weekOverWeekChange( $response_stats['this_week_count'], $response_stats['last_week_count'] ),
+					],
+					'completion_rate' => [
+						'value'  => $session_stats['completion_rate'],
+						'change' => $this->weekOverWeekChange( $session_stats['this_week_completion_rate'], $session_stats['last_week_completion_rate'] ),
+					],
+					'abandonment_rate' => [
+						'value'  => $session_stats['abandonment_rate'],
+						'change' => $this->weekOverWeekChange( $session_stats['this_week_abandonment_rate'], $session_stats['last_week_abandonment_rate'] ),
+					],
+					'avg_rating' => [
+						'value'  => $response_stats['avg_score'],
+						'change' => $this->weekOverWeekChange( $response_stats['this_week_avg_score'], $response_stats['last_week_avg_score'] ),
+					],
+					'active_surveys' => [
+						'value'         => $survey_stats['total'],
+						'new_this_week' => $survey_stats['new_this_week'],
+						'change'        => $survey_stats['total'] > 0
+							? round( $survey_stats['new_this_week'] / $survey_stats['total'] * 100, 1 )
+							: null,
+					],
 				],
-				'completion_rate' => [
-					'value'  => $sessionStats['completion_rate'],
-					'change' => $this->weekOverWeekChange( $sessionStats['this_week_completion_rate'], $sessionStats['last_week_completion_rate'] ),
-				],
-				'abandonment_rate' => [
-					'value'  => $sessionStats['abandonment_rate'],
-					'change' => $this->weekOverWeekChange( $sessionStats['this_week_abandonment_rate'], $sessionStats['last_week_abandonment_rate'] ),
-				],
-				'avg_rating' => [
-					'value'  => $responseStats['avg_score'],
-					'change' => $this->weekOverWeekChange( $responseStats['this_week_avg_score'], $responseStats['last_week_avg_score'] ),
-				],
-				'active_surveys' => [
-					'value'         => $surveyStats['total'],
-					'new_this_week' => $surveyStats['new_this_week'],
-					'change'        => $surveyStats['total'] > 0
-						? round( $surveyStats['new_this_week'] / $surveyStats['total'] * 100, 1 )
-						: null,
-				],
-			],
-			'chart'            => $chartData,
-			'total_in_period'  => array_sum( array_column( $chartData, 'count' ) ),
-			'recent_responses' => $recent,
-			'device_breakdown' => $deviceBreakdown,
-		] );
+				'chart'            => $chart_data,
+				'total_in_period'  => array_sum( array_column( $chart_data, 'count' ) ),
+				'recent_responses' => $recent,
+				'device_breakdown' => $device_breakdown,
+			]
+		);
 	}
 
 	/**
@@ -172,33 +182,39 @@ class FormAnalyticsController extends RestController {
 	 * @since  1.0.0
 	 */
 	public function listForms( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
-		$status  = $request->get_param( 'status' );
-		$page    = (int) $request->get_param( 'page' );
-		$perPage = (int) $request->get_param( 'per_page' );
+		$status   = $request->get_param( 'status' );
+		$page     = (int) $request->get_param( 'page' );
+		$per_page = (int) $request->get_param( 'per_page' );
 
 		$filter = new SurveyFilter(
 			status:  $status !== null ? SurveyStatus::from( $status ) : null,
 			page:    $page,
-			perPage: $perPage,
+			per_page: $per_page,
 		);
 
-		$surveys = $this->surveyRepository->findAll( $filter );
-		$total   = $this->surveyRepository->count( $filter );
+		$surveys = $this->survey_repository->findAll( $filter );
+		$total   = $this->survey_repository->count( $filter );
 
 		if ( empty( $surveys ) ) {
-			return $this->successResponse( [
-				'forms'      => [],
-				'pagination' => $this->buildPagination( $total, $page, $perPage ),
-				'totals'     => [ 'total_forms' => 0, 'total_responses' => 0, 'total_views' => 0 ],
-			] );
+			return $this->successResponse(
+				[
+					'forms'      => [],
+					'pagination' => $this->buildPagination( $total, $page, $per_page ),
+					'totals'     => [
+						'total_forms' => 0,
+						'total_responses' => 0,
+						'total_views' => 0,
+					],
+				]
+			);
 		}
 
-		$surveyIds       = array_map( fn( Survey $s ) => $s->getId(), $surveys );
-		$sessionMetrics  = $this->sessionRepository->getAnalyticsForAllSurveys( $surveyIds );
-		$responseMetrics = $this->responseRepository->aggregateScoreStatsForAllSurveys( $surveyIds );
+		$survey_ids       = array_map( fn( Survey $s ) => $s->getId(), $surveys );
+		$session_metrics  = $this->session_repository->getAnalyticsForAllSurveys( $survey_ids );
+		$response_metrics = $this->response_repository->aggregateScoreStatsForAllSurveys( $survey_ids );
 
 		$forms = array_map(
-			function ( Survey $survey ) use ( $sessionMetrics, $responseMetrics ): array {
+			function ( Survey $survey ) use ( $session_metrics, $response_metrics ): array {
 				$id = $survey->getId();
 
 				return [
@@ -208,25 +224,27 @@ class FormAnalyticsController extends RestController {
 					'response_count'   => $survey->getResponseCount(),
 					'created_at'       => $survey->getCreatedAt()->format( 'Y-m-d H:i:s' ),
 					'updated_at'       => $survey->getUpdatedAt()?->format( 'Y-m-d H:i:s' ),
-					'session_metrics'  => $sessionMetrics[ $id ]  ?? $this->emptySessionMetrics(),
-					'response_metrics' => $this->buildResponseSummary( $responseMetrics[ $id ] ?? $this->emptyResponseStats() ),
+					'session_metrics'  => $session_metrics[ $id ] ?? $this->emptySessionMetrics(),
+					'response_metrics' => $this->buildResponseSummary( $response_metrics[ $id ] ?? $this->emptyResponseStats() ),
 				];
 			},
 			$surveys
 		);
 
-		$totalResponses = (int) array_sum( array_column( $responseMetrics, 'total' ) );
-		$totalViews     = (int) array_sum( array_column( $sessionMetrics, 'total_views' ) );
+		$total_responses = (int) array_sum( array_column( $response_metrics, 'total' ) );
+		$total_views     = (int) array_sum( array_column( $session_metrics, 'total_views' ) );
 
-		return $this->successResponse( [
-			'forms'      => $forms,
-			'pagination' => $this->buildPagination( $total, $page, $perPage ),
-			'totals'     => [
-				'total_forms'     => $total,
-				'total_responses' => $totalResponses,
-				'total_views'     => $totalViews,
-			],
-		] );
+		return $this->successResponse(
+			[
+				'forms'      => $forms,
+				'pagination' => $this->buildPagination( $total, $page, $per_page ),
+				'totals'     => [
+					'total_forms'     => $total,
+					'total_responses' => $total_responses,
+					'total_views'     => $total_views,
+				],
+			]
+		);
 	}
 
 	/**
@@ -241,39 +259,41 @@ class FormAnalyticsController extends RestController {
 	 * @since  1.0.0
 	 */
 	public function getFormAnalytics( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
-		$surveyId = (int) $request->get_param( 'id' );
+		$survey_id = (int) $request->get_param( 'id' );
 
 		try {
-			$responseMetrics = $this->analyticsService->getAnalytics( $surveyId );
+			$response_metrics = $this->analytics_service->getAnalytics( $survey_id );
 		} catch ( NotFoundException $e ) {
 			return $this->exceptionToResponse( $e );
 		}
 
-		$survey  = $this->surveyRepository->findById( $surveyId );
-		$session = $this->sessionRepository->getFormSessionStatsWithWoW( $surveyId );
+		$survey  = $this->survey_repository->findById( $survey_id );
+		$session = $this->session_repository->getFormSessionStatsWithWoW( $survey_id );
 
-		return $this->successResponse( [
-			'survey'          => [
-				'id'             => $survey->getId(),
-				'title'          => $survey->getTitle(),
-				'description'    => $survey->getDescription(),
-				'status'         => $survey->getStatus()->value,
-				'response_count' => $survey->getResponseCount(),
-				'created_at'     => $survey->getCreatedAt()->format( 'Y-m-d H:i:s' ),
-				'updated_at'     => $survey->getUpdatedAt()?->format( 'Y-m-d H:i:s' ),
-			],
-			'session_metrics' => [
-				'total_views'              => $session['total_views'],
-				'total_starts'             => $session['total_starts'],
-				'total_submissions'        => $session['total_submissions'],
-				'completion_rate'          => $session['completion_rate'],
-				'completion_rate_change'   => $this->weekOverWeekChange( $session['this_week_completion_rate'], $session['last_week_completion_rate'] ),
-				'abandonment_rate'         => $session['abandonment_rate'],
-				'abandonment_rate_change'  => $this->weekOverWeekChange( $session['this_week_abandonment_rate'], $session['last_week_abandonment_rate'] ),
-				'avg_completion_time'      => $session['avg_completion_time'],
-			],
-			'response_metrics' => $responseMetrics,
-		] );
+		return $this->successResponse(
+			[
+				'survey'          => [
+					'id'             => $survey->getId(),
+					'title'          => $survey->getTitle(),
+					'description'    => $survey->getDescription(),
+					'status'         => $survey->getStatus()->value,
+					'response_count' => $survey->getResponseCount(),
+					'created_at'     => $survey->getCreatedAt()->format( 'Y-m-d H:i:s' ),
+					'updated_at'     => $survey->getUpdatedAt()?->format( 'Y-m-d H:i:s' ),
+				],
+				'session_metrics' => [
+					'total_views'              => $session['total_views'],
+					'total_starts'             => $session['total_starts'],
+					'total_submissions'        => $session['total_submissions'],
+					'completion_rate'          => $session['completion_rate'],
+					'completion_rate_change'   => $this->weekOverWeekChange( $session['this_week_completion_rate'], $session['last_week_completion_rate'] ),
+					'abandonment_rate'         => $session['abandonment_rate'],
+					'abandonment_rate_change'  => $this->weekOverWeekChange( $session['this_week_abandonment_rate'], $session['last_week_abandonment_rate'] ),
+					'avg_completion_time'      => $session['avg_completion_time'],
+				],
+				'response_metrics' => $response_metrics,
+			]
+		);
 	}
 
 	/**
@@ -281,43 +301,43 @@ class FormAnalyticsController extends RestController {
 	 *
 	 * @param  int $total   Total matching records (across all pages).
 	 * @param  int $page    Current 1-based page number.
-	 * @param  int $perPage Items per page.
+	 * @param  int $per_page Items per page.
 	 * @return array<string, int>
 	 * @since  1.0.0
 	 */
-	private function buildPagination( int $total, int $page, int $perPage ): array {
+	private function buildPagination( int $total, int $page, int $per_page ): array {
 		return [
 			'total'       => $total,
-			'total_pages' => (int) ceil( $total / max( 1, $perPage ) ),
+			'total_pages' => (int) ceil( $total / max( 1, $per_page ) ),
 			'page'        => $page,
-			'per_page'    => $perPage,
+			'per_page'    => $per_page,
 		];
 	}
 
 	/**
 	 * Derive NPS score and summary from raw aggregated response stats.
 	 *
-	 * @param  array{total: int, score_count: int, score_sum: float, promoters: int, passives: int, detractors: int} $stats
+	 * @param  array{total: int, score_count: int, score_sum: float, promoters: int, passives: int, detractors: int} $stats Raw response stats aggregate.
 	 * @return array<string, mixed>
 	 * @since  1.0.0
 	 */
 	private function buildResponseSummary( array $stats ): array {
-		$total      = $stats['total'];
-		$scoreCount = $stats['score_count'];
+		$total       = $stats['total'];
+		$score_count = $stats['score_count'];
 
-		$averageScore = $scoreCount > 0
-			? round( $stats['score_sum'] / $scoreCount, 2 )
+		$average_score = $score_count > 0
+			? round( $stats['score_sum'] / $score_count, 2 )
 			: null;
 
-		$npsScore = $total > 0
+		$nps_score = $total > 0
 			? round( ( ( $stats['promoters'] - $stats['detractors'] ) / $total ) * 100, 2 )
 			: 0.0;
 
 		return [
 			'total_responses' => $total,
-			'average_score'   => $averageScore,
+			'average_score'   => $average_score,
 			'nps_score'       => [
-				'score'      => $npsScore,
+				'score'      => $nps_score,
 				'promoters'  => $stats['promoters'],
 				'passives'   => $stats['passives'],
 				'detractors' => $stats['detractors'],
@@ -362,20 +382,23 @@ class FormAnalyticsController extends RestController {
 	/**
 	 * Build a complete daily series padded with zeros for days with no responses.
 	 *
-	 * @param  array<string, int> $countsByDate SQL result keyed by Y-m-d date.
-	 * @param  string             $startDate    First date in the series (Y-m-d).
-	 * @param  string             $endDate      Last date in the series (Y-m-d).
+	 * @param  array<string, int> $counts_by_date SQL result keyed by Y-m-d date.
+	 * @param  string             $start_date    First date in the series (Y-m-d).
+	 * @param  string             $end_date      Last date in the series (Y-m-d).
 	 * @return array<int, array{date: string, count: int}>
 	 * @since  1.0.0
 	 */
-	private function buildChart( array $countsByDate, string $startDate, string $endDate ): array {
+	private function buildChart( array $counts_by_date, string $start_date, string $end_date ): array {
 		$result  = [];
-		$current = new \DateTimeImmutable( $startDate );
-		$end     = new \DateTimeImmutable( $endDate );
+		$current = new \DateTimeImmutable( $start_date );
+		$end     = new \DateTimeImmutable( $end_date );
 
 		while ( $current <= $end ) {
 			$d        = $current->format( 'Y-m-d' );
-			$result[] = [ 'date' => $d, 'count' => $countsByDate[ $d ] ?? 0 ];
+			$result[] = [
+				'date' => $d,
+				'count' => $counts_by_date[ $d ] ?? 0,
+			];
 			$current  = $current->modify( '+1 day' );
 		}
 
@@ -397,22 +420,25 @@ class FormAnalyticsController extends RestController {
 			return [];
 		}
 
-		$surveyIds = array_unique( array_map( fn( Response $r ) => $r->getSurveyId(), $responses ) );
-		$surveys   = $this->surveyRepository->findByIds( $surveyIds ); // 1 query, keyed by id
+		$survey_ids = array_unique( array_map( fn( Response $r ) => $r->getSurveyId(), $responses ) );
+		$surveys    = $this->survey_repository->findByIds( $survey_ids ); // 1 query, keyed by id
 
-		return array_map( function ( Response $response ) use ( $surveys ): array {
-			$survey = $surveys[ $response->getSurveyId() ] ?? null;
+		return array_map(
+			function ( Response $response ) use ( $surveys ): array {
+				$survey = $surveys[ $response->getSurveyId() ] ?? null;
 
-			return [
-				'id'            => $response->getId(),
-				'survey_id'     => $response->getSurveyId(),
-				'survey_title'  => $survey?->getTitle(),
-				'survey_type'   => $survey ? $this->extractSurveyType( $survey->getFormSchema() ) : null,
-				'score'         => $response->getScore() !== null ? (int) $response->getScore() : null,
-				'response_text' => $this->extractResponseText( $response->getResponseData() ),
-				'created_at'    => $response->getCreatedAt()->format( 'Y-m-d H:i:s' ),
-			];
-		}, $responses );
+				return [
+					'id'            => $response->getId(),
+					'survey_id'     => $response->getSurveyId(),
+					'survey_title'  => $survey?->getTitle(),
+					'survey_type'   => $survey ? $this->extractSurveyType( $survey->getFormSchema() ) : null,
+					'score'         => $response->getScore() !== null ? (int) $response->getScore() : null,
+					'response_text' => $this->extractResponseText( $response->getResponseData() ),
+					'created_at'    => $response->getCreatedAt()->format( 'Y-m-d H:i:s' ),
+				];
+			},
+			$responses
+		);
 	}
 
 	/**
@@ -422,17 +448,17 @@ class FormAnalyticsController extends RestController {
 	 * primary field type found, uppercased. Returns null when the schema has no
 	 * recognised primary field (e.g. a plain text-only survey).
 	 *
-	 * @param  array<mixed> $formSchema Decoded form_schema array.
+	 * @param  array<mixed> $form_schema Decoded form_schema array.
 	 * @return string|null  'NPS' or null.
 	 * @since  1.0.0
 	 */
-	private function extractSurveyType( array $formSchema ): ?string {
-		$primaryTypes = [ 'nps' ];
+	private function extractSurveyType( array $form_schema ): ?string {
+		$primary_types = [ 'nps' ];
 
-		foreach ( (array) ( $formSchema['sections'] ?? [] ) as $section ) {
+		foreach ( (array) ( $form_schema['sections'] ?? [] ) as $section ) {
 			foreach ( (array) ( $section['fields'] ?? [] ) as $field ) {
 				$type = strtolower( (string) ( $field['type'] ?? '' ) );
-				if ( in_array( $type, $primaryTypes, true ) ) {
+				if ( in_array( $type, $primary_types, true ) ) {
 					return strtoupper( $type );
 				}
 			}
@@ -444,12 +470,12 @@ class FormAnalyticsController extends RestController {
 	/**
 	 * Extract the first non-empty string value from a response_data payload.
 	 *
-	 * @param  array<mixed> $responseData Raw key/value response payload.
+	 * @param  array<mixed> $response_data Raw key/value response payload.
 	 * @return string|null
 	 * @since  1.0.0
 	 */
-	private function extractResponseText( array $responseData ): ?string {
-		foreach ( $responseData as $value ) {
+	private function extractResponseText( array $response_data ): ?string {
+		foreach ( $response_data as $value ) {
 			if ( is_string( $value ) && trim( $value ) !== '' ) {
 				return $value;
 			}
@@ -470,7 +496,7 @@ class FormAnalyticsController extends RestController {
 	 * @since  1.0.0
 	 */
 	private function weekOverWeekChange( int|float|null $current, int|float|null $previous ): ?float {
-		if ( $current === null || $previous === null || $previous == 0 ) {
+		if ( $current === null || $previous === null || $previous === 0 ) {
 			return null;
 		}
 

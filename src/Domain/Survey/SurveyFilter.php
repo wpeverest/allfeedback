@@ -1,4 +1,10 @@
 <?php
+/**
+ * Survey filter.
+ *
+ * @package AllFeedback\Domain\Survey
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -20,26 +26,28 @@ use AllFeedback\Domain\Shared\QueryFilter;
 final class SurveyFilter extends QueryFilter {
 
 	/**
+	 * Constructor.
+	 *
 	 * @param  SurveyStatus|null $status       Restrict results to this lifecycle status.
-	 * @param  int|null          $createdBy    Restrict results to surveys by this user ID.
+	 * @param  int|null          $created_by    Restrict results to surveys by this user ID.
 	 * @param  int               $page         1-based page number.
-	 * @param  int               $perPage      Results per page.
+	 * @param  int               $per_page      Results per page.
 	 * @param  string|null       $search       Optional full-text search string.
-	 * @param  string            $orderBy      Column to order by. Default 'date'.
+	 * @param  string            $order_by      Column to order by. Default 'date'.
 	 * @param  string            $order        Sort direction: ASC | DESC.
-	 * @param  string|null       $createdAfter Only include surveys created on or after this date (Y-m-d).
+	 * @param  string|null       $created_after Only include surveys created on or after this date (Y-m-d).
 	 * @since  1.0.0
 	 */
 	public function __construct(
 		public readonly ?SurveyStatus $status = null,
-		public readonly ?int $createdBy = null,
+		public readonly ?int $created_by = null,
 		int $page = 1,
-		int $perPage = 20,
+		int $per_page = 20,
 		?string $search = null,
-		string $orderBy = 'date',
+		string $order_by = 'date',
 		string $order = 'DESC',
-		public readonly ?string $createdAfter = null,
+		public readonly ?string $created_after = null,
 	) {
-		parent::__construct( $page, $perPage, $search, $orderBy, $order );
+		parent::__construct( $page, $per_page, $search, $order_by, $order );
 	}
 }

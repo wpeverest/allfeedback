@@ -1,4 +1,10 @@
 <?php
+/**
+ * Plugin.
+ *
+ * @package AllFeedback
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -52,7 +58,7 @@ final class Plugin {
 	 * @var AppServiceProvider
 	 * @since 1.0.0
 	 */
-	private AppServiceProvider $appProvider;
+	private AppServiceProvider $app_provider;
 
 	/**
 	 * Module loader — discovers, registers, and boots all modules.
@@ -60,7 +66,7 @@ final class Plugin {
 	 * @var ModuleLoader
 	 * @since 1.0.0
 	 */
-	private ModuleLoader $moduleLoader;
+	private ModuleLoader $module_loader;
 
 	/**
 	 * Guard against double-booting.
@@ -94,11 +100,11 @@ final class Plugin {
 
 		$this->loadConfiguration();
 
-		$this->appProvider = $this->container->get( AppServiceProvider::class );
-		$this->appProvider->boot();
+		$this->app_provider = $this->container->get( AppServiceProvider::class );
+		$this->app_provider->boot();
 
-		$this->moduleLoader = $this->container->get( ModuleLoader::class );
-		$this->moduleLoader->loadModules();
+		$this->module_loader = $this->container->get( ModuleLoader::class );
+		$this->module_loader->loadModules();
 
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			$this->registerCliCommands();
@@ -155,8 +161,8 @@ final class Plugin {
 		$this->doAction( 'allfeedback:activated' );
 
 		// Seed wizard status so maybeRedirectToWizard() fires on first admin load.
-		$wizardStatus = get_option( 'allfeedback_wizard_status' );
-		if ( ! $wizardStatus || $wizardStatus === 'not_started' ) {
+		$wizard_status = get_option( 'allfeedback_wizard_status' );
+		if ( ! $wizard_status || $wizard_status === 'not_started' ) {
 			update_option( 'allfeedback_wizard_status', 'pending_redirect' );
 		}
 
@@ -197,7 +203,7 @@ final class Plugin {
 	 * @since  1.0.0
 	 */
 	public function getModuleLoader(): ModuleLoader {
-		return $this->moduleLoader;
+		return $this->module_loader;
 	}
 
 	/**
@@ -205,15 +211,15 @@ final class Plugin {
 	 * the WordPress admin so the next request rebuilds it from fresh bindings.
 	 *
 	 * @param  \WP_Upgrader         $upgrader  Upgrader instance (unused).
-	 * @param  array<string, mixed> $hookExtra Data about what was upgraded.
+	 * @param  array<string, mixed> $hook_extra Data about what was upgraded.
 	 * @return void
 	 * @since  1.0.0
 	 */
-	public function onUpgradeComplete( \WP_Upgrader $upgrader, array $hookExtra ): void {
+	public function onUpgradeComplete( \WP_Upgrader $upgrader, array $hook_extra ): void {
 		if (
-			( $hookExtra['action'] ?? '' ) === 'update' &&
-			( $hookExtra['type'] ?? '' ) === 'plugin' &&
-			in_array( plugin_basename( AF_PLUGIN_FILE ), (array) ( $hookExtra['plugins'] ?? [] ), true )
+			( $hook_extra['action'] ?? '' ) === 'update' &&
+			( $hook_extra['type'] ?? '' ) === 'plugin' &&
+			in_array( plugin_basename( AF_PLUGIN_FILE ), (array) ( $hook_extra['plugins'] ?? [] ), true )
 		) {
 			Container::purgeCache();
 		}
@@ -241,11 +247,11 @@ final class Plugin {
 	 * @since  1.0.0
 	 */
 	private function loadConfiguration(): void {
-		$configPath = Constants::path( 'config/app.php' );
+		$config_path = Constants::path( 'config/app.php' );
 
-		if ( file_exists( $configPath ) ) {
-			$appConfig = require $configPath;
-			$this->container->set( 'config.app', $appConfig );
+		if ( file_exists( $config_path ) ) {
+			$app_config = require $config_path;
+			$this->container->set( 'config.app', $app_config );
 		}
 	}
 
@@ -259,16 +265,16 @@ final class Plugin {
 	 * @since  1.0.0
 	 */
 	private function maybeFlushRewriteRules(): void {
-		$optionKey = 'allfb_rewrite_version';
+		$option_key = 'allfb_rewrite_version';
 
 		$expected = $this->applyFilters( 'allfeedback:rewrite:expected_version', '1' );
 
-		if ( get_option( $optionKey ) !== $expected ) {
+		if ( get_option( $option_key ) !== $expected ) {
 			$this->addAction(
 				'init',
-				static function () use ( $optionKey, $expected ): void {
+				static function () use ( $option_key, $expected ): void {
 					flush_rewrite_rules();
-					update_option( $optionKey, $expected );
+					update_option( $option_key, $expected );
 				},
 				99
 			);

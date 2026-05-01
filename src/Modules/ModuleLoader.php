@@ -1,4 +1,10 @@
 <?php
+/**
+ * Module loader.
+ *
+ * @package AllFeedback\Modules
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -47,9 +53,11 @@ class ModuleLoader {
 	 * @var array<string, class-string<ModuleInterface>>
 	 * @since 1.0.0
 	 */
-	private array $availableModules = [];
+	private array $available_modules = [];
 
 	/**
+	 * Constructor.
+	 *
 	 * @param  Container $container DI container for instantiating module classes.
 	 * @param  Logger    $logger    Logger for recording instantiation and boot errors.
 	 * @since  1.0.0
@@ -73,9 +81,9 @@ class ModuleLoader {
 	 * @since  1.0.0
 	 */
 	public function loadModules(): void {
-		$this->availableModules = $this->applyFilters(
+		$this->available_modules = $this->applyFilters(
 			'allfeedback:modules:register',
-			$this->availableModules
+			$this->available_modules
 		);
 
 		$modules = $this->discoverModules();
@@ -111,7 +119,7 @@ class ModuleLoader {
 	private function discoverModules(): array {
 		$modules = [];
 
-		foreach ( $this->availableModules as $class ) {
+		foreach ( $this->available_modules as $class ) {
 			if ( ! class_exists( $class ) ) {
 				$this->logger->warning( "Module class not found: {$class}" );
 				continue;
@@ -151,10 +159,10 @@ class ModuleLoader {
 	/**
 	 * Recursive DFS visit for topological sort.
 	 *
-	 * @param  ModuleInterface         $module  Module being visited.
-	 * @param  ModuleInterface[]       $all     All discovered modules.
-	 * @param  ModuleInterface[]       $sorted  Accumulator (by reference).
-	 * @param  array<string, bool>     $visited Visited map (by reference).
+	 * @param  ModuleInterface     $module  Module being visited.
+	 * @param  ModuleInterface[]   $all     All discovered modules.
+	 * @param  ModuleInterface[]   $sorted  Accumulator (by reference).
+	 * @param  array<string, bool> $visited Visited map (by reference).
 	 * @return void
 	 * @since  1.0.0
 	 */
@@ -172,9 +180,9 @@ class ModuleLoader {
 
 		$visited[ $id ] = true;
 
-		foreach ( $module->getDependencies() as $depId ) {
+		foreach ( $module->getDependencies() as $dep_id ) {
 			foreach ( $all as $candidate ) {
-				if ( $candidate->getId() === $depId ) {
+				if ( $candidate->getId() === $dep_id ) {
 					$this->visit( $candidate, $all, $sorted, $visited );
 				}
 			}

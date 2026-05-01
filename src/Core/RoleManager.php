@@ -1,4 +1,10 @@
 <?php
+/**
+ * Role manager.
+ *
+ * @package AllFeedback\Core
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 

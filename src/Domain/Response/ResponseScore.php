@@ -1,4 +1,10 @@
 <?php
+/**
+ * Response score.
+ *
+ * @package AllFeedback\Domain\Response
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -17,6 +23,8 @@ defined( 'ABSPATH' ) || exit;
 final class ResponseScore {
 
 	/**
+	 * Constructor.
+	 *
 	 * @param  float  $score Numeric score value.
 	 * @param  string $type  Score type: nps.
 	 * @throws \InvalidArgumentException When the type is not nps.
@@ -70,7 +78,7 @@ final class ResponseScore {
 			return null;
 		}
 
-		return match( true ) {
+		return match ( true ) {
 			$this->score >= 9 => 'promoter',
 			$this->score >= 7 => 'passive',
 			default           => 'detractor',

@@ -1,4 +1,10 @@
 <?php
+/**
+ * Container.
+ *
+ * @package AllFeedback\Core
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -60,9 +66,9 @@ class Container {
 		$builder->useAttributes( true );
 
 		if ( $this->isProduction() ) {
-			$cacheDir = WP_CONTENT_DIR . '/cache/allfeedback/' . Constants::VERSION;
-			$builder->enableCompilation( $cacheDir );
-			$builder->writeProxiesToFile( true, $cacheDir . '/proxies' );
+			$cache_dir = WP_CONTENT_DIR . '/cache/allfeedback/' . Constants::VERSION;
+			$builder->enableCompilation( $cache_dir );
+			$builder->writeProxiesToFile( true, $cache_dir . '/proxies' );
 			$this->compiled = true;
 		}
 
@@ -80,10 +86,10 @@ class Container {
 	 * @since  1.0.0
 	 */
 	private function loadServiceDefinitions( ContainerBuilder $builder ): void {
-		$servicesFile = Constants::path( 'config/services.php' );
+		$services_file = Constants::path( 'config/services.php' );
 
-		if ( file_exists( $servicesFile ) ) {
-			$definitions = require $servicesFile;
+		if ( file_exists( $services_file ) ) {
+			$definitions = require $services_file;
 			$builder->addDefinitions( $definitions );
 		}
 	}
@@ -191,17 +197,14 @@ class Container {
 
 		foreach ( $iterator as $file ) {
 			if ( $file->isDir() ) {
-				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir, WordPress.PHP.NoSilencedErrors.Discouraged
 				@rmdir( $file->getPathname() );
-			} else {
-				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_unlink
-				if ( ! @unlink( $file->getPathname() ) ) {
-					error_log( 'AllFeedback: failed to delete cache file: ' . $file->getPathname() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-				}
+			} elseif ( ! @unlink( $file->getPathname() ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink, WordPress.WP.AlternativeFunctions.file_system_operations_unlink, WordPress.PHP.NoSilencedErrors.Discouraged
+				error_log( 'AllFeedback: failed to delete cache file: ' . $file->getPathname() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			}
 		}
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir, WordPress.PHP.NoSilencedErrors.Discouraged
 		@rmdir( $dir );
 	}
 }

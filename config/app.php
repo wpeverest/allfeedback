@@ -1,13 +1,15 @@
 <?php
-
-defined( 'ABSPATH' ) || exit;
-
 /**
  * Application configuration.
  *
  * Values here are read by Config::class and can be retrieved anywhere via the
- * DI container:  $container->get( Config::class )->get( 'name' )
+ * DI container: $container->get( Config::class )->get( 'name' ).
+ *
+ * @package AllFeedback
+ * @since   1.0.0
  */
+
+defined( 'ABSPATH' ) || exit;
 
 use AllFeedback\Core\Constants;
 
@@ -20,7 +22,7 @@ return [
 	'version'     => Constants::VERSION,
 	'slug'        => 'allfeedback',
 	'text_domain' => Constants::TEXT_DOMAIN,
-	'namespace'   => 'allfeedback/v1', // REST API namespace
+	'namespace'   => 'allfeedback/v1', // REST API namespace.
 
 	// ------------------------------------------------------------------
 	// File-system paths (absolute)
@@ -43,8 +45,8 @@ return [
 	// ------------------------------------------------------------------
 	'cache'       => [
 		'enabled' => true,
-		'ttl'     => 3600,            // seconds
-		'prefix'  => 'allfb_',          // option/transient prefix
+		'ttl'     => 3600,            // seconds.
+		'prefix'  => 'allfb_',          // option/transient prefix.
 	],
 
 ];

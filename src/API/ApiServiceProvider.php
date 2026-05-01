@@ -1,4 +1,10 @@
 <?php
+/**
+ * Api service provider.
+ *
+ * @package AllFeedback\API
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -39,6 +45,8 @@ class ApiServiceProvider implements ServiceProvider {
 	use Hooks;
 
 	/**
+	 * Constructor.
+	 *
 	 * @param  Container $container DI container used to resolve controller instances.
 	 * @since  1.0.0
 	 */
@@ -76,11 +84,15 @@ class ApiServiceProvider implements ServiceProvider {
 	 * @since  1.0.0
 	 */
 	public function registerShutdownHook(): void {
-		add_action( 'shutdown', function () {
-			if ( function_exists( 'fastcgi_finish_request' ) ) {
-				fastcgi_finish_request();
-			}
-		}, 0 );
+		add_action(
+			'shutdown',
+			function () {
+				if ( function_exists( 'fastcgi_finish_request' ) ) {
+					fastcgi_finish_request();
+				}
+			},
+			0
+		);
 	}
 
 	/**

@@ -1,4 +1,10 @@
 <?php
+/**
+ * Targeting engine.
+ *
+ * @package AllFeedback\Frontend
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -55,12 +61,14 @@ class TargetingEngine {
 	use Hooks;
 
 	/**
-	 * @param  SurveyRepository $surveyRepository Repository for loading published surveys.
+	 * Constructor.
+	 *
+	 * @param  SurveyRepository $survey_repository Repository for loading published surveys.
 	 * @param  Logger           $logger           Logger for recording load failures.
 	 * @since  1.0.0
 	 */
 	public function __construct(
-		private readonly SurveyRepository $surveyRepository,
+		private readonly SurveyRepository $survey_repository,
 		private readonly Logger $logger,
 	) {}
 
@@ -76,11 +84,11 @@ class TargetingEngine {
 	 */
 	public function resolveAllForCurrentPage(): array {
 		try {
-			$surveys = $this->surveyRepository->findAll(
+			$surveys = $this->survey_repository->findAll(
 				new SurveyFilter(
 					status:  SurveyStatus::Published,
-					perPage: 100,
-					orderBy: 'date',
+					per_page: 100,
+					order_by: 'date',
 					order:   'DESC',
 				)
 			);
@@ -133,8 +141,8 @@ class TargetingEngine {
 		}
 
 		$mode       = (string) ( $targeting['mode'] ?? 'all' );
-		$rules      = (array)  ( $targeting['rules'] ?? [] );
-		$exclusions = (array)  ( $targeting['exclusions'] ?? [] );
+		$rules      = (array) ( $targeting['rules'] ?? [] );
+		$exclusions = (array) ( $targeting['exclusions'] ?? [] );
 
 		foreach ( $exclusions as $rule ) {
 			if ( is_array( $rule ) && $this->evaluateRule( $rule ) ) {
@@ -167,22 +175,24 @@ class TargetingEngine {
 	 * @since  1.0.0
 	 */
 	private function matchesSettingsTargeting( array $settings ): bool {
-		$targetPages = (string) ( $settings['targetPages'] ?? $settings['target_pages'] ?? 'all' );
+		$target_pages = (string) ( $settings['targetPages'] ?? $settings['target_pages'] ?? 'all' );
 
-		if ( $targetPages === 'all' ) {
+		if ( $target_pages === 'all' ) {
 			return true;
 		}
 
-		$ids = array_values( array_filter(
-			array_map( 'intval', (array) ( $settings['target_page_ids'] ?? [] ) ),
-			fn( int $id ) => $id > 0
-		) );
+		$ids = array_values(
+			array_filter(
+				array_map( 'intval', (array) ( $settings['target_page_ids'] ?? [] ) ),
+				fn( int $id ) => $id > 0
+			)
+		);
 
 		if ( $ids === [] ) {
 			return false;
 		}
 
-		if ( $targetPages === 'specific_pages' || $targetPages === 'specific' ) {
+		if ( $target_pages === 'specific_pages' || $target_pages === 'specific' ) {
 			foreach ( $ids as $id ) {
 				if ( is_page( $id ) ) {
 					return true;
@@ -191,9 +201,9 @@ class TargetingEngine {
 			return false;
 		}
 
-		if ( $targetPages === 'specific_posts' ) {
-			$currentId = isset( $GLOBALS['post'] ) ? (int) ( $GLOBALS['post']->ID ?? 0 ) : 0;
-			return $currentId > 0 && in_array( $currentId, $ids, true );
+		if ( $target_pages === 'specific_posts' ) {
+			$current_id = isset( $GLOBALS['post'] ) ? (int) ( $GLOBALS['post']->ID ?? 0 ) : 0;
+			return $current_id > 0 && in_array( $current_id, $ids, true );
 		}
 
 		return true;
@@ -222,7 +232,7 @@ class TargetingEngine {
 	 * @since  1.0.0
 	 */
 	private function evaluateRule( array $rule ): bool {
-		$type  = (string) ( $rule['type']  ?? '' );
+		$type  = (string) ( $rule['type'] ?? '' );
 		$value = $rule['value'] ?? null;
 
 		$matched = match ( $type ) {

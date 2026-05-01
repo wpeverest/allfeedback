@@ -1,4 +1,10 @@
 <?php
+/**
+ * Submit controller.
+ *
+ * @package AllFeedback\API\Controllers\V1
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -37,7 +43,7 @@ use AllFeedback\Support\Logger;
  *   4. `allfeedback_allow_response_submission` filter — pro blocking hooks.
  *   5. `allfeedback_response_data_before_save` filter — data transformation.
  *   6. Delegate to SubmitResponseService, which runs the validation pipeline,
- *      persists the response, and fires `allfeedback:response:submitted` to
+ *      persists the response, and fires `allfeedback_response_submitted` to
  *      trigger the async notification pipeline (admin alert + respondent email).
  *   7. `allfeedback_response_submitted` action — third-party side-effects.
  *
@@ -47,9 +53,12 @@ use AllFeedback\Support\Logger;
 class SubmitController extends RestController {
 
 	/**
+	 * REST resource slug.
+	 *
+	 * @var string
 	 * @since 1.0.0
 	 */
-	protected string $restBase = 'surveys';
+	protected string $rest_base = 'surveys';
 
 	/**
 	 * Nonce action used to authenticate public widget submissions.
@@ -59,21 +68,23 @@ class SubmitController extends RestController {
 	public const NONCE_ACTION = 'allfeedback_submit';
 
 	/**
-	 * @param  SurveyRepository        $surveyRepository   Survey repository for existence and status checks.
-	 * @param  ResponseRepository      $responseRepository Response repository for duplicate detection.
-	 * @param  SubmitResponseService   $submitService      Use-case service for response submission.
-	 * @param  SettingsManager         $settingsManager    Settings for privacy flags.
+	 * Constructor.
+	 *
+	 * @param  SurveyRepository        $survey_repository   Survey repository for existence and status checks.
+	 * @param  ResponseRepository      $response_repository Response repository for duplicate detection.
+	 * @param  SubmitResponseService   $submit_service      Use-case service for response submission.
+	 * @param  SettingsManager         $settings_manager    Settings for privacy flags.
 	 * @param  Logger                  $logger             Structured logger.
-	 * @param  SurveySessionRepository $sessionRepository  Session repository for analytics.
+	 * @param  SurveySessionRepository $session_repository  Session repository for analytics.
 	 * @since  1.0.0
 	 */
 	public function __construct(
-		private readonly SurveyRepository $surveyRepository,
-		private readonly ResponseRepository $responseRepository,
-		private readonly SubmitResponseService $submitService,
-		private readonly SettingsManager $settingsManager,
+		private readonly SurveyRepository $survey_repository,
+		private readonly ResponseRepository $response_repository,
+		private readonly SubmitResponseService $submit_service,
+		private readonly SettingsManager $settings_manager,
 		private readonly Logger $logger,
-		private readonly SurveySessionRepository $sessionRepository,
+		private readonly SurveySessionRepository $session_repository,
 	) {}
 
 	/**
@@ -85,7 +96,7 @@ class SubmitController extends RestController {
 	public function registerRoutes(): void {
 		register_rest_route(
 			$this->namespace,
-			'/' . $this->restBase . '/(?P<id>\d+)/submit',
+			'/' . $this->rest_base . '/(?P<id>\d+)/submit',
 			[
 				'methods'             => \WP_REST_Server::CREATABLE,
 				'callback'            => [ $this, 'handle' ],
@@ -115,119 +126,132 @@ class SubmitController extends RestController {
 			return $this->errorResponse( __( 'Invalid or expired nonce.', 'allfeedback' ), 403 );
 		}
 
-		[ $ipHash, $rawIp ] = $this->resolveIp();
+		[ $ip_hash, $raw_ip ] = $this->resolveIp();
 
-		if ( ! $this->checkRateLimit( $ipHash ) ) {
+		if ( ! $this->checkRateLimit( $ip_hash ) ) {
 			$this->logger->warning( 'Submission rejected: rate limit exceeded.', [ 'survey_id' => (int) $request->get_param( 'id' ) ] );
 			return $this->errorResponse( __( 'Too many submissions. Please wait before trying again.', 'allfeedback' ), 429 );
 		}
 
-		$surveyId = (int) $request->get_param( 'id' );
-		$survey   = $this->surveyRepository->findById( $surveyId );
+		$survey_id = (int) $request->get_param( 'id' );
+		$survey    = $this->survey_repository->findById( $survey_id );
 
 		if ( $survey === null ) {
 			return $this->notFoundResponse( __( 'Survey', 'allfeedback' ) );
 		}
 
-		$isDraft        = $survey->getStatus()->value === 'draft';
-		$isAdminPreview = $isDraft && current_user_can( 'manage_options' );
+		$is_draft         = $survey->getStatus()->value === 'draft';
+		$is_admin_preview = $is_draft && current_user_can( 'manage_options' );
 
-		if ( ! $survey->getStatus()->isPublished() && ! $isAdminPreview ) {
+		if ( ! $survey->getStatus()->isPublished() && ! $is_admin_preview ) {
 			$this->logger->warning(
 				'Submission rejected: survey not published.',
-				[ 'survey_id' => $surveyId, 'status' => $survey->getStatus()->value ]
+				[
+					'survey_id' => $survey_id,
+					'status' => $survey->getStatus()->value,
+				]
 			);
 			return $this->errorResponse( __( 'This survey is not currently accepting responses.', 'allfeedback' ), 403 );
 		}
 
-		if ( ! (bool) apply_filters( 'allfeedback_allow_response_submission', true, $surveyId, $survey, $request ) ) {
-			$this->logger->warning( 'Submission blocked by filter.', [ 'survey_id' => $surveyId ] );
+		if ( ! (bool) apply_filters( 'allfeedback_allow_response_submission', true, $survey_id, $survey, $request ) ) {
+			$this->logger->warning( 'Submission blocked by filter.', [ 'survey_id' => $survey_id ] );
 			return $this->errorResponse( __( 'Response submission is not allowed.', 'allfeedback' ), 403 );
 		}
 
-		$disableUserDetails = (bool) $this->settingsManager->get( 'advanced.privacy.disable_user_details' );
+		$disable_user_details = (bool) $this->settings_manager->get( 'advanced.privacy.disable_user_details' );
 
-		if ( ! $disableUserDetails && ! current_user_can( 'manage_options' ) ) {
-			$duplicateWindowHours = max( 0, (int) apply_filters( 'allfeedback_duplicate_window_hours', 0, $surveyId ) );
-			$userId               = get_current_user_id();
+		if ( ! $disable_user_details && ! current_user_can( 'manage_options' ) ) {
+			$duplicate_window_hours = max( 0, (int) apply_filters( 'allfeedback_duplicate_window_hours', 0, $survey_id ) );
+			$user_id                = get_current_user_id();
 
-			if ( $userId > 0 ) {
-				if ( $this->responseRepository->existsByUserId( $surveyId, $userId, $duplicateWindowHours ) ) {
-					$this->logger->debug( 'Duplicate submission blocked (user_id).', [ 'survey_id' => $surveyId, 'user_id' => $userId ] );
+			if ( $user_id > 0 ) {
+				if ( $this->response_repository->existsByUserId( $survey_id, $user_id, $duplicate_window_hours ) ) {
+					$this->logger->debug(
+						'Duplicate submission blocked (user_id).',
+						[
+							'survey_id' => $survey_id,
+							'user_id' => $user_id,
+						]
+					);
 					return $this->errorResponse( __( 'A response from this user has already been recorded.', 'allfeedback' ), 409 );
 				}
 			} else {
-				$visitorToken = sanitize_text_field( (string) ( $request->get_param( 'visitor_token' ) ?? '' ) );
+				$visitor_token = sanitize_text_field( (string) ( $request->get_param( 'visitor_token' ) ?? '' ) );
 
-				if ( $visitorToken !== '' ) {
-					if ( $this->responseRepository->existsByGuestToken( $surveyId, $visitorToken, $duplicateWindowHours ) ) {
-						$this->logger->debug( 'Duplicate submission blocked (guest_token).', [ 'survey_id' => $surveyId ] );
+				if ( $visitor_token !== '' ) {
+					if ( $this->response_repository->existsByGuestToken( $survey_id, $visitor_token, $duplicate_window_hours ) ) {
+						$this->logger->debug( 'Duplicate submission blocked (guest_token).', [ 'survey_id' => $survey_id ] );
 						return $this->errorResponse( __( 'A response from this visitor has already been recorded.', 'allfeedback' ), 409 );
 					}
-				} elseif ( $ipHash !== '' ) {
-					if ( $this->responseRepository->existsByIpHash( $surveyId, $ipHash, $duplicateWindowHours ) ) {
-						$this->logger->debug( 'Duplicate submission blocked (ip_hash).', [ 'survey_id' => $surveyId ] );
+				} elseif ( $ip_hash !== '' ) {
+					if ( $this->response_repository->existsByIpHash( $survey_id, $ip_hash, $duplicate_window_hours ) ) {
+						$this->logger->debug( 'Duplicate submission blocked (ip_hash).', [ 'survey_id' => $survey_id ] );
 						return $this->errorResponse( __( 'A response from this visitor has already been recorded.', 'allfeedback' ), 409 );
 					}
 				}
 			}
 		}
 
-		$responseData = $this->sanitizeResponseData(
+		$response_data = $this->sanitizeResponseData(
 			(array) apply_filters(
 				'allfeedback_response_data_before_save',
 				(array) ( $request->get_param( 'response_data' ) ?? [] ),
-				$surveyId,
+				$survey_id,
 				$survey
 			)
 		);
 
 		$dto = ResponseDTO::fromArray(
-			$surveyId,
-			array_merge( $request->get_params(), [ 'response_data' => $responseData ] )
+			$survey_id,
+			array_merge( $request->get_params(), [ 'response_data' => $response_data ] )
 		);
 
 		try {
-			$domainResponse = $this->submitService->execute( $dto, $ipHash, $disableUserDetails ? null : $rawIp );
+			$domain_response = $this->submit_service->execute( $dto, $ip_hash, $disable_user_details ? null : $raw_ip );
 		} catch ( ValidationException $e ) {
 			return $this->exceptionToResponse( $e );
 		} catch ( NotFoundException $e ) {
 			return $this->exceptionToResponse( $e );
 		}
 
-		$responseId = (int) $domainResponse->getId();
+		$response_id = (int) $domain_response->getId();
 
-		$sessionId = sanitize_text_field( (string) ( $request->get_param( 'session_id' ) ?? '' ) );
-		if ( $sessionId !== '' ) {
+		$session_id = sanitize_text_field( (string) ( $request->get_param( 'session_id' ) ?? '' ) );
+		if ( $session_id !== '' ) {
 			$now     = new \DateTimeImmutable();
-			$session = $this->sessionRepository->findBySessionId( $sessionId );
+			$session = $this->session_repository->findBySessionId( $session_id );
 			if ( $session === null ) {
-				$session = new SurveySession(
-					surveyId:  $surveyId,
-					sessionId: $sessionId,
-					userId:    get_current_user_id() ?: null,
-					guestId:   sanitize_text_field( (string) ( $request->get_param( 'visitor_token' ) ?? '' ) ) ?: null,
+				$submit_user_id_raw  = get_current_user_id();
+				$submit_user_id      = $submit_user_id_raw !== 0 ? $submit_user_id_raw : null;
+				$submit_guest_id_raw = sanitize_text_field( (string) ( $request->get_param( 'visitor_token' ) ?? '' ) );
+				$submit_guest_id     = $submit_guest_id_raw !== '' ? $submit_guest_id_raw : null;
+				$session             = new SurveySession(
+					survey_id:  $survey_id,
+					session_id: $session_id,
+					user_id:    $submit_user_id,
+					guest_id:   $submit_guest_id,
 				);
 			}
 			if ( ! $session->isSubmitted() ) {
 				$session->markSubmitted( $now );
-				$this->sessionRepository->save( $session );
+				$this->session_repository->save( $session );
 			}
 		}
 
-		do_action( 'allfeedback_response_submitted', $responseId, $surveyId, $survey );
+		do_action( 'allfeedback_response_submitted', $response_id, $survey_id, $survey );
 
 		$this->logger->info(
 			'Survey response submitted.',
 			[
-				'response_id' => $responseId,
-				'survey_id'   => $surveyId,
+				'response_id' => $response_id,
+				'survey_id'   => $survey_id,
 				'score'       => $request->get_param( 'score' ),
 				'anonymous'   => ! is_user_logged_in(),
 			]
 		);
 
-		return $this->successResponse( [ 'id' => $responseId ], 201 );
+		return $this->successResponse( [ 'id' => $response_id ], 201 );
 	}
 
 	/**
@@ -239,17 +263,17 @@ class SubmitController extends RestController {
 	 * an IP listed in the `allfeedback_trusted_proxies` filter (e.g. a load
 	 * balancer or CDN whose IP is known and fixed).
 	 *
-	 * @return array{0: string, 1: string} [ $hash, $rawIp ]
+	 * @return array{0: string, 1: string} [ $hash, $raw_ip ]
 	 * @since  1.0.0
 	 */
 	private function resolveIp(): array {
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
-		$remoteAddr = sanitize_text_field( (string) ( $_SERVER['REMOTE_ADDR'] ?? '' ) );
-		$ip         = $remoteAddr;
+		$remote_addr = sanitize_text_field( (string) ( $_SERVER['REMOTE_ADDR'] ?? '' ) );
+		$ip          = $remote_addr;
 
-		$trustedProxies = (array) apply_filters( 'allfeedback_trusted_proxies', [] );
+		$trusted_proxies = (array) apply_filters( 'allfeedback_trusted_proxies', [] );
 
-		if ( $trustedProxies !== [] && in_array( $remoteAddr, $trustedProxies, true ) ) {
+		if ( $trusted_proxies !== [] && in_array( $remote_addr, $trusted_proxies, true ) ) {
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
 			$forwarded = sanitize_text_field( trim( explode( ',', (string) ( $_SERVER['HTTP_X_FORWARDED_FOR'] ?? '' ) )[0] ) );
 			if ( $forwarded !== '' && filter_var( $forwarded, FILTER_VALIDATE_IP ) ) {
@@ -268,13 +292,13 @@ class SubmitController extends RestController {
 	 * Allows a maximum of `allfeedback_submit_rate_limit` submissions (default 10)
 	 * per IP within a 5-minute window.
 	 *
-	 * @param  string $ipHash HMAC hash of the visitor IP.
+	 * @param  string $ip_hash HMAC hash of the visitor IP.
 	 * @return bool True when under the limit; false when exceeded.
 	 * @since  1.0.0
 	 */
-	private function checkRateLimit( string $ipHash ): bool {
+	private function checkRateLimit( string $ip_hash ): bool {
 		$limit = max( 1, (int) apply_filters( 'allfeedback_submit_rate_limit', 10 ) );
-		$key   = 'allfb_rl_' . substr( $ipHash, 0, 16 );
+		$key   = 'allfb_rl_' . substr( $ip_hash, 0, 16 );
 		$count = (int) get_transient( $key );
 
 		if ( $count >= $limit ) {
@@ -337,7 +361,7 @@ class SubmitController extends RestController {
 			),
 			'page_url'      => $this->argString(
 				description: __( 'URL of the page where the survey was displayed.', 'allfeedback' ),
-				maxLength:   2083,
+				max_length:   2083,
 			),
 			'device_type'   => $this->argEnum(
 				description: __( 'Visitor device type at submission time.', 'allfeedback' ),
@@ -349,11 +373,11 @@ class SubmitController extends RestController {
 			),
 			'visitor_token' => $this->argString(
 				description: __( 'Persistent guest visitor UUID (v4) for duplicate detection.', 'allfeedback' ),
-				maxLength:   36,
+				max_length:   36,
 			),
 			'session_id'    => $this->argString(
 				description: __( 'Analytics session UUID (v4) generated on widget open.', 'allfeedback' ),
-				maxLength:   36,
+				max_length:   36,
 			),
 		];
 	}

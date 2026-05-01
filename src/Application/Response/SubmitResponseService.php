@@ -1,4 +1,10 @@
 <?php
+/**
+ * Submit response service.
+ *
+ * @package AllFeedback\Application\Response
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -25,30 +31,32 @@ use AllFeedback\Domain\Survey\SurveyRepository;
 class SubmitResponseService {
 
 	/**
-	 * @param  SurveyRepository   $surveyRepository   Reads survey aggregates.
-	 * @param  ResponseRepository $responseRepository Persists response aggregates.
+	 * Constructor.
+	 *
+	 * @param  SurveyRepository   $survey_repository   Reads survey aggregates.
+	 * @param  ResponseRepository $response_repository Persists response aggregates.
 	 * @since  1.0.0
 	 */
 	public function __construct(
-		private readonly SurveyRepository $surveyRepository,
-		private readonly ResponseRepository $responseRepository,
+		private readonly SurveyRepository $survey_repository,
+		private readonly ResponseRepository $response_repository,
 	) {}
 
 	/**
 	 * Run the validation pipeline, create a Response aggregate, and persist it.
 	 *
 	 * @param  ResponseDTO $dto       Validated response payload.
-	 * @param  string      $ipHash    HMAC-SHA256 hash of the visitor's IP (computed by the controller).
-	 * @param  string|null $ipAddress Raw IP address, or null when privacy mode is active.
+	 * @param  string      $ip_hash    HMAC-SHA256 hash of the visitor's IP (computed by the controller).
+	 * @param  string|null $ip_address Raw IP address, or null when privacy mode is active.
 	 * @return Response
 	 * @throws NotFoundException When the referenced survey does not exist.
 	 * @since  1.0.0
 	 */
-	public function execute( ResponseDTO $dto, string $ipHash, ?string $ipAddress = null ): Response {
-		$survey = $this->surveyRepository->findById( $dto->surveyId );
+	public function execute( ResponseDTO $dto, string $ip_hash, ?string $ip_address = null ): Response {
+		$survey = $this->survey_repository->findById( $dto->survey_id );
 
 		if ( $survey === null ) {
-			throw NotFoundException::forResource( esc_html__( 'Survey', 'allfeedback' ), $dto->surveyId ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- surveyId is a typed int
+			throw NotFoundException::forResource( esc_html__( 'Survey', 'allfeedback' ), $dto->survey_id ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- surveyId is a typed int
 		}
 
 		$context = new ResponseContext( dto: $dto, survey: $survey );
@@ -62,23 +70,23 @@ class SubmitResponseService {
 		$this->runPipeline( $pipeline, $context );
 
 		$response = new Response(
-			surveyId: $dto->surveyId,
-			responseData: $dto->responseData,
+			survey_id: $dto->survey_id,
+			response_data: $dto->response_data,
 			score: $dto->score,
-			pageUrl: $dto->pageUrl,
-			deviceType: $dto->deviceType,
-			ipHash: $ipHash,
-			ipAddress: $ipAddress,
-			userId: $dto->userId > 0 ? $dto->userId : null,
-			guestToken: $dto->guestToken,
-			consentGiven: $dto->consentGiven,
+			page_url: $dto->page_url,
+			device_type: $dto->device_type,
+			ip_hash: $ip_hash,
+			ip_address: $ip_address,
+			user_id: $dto->user_id > 0 ? $dto->user_id : null,
+			guest_token: $dto->guest_token,
+			consent_given: $dto->consent_given,
 		);
 
-		$response = $this->responseRepository->save( $response );
+		$response = $this->response_repository->save( $response );
 
-		$this->surveyRepository->incrementResponseCount( $dto->surveyId );
+		$this->survey_repository->incrementResponseCount( $dto->survey_id );
 
-		do_action( 'allfeedback:response:submitted', $response, $survey );
+		do_action( 'allfeedback_response_submitted', $response, $survey );
 
 		return $response;
 	}

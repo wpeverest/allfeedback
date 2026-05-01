@@ -1,4 +1,10 @@
 <?php
+/**
+ * Development-only REST controller for seeding and clearing test data.
+ *
+ * @package AllFeedback\API\Controllers\V1
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -23,7 +29,13 @@ use AllFeedback\API\RestController;
  */
 class DevToolsController extends RestController {
 
-	protected string $restBase = 'dev-tools';
+	/**
+	 * Route base for dev-tools endpoints.
+	 *
+	 * @var string
+	 * @since 1.0.0
+	 */
+	protected string $rest_base = 'dev-tools';
 
 	private const SEEDED_META_KEY = '_allfb_seeded';
 
@@ -74,26 +86,26 @@ class DevToolsController extends RestController {
 	];
 
 	private const FORM_TEMPLATES = [
-		[ 'NPS Customer Satisfaction',  'How likely are you to recommend us to a friend?',        0 ],
-		[ 'Product Feedback',           'Tell us about your experience with our product.',         1 ],
-		[ 'Support Experience',         'Rate your recent support interaction.',                   2 ],
-		[ 'Website Usability',          'Help us improve our website.',                            3 ],
-		[ 'Onboarding Feedback',        'Tell us about your onboarding experience.',               4 ],
-		[ 'Checkout Experience',        'Rate your checkout experience.',                          2 ],
-		[ 'Feature Request Pulse',      'What features should we build next?',                     5 ],
-		[ 'Post-Purchase Survey',       'How was your purchase experience?',                       0 ],
-		[ 'Event Feedback',             'Rate our most recent event.',                             1 ],
-		[ 'Annual Brand Survey',        'Your annual brand perception check-in.',                  6 ],
-		[ 'Mobile App Review',          'Tell us how our mobile app feels to use.',                0 ],
-		[ 'Beta Feature Feedback',      'You tried our beta — what did you think?',                3 ],
-		[ 'Cancellation Survey',        'Help us understand why you are leaving.',                 5 ],
-		[ 'Renewal Satisfaction',       'How do you feel about renewing with us?',                 2 ],
-		[ 'Partner Portal Feedback',    'Rate your partner portal experience.',                    1 ],
-		[ 'Documentation Quality',      'How helpful is our documentation?',                      4 ],
-		[ 'Pricing Perception',         'Do you feel our pricing is fair?',                        3 ],
-		[ 'Sales Call Experience',      'How did your sales conversation go?',                     6 ],
-		[ 'Employee Engagement',        'Rate your experience working with our team.',             2 ],
-		[ 'Community Feedback',         'How do you find our community forums?',                   0 ],
+		[ 'NPS Customer Satisfaction', 'How likely are you to recommend us to a friend?', 0 ],
+		[ 'Product Feedback', 'Tell us about your experience with our product.', 1 ],
+		[ 'Support Experience', 'Rate your recent support interaction.', 2 ],
+		[ 'Website Usability', 'Help us improve our website.', 3 ],
+		[ 'Onboarding Feedback', 'Tell us about your onboarding experience.', 4 ],
+		[ 'Checkout Experience', 'Rate your checkout experience.', 2 ],
+		[ 'Feature Request Pulse', 'What features should we build next?', 5 ],
+		[ 'Post-Purchase Survey', 'How was your purchase experience?', 0 ],
+		[ 'Event Feedback', 'Rate our most recent event.', 1 ],
+		[ 'Annual Brand Survey', 'Your annual brand perception check-in.', 6 ],
+		[ 'Mobile App Review', 'Tell us how our mobile app feels to use.', 0 ],
+		[ 'Beta Feature Feedback', 'You tried our beta — what did you think?', 3 ],
+		[ 'Cancellation Survey', 'Help us understand why you are leaving.', 5 ],
+		[ 'Renewal Satisfaction', 'How do you feel about renewing with us?', 2 ],
+		[ 'Partner Portal Feedback', 'Rate your partner portal experience.', 1 ],
+		[ 'Documentation Quality', 'How helpful is our documentation?', 4 ],
+		[ 'Pricing Perception', 'Do you feel our pricing is fair?', 3 ],
+		[ 'Sales Call Experience', 'How did your sales conversation go?', 6 ],
+		[ 'Employee Engagement', 'Rate your experience working with our team.', 2 ],
+		[ 'Community Feedback', 'How do you find our community forums?', 0 ],
 	];
 
 	private const DEVICES = [ 'desktop', 'mobile', 'tablet' ];
@@ -106,137 +118,344 @@ class DevToolsController extends RestController {
 	 *   'score_range'  - [min, max] or null if no numeric score
 	 *   'fields'       - ordered list of field configs for fake-data generation
 	 *
-	 * @param int $type 0-6
+	 * @param int $type Schema type index 0-6.
 	 */
 	private static function schemaConfig( int $type ): array {
 		switch ( $type ) {
-			case 0: // NPS + long text
+			case 0: // NPS + long text.
 				return [
-					'schema'      => [ 'version' => '1.0', 'sections' => [[
-						'id' => 's1', 'title' => 'Feedback',
-						'fields' => [
-							[ 'id' => 'f1', 'type' => 'nps',      'label' => 'How likely are you to recommend us to a friend or colleague?', 'required' => true,  'settings' => [] ],
-							[ 'id' => 'f2', 'type' => 'long_text', 'label' => 'What is the main reason for your score?',                     'required' => false, 'settings' => [] ],
+					'schema'      => [
+						'version' => '1.0',
+						'sections' => [
+							[
+								'id' => 's1',
+								'title' => 'Feedback',
+								'fields' => [
+									[
+										'id' => 'f1',
+										'type' => 'nps',
+										'label' => 'How likely are you to recommend us to a friend or colleague?',
+										'required' => true,
+										'settings' => [],
+									],
+									[
+										'id' => 'f2',
+										'type' => 'long_text',
+										'label' => 'What is the main reason for your score?',
+										'required' => false,
+										'settings' => [],
+									],
+								],
+							],
 						],
-					]]],
+					],
 					'score_range' => [ 0, 10 ],
 					'fields'      => [
-						[ 'id' => 'f1', 'type' => 'nps' ],
-						[ 'id' => 'f2', 'type' => 'long_text' ],
+						[
+							'id' => 'f1',
+							'type' => 'nps',
+						],
+						[
+							'id' => 'f2',
+							'type' => 'long_text',
+						],
 					],
 				];
 
-			case 1: // Star rating + short text
+			case 1: // Star rating + short text.
 				return [
-					'schema'      => [ 'version' => '1.0', 'sections' => [[
-						'id' => 's1', 'title' => 'Rating',
-						'fields' => [
-							[ 'id' => 'f1', 'type' => 'star_rating', 'label' => 'How would you rate your overall experience?', 'required' => true,  'settings' => [ 'starRange' => 5, 'starScale' => 'star' ] ],
-							[ 'id' => 'f2', 'type' => 'short_text',  'label' => 'What could we improve?',                      'required' => false, 'settings' => [ 'placeholder' => 'Type your answer…' ] ],
+					'schema'      => [
+						'version' => '1.0',
+						'sections' => [
+							[
+								'id' => 's1',
+								'title' => 'Rating',
+								'fields' => [
+									[
+										'id' => 'f1',
+										'type' => 'star_rating',
+										'label' => 'How would you rate your overall experience?',
+										'required' => true,
+										'settings' => [
+											'starRange' => 5,
+											'starScale' => 'star',
+										],
+									],
+									[
+										'id' => 'f2',
+										'type' => 'short_text',
+										'label' => 'What could we improve?',
+										'required' => false,
+										'settings' => [ 'placeholder' => 'Type your answer…' ],
+									],
+								],
+							],
 						],
-					]]],
+					],
 					'score_range' => [ 1, 5 ],
 					'fields'      => [
-						[ 'id' => 'f1', 'type' => 'star_rating', 'min' => 1, 'max' => 5 ],
-						[ 'id' => 'f2', 'type' => 'short_text' ],
+						[
+							'id' => 'f1',
+							'type' => 'star_rating',
+							'min' => 1,
+							'max' => 5,
+						],
+						[
+							'id' => 'f2',
+							'type' => 'short_text',
+						],
 					],
 				];
 
-			case 2: // Scale 1-10 + long text
+			case 2: // Scale 1-10 + long text.
 				return [
-					'schema'      => [ 'version' => '1.0', 'sections' => [[
-						'id' => 's1', 'title' => 'Satisfaction',
-						'fields' => [
-							[ 'id' => 'f1', 'type' => 'scale',     'label' => 'How satisfied are you with our service?',  'required' => true,  'settings' => [ 'scaleMin' => 1, 'scaleMax' => 10, 'scaleLowLabel' => 'Very unsatisfied', 'scaleHighLabel' => 'Very satisfied' ] ],
-							[ 'id' => 'f2', 'type' => 'long_text', 'label' => 'Tell us more about your experience.',       'required' => false, 'settings' => [] ],
+					'schema'      => [
+						'version' => '1.0',
+						'sections' => [
+							[
+								'id' => 's1',
+								'title' => 'Satisfaction',
+								'fields' => [
+									[
+										'id' => 'f1',
+										'type' => 'scale',
+										'label' => 'How satisfied are you with our service?',
+										'required' => true,
+										'settings' => [
+											'scaleMin' => 1,
+											'scaleMax' => 10,
+											'scaleLowLabel' => 'Very unsatisfied',
+											'scaleHighLabel' => 'Very satisfied',
+										],
+									],
+									[
+										'id' => 'f2',
+										'type' => 'long_text',
+										'label' => 'Tell us more about your experience.',
+										'required' => false,
+										'settings' => [],
+									],
+								],
+							],
 						],
-					]]],
+					],
 					'score_range' => [ 1, 10 ],
 					'fields'      => [
-						[ 'id' => 'f1', 'type' => 'scale', 'min' => 1, 'max' => 10 ],
-						[ 'id' => 'f2', 'type' => 'long_text' ],
-					],
-				];
-
-			case 3: // Radio + short text
-				return [
-					'schema'      => [ 'version' => '1.0', 'sections' => [[
-						'id' => 's1', 'title' => 'Quick Survey',
-						'fields' => [
-							[ 'id' => 'f1', 'type' => 'radio',      'label' => 'How did you hear about us?',   'required' => true,  'settings' => [ 'options' => [ 'Search engine', 'Social media', 'Friend or colleague', 'Advertisement', 'Other' ] ] ],
-							[ 'id' => 'f2', 'type' => 'short_text', 'label' => 'Any additional comments?',     'required' => false, 'settings' => [ 'placeholder' => 'Optional…' ] ],
-						],
-					]]],
-					'score_range' => null,
-					'fields'      => [
-						[ 'id' => 'f1', 'type' => 'radio', 'options' => [ 'Search engine', 'Social media', 'Friend or colleague', 'Advertisement', 'Other' ] ],
-						[ 'id' => 'f2', 'type' => 'short_text' ],
-					],
-				];
-
-			case 4: // Checkboxes + long text
-				return [
-					'schema'      => [ 'version' => '1.0', 'sections' => [[
-						'id' => 's1', 'title' => 'Feature Survey',
-						'fields' => [
-							[ 'id' => 'f1', 'type' => 'checkboxes', 'label' => 'Which features do you use most?',          'required' => true,  'settings' => [ 'options' => [ 'Dashboard', 'Reports', 'Integrations', 'Automation', 'Support chat' ] ] ],
-							[ 'id' => 'f2', 'type' => 'long_text',  'label' => 'What features would you like to see next?', 'required' => false, 'settings' => [] ],
-						],
-					]]],
-					'score_range' => null,
-					'fields'      => [
-						[ 'id' => 'f1', 'type' => 'checkboxes', 'options' => [ 'Dashboard', 'Reports', 'Integrations', 'Automation', 'Support chat' ] ],
-						[ 'id' => 'f2', 'type' => 'long_text' ],
-					],
-				];
-
-			case 5: // Radio choice + NPS (multi-page)
-				return [
-					'schema'      => [ 'version' => '1.0', 'sections' => [
 						[
-							'id' => 's1', 'title' => 'About You',
-							'fields' => [
-								[ 'id' => 'f1', 'type' => 'radio', 'label' => 'What best describes your role?', 'required' => true, 'settings' => [ 'options' => [ 'Developer', 'Designer', 'Manager', 'Marketing', 'Other' ] ] ],
-							],
+							'id' => 'f1',
+							'type' => 'scale',
+							'min' => 1,
+							'max' => 10,
 						],
 						[
-							'id' => 's2', 'title' => 'Your Opinion',
-							'fields' => [
-								[ 'id' => 'f2', 'type' => 'nps',      'label' => 'How likely are you to recommend us?',               'required' => true,  'settings' => [] ],
-								[ 'id' => 'f3', 'type' => 'long_text', 'label' => 'What would make you more likely to recommend us?',   'required' => false, 'settings' => [] ],
+							'id' => 'f2',
+							'type' => 'long_text',
+						],
+					],
+				];
+
+			case 3: // Radio + short text.
+				return [
+					'schema'      => [
+						'version' => '1.0',
+						'sections' => [
+							[
+								'id' => 's1',
+								'title' => 'Quick Survey',
+								'fields' => [
+									[
+										'id' => 'f1',
+										'type' => 'radio',
+										'label' => 'How did you hear about us?',
+										'required' => true,
+										'settings' => [ 'options' => [ 'Search engine', 'Social media', 'Friend or colleague', 'Advertisement', 'Other' ] ],
+									],
+									[
+										'id' => 'f2',
+										'type' => 'short_text',
+										'label' => 'Any additional comments?',
+										'required' => false,
+										'settings' => [ 'placeholder' => 'Optional…' ],
+									],
+								],
 							],
 						],
-					]],
+					],
+					'score_range' => null,
+					'fields'      => [
+						[
+							'id' => 'f1',
+							'type' => 'radio',
+							'options' => [ 'Search engine', 'Social media', 'Friend or colleague', 'Advertisement', 'Other' ],
+						],
+						[
+							'id' => 'f2',
+							'type' => 'short_text',
+						],
+					],
+				];
+
+			case 4: // Checkboxes + long text.
+				return [
+					'schema'      => [
+						'version' => '1.0',
+						'sections' => [
+							[
+								'id' => 's1',
+								'title' => 'Feature Survey',
+								'fields' => [
+									[
+										'id' => 'f1',
+										'type' => 'checkboxes',
+										'label' => 'Which features do you use most?',
+										'required' => true,
+										'settings' => [ 'options' => [ 'Dashboard', 'Reports', 'Integrations', 'Automation', 'Support chat' ] ],
+									],
+									[
+										'id' => 'f2',
+										'type' => 'long_text',
+										'label' => 'What features would you like to see next?',
+										'required' => false,
+										'settings' => [],
+									],
+								],
+							],
+						],
+					],
+					'score_range' => null,
+					'fields'      => [
+						[
+							'id' => 'f1',
+							'type' => 'checkboxes',
+							'options' => [ 'Dashboard', 'Reports', 'Integrations', 'Automation', 'Support chat' ],
+						],
+						[
+							'id' => 'f2',
+							'type' => 'long_text',
+						],
+					],
+				];
+
+			case 5: // Radio choice + NPS (multi-page).
+				return [
+					'schema'      => [
+						'version' => '1.0',
+						'sections' => [
+							[
+								'id' => 's1',
+								'title' => 'About You',
+								'fields' => [
+									[
+										'id' => 'f1',
+										'type' => 'radio',
+										'label' => 'What best describes your role?',
+										'required' => true,
+										'settings' => [ 'options' => [ 'Developer', 'Designer', 'Manager', 'Marketing', 'Other' ] ],
+									],
+								],
+							],
+							[
+								'id' => 's2',
+								'title' => 'Your Opinion',
+								'fields' => [
+									[
+										'id' => 'f2',
+										'type' => 'nps',
+										'label' => 'How likely are you to recommend us?',
+										'required' => true,
+										'settings' => [],
+									],
+									[
+										'id' => 'f3',
+										'type' => 'long_text',
+										'label' => 'What would make you more likely to recommend us?',
+										'required' => false,
+										'settings' => [],
+									],
+								],
+							],
+						],
+					],
 					'score_range' => [ 0, 10 ],
 					'fields'      => [
-						[ 'id' => 'f1', 'type' => 'radio',     'options' => [ 'Developer', 'Designer', 'Manager', 'Marketing', 'Other' ] ],
-						[ 'id' => 'f2', 'type' => 'nps' ],
-						[ 'id' => 'f3', 'type' => 'long_text' ],
+						[
+							'id' => 'f1',
+							'type' => 'radio',
+							'options' => [ 'Developer', 'Designer', 'Manager', 'Marketing', 'Other' ],
+						],
+						[
+							'id' => 'f2',
+							'type' => 'nps',
+						],
+						[
+							'id' => 'f3',
+							'type' => 'long_text',
+						],
 					],
 				];
 
-			default: // case 6: Scale + checkboxes + short text (multi-page)
+			default: // case 6: Scale + checkboxes + short text (multi-page).
 				return [
-					'schema'      => [ 'version' => '1.0', 'sections' => [
-						[
-							'id' => 's1', 'title' => 'Experience',
-							'fields' => [
-								[ 'id' => 'f1', 'type' => 'scale', 'label' => 'How easy was it to achieve your goal?', 'required' => true, 'settings' => [ 'scaleMin' => 1, 'scaleMax' => 7, 'scaleLowLabel' => 'Very difficult', 'scaleHighLabel' => 'Very easy' ] ],
+					'schema'      => [
+						'version' => '1.0',
+						'sections' => [
+							[
+								'id' => 's1',
+								'title' => 'Experience',
+								'fields' => [
+									[
+										'id' => 'f1',
+										'type' => 'scale',
+										'label' => 'How easy was it to achieve your goal?',
+										'required' => true,
+										'settings' => [
+											'scaleMin' => 1,
+											'scaleMax' => 7,
+											'scaleLowLabel' => 'Very difficult',
+											'scaleHighLabel' => 'Very easy',
+										],
+									],
+								],
+							],
+							[
+								'id' => 's2',
+								'title' => 'Details',
+								'fields' => [
+									[
+										'id' => 'f2',
+										'type' => 'checkboxes',
+										'label' => 'What obstacles did you encounter?',
+										'required' => false,
+										'settings' => [ 'options' => [ 'Confusing UI', 'Slow performance', 'Missing features', 'Poor documentation', 'None' ] ],
+									],
+									[
+										'id' => 'f3',
+										'type' => 'short_text',
+										'label' => 'Anything else to share?',
+										'required' => false,
+										'settings' => [],
+									],
+								],
 							],
 						],
-						[
-							'id' => 's2', 'title' => 'Details',
-							'fields' => [
-								[ 'id' => 'f2', 'type' => 'checkboxes', 'label' => 'What obstacles did you encounter?', 'required' => false, 'settings' => [ 'options' => [ 'Confusing UI', 'Slow performance', 'Missing features', 'Poor documentation', 'None' ] ] ],
-								[ 'id' => 'f3', 'type' => 'short_text', 'label' => 'Anything else to share?',           'required' => false, 'settings' => [] ],
-							],
-						],
-					]],
+					],
 					'score_range' => [ 1, 7 ],
 					'fields'      => [
-						[ 'id' => 'f1', 'type' => 'scale',      'min' => 1, 'max' => 7 ],
-						[ 'id' => 'f2', 'type' => 'checkboxes', 'options' => [ 'Confusing UI', 'Slow performance', 'Missing features', 'Poor documentation', 'None' ] ],
-						[ 'id' => 'f3', 'type' => 'short_text' ],
+						[
+							'id' => 'f1',
+							'type' => 'scale',
+							'min' => 1,
+							'max' => 7,
+						],
+						[
+							'id' => 'f2',
+							'type' => 'checkboxes',
+							'options' => [ 'Confusing UI', 'Slow performance', 'Missing features', 'Poor documentation', 'None' ],
+						],
+						[
+							'id' => 'f3',
+							'type' => 'short_text',
+						],
 					],
 				];
 		}
@@ -244,15 +463,18 @@ class DevToolsController extends RestController {
 
 	/**
 	 * Generate fake response_data JSON and a score for a given schema config.
+	 *
+	 * @param array<string, mixed> $config Schema config produced by schemaConfig().
+	 * @return array{0: string|false, 1: int|null}
 	 */
 	private static function fakeResponseData( array $config ): array {
-		$data = [];
+		$data  = [];
 		$score = null;
 
 		foreach ( $config['fields'] as $i => $field ) {
 			switch ( $field['type'] ) {
 				case 'nps':
-					$val = rand( 0, 10 );
+					$val                  = wp_rand( 0, 10 );
 					$data[ $field['id'] ] = $val;
 					if ( $i === 0 || $score === null ) {
 						$score = $val;
@@ -260,7 +482,7 @@ class DevToolsController extends RestController {
 					break;
 
 				case 'star_rating':
-					$val = rand( $field['min'] ?? 1, $field['max'] ?? 5 );
+					$val                  = wp_rand( $field['min'] ?? 1, $field['max'] ?? 5 );
 					$data[ $field['id'] ] = $val;
 					if ( $score === null ) {
 						$score = $val;
@@ -268,7 +490,7 @@ class DevToolsController extends RestController {
 					break;
 
 				case 'scale':
-					$val = rand( $field['min'] ?? 1, $field['max'] ?? 10 );
+					$val                  = wp_rand( $field['min'] ?? 1, $field['max'] ?? 10 );
 					$data[ $field['id'] ] = $val;
 					if ( $score === null ) {
 						$score = $val;
@@ -280,9 +502,9 @@ class DevToolsController extends RestController {
 					break;
 
 				case 'checkboxes':
-					$opts = $field['options'];
-					$count = rand( 1, min( 3, count( $opts ) ) );
-					$keys = (array) array_rand( $opts, $count );
+					$opts                 = $field['options'];
+					$count                = wp_rand( 1, min( 3, count( $opts ) ) );
+					$keys                 = (array) array_rand( $opts, $count );
 					$data[ $field['id'] ] = array_values( array_map( fn( $k ) => $opts[ $k ], $keys ) );
 					break;
 
@@ -304,7 +526,7 @@ class DevToolsController extends RestController {
 	 * Generate a UUID v4 string.
 	 */
 	private static function uuid(): string {
-		$b = random_bytes( 16 );
+		$b    = random_bytes( 16 );
 		$b[6] = chr( ( ord( $b[6] ) & 0x0f ) | 0x40 );
 		$b[8] = chr( ( ord( $b[8] ) & 0x3f ) | 0x80 );
 		return vsprintf( '%s%s-%s-%s-%s-%s%s%s', str_split( bin2hex( $b ), 4 ) );
@@ -320,7 +542,7 @@ class DevToolsController extends RestController {
 
 		\register_rest_route(
 			$this->namespace,
-			"/{$this->restBase}/seed",
+			"/{$this->rest_base}/seed",
 			[
 				[
 					'methods'             => \WP_REST_Server::CREATABLE,
@@ -351,7 +573,7 @@ class DevToolsController extends RestController {
 
 		\register_rest_route(
 			$this->namespace,
-			"/{$this->restBase}/reset-wizard",
+			"/{$this->rest_base}/reset-wizard",
 			[
 				'methods'             => \WP_REST_Server::CREATABLE,
 				'callback'            => [ $this, 'resetWizard' ],
@@ -361,7 +583,7 @@ class DevToolsController extends RestController {
 
 		\register_rest_route(
 			$this->namespace,
-			"/{$this->restBase}/logs",
+			"/{$this->rest_base}/logs",
 			[
 				'methods'             => \WP_REST_Server::DELETABLE,
 				'callback'            => [ $this, 'clearLogs' ],
@@ -371,7 +593,7 @@ class DevToolsController extends RestController {
 
 		\register_rest_route(
 			$this->namespace,
-			"/{$this->restBase}/reset-settings",
+			"/{$this->rest_base}/reset-settings",
 			[
 				'methods'             => \WP_REST_Server::CREATABLE,
 				'callback'            => [ $this, 'resetSettings' ],
@@ -382,30 +604,37 @@ class DevToolsController extends RestController {
 
 	/**
 	 * Seed fake surveys, responses, and sessions.
+	 *
+	 * @param \WP_REST_Request $request Full request data.
+	 * @return \WP_REST_Response
 	 */
 	public function seed( \WP_REST_Request $request ): \WP_REST_Response {
 		global $wpdb;
 
-		$num_surveys     = (int) $request->get_param( 'surveys' );
-		$per_survey      = (int) $request->get_param( 'responses_per_survey' );
-		$admin_id        = get_current_user_id();
-		$templates       = self::FORM_TEMPLATES;
+		$num_surveys = (int) $request->get_param( 'surveys' );
+		$per_survey  = (int) $request->get_param( 'responses_per_survey' );
+		$admin_id    = get_current_user_id();
+		$templates   = self::FORM_TEMPLATES;
 
-		$settings = wp_json_encode( [
-			'submitLabel'    => 'Submit',
-			'nextLabel'      => 'Next',
-			'backLabel'      => 'Back',
-			'widgetLabel'    => 'Feedback',
-			'triggerIcon'    => 'message',
-			'widgetPosition' => 'bottom-right',
-		] );
+		$settings = wp_json_encode(
+			[
+				'submitLabel'    => 'Submit',
+				'nextLabel'      => 'Next',
+				'backLabel'      => 'Back',
+				'widgetLabel'    => 'Feedback',
+				'triggerIcon'    => 'message',
+				'widgetPosition' => 'bottom-right',
+			]
+		);
 
-		$styling = wp_json_encode( [
-			'color'    => '#6366F1',
-			'position' => 'bottom-right',
-			'trigger'  => 'auto',
-			'delay'    => 0,
-		] );
+		$styling = wp_json_encode(
+			[
+				'color'    => '#6366F1',
+				'position' => 'bottom-right',
+				'trigger'  => 'auto',
+				'delay'    => 0,
+			]
+		);
 
 		$survey_ids      = [];
 		$total_responses = 0;
@@ -441,7 +670,7 @@ class DevToolsController extends RestController {
 			$survey_id    = (int) $wpdb->insert_id;
 			$survey_ids[] = $survey_id;
 
-			// ── Responses ──────────────────────────────────────────────────────
+			// Responses.
 			$batch = 500;
 			for ( $start = 0; $start < $per_survey; $start += $batch ) {
 				$count = min( $batch, $per_survey - $start );
@@ -449,110 +678,140 @@ class DevToolsController extends RestController {
 
 				for ( $j = 0; $j < $count; $j++ ) {
 					[ $data, $score ] = self::fakeResponseData( $config );
-					$device   = self::DEVICES[ array_rand( self::DEVICES ) ];
-					$is_read  = rand( 0, 1 );
-					$days_ago = rand( 0, 730 );
-					$created  = gmdate( 'Y-m-d H:i:s', strtotime( "-{$days_ago} days" ) );
-					$ip       = rand( 1, 255 ) . '.' . rand( 0, 255 ) . '.' . rand( 0, 255 ) . '.' . rand( 0, 255 );
-					$ip_hash  = hash( 'sha256', $ip );
+					$device           = self::DEVICES[ array_rand( self::DEVICES ) ];
+					$is_read          = wp_rand( 0, 1 );
+					$days_ago         = wp_rand( 0, 730 );
+					$created          = gmdate( 'Y-m-d H:i:s', strtotime( "-{$days_ago} days" ) );
+					$ip               = wp_rand( 1, 255 ) . '.' . wp_rand( 0, 255 ) . '.' . wp_rand( 0, 255 ) . '.' . wp_rand( 0, 255 );
+					$ip_hash          = hash( 'sha256', $ip );
 
 					if ( $score !== null ) {
 						$rows[] = $wpdb->prepare(
 							'(%d, %s, %d, %s, %s, %s, %d, %s)',
-							$survey_id, $data, $score, $device, $ip_hash, $ip, $is_read, $created
+							$survey_id,
+							$data,
+							$score,
+							$device,
+							$ip_hash,
+							$ip,
+							$is_read,
+							$created
 						);
 					} else {
 						$rows[] = $wpdb->prepare(
 							'(%d, %s, NULL, %s, %s, %s, %d, %s)',
-							$survey_id, $data, $device, $ip_hash, $ip, $is_read, $created
+							$survey_id,
+							$data,
+							$device,
+							$ip_hash,
+							$ip,
+							$is_read,
+							$created
 						);
 					}
 				}
 
-				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-				$wpdb->query(
+				$wpdb->query( // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 					"INSERT INTO {$wpdb->prefix}af_responses
 						(survey_id, response_data, score, device_type, ip_hash, ip_address, is_read, created_at)
-					 VALUES " . implode( ',', $rows )
+					 VALUES " . implode( ',', $rows ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 				);
 
 				$total_responses += $count;
 			}
 
-			// Sync response_count cache
-			$actual_count = (int) $wpdb->get_var( $wpdb->prepare(
-				"SELECT COUNT(*) FROM {$wpdb->prefix}af_responses WHERE survey_id = %d",
-				$survey_id
-			) );
+			// Sync response_count cache.
+			$actual_count = (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM {$wpdb->prefix}af_responses WHERE survey_id = %d",
+					$survey_id
+				)
+			);
 			$wpdb->update(
 				$wpdb->prefix . 'af_surveys',
 				[ 'response_count' => $actual_count ],
 				[ 'id' => $survey_id ],
-				[ '%d' ], [ '%d' ]
+				[ '%d' ],
+				[ '%d' ]
 			);
 
-			// ── Sessions ───────────────────────────────────────────────────────
-			// submitted ≈ per_survey, abandoned ≈ 30%, viewed-only ≈ 40%
+			// Sessions.
+			// Submitted: per_survey; abandoned: ~30%; viewed-only: ~40%.
 			$n_submitted = $per_survey;
 			$n_abandoned = (int) round( $per_survey * 0.30 );
 			$n_viewed    = (int) round( $per_survey * 0.40 );
 
-			$session_rows = [];
+			$session_rows   = [];
 			$flush_sessions = static function () use ( &$session_rows, &$total_sessions, $wpdb ) {
 				if ( empty( $session_rows ) ) {
 					return;
 				}
-				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-				$wpdb->query(
+				$wpdb->query( // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 					"INSERT INTO {$wpdb->prefix}af_survey_sessions
 						(survey_id, session_id, guest_id, status, started_at, submitted_at, abandoned_at, last_active_at, created_at)
-					 VALUES " . implode( ',', $session_rows )
+					 VALUES " . implode( ',', $session_rows ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 				);
 				$total_sessions += count( $session_rows );
 				$session_rows    = [];
 			};
 
-			// Submitted sessions
+			// Submitted sessions.
 			for ( $j = 0; $j < $n_submitted; $j++ ) {
-				$days_ago    = rand( 0, 730 );
-				$ts          = strtotime( "-{$days_ago} days" );
-				$created     = gmdate( 'Y-m-d H:i:s', $ts );
-				$started     = gmdate( 'Y-m-d H:i:s', $ts + rand( 5, 60 ) );
-				$submitted   = gmdate( 'Y-m-d H:i:s', $ts + rand( 90, 600 ) );
+				$days_ago       = wp_rand( 0, 730 );
+				$ts             = strtotime( "-{$days_ago} days" );
+				$created        = gmdate( 'Y-m-d H:i:s', $ts );
+				$started        = gmdate( 'Y-m-d H:i:s', $ts + wp_rand( 5, 60 ) );
+				$submitted      = gmdate( 'Y-m-d H:i:s', $ts + wp_rand( 90, 600 ) );
 				$session_rows[] = $wpdb->prepare(
 					"(%d, %s, %s, 'submitted', %s, %s, NULL, %s, %s)",
-					$survey_id, self::uuid(), self::uuid(), $started, $submitted, $submitted, $created
+					$survey_id,
+					self::uuid(),
+					self::uuid(),
+					$started,
+					$submitted,
+					$submitted,
+					$created
 				);
 				if ( count( $session_rows ) >= $batch ) {
 					$flush_sessions();
 				}
 			}
 
-			// Abandoned sessions
+			// Abandoned sessions.
 			for ( $j = 0; $j < $n_abandoned; $j++ ) {
-				$days_ago    = rand( 0, 730 );
-				$ts          = strtotime( "-{$days_ago} days" );
-				$created     = gmdate( 'Y-m-d H:i:s', $ts );
-				$started     = gmdate( 'Y-m-d H:i:s', $ts + rand( 5, 60 ) );
-				$abandoned   = gmdate( 'Y-m-d H:i:s', $ts + rand( 15, 120 ) );
+				$days_ago       = wp_rand( 0, 730 );
+				$ts             = strtotime( "-{$days_ago} days" );
+				$created        = gmdate( 'Y-m-d H:i:s', $ts );
+				$started        = gmdate( 'Y-m-d H:i:s', $ts + wp_rand( 5, 60 ) );
+				$abandoned      = gmdate( 'Y-m-d H:i:s', $ts + wp_rand( 15, 120 ) );
 				$session_rows[] = $wpdb->prepare(
 					"(%d, %s, %s, 'started', %s, NULL, %s, %s, %s)",
-					$survey_id, self::uuid(), self::uuid(), $started, $abandoned, $abandoned, $created
+					$survey_id,
+					self::uuid(),
+					self::uuid(),
+					$started,
+					$abandoned,
+					$abandoned,
+					$created
 				);
 				if ( count( $session_rows ) >= $batch ) {
 					$flush_sessions();
 				}
 			}
 
-			// Viewed-only sessions
+			// Viewed-only sessions.
 			for ( $j = 0; $j < $n_viewed; $j++ ) {
-				$days_ago    = rand( 0, 730 );
-				$ts          = strtotime( "-{$days_ago} days" );
-				$created     = gmdate( 'Y-m-d H:i:s', $ts );
-				$last_active = gmdate( 'Y-m-d H:i:s', $ts + rand( 3, 30 ) );
+				$days_ago       = wp_rand( 0, 730 );
+				$ts             = strtotime( "-{$days_ago} days" );
+				$created        = gmdate( 'Y-m-d H:i:s', $ts );
+				$last_active    = gmdate( 'Y-m-d H:i:s', $ts + wp_rand( 3, 30 ) );
 				$session_rows[] = $wpdb->prepare(
 					"(%d, %s, %s, 'viewed', NULL, NULL, NULL, %s, %s)",
-					$survey_id, self::uuid(), self::uuid(), $last_active, $created
+					$survey_id,
+					self::uuid(),
+					self::uuid(),
+					$last_active,
+					$created
 				);
 				if ( count( $session_rows ) >= $batch ) {
 					$flush_sessions();
@@ -562,12 +821,14 @@ class DevToolsController extends RestController {
 			$flush_sessions();
 		}
 
-		return $this->successResponse( [
-			'surveys'   => count( $survey_ids ),
-			'responses' => $total_responses,
-			'sessions'  => $total_sessions,
-			'survey_ids' => $survey_ids,
-		] );
+		return $this->successResponse(
+			[
+				'surveys'   => count( $survey_ids ),
+				'responses' => $total_responses,
+				'sessions'  => $total_sessions,
+				'survey_ids' => $survey_ids,
+			]
+		);
 	}
 
 	/**
@@ -584,7 +845,13 @@ class DevToolsController extends RestController {
 		);
 
 		if ( empty( $ids ) ) {
-			return $this->successResponse( [ 'deleted_surveys' => 0, 'deleted_responses' => 0, 'deleted_sessions' => 0 ] );
+			return $this->successResponse(
+				[
+					'deleted_surveys' => 0,
+					'deleted_responses' => 0,
+					'deleted_sessions' => 0,
+				]
+			);
 		}
 
 		$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
@@ -613,11 +880,13 @@ class DevToolsController extends RestController {
 			)
 		);
 
-		return $this->successResponse( [
-			'deleted_surveys'   => $deleted_surveys,
-			'deleted_responses' => $deleted_responses,
-			'deleted_sessions'  => $deleted_sessions,
-		] );
+		return $this->successResponse(
+			[
+				'deleted_surveys'   => $deleted_surveys,
+				'deleted_responses' => $deleted_responses,
+				'deleted_sessions'  => $deleted_sessions,
+			]
+		);
 	}
 
 	/**
@@ -645,5 +914,4 @@ class DevToolsController extends RestController {
 		\delete_option( 'allfeedback_settings' );
 		return $this->successResponse( [ 'reset' => true ] );
 	}
-
 }

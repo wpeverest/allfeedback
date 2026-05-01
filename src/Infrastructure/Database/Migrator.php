@@ -1,4 +1,10 @@
 <?php
+/**
+ * Migrator.
+ *
+ * @package AllFeedback\Infrastructure\Database
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -31,13 +37,15 @@ class Migrator {
 	 * @var string
 	 * @since 1.0.0
 	 */
-	private string $migrationsPath;
+	private string $migrations_path;
 
 	/**
+	 * Constructor.
+	 *
 	 * @since  1.0.0
 	 */
 	public function __construct() {
-		$this->migrationsPath = Constants::path( 'database/migrations/' );
+		$this->migrations_path = Constants::path( 'database/migrations/' );
 	}
 
 	/**
@@ -59,14 +67,16 @@ class Migrator {
 
 		$collate = $wpdb->has_cap( 'collation' ) ? $wpdb->get_charset_collate() : '';
 
-		dbDelta( "CREATE TABLE {$table} (
+		dbDelta(
+			"CREATE TABLE {$table} (
 			id        BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
 			name      VARCHAR(255)        NOT NULL,
 			batch     BIGINT(20) UNSIGNED NOT NULL,
 			ran_at    DATETIME            NOT NULL,
 			PRIMARY KEY (id),
 			UNIQUE KEY name (name)
-		) {$collate};" );
+		) {$collate};"
+		);
 	}
 
 	/**
@@ -119,8 +129,8 @@ class Migrator {
 	public function rollback( int $step = 1 ): array {
 		$this->ensureTable();
 
-		$currentBatch = $this->currentBatch();
-		$targetBatch  = max( 0, $currentBatch - $step );
+		$current_batch = $this->currentBatch();
+		$target_batch  = max( 0, $current_batch - $step );
 
 		global $wpdb;
 		$table = $this->tableName();
@@ -128,7 +138,7 @@ class Migrator {
 		$names = $wpdb->get_col(
 			$wpdb->prepare(
 				"SELECT name FROM {$table} WHERE batch > %d ORDER BY id DESC",
-				$targetBatch
+				$target_batch
 			)
 		);
 
@@ -138,26 +148,26 @@ class Migrator {
 
 		$this->doAction( 'allfeedback:migrations:before_rollback', $names );
 
-		$rolledBack = [];
-		$fileMap    = $this->fileMapByName();
+		$rolled_back = [];
+		$file_map    = $this->fileMapByName();
 
 		foreach ( $names as $name ) {
-			if ( ! isset( $fileMap[ $name ] ) ) {
+			if ( ! isset( $file_map[ $name ] ) ) {
 				continue;
 			}
 
 			$this->doAction( 'allfeedback:migration:before_rollback', $name );
 
-			$this->resolve( $fileMap[ $name ] )->down();
+			$this->resolve( $file_map[ $name ] )->down();
 			$this->deleteRan( $name );
-			$rolledBack[] = $name;
+			$rolled_back[] = $name;
 
 			$this->doAction( 'allfeedback:migration:after_rollback', $name );
 		}
 
-		$this->doAction( 'allfeedback:migrations:after_rollback', $rolledBack );
+		$this->doAction( 'allfeedback:migrations:after_rollback', $rolled_back );
 
-		return $rolledBack;
+		return $rolled_back;
 	}
 
 	/**
@@ -180,9 +190,9 @@ class Migrator {
 	public function reset(): array {
 		$this->ensureTable();
 
-		$files      = array_reverse( $this->discoverFiles() );
-		$ran        = $this->getRanNames();
-		$rolledBack = [];
+		$files       = array_reverse( $this->discoverFiles() );
+		$ran         = $this->getRanNames();
+		$rolled_back = [];
 
 		$this->doAction( 'allfeedback:migrations:before_rollback', $ran );
 
@@ -197,14 +207,14 @@ class Migrator {
 
 			$this->resolve( $file )->down();
 			$this->deleteRan( $name );
-			$rolledBack[] = $name;
+			$rolled_back[] = $name;
 
 			$this->doAction( 'allfeedback:migration:after_rollback', $name );
 		}
 
-		$this->doAction( 'allfeedback:migrations:after_rollback', $rolledBack );
+		$this->doAction( 'allfeedback:migrations:after_rollback', $rolled_back );
 
-		return $rolledBack;
+		return $rolled_back;
 	}
 
 	/**
@@ -252,18 +262,22 @@ class Migrator {
 		global $wpdb;
 		$table = $this->tableName();
 
-		$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT name, batch, ran_at FROM %i', $table ), ARRAY_A ) ?: [];
+		$rows_raw = $wpdb->get_results( $wpdb->prepare( 'SELECT name, batch, ran_at FROM %i', $table ), ARRAY_A );
+		$rows     = $rows_raw !== null && $rows_raw !== false ? $rows_raw : [];
 
-		$ranMap = [];
+		$ran_map = [];
 		foreach ( $rows as $row ) {
-			$ranMap[ $row['name'] ] = [ 'batch' => (int) $row['batch'], 'ran_at' => $row['ran_at'] ];
+			$ran_map[ $row['name'] ] = [
+				'batch' => (int) $row['batch'],
+				'ran_at' => $row['ran_at'],
+			];
 		}
 
 		$result = [];
 
 		foreach ( $this->discoverFiles() as $file ) {
 			$name = $this->nameFromFile( $file );
-			$meta = $ranMap[ $name ] ?? null;
+			$meta = $ran_map[ $name ] ?? null;
 
 			$result[] = [
 				'name'   => $name,
@@ -318,7 +332,8 @@ class Migrator {
 	private function getRanNames(): array {
 		global $wpdb;
 		$table = $this->tableName();
-		return $wpdb->get_col( $wpdb->prepare( 'SELECT name FROM %i', $table ) ) ?: [];
+		$col   = $wpdb->get_col( $wpdb->prepare( 'SELECT name FROM %i', $table ) );
+		return $col !== null && $col !== false ? $col : [];
 	}
 
 	/**
@@ -378,8 +393,9 @@ class Migrator {
 	 * @since  1.0.0
 	 */
 	private function discoverFiles(): array {
-		$path  = $this->applyFilters( 'allfeedback:migrations:path', $this->migrationsPath );
-		$files = glob( $path . '*.php' ) ?: [];
+		$path      = $this->applyFilters( 'allfeedback:migrations:path', $this->migrations_path );
+		$files_raw = glob( $path . '*.php' );
+		$files     = $files_raw !== false ? $files_raw : [];
 		sort( $files );
 
 		return $files;
@@ -402,37 +418,40 @@ class Migrator {
 	/**
 	 * Derive the migration name (basename without extension).
 	 *
-	 * @param  string $filePath Absolute path to the migration file.
+	 * @param  string $file_path Absolute path to the migration file.
 	 * @return string
 	 * @since  1.0.0
 	 */
-	private function nameFromFile( string $filePath ): string {
-		return pathinfo( $filePath, PATHINFO_FILENAME );
+	private function nameFromFile( string $file_path ): string {
+		return pathinfo( $file_path, PATHINFO_FILENAME );
 	}
 
 	/**
 	 * Instantiate the migration class from a file path.
 	 *
-	 * @param  string $filePath Absolute path to the migration file.
+	 * @param  string $file_path Absolute path to the migration file.
 	 * @return Migration
+	 * @throws \RuntimeException If the class is not found or does not extend Migration.
 	 * @since  1.0.0
 	 */
-	private function resolve( string $filePath ): Migration {
-		require_once $filePath;
+	private function resolve( string $file_path ): Migration {
+		require_once $file_path;
 
-		$filename  = pathinfo( $filePath, PATHINFO_FILENAME );
-		$className = (string) preg_replace( '/^\d+_/', '', $filename );
+		$filename   = pathinfo( $file_path, PATHINFO_FILENAME );
+		$class_name = (string) preg_replace( '/^\d+_/', '', $filename );
 
-		/** @var class-string<Migration> */
-		$fqcn = 'AllFeedback\\Database\\Migrations\\' . $className;
+		/** @var class-string<Migration> */ // phpcs:ignore Generic.Commenting.DocComment.MissingShort -- inline type hint
+		$fqcn = 'AllFeedback\\Database\\Migrations\\' . $class_name;
 
 		if ( ! class_exists( $fqcn ) ) {
-			throw new \RuntimeException( "Migration class {$fqcn} not found in {$filePath}." );
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- developer-facing exception, not user-facing HTML
+			throw new \RuntimeException( "Migration class {$fqcn} not found in {$file_path}." );
 		}
 
 		$instance = new $fqcn();
 
 		if ( ! $instance instanceof Migration ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- developer-facing exception, not user-facing HTML
 			throw new \RuntimeException( "{$fqcn} must extend Migration." );
 		}
 

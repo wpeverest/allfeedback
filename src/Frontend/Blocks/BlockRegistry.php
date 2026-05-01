@@ -1,4 +1,10 @@
 <?php
+/**
+ * Block registry.
+ *
+ * @package AllFeedback\Frontend\Blocks
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -27,6 +33,8 @@ final class BlockRegistry {
 	private array $blocks;
 
 	/**
+	 * Constructor.
+	 *
 	 * @param  AbstractBlock ...$blocks All block instances to register.
 	 * @since  1.0.0
 	 */

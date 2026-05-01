@@ -1,4 +1,10 @@
 <?php
+/**
+ * Logger.
+ *
+ * @package AllFeedback\Support
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -86,6 +92,8 @@ class Logger {
 	];
 
 	/**
+	 * Constructor.
+	 *
 	 * @param  SettingsManager $settings Plugin settings (for enabled, level, retention_days).
 	 * @since  1.0.0
 	 */
@@ -155,12 +163,11 @@ class Logger {
 	 * @since  1.0.0
 	 */
 	public function registerShutdownHandler(): void {
-		$pluginDir = defined( 'ABSPATH' )
-			? ( realpath( WP_PLUGIN_DIR . '/allfeedback' ) ?: '' )
-			: '';
+		$plugin_dir_raw = defined( 'ABSPATH' ) ? realpath( WP_PLUGIN_DIR . '/allfeedback' ) : false;
+		$plugin_dir     = $plugin_dir_raw !== false ? $plugin_dir_raw : '';
 
 		register_shutdown_function(
-			function () use ( $pluginDir ): void {
+			function () use ( $plugin_dir ): void {
 				$error = error_get_last();
 
 				if ( $error === null ) {
@@ -171,15 +178,18 @@ class Logger {
 					return;
 				}
 
-				if ( $pluginDir !== '' && strpos( $error['file'], $pluginDir ) === false ) {
+				if ( $plugin_dir !== '' && strpos( $error['file'], $plugin_dir ) === false ) {
 					return;
 				}
 
-				$this->writeFatal( $error['message'], [
-					'file' => $error['file'],
-					'line' => $error['line'],
-					'type' => $error['type'],
-				] );
+				$this->writeFatal(
+					$error['message'],
+					[
+						'file' => $error['file'],
+						'line' => $error['line'],
+						'type' => $error['type'],
+					]
+				);
 			}
 		);
 	}
@@ -351,8 +361,9 @@ class Logger {
 			return;
 		}
 
-		$cutoff = strtotime( "-{$days} days" );
-		$files  = glob( $this->logDir() . '/allfeedback-*.log' ) ?: [];
+		$cutoff    = strtotime( "-{$days} days" );
+		$files_raw = glob( $this->logDir() . '/allfeedback-*.log' );
+		$files     = $files_raw !== false ? $files_raw : [];
 
 		foreach ( $files as $file ) {
 			if ( is_file( $file ) && filemtime( $file ) < $cutoff ) {

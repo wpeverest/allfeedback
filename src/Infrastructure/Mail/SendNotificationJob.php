@@ -1,4 +1,10 @@
 <?php
+/**
+ * Send notification job.
+ *
+ * @package AllFeedback\Infrastructure\Mail
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -35,14 +41,16 @@ class SendNotificationJob extends AbstractJob {
 	];
 
 	/**
-	 * @param  SurveyRepository            $surveyRepository Repository for loading survey aggregates.
-	 * @param  SurveyPublishedNotification  $surveyPublished  Survey-published notification handler.
-	 * @param  Logger                       $logger           Logger for recording errors and info.
+	 * Constructor.
+	 *
+	 * @param  SurveyRepository            $survey_repository Repository for loading survey aggregates.
+	 * @param  SurveyPublishedNotification $survey_published  Survey-published notification handler.
+	 * @param  Logger                      $logger           Logger for recording errors and info.
 	 * @since  1.0.0
 	 */
 	public function __construct(
-		private readonly SurveyRepository $surveyRepository,
-		private readonly SurveyPublishedNotification $surveyPublished,
+		private readonly SurveyRepository $survey_repository,
+		private readonly SurveyPublishedNotification $survey_published,
 		private readonly Logger $logger,
 	) {}
 
@@ -56,14 +64,14 @@ class SendNotificationJob extends AbstractJob {
 	public function handle( AbstractJobPayload $payload ): void {
 		assert( $payload instanceof SendNotificationJobPayload );
 
-		$type = $payload->notificationType;
+		$type = $payload->notification_type;
 
 		if ( ! in_array( $type, self::VALID_TYPES, true ) ) {
 			$this->logger->error( 'Unknown notification type', [ 'type' => $type ] );
 			return;
 		}
 
-		$this->handleSurveyPublished( $payload->surveyId );
+		$this->handleSurveyPublished( $payload->survey_id );
 	}
 
 	/**
@@ -80,20 +88,20 @@ class SendNotificationJob extends AbstractJob {
 	/**
 	 * Handle the survey_published notification type.
 	 *
-	 * @param  int $surveyId Survey primary key.
+	 * @param  int $survey_id Survey primary key.
 	 * @return void
 	 * @since  1.0.0
 	 */
-	private function handleSurveyPublished( int $surveyId ): void {
-		$survey = $this->surveyRepository->findById( $surveyId );
+	private function handleSurveyPublished( int $survey_id ): void {
+		$survey = $this->survey_repository->findById( $survey_id );
 		if ( ! $survey ) {
-			$this->logger->error( 'Survey not found for notification', [ 'survey_id' => $surveyId ] );
+			$this->logger->error( 'Survey not found for notification', [ 'survey_id' => $survey_id ] );
 			return;
 		}
 
 		$context = new NotificationContext( survey: $survey );
-		$this->surveyPublished->send( $context );
+		$this->survey_published->send( $context );
 
-		$this->logger->info( 'Survey published notification sent', [ 'survey_id' => $surveyId ] );
+		$this->logger->info( 'Survey published notification sent', [ 'survey_id' => $survey_id ] );
 	}
 }

@@ -1,4 +1,10 @@
 <?php
+/**
+ * Survey repository.
+ *
+ * @package AllFeedback\Domain\Survey
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 

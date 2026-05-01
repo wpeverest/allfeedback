@@ -1,4 +1,10 @@
 <?php
+/**
+ * Survey query service.
+ *
+ * @package AllFeedback\Application\Survey
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -19,6 +25,8 @@ use AllFeedback\Domain\Survey\SurveyRepository;
 class SurveyQueryService {
 
 	/**
+	 * Constructor.
+	 *
 	 * @param  SurveyRepository $repository Persistence layer for survey aggregates.
 	 * @since  1.0.0
 	 */

@@ -1,4 +1,10 @@
 <?php
+/**
+ * Notification service provider.
+ *
+ * @package AllFeedback\Infrastructure\Mail
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -15,8 +21,8 @@ use AllFeedback\Traits\Hooks;
  * Wires WordPress action hooks to async notification jobs.
  *
  * Listened hooks → dispatched jobs:
- *   - `allfeedback:response:submitted`  → new_response_alert
- *   - `allfeedback:survey:activated`    → survey_published
+ *   - `allfeedback_response_submitted`  → new_response_alert
+ *   - `allfeedback_survey_activated`    → survey_published
  *   - `init`                            → scheduleWeeklyDigest (idempotent, AS-only)
  *
  * Jobs are dispatched via the configured {@see JobDispatcher}. When Action
@@ -24,7 +30,7 @@ use AllFeedback\Traits\Hooks;
  * sent synchronously in-process.
  *
  * To register additional notification types from a Pro add-on, hook into
- * `allfeedback:response:submitted` directly instead of modifying this class.
+ * `allfeedback_response_submitted` directly instead of modifying this class.
  *
  * @package AllFeedback\Infrastructure\Mail
  * @since   1.0.0
@@ -46,6 +52,8 @@ class NotificationServiceProvider implements ServiceProviderInterface {
 	private const DIGEST_SCHEDULED_OPTION = 'allfeedback_digest_scheduled';
 
 	/**
+	 * Constructor.
+	 *
 	 * @param  JobDispatcher $dispatcher Background job dispatcher.
 	 * @since  1.0.0
 	 */
@@ -60,8 +68,8 @@ class NotificationServiceProvider implements ServiceProviderInterface {
 	 * @since  1.0.0
 	 */
 	public function boot(): void {
-		$this->addAction( 'allfeedback:survey:activated', [ $this, 'onSurveyActivated' ] );
-		$this->addAction( 'init',                         [ $this, 'scheduleWeeklyDigest' ] );
+		$this->addAction( 'allfeedback_survey_activated', [ $this, 'onSurveyActivated' ] );
+		$this->addAction( 'init', [ $this, 'scheduleWeeklyDigest' ] );
 	}
 
 	/**
@@ -72,16 +80,16 @@ class NotificationServiceProvider implements ServiceProviderInterface {
 	 * @since  1.0.0
 	 */
 	public function onSurveyActivated( Survey $survey ): void {
-		$surveyId = (int) $survey->getId();
-		if ( $surveyId <= 0 ) {
+		$survey_id = (int) $survey->getId();
+		if ( $survey_id <= 0 ) {
 			return;
 		}
 
 		$this->dispatcher->dispatch(
 			SendNotificationJob::class,
 			new SendNotificationJobPayload(
-				notificationType: 'survey_published',
-				surveyId:         $surveyId,
+				notification_type: 'survey_published',
+				survey_id:         $survey_id,
 			)
 		);
 	}
@@ -121,14 +129,14 @@ class NotificationServiceProvider implements ServiceProviderInterface {
 		// Cancel any duplicates created before this guard was in place.
 		$this->dispatcher->cancel( SendWeeklyDigestJob::class, $payload );
 
-		$timezone   = wp_timezone();
-		$nextMonday = new \DateTimeImmutable( 'next Monday 08:00:00', $timezone );
+		$timezone    = wp_timezone();
+		$next_monday = new \DateTimeImmutable( 'next Monday 08:00:00', $timezone );
 
 		$this->dispatcher->scheduleRecurring(
 			SendWeeklyDigestJob::class,
 			$payload,
 			604800,
-			$nextMonday->getTimestamp()
+			$next_monday->getTimestamp()
 		);
 
 		update_option( self::DIGEST_SCHEDULED_OPTION, true, false );

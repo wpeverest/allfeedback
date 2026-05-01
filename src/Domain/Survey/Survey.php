@@ -1,4 +1,10 @@
 <?php
+/**
+ * Survey.
+ *
+ * @package AllFeedback\Domain\Survey
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -35,7 +41,7 @@ class Survey extends Entity {
 	 * @var string|null
 	 * @since 1.0.0
 	 */
-	private ?string $conflictReason = null;
+	private ?string $conflict_reason = null;
 
 	/**
 	 * Denormalised count of submitted responses for this survey.
@@ -43,7 +49,7 @@ class Survey extends Entity {
 	 * @var int
 	 * @since 1.0.0
 	 */
-	private int $responseCount;
+	private int $response_count;
 
 	/**
 	 * Timestamp of when the survey was first persisted.
@@ -51,7 +57,7 @@ class Survey extends Entity {
 	 * @var DateTimeImmutable
 	 * @since 1.0.0
 	 */
-	private DateTimeImmutable $createdAt;
+	private DateTimeImmutable $created_at;
 
 	/**
 	 * Timestamp of the most recent update, or null when unmodified since creation.
@@ -59,7 +65,7 @@ class Survey extends Entity {
 	 * @var DateTimeImmutable|null
 	 * @since 1.0.0
 	 */
-	private ?DateTimeImmutable $updatedAt = null;
+	private ?DateTimeImmutable $updated_at = null;
 
 	/**
 	 * Targeting rules controlling where/when the survey is displayed.
@@ -70,33 +76,36 @@ class Survey extends Entity {
 	private array $targeting;
 
 	/**
-	 * @param  string            $title         Human-readable survey title.
-	 * @param  string            $description   Optional survey description.
-	 * @param  array<mixed>      $formSchema    Structured form field definitions.
-	 * @param  array<mixed>      $settings      Survey display and behaviour settings.
-	 * @param  array<mixed>      $styling       Visual customisation overrides.
-	 * @param  array<mixed>      $targeting     Targeting rules.
-	 * @param  int               $createdBy     WordPress user ID of the author.
-	 * @param  SurveyStatus|null $status        Initial status; defaults to Draft.
-	 * @param  int               $responseCount Seed value for the response counter.
+	 * Constructor.
+	 *
+	 * @param  string                 $title         Human-readable survey title.
+	 * @param  string                 $description   Optional survey description.
+	 * @param  array<mixed>           $form_schema    Structured form field definitions.
+	 * @param  array<mixed>           $settings      Survey display and behaviour settings.
+	 * @param  array<mixed>           $styling       Visual customisation overrides.
+	 * @param  array<mixed>           $targeting     Targeting rules.
+	 * @param  int                    $created_by     WordPress user ID of the author.
+	 * @param  SurveyStatus|null      $status        Initial status; defaults to Draft.
+	 * @param  int                    $response_count Seed value for the response counter.
+	 * @param  DateTimeImmutable|null $created_at     Optional creation timestamp; defaults to now.
 	 * @since  1.0.0
 	 */
 	public function __construct(
 		private string $title,
 		private string $description = '',
-		private array $formSchema = [],
+		private array $form_schema = [],
 		private array $settings = [],
 		private array $styling = [],
 		array $targeting = [],
-		private int $createdBy = 0,
+		private int $created_by = 0,
 		?SurveyStatus $status = null,
-		int $responseCount = 0,
-		?DateTimeImmutable $createdAt = null,
+		int $response_count = 0,
+		?DateTimeImmutable $created_at = null,
 	) {
-		$this->targeting     = $targeting;
-		$this->status        = $status ?? SurveyStatus::Draft;
-		$this->responseCount = $responseCount;
-		$this->createdAt     = $createdAt ?? new DateTimeImmutable();
+		$this->targeting      = $targeting;
+		$this->status         = $status ?? SurveyStatus::Draft;
+		$this->response_count = $response_count;
+		$this->created_at     = $created_at ?? new DateTimeImmutable();
 	}
 
 	/**
@@ -105,15 +114,16 @@ class Survey extends Entity {
 	 * @param  int                    $id             Primary key.
 	 * @param  string                 $title          Survey title.
 	 * @param  string                 $description    Survey description.
-	 * @param  array<mixed>           $formSchema     Decoded form schema.
+	 * @param  array<mixed>           $form_schema     Decoded form schema.
 	 * @param  array<mixed>           $settings       Decoded settings.
 	 * @param  SurveyStatus           $status         Current status.
-	 * @param  int                    $responseCount  Denormalised response count.
-	 * @param  int                    $createdBy      Author user ID.
-	 * @param  DateTimeImmutable      $createdAt      Creation timestamp.
-	 * @param  DateTimeImmutable|null $updatedAt      Last-updated timestamp.
+	 * @param  int                    $response_count  Denormalised response count.
+	 * @param  int                    $created_by      Author user ID.
+	 * @param  DateTimeImmutable      $created_at      Creation timestamp.
+	 * @param  DateTimeImmutable|null $updated_at      Last-updated timestamp.
 	 * @param  array<mixed>           $styling        Styling overrides.
-	 * @param  string|null            $conflictReason Targeting conflict explanation.
+	 * @param  string|null            $conflict_reason Targeting conflict explanation.
+	 * @param  array<mixed>           $targeting       Targeting rules.
 	 * @return self
 	 * @since  1.0.0
 	 */
@@ -121,21 +131,21 @@ class Survey extends Entity {
 		int $id,
 		string $title,
 		string $description,
-		array $formSchema,
+		array $form_schema,
 		array $settings,
 		SurveyStatus $status,
-		int $responseCount,
-		int $createdBy,
-		DateTimeImmutable $createdAt,
-		?DateTimeImmutable $updatedAt = null,
+		int $response_count,
+		int $created_by,
+		DateTimeImmutable $created_at,
+		?DateTimeImmutable $updated_at = null,
 		array $styling = [],
-		?string $conflictReason = null,
+		?string $conflict_reason = null,
 		array $targeting = [],
 	): self {
-		$survey                 = new self( $title, $description, $formSchema, $settings, $styling, $targeting, $createdBy, $status, $responseCount, $createdAt );
-		$survey->id             = $id;
-		$survey->updatedAt      = $updatedAt;
-		$survey->conflictReason = $conflictReason;
+		$survey                  = new self( $title, $description, $form_schema, $settings, $styling, $targeting, $created_by, $status, $response_count, $created_at );
+		$survey->id              = $id;
+		$survey->updated_at      = $updated_at;
+		$survey->conflict_reason = $conflict_reason;
 		return $survey;
 	}
 
@@ -190,18 +200,18 @@ class Survey extends Entity {
 	 * @since  1.0.0
 	 */
 	public function getFormSchema(): array {
-		return $this->formSchema;
+		return $this->form_schema;
 	}
 
 	/**
 	 * Replace the form schema and record a modification timestamp.
 	 *
-	 * @param  array<mixed> $formSchema New form schema.
+	 * @param  array<mixed> $form_schema New form schema.
 	 * @return void
 	 * @since  1.0.0
 	 */
-	public function setFormSchema( array $formSchema ): void {
-		$this->formSchema = $formSchema;
+	public function setFormSchema( array $form_schema ): void {
+		$this->form_schema = $form_schema;
 		$this->touch();
 	}
 
@@ -300,7 +310,7 @@ class Survey extends Entity {
 	 * @since  1.0.0
 	 */
 	public function getConflictReason(): ?string {
-		return $this->conflictReason;
+		return $this->conflict_reason;
 	}
 
 	/**
@@ -311,7 +321,7 @@ class Survey extends Entity {
 	 * @since  1.0.0
 	 */
 	public function setConflictReason( ?string $reason ): void {
-		$this->conflictReason = $reason;
+		$this->conflict_reason = $reason;
 	}
 
 	/**
@@ -321,7 +331,7 @@ class Survey extends Entity {
 	 * @since  1.0.0
 	 */
 	public function getResponseCount(): int {
-		return $this->responseCount;
+		return $this->response_count;
 	}
 
 	/**
@@ -331,7 +341,7 @@ class Survey extends Entity {
 	 * @since  1.0.0
 	 */
 	public function getCreatedBy(): int {
-		return $this->createdBy;
+		return $this->created_by;
 	}
 
 	/**
@@ -341,7 +351,7 @@ class Survey extends Entity {
 	 * @since  1.0.0
 	 */
 	public function getCreatedAt(): DateTimeImmutable {
-		return $this->createdAt;
+		return $this->created_at;
 	}
 
 	/**
@@ -351,7 +361,7 @@ class Survey extends Entity {
 	 * @since  1.0.0
 	 */
 	public function getUpdatedAt(): ?DateTimeImmutable {
-		return $this->updatedAt;
+		return $this->updated_at;
 	}
 
 	/**
@@ -405,7 +415,7 @@ class Survey extends Entity {
 	 * @since  1.0.0
 	 */
 	public function incrementResponseCount(): void {
-		++$this->responseCount;
+		++$this->response_count;
 		$this->touch();
 	}
 
@@ -420,15 +430,15 @@ class Survey extends Entity {
 			'id'             => $this->id,
 			'title'          => $this->title,
 			'description'    => $this->description,
-			'form_schema'    => $this->formSchema,
+			'form_schema'    => $this->form_schema,
 			'settings'       => $this->settings,
 			'styling'        => $this->styling,
 			'targeting'      => $this->targeting,
 			'status'         => $this->status->value,
-			'response_count' => $this->responseCount,
-			'created_by'     => $this->createdBy,
-			'created_at'     => $this->createdAt->format( 'Y-m-d H:i:s' ),
-			'updated_at'     => $this->updatedAt?->format( 'Y-m-d H:i:s' ),
+			'response_count' => $this->response_count,
+			'created_by'     => $this->created_by,
+			'created_at'     => $this->created_at->format( 'Y-m-d H:i:s' ),
+			'updated_at'     => $this->updated_at?->format( 'Y-m-d H:i:s' ),
 		];
 	}
 
@@ -439,6 +449,6 @@ class Survey extends Entity {
 	 * @since  1.0.0
 	 */
 	private function touch(): void {
-		$this->updatedAt = new DateTimeImmutable();
+		$this->updated_at = new DateTimeImmutable();
 	}
 }

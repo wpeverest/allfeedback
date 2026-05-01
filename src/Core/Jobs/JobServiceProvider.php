@@ -1,4 +1,10 @@
 <?php
+/**
+ * Job service provider.
+ *
+ * @package AllFeedback\Core\Jobs
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -26,6 +32,8 @@ class JobServiceProvider implements ServiceProviderInterface {
 	use Hooks;
 
 	/**
+	 * Constructor.
+	 *
 	 * @param  ActionSchedulerRunner $runner The job runner that listens for the run hook.
 	 * @since  1.0.0
 	 */

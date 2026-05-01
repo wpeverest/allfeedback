@@ -1,4 +1,10 @@
 <?php
+/**
+ * Event subscriber.
+ *
+ * @package AllFeedback\Core\Events
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 

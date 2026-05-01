@@ -1,4 +1,10 @@
 <?php
+/**
+ * Send notification job payload.
+ *
+ * @package AllFeedback\Infrastructure\Mail
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -20,15 +26,17 @@ use AllFeedback\Core\Jobs\AbstractJobPayload;
 class SendNotificationJobPayload extends AbstractJobPayload {
 
 	/**
-	 * @param  string $notificationType Notification type identifier (e.g. `new_response_alert`).
-	 * @param  int    $surveyId         Survey primary key.
-	 * @param  int    $responseId       Response primary key (0 for survey-only notifications).
+	 * Constructor.
+	 *
+	 * @param  string $notification_type Notification type identifier (e.g. `new_response_alert`).
+	 * @param  int    $survey_id         Survey primary key.
+	 * @param  int    $response_id       Response primary key (0 for survey-only notifications).
 	 * @since  1.0.0
 	 */
 	public function __construct(
-		public readonly string $notificationType = '',
-		public readonly int $surveyId = 0,
-		public readonly int $responseId = 0,
+		public readonly string $notification_type = '',
+		public readonly int $survey_id = 0,
+		public readonly int $response_id = 0,
 	) {}
 
 	/**
@@ -40,9 +48,9 @@ class SendNotificationJobPayload extends AbstractJobPayload {
 	 */
 	public static function fromArray( array $data ): self {
 		return new self(
-			notificationType: (string) ( $data['notificationType'] ?? '' ),
-			surveyId: (int) ( $data['surveyId'] ?? 0 ),
-			responseId: (int) ( $data['responseId'] ?? 0 ),
+			notification_type: (string) ( $data['notificationType'] ?? '' ),
+			survey_id: (int) ( $data['surveyId'] ?? 0 ),
+			response_id: (int) ( $data['responseId'] ?? 0 ),
 		);
 	}
 
@@ -54,9 +62,9 @@ class SendNotificationJobPayload extends AbstractJobPayload {
 	 */
 	public function toArray(): array {
 		return [
-			'notificationType' => $this->notificationType,
-			'surveyId'         => $this->surveyId,
-			'responseId'       => $this->responseId,
+			'notificationType' => $this->notification_type,
+			'surveyId'         => $this->survey_id,
+			'responseId'       => $this->response_id,
 		];
 	}
 }

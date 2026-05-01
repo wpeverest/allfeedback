@@ -1,4 +1,10 @@
 <?php
+/**
+ * Wpdb survey session repository.
+ *
+ * @package AllFeedback\Infrastructure\Database\Repositories
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -12,12 +18,14 @@ use AllFeedback\Domain\Analytics\SurveySessionRepository;
 // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
 
 /**
- * wpdb-backed implementation of SurveySessionRepository.
+ * Wpdb-backed implementation of SurveySessionRepository.
  *
  * @package AllFeedback\Infrastructure\Database\Repositories
  * @since   1.0.0
  */
 class WpdbSurveySessionRepository implements SurveySessionRepository {
+
+	// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- $this->table is a trusted class property, never user input
 
 	/**
 	 * Fully-qualified table name including the wpdb prefix.
@@ -36,6 +44,8 @@ class WpdbSurveySessionRepository implements SurveySessionRepository {
 	private const ABANDON_TIMEOUT_MINUTES = 30;
 
 	/**
+	 * Constructor.
+	 *
 	 * @since  1.0.0
 	 */
 	public function __construct() {
@@ -54,8 +64,8 @@ class WpdbSurveySessionRepository implements SurveySessionRepository {
 	public function save( SurveySession $session ): SurveySession {
 		global $wpdb;
 
-		$fmt     = 'Y-m-d H:i:s';
-		$toStr   = static fn( ?\DateTimeImmutable $d ): ?string => $d?->format( $fmt );
+		$fmt    = 'Y-m-d H:i:s';
+		$to_str = static fn( ?\DateTimeImmutable $d ): ?string => $d?->format( $fmt );
 
 		$data = [
 			'survey_id'      => $session->getSurveyId(),
@@ -63,9 +73,9 @@ class WpdbSurveySessionRepository implements SurveySessionRepository {
 			'user_id'        => $session->getUserId(),
 			'guest_id'       => $session->getGuestId(),
 			'status'         => $session->getStatus(),
-			'started_at'     => $toStr( $session->getStartedAt() ),
-			'submitted_at'   => $toStr( $session->getSubmittedAt() ),
-			'abandoned_at'   => $toStr( $session->getAbandonedAt() ),
+			'started_at'     => $to_str( $session->getStartedAt() ),
+			'submitted_at'   => $to_str( $session->getSubmittedAt() ),
+			'abandoned_at'   => $to_str( $session->getAbandonedAt() ),
 			'last_active_at' => $session->getLastActiveAt()->format( $fmt ),
 			'created_at'     => $session->getCreatedAt()->format( $fmt ),
 		];
@@ -85,9 +95,9 @@ class WpdbSurveySessionRepository implements SurveySessionRepository {
 				$this->table,
 				[
 					'status'         => $session->getStatus(),
-					'started_at'     => $toStr( $session->getStartedAt() ),
-					'submitted_at'   => $toStr( $session->getSubmittedAt() ),
-					'abandoned_at'   => $toStr( $session->getAbandonedAt() ),
+					'started_at'     => $to_str( $session->getStartedAt() ),
+					'submitted_at'   => $to_str( $session->getSubmittedAt() ),
+					'abandoned_at'   => $to_str( $session->getAbandonedAt() ),
 					'last_active_at' => $session->getLastActiveAt()->format( $fmt ),
 				],
 				[ 'id' => $session->getId() ],
@@ -106,17 +116,17 @@ class WpdbSurveySessionRepository implements SurveySessionRepository {
 	/**
 	 * Find a session by its client-generated UUID, or null when absent.
 	 *
-	 * @param  string $sessionId Client-generated session UUID.
+	 * @param  string $session_id Client-generated session UUID.
 	 * @return SurveySession|null
 	 * @since  1.0.0
 	 */
-	public function findBySessionId( string $sessionId ): ?SurveySession {
+	public function findBySessionId( string $session_id ): ?SurveySession {
 		global $wpdb;
 
 		$row = $wpdb->get_row(
 			$wpdb->prepare(
 				"SELECT * FROM `{$this->table}` WHERE session_id = %s LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$sessionId
+				$session_id
 			),
 			ARRAY_A
 		);
@@ -195,30 +205,33 @@ class WpdbSurveySessionRepository implements SurveySessionRepository {
 				   OR started_at   IS NOT NULL
 				   OR submitted_at IS NOT NULL
 				   OR last_active_at < DATE_SUB(NOW(), INTERVAL %d MINUTE)",
-				$t, $t, $t, $t
+				$t,
+				$t,
+				$t,
+				$t
 			),
 			ARRAY_A
 		);
 
 		return [
-			'completion_rate'             => isset( $row['completion_rate'] )             ? (float) $row['completion_rate']             : null,
-			'this_week_completion_rate'   => isset( $row['this_week_completion_rate'] )   ? (float) $row['this_week_completion_rate']   : null,
-			'last_week_completion_rate'   => isset( $row['last_week_completion_rate'] )   ? (float) $row['last_week_completion_rate']   : null,
-			'abandonment_rate'            => isset( $row['abandonment_rate'] )            ? (float) $row['abandonment_rate']            : null,
-			'this_week_abandonment_rate'  => isset( $row['this_week_abandonment_rate'] )  ? (float) $row['this_week_abandonment_rate']  : null,
-			'last_week_abandonment_rate'  => isset( $row['last_week_abandonment_rate'] )  ? (float) $row['last_week_abandonment_rate']  : null,
+			'completion_rate'             => isset( $row['completion_rate'] ) ? (float) $row['completion_rate'] : null,
+			'this_week_completion_rate'   => isset( $row['this_week_completion_rate'] ) ? (float) $row['this_week_completion_rate'] : null,
+			'last_week_completion_rate'   => isset( $row['last_week_completion_rate'] ) ? (float) $row['last_week_completion_rate'] : null,
+			'abandonment_rate'            => isset( $row['abandonment_rate'] ) ? (float) $row['abandonment_rate'] : null,
+			'this_week_abandonment_rate'  => isset( $row['this_week_abandonment_rate'] ) ? (float) $row['this_week_abandonment_rate'] : null,
+			'last_week_abandonment_rate'  => isset( $row['last_week_abandonment_rate'] ) ? (float) $row['last_week_abandonment_rate'] : null,
 		];
 	}
 
 	/**
 	 * Same as getOverviewSessionStats() but scoped to a specific set of survey IDs.
 	 *
-	 * @param  int[] $surveyIds Survey primary keys to include.
+	 * @param  int[] $survey_ids Survey primary keys to include.
 	 * @return array{completion_rate: float|null, this_week_completion_rate: float|null, last_week_completion_rate: float|null, abandonment_rate: float|null, this_week_abandonment_rate: float|null, last_week_abandonment_rate: float|null}
 	 * @since  1.0.0
 	 */
-	public function getOverviewSessionStatsForSurveys( array $surveyIds ): array {
-		if ( empty( $surveyIds ) ) {
+	public function getOverviewSessionStatsForSurveys( array $survey_ids ): array {
+		if ( empty( $survey_ids ) ) {
 			return [
 				'completion_rate'            => null,
 				'this_week_completion_rate'  => null,
@@ -232,10 +245,9 @@ class WpdbSurveySessionRepository implements SurveySessionRepository {
 		global $wpdb;
 
 		$t            = self::ABANDON_TIMEOUT_MINUTES;
-		$placeholders = implode( ',', array_fill( 0, count( $surveyIds ), '%d' ) );
+		$placeholders = implode( ',', array_fill( 0, count( $survey_ids ), '%d' ) );
 
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
-		$params = array_merge( [ $t, $t, $t ], $surveyIds, [ $t ] );
+		$params = array_merge( [ $t, $t, $t ], $survey_ids, [ $t ] );
 		$row    = $wpdb->get_row(
 			$wpdb->prepare(
 				"SELECT
@@ -300,13 +312,12 @@ class WpdbSurveySessionRepository implements SurveySessionRepository {
 			),
 			ARRAY_A
 		);
-		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 
 		return [
-			'completion_rate'            => isset( $row['completion_rate'] )            ? (float) $row['completion_rate']            : null,
-			'this_week_completion_rate'  => isset( $row['this_week_completion_rate'] )  ? (float) $row['this_week_completion_rate']  : null,
-			'last_week_completion_rate'  => isset( $row['last_week_completion_rate'] )  ? (float) $row['last_week_completion_rate']  : null,
-			'abandonment_rate'           => isset( $row['abandonment_rate'] )           ? (float) $row['abandonment_rate']           : null,
+			'completion_rate'            => isset( $row['completion_rate'] ) ? (float) $row['completion_rate'] : null,
+			'this_week_completion_rate'  => isset( $row['this_week_completion_rate'] ) ? (float) $row['this_week_completion_rate'] : null,
+			'last_week_completion_rate'  => isset( $row['last_week_completion_rate'] ) ? (float) $row['last_week_completion_rate'] : null,
+			'abandonment_rate'           => isset( $row['abandonment_rate'] ) ? (float) $row['abandonment_rate'] : null,
 			'this_week_abandonment_rate' => isset( $row['this_week_abandonment_rate'] ) ? (float) $row['this_week_abandonment_rate'] : null,
 			'last_week_abandonment_rate' => isset( $row['last_week_abandonment_rate'] ) ? (float) $row['last_week_abandonment_rate'] : null,
 		];
@@ -315,31 +326,30 @@ class WpdbSurveySessionRepository implements SurveySessionRepository {
 	/**
 	 * Return aggregate session metrics across every survey, optionally filtered by date range.
 	 *
-	 * @param  string|null $dateFrom Optional start date Y-m-d.
-	 * @param  string|null $dateTo   Optional end date Y-m-d.
+	 * @param  string|null $date_from Optional start date Y-m-d.
+	 * @param  string|null $date_to   Optional end date Y-m-d.
 	 * @return array<string, int|float|null>
 	 * @since  1.0.0
 	 */
-	public function getGlobalAnalytics( ?string $dateFrom = null, ?string $dateTo = null ): array {
+	public function getGlobalAnalytics( ?string $date_from = null, ?string $date_to = null ): array {
 		global $wpdb;
 
 		$timeout = self::ABANDON_TIMEOUT_MINUTES;
 		$where   = [];
 		$params  = [ $timeout ];
 
-		if ( $dateFrom !== null ) {
+		if ( $date_from !== null ) {
 			$where[]  = 'DATE(created_at) >= %s';
-			$params[] = $dateFrom;
+			$params[] = $date_from;
 		}
 
-		if ( $dateTo !== null ) {
+		if ( $date_to !== null ) {
 			$where[]  = 'DATE(created_at) <= %s';
-			$params[] = $dateTo;
+			$params[] = $date_to;
 		}
 
-		$whereClause = $where !== [] ? 'AND ' . implode( ' AND ', $where ) : '';
+		$where_clause = $where !== [] ? 'AND ' . implode( ' AND ', $where ) : '';
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
 		$row = $wpdb->get_row(
 			$wpdb->prepare(
 				"SELECT
@@ -370,7 +380,7 @@ class WpdbSurveySessionRepository implements SurveySessionRepository {
 						)
 					, 0)                                                                         AS avg_completion_time
 				FROM `{$this->table}`
-				WHERE 1=1 {$whereClause}",
+				WHERE 1=1 {$where_clause}",
 				...$params
 			),
 			ARRAY_A
@@ -391,30 +401,29 @@ class WpdbSurveySessionRepository implements SurveySessionRepository {
 			'total_views'         => (int) $row['total_views'],
 			'total_starts'        => (int) $row['total_starts'],
 			'total_submissions'   => (int) $row['total_submissions'],
-			'completion_rate'     => $row['completion_rate']     !== null ? (float) $row['completion_rate']     : null,
-			'abandonment_rate'    => $row['abandonment_rate']    !== null ? (float) $row['abandonment_rate']    : null,
-			'avg_completion_time' => $row['avg_completion_time'] !== null ? (int)   $row['avg_completion_time'] : null,
+			'completion_rate'     => $row['completion_rate'] !== null ? (float) $row['completion_rate'] : null,
+			'abandonment_rate'    => $row['abandonment_rate'] !== null ? (float) $row['abandonment_rate'] : null,
+			'avg_completion_time' => $row['avg_completion_time'] !== null ? (int) $row['avg_completion_time'] : null,
 		];
 	}
 
 	/**
 	 * Return session analytics for multiple surveys in a single query, keyed by survey_id.
 	 *
-	 * @param  int[] $surveyIds Survey primary keys.
+	 * @param  int[] $survey_ids Survey primary keys.
 	 * @return array<int, array<string, int|float|null>>
 	 * @since  1.0.0
 	 */
-	public function getAnalyticsForAllSurveys( array $surveyIds ): array {
-		if ( empty( $surveyIds ) ) {
+	public function getAnalyticsForAllSurveys( array $survey_ids ): array {
+		if ( empty( $survey_ids ) ) {
 			return [];
 		}
 
 		global $wpdb;
 
 		$timeout      = self::ABANDON_TIMEOUT_MINUTES;
-		$placeholders = implode( ',', array_fill( 0, count( $surveyIds ), '%d' ) );
+		$placeholders = implode( ',', array_fill( 0, count( $survey_ids ), '%d' ) );
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT
@@ -449,10 +458,11 @@ class WpdbSurveySessionRepository implements SurveySessionRepository {
 				WHERE survey_id IN ({$placeholders})
 				GROUP BY survey_id",
 				$timeout,
-				...$surveyIds
+				...$survey_ids
 			),
 			ARRAY_A
-		) ?: [];
+		);
+		$rows = $rows !== null && $rows !== false ? $rows : [];
 
 		$result = [];
 		foreach ( $rows as $row ) {
@@ -461,9 +471,9 @@ class WpdbSurveySessionRepository implements SurveySessionRepository {
 				'total_views'         => (int) $row['total_views'],
 				'total_starts'        => (int) $row['total_starts'],
 				'total_submissions'   => (int) $row['total_submissions'],
-				'completion_rate'     => $row['completion_rate']     !== null ? (float) $row['completion_rate']     : null,
-				'abandonment_rate'    => $row['abandonment_rate']    !== null ? (float) $row['abandonment_rate']    : null,
-				'avg_completion_time' => $row['avg_completion_time'] !== null ? (int)   $row['avg_completion_time'] : null,
+				'completion_rate'     => $row['completion_rate'] !== null ? (float) $row['completion_rate'] : null,
+				'abandonment_rate'    => $row['abandonment_rate'] !== null ? (float) $row['abandonment_rate'] : null,
+				'avg_completion_time' => $row['avg_completion_time'] !== null ? (int) $row['avg_completion_time'] : null,
 			];
 		}
 
@@ -473,11 +483,11 @@ class WpdbSurveySessionRepository implements SurveySessionRepository {
 	/**
 	 * Return full session analytics for one survey with WoW windows in one conditional-aggregation query.
 	 *
-	 * @param  int $surveyId Survey primary key.
+	 * @param  int $survey_id Survey primary key.
 	 * @return array<string, int|float|null>
 	 * @since  1.0.0
 	 */
-	public function getFormSessionStatsWithWoW( int $surveyId ): array {
+	public function getFormSessionStatsWithWoW( int $survey_id ): array {
 		global $wpdb;
 
 		$t = self::ABANDON_TIMEOUT_MINUTES;
@@ -548,7 +558,10 @@ class WpdbSurveySessionRepository implements SurveySessionRepository {
 					, 2)                                                                                        AS last_week_abandonment_rate
 				FROM `{$this->table}`
 				WHERE survey_id = %d",
-				$t, $t, $t, $surveyId
+				$t,
+				$t,
+				$t,
+				$survey_id
 			),
 			ARRAY_A
 		);
@@ -572,11 +585,11 @@ class WpdbSurveySessionRepository implements SurveySessionRepository {
 			'total_views'                => (int) $row['total_views'],
 			'total_starts'               => (int) $row['total_starts'],
 			'total_submissions'          => (int) $row['total_submissions'],
-			'avg_completion_time'        => $row['avg_completion_time']        !== null ? (int)   $row['avg_completion_time']        : null,
-			'completion_rate'            => $row['completion_rate']            !== null ? (float) $row['completion_rate']            : null,
-			'this_week_completion_rate'  => $row['this_week_completion_rate']  !== null ? (float) $row['this_week_completion_rate']  : null,
-			'last_week_completion_rate'  => $row['last_week_completion_rate']  !== null ? (float) $row['last_week_completion_rate']  : null,
-			'abandonment_rate'           => $row['abandonment_rate']           !== null ? (float) $row['abandonment_rate']           : null,
+			'avg_completion_time'        => $row['avg_completion_time'] !== null ? (int) $row['avg_completion_time'] : null,
+			'completion_rate'            => $row['completion_rate'] !== null ? (float) $row['completion_rate'] : null,
+			'this_week_completion_rate'  => $row['this_week_completion_rate'] !== null ? (float) $row['this_week_completion_rate'] : null,
+			'last_week_completion_rate'  => $row['last_week_completion_rate'] !== null ? (float) $row['last_week_completion_rate'] : null,
+			'abandonment_rate'           => $row['abandonment_rate'] !== null ? (float) $row['abandonment_rate'] : null,
 			'this_week_abandonment_rate' => $row['this_week_abandonment_rate'] !== null ? (float) $row['this_week_abandonment_rate'] : null,
 			'last_week_abandonment_rate' => $row['last_week_abandonment_rate'] !== null ? (float) $row['last_week_abandonment_rate'] : null,
 		];
@@ -586,11 +599,11 @@ class WpdbSurveySessionRepository implements SurveySessionRepository {
 	 * Return aggregate analytics for a survey using timestamps as source of truth.
 	 * Abandonment includes explicit closes AND timed-out started sessions.
 	 *
-	 * @param  int $surveyId Survey primary key.
+	 * @param  int $survey_id Survey primary key.
 	 * @return array<string, int|float|null>
 	 * @since  1.0.0
 	 */
-	public function getAnalytics( int $surveyId ): array {
+	public function getAnalytics( int $survey_id ): array {
 		global $wpdb;
 
 		$timeout = self::ABANDON_TIMEOUT_MINUTES;
@@ -628,7 +641,7 @@ class WpdbSurveySessionRepository implements SurveySessionRepository {
 				FROM `{$this->table}`
 				WHERE survey_id = %d",
 				$timeout,
-				$surveyId
+				$survey_id
 			),
 			ARRAY_A
 		);
@@ -648,9 +661,9 @@ class WpdbSurveySessionRepository implements SurveySessionRepository {
 			'total_views'         => (int) $row['total_views'],
 			'total_starts'        => (int) $row['total_starts'],
 			'total_submissions'   => (int) $row['total_submissions'],
-			'completion_rate'     => $row['completion_rate']     !== null ? (float) $row['completion_rate']     : null,
-			'abandonment_rate'    => $row['abandonment_rate']    !== null ? (float) $row['abandonment_rate']    : null,
-			'avg_completion_time' => $row['avg_completion_time'] !== null ? (int)   $row['avg_completion_time'] : null,
+			'completion_rate'     => $row['completion_rate'] !== null ? (float) $row['completion_rate'] : null,
+			'abandonment_rate'    => $row['abandonment_rate'] !== null ? (float) $row['abandonment_rate'] : null,
+			'avg_completion_time' => $row['avg_completion_time'] !== null ? (int) $row['avg_completion_time'] : null,
 		];
 	}
 }

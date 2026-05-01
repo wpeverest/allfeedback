@@ -1,4 +1,10 @@
 <?php
+/**
+ * Survey block.
+ *
+ * @package AllFeedback\Frontend\Blocks
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -30,13 +36,15 @@ use AllFeedback\Domain\Survey\SurveyRepository;
 class SurveyBlock extends AbstractBlock {
 
 	/**
+	 * Constructor.
+	 *
 	 * @param  Container       $container       DI container for lazy repository resolution.
-	 * @param  SettingsManager $settingsManager Plugin settings for widget colour injection.
+	 * @param  SettingsManager $settings_manager Plugin settings for widget colour injection.
 	 * @since  1.0.0
 	 */
 	public function __construct(
 		private readonly Container $container,
-		private readonly SettingsManager $settingsManager,
+		private readonly SettingsManager $settings_manager,
 	) {}
 
 	/**
@@ -52,25 +60,27 @@ class SurveyBlock extends AbstractBlock {
 	/**
 	 * Inject plugin settings into the block editor script after registration.
 	 *
-	 * window.__ALLFB_BLOCK__ is read by the React editor component to apply
+	 * The window.__ALLFB_BLOCK__ global is read by the React editor component to apply
 	 * the correct accent colour to the form preview.
 	 *
-	 * @param  \WP_Block_Type $blockType Registered block type object.
+	 * @param  \WP_Block_Type $block_type Registered block type object.
 	 * @return void
 	 * @since  1.0.0
 	 */
-	protected function afterRegister( \WP_Block_Type $blockType ): void {
-		if ( empty( $blockType->editor_script_handles ) ) {
+	protected function afterRegister( \WP_Block_Type $block_type ): void {
+		if ( empty( $block_type->editor_script_handles ) ) {
 			return;
 		}
 
-		$widgetSettings = (array) $this->settingsManager->get( 'general.widget' );
+		$widget_settings = (array) $this->settings_manager->get( 'general.widget' );
 
 		wp_add_inline_script(
-			$blockType->editor_script_handles[0],
-			'window.__ALLFB_BLOCK__ = ' . wp_json_encode( [
-				'color' => $widgetSettings['color'] ?? '#6366f1',
-			] ) . ';',
+			$block_type->editor_script_handles[0],
+			'window.__ALLFB_BLOCK__ = ' . wp_json_encode(
+				[
+					'color' => $widget_settings['color'] ?? '#6366f1',
+				]
+			) . ';',
 			'before'
 		);
 	}
@@ -86,15 +96,14 @@ class SurveyBlock extends AbstractBlock {
 	 * @since  1.0.0
 	 */
 	public function render( array $attributes ): string {
-		$surveyId = (int) ( $attributes['surveyId'] ?? 0 );
+		$survey_id = (int) ( $attributes['surveyId'] ?? 0 );
 
-		if ( $surveyId <= 0 ) {
+		if ( $survey_id <= 0 ) {
 			return '';
 		}
 
-		/** @var SurveyRepository $repo */
-		$repo   = $this->container->get( SurveyRepository::class );
-		$survey = $repo->findById( $surveyId );
+		/** @var SurveyRepository $repo */ // phpcs:ignore Generic.Commenting.DocComment.MissingShort -- inline type hint		$repo   = $this->container->get( SurveyRepository::class );
+		$survey = $repo->findById( $survey_id );
 
 		if ( $survey === null || ! $survey->getStatus()->isPublished() ) {
 			return '';
@@ -104,7 +113,7 @@ class SurveyBlock extends AbstractBlock {
 
 		return sprintf(
 			'<div class="allfb-embed" data-survey-id="%d" data-nonce="%s" role="region" aria-label="%s"></div>',
-			$surveyId,
+			$survey_id,
 			$nonce,
 			esc_attr( $survey->getTitle() )
 		);

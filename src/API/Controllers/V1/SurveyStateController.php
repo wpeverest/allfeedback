@@ -1,4 +1,10 @@
 <?php
+/**
+ * Survey state controller.
+ *
+ * @package AllFeedback\API\Controllers\V1
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -30,18 +36,23 @@ use AllFeedback\Domain\Survey\SurveyRepository;
 class SurveyStateController extends RestController {
 
 	/**
+	 * REST resource slug.
+	 *
+	 * @var string
 	 * @since 1.0.0
 	 */
-	protected string $restBase = 'surveys';
+	protected string $rest_base = 'surveys';
 
 	/**
-	 * @param  SurveyStateService $stateService     Reads/writes user_meta survey state.
-	 * @param  SurveyRepository   $surveyRepository Used to verify the survey exists.
+	 * Constructor.
+	 *
+	 * @param  SurveyStateService $state_service     Reads/writes user_meta survey state.
+	 * @param  SurveyRepository   $survey_repository Used to verify the survey exists.
 	 * @since  1.0.0
 	 */
 	public function __construct(
-		private readonly SurveyStateService $stateService,
-		private readonly SurveyRepository $surveyRepository,
+		private readonly SurveyStateService $state_service,
+		private readonly SurveyRepository $survey_repository,
 	) {}
 
 	/**
@@ -53,7 +64,7 @@ class SurveyStateController extends RestController {
 	public function registerRoutes(): void {
 		register_rest_route(
 			$this->namespace,
-			'/' . $this->restBase . '/(?P<id>\d+)/state',
+			'/' . $this->rest_base . '/(?P<id>\d+)/state',
 			[
 				'methods'             => \WP_REST_Server::CREATABLE,
 				'callback'            => [ $this, 'handle' ],
@@ -84,20 +95,20 @@ class SurveyStateController extends RestController {
 	 * @since  1.0.0
 	 */
 	public function handle( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
-		$surveyId = (int) $request->get_param( 'id' );
-		$userId   = get_current_user_id();
-		$action   = (string) $request->get_param( 'action' );
+		$survey_id = (int) $request->get_param( 'id' );
+		$user_id   = get_current_user_id();
+		$action    = (string) $request->get_param( 'action' );
 
-		$survey = $this->surveyRepository->findById( $surveyId );
+		$survey = $this->survey_repository->findById( $survey_id );
 
 		if ( $survey === null || ! $survey->getStatus()->isPublished() ) {
 			return $this->notFoundResponse( __( 'Survey', 'allfeedback' ) );
 		}
 
 		match ( $action ) {
-			'impression' => $this->stateService->recordImpression( $userId, $surveyId ),
-			'dismiss'    => $this->stateService->recordDismissal( $userId, $surveyId ),
-			'submit'     => $this->stateService->recordSubmit( $userId, $surveyId ),
+			'impression' => $this->state_service->recordImpression( $user_id, $survey_id ),
+			'dismiss'    => $this->state_service->recordDismissal( $user_id, $survey_id ),
+			'submit'     => $this->state_service->recordSubmit( $user_id, $survey_id ),
 		};
 
 		return $this->successResponse( [ 'ok' => true ] );

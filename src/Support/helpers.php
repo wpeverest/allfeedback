@@ -1,4 +1,10 @@
 <?php
+/**
+ * Helpers.
+ *
+ * @package AllFeedback
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -38,11 +44,11 @@ if ( ! function_exists( 'allfeedback_get_setting' ) ) {
 	 * defaults-plus-stored-values logic defined there.
 	 *
 	 * @param  string $key     The setting key, e.g. 'email_notifications'.
-	 * @param  mixed  $default Value returned when the key is not found.
-	 * @return mixed           The setting value, or $default.
+	 * @param  mixed  $fallback Value returned when the key is not found.
+	 * @return mixed           The setting value, or $fallback.
 	 * @since  1.0.0
 	 */
-	function allfeedback_get_setting( string $key, mixed $default = null ): mixed {
+	function allfeedback_get_setting( string $key, mixed $fallback = null ): mixed {
 		static $manager = null;
 
 		if ( null === $manager ) {
@@ -51,7 +57,7 @@ if ( ! function_exists( 'allfeedback_get_setting' ) ) {
 
 		$value = $manager->get( $key );
 
-		return $value !== null ? $value : $default;
+		return $value !== null ? $value : $fallback;
 	}
 }
 
@@ -92,11 +98,11 @@ if ( ! function_exists( 'allfeedback_get_survey_embed_url' ) ) {
 	 *
 	 * Example output: https://example.com/?allfb_survey=42
 	 *
-	 * @param  int    $surveyId The survey's primary-key ID.
+	 * @param  int $survey_id The survey's primary-key ID.
 	 * @return string           Fully-qualified embed URL.
 	 * @since  1.0.0
 	 */
-	function allfeedback_get_survey_embed_url( int $surveyId ): string {
-		return add_query_arg( 'allfb_survey', $surveyId, home_url( '/' ) );
+	function allfeedback_get_survey_embed_url( int $survey_id ): string {
+		return add_query_arg( 'allfb_survey', $survey_id, home_url( '/' ) );
 	}
 }

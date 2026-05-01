@@ -1,4 +1,10 @@
 <?php
+/**
+ * Response submitted.
+ *
+ * @package AllFeedback\Domain\Response\Events
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -18,6 +24,8 @@ use AllFeedback\Domain\Response\Response;
 class ResponseSubmitted extends Event {
 
 	/**
+	 * Constructor.
+	 *
 	 * @param  Response $response The persisted response aggregate.
 	 * @since  1.0.0
 	 */

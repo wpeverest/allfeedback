@@ -1,4 +1,10 @@
 <?php
+/**
+ * Abstract module.
+ *
+ * @package AllFeedback\Modules
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -102,6 +108,8 @@ abstract class AbstractModule implements ModuleInterface {
 	protected array $dependencies = [];
 
 	/**
+	 * Constructor.
+	 *
 	 * @param  Container $container DI container for resolving services within the module.
 	 * @since  1.0.0
 	 */
@@ -146,7 +154,8 @@ abstract class AbstractModule implements ModuleInterface {
 	 * @return string
 	 * @since  1.0.0
 	 */
-	public function getId(): string { return $this->id; }
+	public function getId(): string {
+		return $this->id; }
 
 	/**
 	 * {@inheritdoc}
@@ -154,7 +163,8 @@ abstract class AbstractModule implements ModuleInterface {
 	 * @return string
 	 * @since  1.0.0
 	 */
-	public function getName(): string { return $this->name; }
+	public function getName(): string {
+		return $this->name; }
 
 	/**
 	 * {@inheritdoc}
@@ -162,7 +172,8 @@ abstract class AbstractModule implements ModuleInterface {
 	 * @return string
 	 * @since  1.0.0
 	 */
-	public function getDescription(): string { return $this->description; }
+	public function getDescription(): string {
+		return $this->description; }
 
 	/**
 	 * {@inheritdoc}
@@ -170,7 +181,8 @@ abstract class AbstractModule implements ModuleInterface {
 	 * @return string
 	 * @since  1.0.0
 	 */
-	public function getVersion(): string { return $this->version; }
+	public function getVersion(): string {
+		return $this->version; }
 
 	/**
 	 * {@inheritdoc}
@@ -178,7 +190,8 @@ abstract class AbstractModule implements ModuleInterface {
 	 * @return string[]
 	 * @since  1.0.0
 	 */
-	public function getDependencies(): array { return $this->dependencies; }
+	public function getDependencies(): array {
+		return $this->dependencies; }
 
 	/**
 	 * {@inheritdoc}
@@ -225,8 +238,8 @@ abstract class AbstractModule implements ModuleInterface {
 	private function checkDependencies(): bool {
 		$registry = ModuleRegistry::getInstance();
 
-		foreach ( $this->dependencies as $dependencyId ) {
-			$dep = $registry->getModule( $dependencyId );
+		foreach ( $this->dependencies as $dependency_id ) {
+			$dep = $registry->getModule( $dependency_id );
 			if ( ! $dep || ! $dep->isEnabled() ) {
 				return false;
 			}
@@ -242,8 +255,8 @@ abstract class AbstractModule implements ModuleInterface {
 	 * @since  1.0.0
 	 */
 	private function loadModuleState(): void {
-		$enabledModules = (array) get_option( '_allfb_enabled_modules', [] );
-		$this->enabled  = in_array( $this->id, $enabledModules, true );
+		$enabled_modules = (array) get_option( '_allfb_enabled_modules', [] );
+		$this->enabled   = in_array( $this->id, $enabled_modules, true );
 	}
 
 	/**
@@ -253,16 +266,16 @@ abstract class AbstractModule implements ModuleInterface {
 	 * @since  1.0.0
 	 */
 	private function saveModuleState(): void {
-		$enabledModules = (array) get_option( '_allfb_enabled_modules', [] );
+		$enabled_modules = (array) get_option( '_allfb_enabled_modules', [] );
 
 		if ( $this->enabled ) {
-			if ( ! in_array( $this->id, $enabledModules, true ) ) {
-				$enabledModules[] = $this->id;
+			if ( ! in_array( $this->id, $enabled_modules, true ) ) {
+				$enabled_modules[] = $this->id;
 			}
 		} else {
-			$enabledModules = array_diff( $enabledModules, [ $this->id ] );
+			$enabled_modules = array_diff( $enabled_modules, [ $this->id ] );
 		}
 
-		update_option( '_allfb_enabled_modules', array_values( $enabledModules ) );
+		update_option( '_allfb_enabled_modules', array_values( $enabled_modules ) );
 	}
 }

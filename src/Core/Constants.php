@@ -1,4 +1,10 @@
 <?php
+/**
+ * Constants.
+ *
+ * @package AllFeedback\Core
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -65,7 +71,7 @@ final class Constants {
 	 * @var string|null
 	 * @since 1.0.0
 	 */
-	private static ?string $pluginFile = null;
+	private static ?string $plugin_file = null;
 
 	/**
 	 * Absolute path to the plugin directory (trailing slash included).
@@ -73,7 +79,7 @@ final class Constants {
 	 * @var string|null
 	 * @since 1.0.0
 	 */
-	private static ?string $pluginPath = null;
+	private static ?string $plugin_path = null;
 
 	/**
 	 * Public URL to the plugin directory (trailing slash included).
@@ -81,7 +87,7 @@ final class Constants {
 	 * @var string|null
 	 * @since 1.0.0
 	 */
-	private static ?string $pluginUrl = null;
+	private static ?string $plugin_url = null;
 
 	/**
 	 * Plugin basename, e.g. `allfeedback/allfeedback.php`.
@@ -89,7 +95,7 @@ final class Constants {
 	 * @var string|null
 	 * @since 1.0.0
 	 */
-	private static ?string $pluginBasename = null;
+	private static ?string $plugin_basename = null;
 
 	/**
 	 * Current environment: `'production'` (default) or `'development'`.
@@ -104,15 +110,15 @@ final class Constants {
 	 *
 	 * Must be called once from `allfeedback.php` before the plugin boots.
 	 *
-	 * @param  string $pluginFile Absolute path to the main plugin file.
+	 * @param  string $plugin_file Absolute path to the main plugin file.
 	 * @return void
 	 * @since  1.0.0
 	 */
-	public static function init( string $pluginFile ): void {
-		self::$pluginFile     = $pluginFile;
-		self::$pluginPath     = plugin_dir_path( $pluginFile );
-		self::$pluginUrl      = plugin_dir_url( $pluginFile );
-		self::$pluginBasename = plugin_basename( $pluginFile );
+	public static function init( string $plugin_file ): void {
+		self::$plugin_file     = $plugin_file;
+		self::$plugin_path     = plugin_dir_path( $plugin_file );
+		self::$plugin_url      = plugin_dir_url( $plugin_file );
+		self::$plugin_basename = plugin_basename( $plugin_file );
 
 		self::$environment = self::resolveEnvironment();
 	}
@@ -144,7 +150,7 @@ final class Constants {
 	 * @since  1.0.0
 	 */
 	public static function pluginFile(): string {
-		return self::$pluginFile ?? '';
+		return self::$plugin_file ?? '';
 	}
 
 	/**
@@ -154,7 +160,7 @@ final class Constants {
 	 * @since  1.0.0
 	 */
 	public static function pluginPath(): string {
-		return self::$pluginPath ?? '';
+		return self::$plugin_path ?? '';
 	}
 
 	/**
@@ -164,7 +170,7 @@ final class Constants {
 	 * @since  1.0.0
 	 */
 	public static function pluginUrl(): string {
-		return self::$pluginUrl ?? '';
+		return self::$plugin_url ?? '';
 	}
 
 	/**
@@ -174,7 +180,7 @@ final class Constants {
 	 * @since  1.0.0
 	 */
 	public static function pluginBasename(): string {
-		return self::$pluginBasename ?? '';
+		return self::$plugin_basename ?? '';
 	}
 
 	/**
@@ -211,23 +217,23 @@ final class Constants {
 	/**
 	 * Build an absolute filesystem path relative to the plugin root.
 	 *
-	 * @param  string $relativePath Relative path, e.g. `'config/services.php'`.
+	 * @param  string $relative_path Relative path, e.g. `'config/services.php'`.
 	 * @return string
 	 * @since  1.0.0
 	 */
-	public static function path( string $relativePath = '' ): string {
-		return self::pluginPath() . ltrim( $relativePath, '/' );
+	public static function path( string $relative_path = '' ): string {
+		return self::pluginPath() . ltrim( $relative_path, '/' );
 	}
 
 	/**
 	 * Build a public URL relative to the plugin root.
 	 *
-	 * @param  string $relativePath Relative path, e.g. `'resources/build/admin.js'`.
+	 * @param  string $relative_path Relative path, e.g. `'resources/build/admin.js'`.
 	 * @return string
 	 * @since  1.0.0
 	 */
-	public static function url( string $relativePath = '' ): string {
-		return self::pluginUrl() . ltrim( $relativePath, '/' );
+	public static function url( string $relative_path = '' ): string {
+		return self::pluginUrl() . ltrim( $relative_path, '/' );
 	}
 
 	/**

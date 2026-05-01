@@ -1,4 +1,10 @@
 <?php
+/**
+ * Survey created.
+ *
+ * @package AllFeedback\Domain\Survey\Events
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -18,6 +24,8 @@ use AllFeedback\Domain\Survey\Survey;
 class SurveyCreated extends Event {
 
 	/**
+	 * Constructor.
+	 *
 	 * @param  Survey $survey The newly created survey aggregate.
 	 * @since  1.0.0
 	 */

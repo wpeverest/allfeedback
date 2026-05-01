@@ -1,4 +1,10 @@
 <?php
+/**
+ * Validate survey is active.
+ *
+ * @package AllFeedback\Application\Response\Pipes
+ * @since   1.0.0
+ */
 
 declare(strict_types=1);
 
@@ -30,9 +36,9 @@ class ValidateSurveyIsActive implements PipeInterface {
 	 * @since  1.0.0
 	 */
 	public function execute( ResponseContext $context, \Closure $next ): mixed {
-		$isAdmin = $context->dto->userId > 0 && user_can( $context->dto->userId, 'manage_options' );
+		$is_admin = $context->dto->user_id > 0 && user_can( $context->dto->user_id, 'manage_options' );
 
-		if ( ! $context->survey->getStatus()->isPublished() && ! $isAdmin ) {
+		if ( ! $context->survey->getStatus()->isPublished() && ! $is_admin ) {
 			throw ValidationException::withErrors(
 				[ 'survey' => esc_html__( 'This survey is not currently accepting responses.', 'allfeedback' ) ]
 			);
