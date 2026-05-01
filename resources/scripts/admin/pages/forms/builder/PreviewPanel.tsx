@@ -13,7 +13,6 @@ import {
 	Eye,
 	Globe,
 	Lock,
-	Mail,
 	MessageCircle,
 	MessageSquare,
 	Minus,
@@ -30,7 +29,7 @@ import { useEffect, useRef, useState } from 'react';
 
 const genId = (): string => Math.random().toString(36).slice(2) + Date.now().toString(36);
 
-const TypingBubbleIcon = (props: React.SVGProps<SVGSVGElement>) => (
+const SmileBubbleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 	<svg
 		viewBox="0 0 24 24"
 		fill="none"
@@ -41,14 +40,14 @@ const TypingBubbleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 		aria-hidden="true"
 		{...props}
 	>
-		<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-		<circle cx="9" cy="11" r="1" fill="currentColor" stroke="none" />
-		<circle cx="12" cy="11" r="1" fill="currentColor" stroke="none" />
-		<circle cx="15" cy="11" r="1" fill="currentColor" stroke="none" />
+		<circle cx="12" cy="12" r="10" />
+		<path d="M8 14s1.5 2 4 2 4-2 4-2" />
+		<line x1="9" y1="9" x2="9.01" y2="9" />
+		<line x1="15" y1="9" x2="15.01" y2="9" />
 	</svg>
 );
 
-const CommentBubbleIcon = (props: React.SVGProps<SVGSVGElement>) => (
+const PenLineIcon = (props: React.SVGProps<SVGSVGElement>) => (
 	<svg
 		viewBox="0 0 24 24"
 		fill="none"
@@ -59,9 +58,8 @@ const CommentBubbleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 		aria-hidden="true"
 		{...props}
 	>
-		<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-		<line x1="9" y1="9" x2="15" y2="9" />
-		<line x1="9" y1="13" x2="13" y2="13" />
+		<path d="M12 20h9" />
+		<path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
 	</svg>
 );
 
@@ -108,10 +106,10 @@ type PreviewView = 'page' | 'widget';
 
 const TRIGGER_ICON_MAP: Record<string, React.ElementType> = {
 	message: MessageSquare,
-	chat: MessageCircle,
-	typing: TypingBubbleIcon,
-	comment: CommentBubbleIcon,
-	mail: Mail,
+	chat:    MessageCircle,
+	smile:   SmileBubbleIcon,
+	star:    Star,
+	pen:     PenLineIcon,
 };
 
 const ALLFB_VARS_BASE = {
