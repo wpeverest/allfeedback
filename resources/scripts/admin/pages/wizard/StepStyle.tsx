@@ -71,7 +71,6 @@ export function BrowserPreview({
 			className="border-border/50 shadow-card flex w-full max-w-[440px] flex-col overflow-hidden rounded-xl border bg-white"
 			style={{ aspectRatio: '16/9' }}
 		>
-			{/* Chrome */}
 			<div className="shrink-0 bg-[#dee1e6] select-none">
 				<div className="flex items-end px-2.5 pt-1.5">
 					<div className="flex shrink-0 items-center gap-[5px] pr-2.5 pb-[5px]">
@@ -92,7 +91,6 @@ export function BrowserPreview({
 				</div>
 			</div>
 
-			{/* Page content */}
 			<div className="relative flex-1 overflow-hidden bg-[#f8f9fa]">
 				<div className="flex h-[22px] shrink-0 items-center gap-2 border-b border-black/[0.06] bg-white px-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
 					<div className="bg-foreground/10 h-2 w-10 rounded-full" />
@@ -158,7 +156,6 @@ export function StepStyle({
 	return (
 		<div className="grid grid-cols-1 items-stretch gap-8 lg:grid-cols-[2fr_3fr]">
 
-			{/* Left panel */}
 			<div className="flex flex-col">
 				<div className="border-border/50 bg-card shadow-card flex h-full flex-col rounded-2xl border p-5 md:p-6">
 					<div className="flex flex-col gap-5">
@@ -219,7 +216,6 @@ export function StepStyle({
 				</div>
 			</div>
 
-			{/* Right panel: preview */}
 			<div className="border-border/50 bg-card shadow-card overflow-hidden rounded-2xl border">
 				<div className="border-border/50 bg-muted/10 flex shrink-0 items-center gap-2.5 border-b px-6 py-4">
 					<div className="flex gap-1.5">

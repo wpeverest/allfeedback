@@ -36,7 +36,6 @@ const POSITION_STAT_LABELS: Record<string, string> = {
 	'side-tab':     'Side tab',
 };
 
-// Mini NPS scale matching .allfb-scale--nps / .allfb-scale__btn--nps colours
 function MiniNpsScale({ color }: { color: string }) {
 	return (
 		<div style={{ display: 'flex', gap: 2 }}>
@@ -64,14 +63,12 @@ function MiniNpsScale({ color }: { color: string }) {
 	);
 }
 
-// Widget panel that faithfully mirrors .allfb-panel from frontend.pcss
 function MiniWidgetPanel({ color, position }: { color: string; position: PositionValue }) {
-	// side-tab launcher is ~25 px wide + 8 px gap = 33 px from right edge (mirrors real widget margin-right: 8px)
 	const posStyle: React.CSSProperties =
 		position === 'bottom-left'
 			? { bottom: 68, left: 12 }
 			: position === 'side-tab'
-			? { top: '50%', right: 33, transform: 'translateY(-50%)' }
+			? { top: '50%', right: 38, transform: 'translateY(-50%)' }
 			: { bottom: 68, right: 12 };
 
 	return (
@@ -87,7 +84,6 @@ function MiniWidgetPanel({ color, position }: { color: string; position: Positio
 				...posStyle,
 			}}
 		>
-			{/* .allfb-panel__header */}
 			<div
 				style={{
 					padding: '8px 10px',
@@ -102,7 +98,6 @@ function MiniWidgetPanel({ color, position }: { color: string; position: Positio
 				<span style={{ fontSize: 11, fontWeight: 600, flex: 1, margin: 0 }}>
 					{__('Feedback', 'allfeedback')}
 				</span>
-				{/* .allfb-panel__close (minimize) */}
 				<span
 					style={{
 						width: 18, height: 18, borderRadius: 4,
@@ -115,7 +110,6 @@ function MiniWidgetPanel({ color, position }: { color: string; position: Positio
 						<line x1="5" y1="12" x2="19" y2="12" />
 					</svg>
 				</span>
-				{/* .allfb-panel__close (close) */}
 				<span
 					style={{
 						width: 18, height: 18, borderRadius: 4,
@@ -131,23 +125,18 @@ function MiniWidgetPanel({ color, position }: { color: string; position: Positio
 				</span>
 			</div>
 
-			{/* .allfb-panel__body */}
 			<div style={{ padding: '10px 12px 12px', background: '#fff' }}>
-				{/* Field label (.allfb-field__label) */}
 				<div style={{ fontSize: 9, fontWeight: 500, color: '#1a1a2e', marginBottom: 8, lineHeight: 1.4 }}>
 					{__('How likely are you to recommend us to a friend or colleague?', 'allfeedback')}
 				</div>
 
-				{/* NPS scale (.allfb-scale--nps) */}
 				<MiniNpsScale color={color} />
 
-				{/* Scale labels (.allfb-scale__labels) */}
 				<div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 7, color: '#6b7280', marginTop: 3, marginBottom: 8 }}>
 					<span>{__('Not likely', 'allfeedback')}</span>
 					<span>{__('Very likely', 'allfeedback')}</span>
 				</div>
 
-				{/* Textarea placeholder (.allfb-textarea) */}
 				<div
 					style={{
 						height: 26, borderRadius: 6,
@@ -162,7 +151,6 @@ function MiniWidgetPanel({ color, position }: { color: string; position: Positio
 					{__('Tell us more (optional)…', 'allfeedback')}
 				</div>
 
-				{/* Footer (.allfb-form__footer) */}
 				<div
 					style={{
 						display: 'flex', gap: 4,
@@ -197,7 +185,6 @@ function MiniWidgetPanel({ color, position }: { color: string; position: Positio
 	);
 }
 
-// Widget launcher matching .allfb-launcher
 function MiniLauncher({ color, position }: { color: string; position: PositionValue }) {
 	if (position === 'side-tab') {
 		return (
@@ -298,11 +285,10 @@ export function StepFinal({
 				className="relative z-10 grid w-full items-center gap-10"
 				style={{ gridTemplateColumns: '1fr 1.3fr' }}
 			>
-				{/* Left: hero */}
 				<div>
 					<span
 						className="border-brand-200 bg-brand-50 text-brand-700 mb-[18px] inline-flex items-center gap-2 rounded-full border py-[5px] pr-3 pl-2"
-						style={{ fontSize: '0.8125rem', fontWeight: 600 }}
+						style={{ fontSize: '0.8125rem', fontWeight: 500 }}
 					>
 						<span
 							className="bg-success size-2 shrink-0 rounded-full"
@@ -361,13 +347,13 @@ export function StepFinal({
 							>
 								<div
 									className="text-muted-foreground uppercase tracking-[0.06em]"
-									style={{ fontSize: '0.75rem', fontWeight: 600, marginBottom: '0.375rem' }}
+									style={{ fontSize: '0.75rem', fontWeight: 500, marginBottom: '0.375rem' }}
 								>
 									{stat.label}
 								</div>
 								<div
 									className="text-foreground flex items-center gap-1.5 tracking-[-0.01em]"
-									style={{ fontSize: '1.25rem', fontWeight: 700 }}
+									style={{ fontSize: '1.25rem', fontWeight: 600 }}
 								>
 									{stat.icon}
 									{stat.value}
@@ -399,17 +385,12 @@ export function StepFinal({
 					</div>
 				</div>
 
-				{/* Right: browser preview */}
 				<div
 					className="border-border/50 bg-card overflow-hidden rounded-2xl border p-5 shadow-sm"
 					style={{ height: 480 }}
 				>
-					{/* Browser chrome — matches PreviewPanel exactly */}
 					<div className="border-border/60 flex h-full flex-col overflow-hidden rounded-xl border bg-white shadow-md">
-
-						{/* Chrome bar */}
 						<div className="shrink-0 bg-[#dee1e6] select-none">
-							{/* Tab bar */}
 							<div className="flex items-end px-3 pt-2">
 								<div className="flex shrink-0 items-center gap-[5px] pr-3 pb-[6px]">
 									<span className="size-[11px] rounded-full bg-[#ff5f57] shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.12)]" />
@@ -425,7 +406,6 @@ export function StepFinal({
 									<Plus className="text-muted-foreground/50 size-3" />
 								</button>
 							</div>
-							{/* Nav bar */}
 							<div className="flex items-center gap-0.5 px-2 pt-2 pb-2">
 								<button type="button" className="flex size-[22px] items-center justify-center rounded-full focus-visible:outline-none">
 									<ArrowLeft className="text-muted-foreground/50 size-3.5" />
@@ -447,10 +427,8 @@ export function StepFinal({
 							</div>
 						</div>
 
-						{/* Page content */}
-						<div className="relative flex-1 overflow-hidden bg-[#f8f9fa]">
-							{/* Skeleton overlay — dimmed so the widget reads as "in focus" */}
-							<div className="pointer-events-none absolute inset-0 flex flex-col overflow-hidden opacity-40">
+						<div className="relative flex-1 overflow-hidden bg-[#eef0f3]">
+							<div className="pointer-events-none absolute inset-0 flex flex-col overflow-hidden opacity-20">
 								<div className="flex h-9 shrink-0 items-center gap-3 border-b border-black/5 bg-white px-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
 									<div className="bg-foreground/10 h-2.5 w-14 rounded-full" />
 									<div className="flex flex-1 items-center justify-end gap-2.5">
@@ -477,10 +455,7 @@ export function StepFinal({
 								</div>
 							</div>
 
-							{/* Widget panel (open) */}
 							<MiniWidgetPanel color={brandColor} position={position} />
-
-							{/* Launcher trigger */}
 							<MiniLauncher color={brandColor} position={position} />
 						</div>
 					</div>
