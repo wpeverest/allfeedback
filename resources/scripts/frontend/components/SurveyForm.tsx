@@ -3,6 +3,13 @@ import { activeSections, normalizeSettings, parseSections, trackEvent } from '..
 import type { AllfbConfig, Survey } from '../types';
 import { FieldPreview } from './FieldPreview';
 
+function getDeviceType(): 'desktop' | 'tablet' | 'mobile' {
+	const ua = navigator.userAgent;
+	if ( /tablet|ipad|playbook|silk/i.test( ua ) ) return 'tablet';
+	if ( /mobile|android|iphone|ipod|blackberry|opera mini|iemobile/i.test( ua ) ) return 'mobile';
+	return 'desktop';
+}
+
 function getOrCreateVisitorId(): string {
 	const KEY = 'allfb_visitor_id';
 	let id = localStorage.getItem( KEY );
@@ -110,6 +117,7 @@ export const SurveyForm = ( { cfg, survey, submitNonce, sessionId, onSuccess, al
 					response_data: responseData,
 					page_url:      window.location.href,
 					visitor_token: getOrCreateVisitorId(),
+					device_type:   getDeviceType(),
 					...( score !== undefined && ! Number.isNaN( score ) ? { score } : {} ),
 					...( sessionId ? { session_id: sessionId } : {} ),
 				} ),
