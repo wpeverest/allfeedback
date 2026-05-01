@@ -289,14 +289,14 @@ const WidgetBody = ({
 					<div className="allfb-form-wrapper">
 						{totalSteps > 1 && settings.progressIndicator !== 'none' && (
 							<div
-								className={`allfb-steps${settings.progressIndicator === 'bar' ? 'allfb-steps--bar' : ''}`}
+								className={`allfb-steps${settings.progressIndicator === 'bar' ? ' allfb-steps--bar' : ''}`}
 							>
 								{settings.progressIndicator === 'dots' && (
 									<div className="allfb-steps__dots">
 										{steps.map((_, i) => (
 											<span
 												key={i}
-												className={`allfb-steps__dot${i === stepIndex ? 'is-active' : i < stepIndex ? 'is-done' : ''}`}
+												className={`allfb-steps__dot${i === stepIndex ? ' is-active' : i < stepIndex ? ' is-done' : ''}`}
 											/>
 										))}
 									</div>
@@ -420,7 +420,7 @@ const PreviewPanel = ({
 	const globalPosition = (cachedWidget?.position ??
 		(__ALLFB_ADMIN__.widgetPosition as WidgetPosition) ??
 		'bottom-right') as Exclude<WidgetPosition, ''>;
-	const widgetColor = settings.widgetColor || globalColor;
+	const widgetColor = globalColor;
 	const widgetPosition =
 		(settings.widgetPosition as Exclude<WidgetPosition, ''>) || globalPosition;
 

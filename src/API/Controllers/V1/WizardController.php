@@ -13,7 +13,6 @@ namespace AllFeedback\API\Controllers\V1;
 defined( 'ABSPATH' ) || exit;
 
 use AllFeedback\API\RestController;
-use AllFeedback\Core\Constants;
 use AllFeedback\Core\Settings\SettingsManager;
 use AllFeedback\Domain\Survey\Survey;
 use AllFeedback\Domain\Survey\SurveyRepository;
@@ -289,31 +288,205 @@ class WizardController extends RestController {
 	}
 
 	/**
-	 * Load a survey template JSON schema from the bundled data directory.
+	 * Bundled survey template schemas keyed by template ID.
+	 *
+	 * Embedded directly to avoid any filesystem or file_get_contents dependency.
+	 *
+	 * @var array<string, array<mixed>>
+	 * @since 1.0.0
+	 */
+	private const TEMPLATES = [
+		'nps' => [
+			'version'  => '1',
+			'sections' => [
+				[
+					'id'     => 'nps-s1',
+					'title'  => 'Page 1',
+					'fields' => [
+						[
+							'id'       => 'nps-f1',
+							'type'     => 'nps',
+							'label'    => '<p>How likely are you to recommend us to a friend or colleague?</p>',
+							'required' => true,
+							'settings' => [],
+						],
+						[
+							'id'       => 'nps-f2',
+							'type'     => 'long_text',
+							'label'    => '<p>What is the main reason for your score?</p>',
+							'required' => false,
+							'settings' => [ 'placeholder' => 'Share your thoughts…' ],
+						],
+					],
+				],
+			],
+		],
+		'general-feedback' => [
+			'version'  => '1',
+			'sections' => [
+				[
+					'id'     => 'gf-s1',
+					'title'  => 'General Feedback',
+					'fields' => [
+						[
+							'id'       => 'gf-f1',
+							'type'     => 'star_rating',
+							'label'    => 'How would you rate your overall experience?',
+							'required' => true,
+							'settings' => [ 'starScale' => 'star', 'starRange' => 5 ],
+						],
+						[
+							'id'       => 'gf-f2',
+							'type'     => 'long_text',
+							'label'    => "Anything else you'd like to share with us?",
+							'required' => false,
+							'settings' => [ 'placeholder' => 'Your thoughts, suggestions, or concerns...' ],
+						],
+					],
+				],
+			],
+		],
+		'bug-report' => [
+			'version'  => '1',
+			'sections' => [
+				[
+					'id'     => 'br-s1',
+					'title'  => 'Bug Report',
+					'fields' => [
+						[
+							'id'       => 'br-f1',
+							'type'     => 'short_text',
+							'label'    => 'What issue are you experiencing?',
+							'required' => true,
+							'settings' => [ 'placeholder' => 'Brief description of the bug' ],
+						],
+						[
+							'id'       => 'br-f2',
+							'type'     => 'long_text',
+							'label'    => 'Steps to reproduce the bug',
+							'required' => true,
+							'settings' => [ 'placeholder' => "1. Go to...\n2. Click on...\n3. See error..." ],
+						],
+						[
+							'id'       => 'br-f3',
+							'type'     => 'long_text',
+							'label'    => 'What did you expect to happen?',
+							'required' => false,
+							'settings' => [ 'placeholder' => 'Describe what should have happened' ],
+						],
+					],
+				],
+			],
+		],
+		'feature-request' => [
+			'version'  => '1',
+			'sections' => [
+				[
+					'id'     => 'fr-s1',
+					'title'  => 'Feature Request',
+					'fields' => [
+						[
+							'id'       => 'fr-f1',
+							'type'     => 'short_text',
+							'label'    => 'What feature would you like to see?',
+							'required' => true,
+							'settings' => [ 'placeholder' => 'Name of the feature' ],
+						],
+						[
+							'id'       => 'fr-f2',
+							'type'     => 'long_text',
+							'label'    => 'How would this feature help you?',
+							'required' => true,
+							'settings' => [ 'placeholder' => 'Describe the use case or benefit' ],
+						],
+					],
+				],
+			],
+		],
+		'product-feedback' => [
+			'version'  => '1',
+			'sections' => [
+				[
+					'id'     => 'pf-s1',
+					'title'  => 'Page 1',
+					'fields' => [
+						[
+							'id'       => 'pf-f1',
+							'type'     => 'star_rating',
+							'label'    => '<p>How would you rate this feature overall?</p>',
+							'required' => true,
+							'settings' => [ 'starRange' => 5 ],
+						],
+						[
+							'id'       => 'pf-f2',
+							'type'     => 'long_text',
+							'label'    => '<p>What do you like most about it?</p>',
+							'required' => false,
+							'settings' => [ 'placeholder' => 'Tell us what is working well…' ],
+						],
+						[
+							'id'       => 'pf-f3',
+							'type'     => 'long_text',
+							'label'    => '<p>What could be improved?</p>',
+							'required' => false,
+							'settings' => [ 'placeholder' => 'Share your suggestions…' ],
+						],
+					],
+				],
+			],
+		],
+		'customer-research' => [
+			'version'  => '1',
+			'sections' => [
+				[
+					'id'     => 'cr-s1',
+					'title'  => 'Page 1',
+					'fields' => [
+						[
+							'id'       => 'cr-f1',
+							'type'     => 'radio',
+							'label'    => 'How did you hear about us?',
+							'required' => true,
+							'settings' => [
+								'options'     => [ 'Search Engine', 'Social Media', 'Word of Mouth', 'Other' ],
+								'placeholder' => '',
+							],
+						],
+						[
+							'id'       => 'cr-f2',
+							'type'     => 'radio',
+							'label'    => 'What is your primary goal today?',
+							'required' => true,
+							'settings' => [
+								'options'     => [ 'Learn about us', 'Get support', 'Pricing information', 'Other' ],
+								'placeholder' => '',
+							],
+						],
+						[
+							'id'       => 'cr-f3',
+							'type'     => 'long_text',
+							'label'    => "Is there anything else you'd like to share?",
+							'required' => false,
+							'settings' => [ 'placeholder' => 'Your message…' ],
+						],
+					],
+				],
+			],
+		],
+	];
+
+	/**
+	 * Load a survey template schema.
+	 *
+	 * Returns the embedded PHP array for the given template ID, eliminating any
+	 * filesystem or file_get_contents dependency that could fail on restrictive hosts.
 	 *
 	 * @param  string $template_id Template identifier (e.g. "nps", "bug-report").
-	 * @return array<mixed> Decoded JSON schema, or an empty array when not found.
+	 * @return array<mixed> Schema array, or an empty array when not found.
 	 * @since  1.0.0
 	 */
 	private function loadTemplate( string $template_id ): array {
-		static $cache = [];
-
-		if ( isset( $cache[ $template_id ] ) ) {
-			return $cache[ $template_id ];
-		}
-
-		$path   = Constants::path( "resources/scripts/admin/data/templates/{$template_id}.json" );
-		$schema = [];
-
-		if ( file_exists( $path ) ) {
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
-			$schema_decoded = json_decode( (string) file_get_contents( $path ), true );
-			$schema         = $schema_decoded !== null && $schema_decoded !== false ? $schema_decoded : [];
-		}
-
-		$cache[ $template_id ] = $schema;
-
-		return $schema;
+		return self::TEMPLATES[ $template_id ] ?? [];
 	}
 
 	/**
