@@ -56,8 +56,8 @@ const TABS: {
 	pro?: boolean;
 }[] = [
 	{ value: 'builder', label: __('Builder', 'allfeedback'), Icon: LayoutGrid },
-	{ value: 'settings', label: __('Settings', 'allfeedback'), Icon: Settings2 },
 	{ value: 'styling', label: __('Styling', 'allfeedback'), Icon: Palette },
+	{ value: 'settings', label: __('Settings', 'allfeedback'), Icon: Settings2 },
 ];
 
 const deserializeFormSchema = (
@@ -327,6 +327,7 @@ const FormBuilder = () => {
 				void queryClient.invalidateQueries({ queryKey: ['surveys'] });
 
 				if (published.conflict_reason) {
+					toast.warning(__('Conflict detected — saved as draft instead of publishing.', 'allfeedback'));
 					return;
 				}
 
@@ -627,6 +628,14 @@ const FormBuilder = () => {
 		setPublishMenuOpen(false);
 	};
 
+	const handleMoveToTrash = () => {
+		submitActionRef.current = 'trashed';
+		form.handleSubmit().catch(() => {
+			toast.error(__('Failed to save. Please try again.', 'allfeedback'));
+		});
+		setPublishMenuOpen(false);
+	};
+
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
 			const mod = e.ctrlKey || e.metaKey;
@@ -742,6 +751,21 @@ const FormBuilder = () => {
 						<div className="border-border bg-muted/60 flex items-center gap-1.5 rounded-full border px-3 py-1">
 							<span className="text-muted-foreground text-xs font-medium">
 								{__('Draft', 'allfeedback')}
+							</span>
+						</div>
+					)}
+					{surveyStatus === 'published' && !isDirty && (
+						<div className="border-success/25 bg-success-subtle flex items-center gap-1.5 rounded-full border px-3 py-1">
+							<span className="bg-success block h-1.5 w-1.5 rounded-full" />
+							<span className="text-success text-xs font-medium">
+								{__('Published', 'allfeedback')}
+							</span>
+						</div>
+					)}
+					{surveyStatus === 'trashed' && !isDirty && (
+						<div className="border-destructive/20 bg-destructive/5 flex items-center gap-1.5 rounded-full border px-3 py-1">
+							<span className="text-destructive text-xs font-medium">
+								{__('Trashed', 'allfeedback')}
 							</span>
 						</div>
 					)}
@@ -866,6 +890,13 @@ const FormBuilder = () => {
 									className="text-foreground hover:bg-muted/60 flex w-full items-center px-4 py-2.5 text-sm transition-colors"
 								>
 									{__('Save as Draft', 'allfeedback')}
+								</button>
+								<button
+									type="button"
+									onClick={handleMoveToTrash}
+									className="text-destructive hover:bg-destructive/5 flex w-full items-center px-4 py-2.5 text-sm transition-colors"
+								>
+									{__('Move to Trash', 'allfeedback')}
 								</button>
 							</div>
 						)}
