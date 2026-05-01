@@ -7,10 +7,11 @@ import { cn } from '@/lib/utils';
 import { __ } from '@wordpress/i18n';
 import { Check, Copy, Palette } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-
-// ── Color utilities ──────────────────────────────────────────────────────────
+import { toast } from 'sonner';
 
 type ColorFormat = 'HEX' | 'RGB' | 'HSL';
+
+const FORMAT_ORDER: ColorFormat[] = [ 'HEX', 'RGB', 'HSL' ];
 
 const clamp = ( n: number, lo: number, hi: number ) => Math.min( hi, Math.max( lo, n ) );
 
@@ -79,10 +80,6 @@ function parseValue( input: string, fmt: ColorFormat ): string | null {
 	return rgbToHex( r, g, b );
 }
 
-// ── Custom drag-based hue slider ─────────────────────────────────────────────
-// Native <input type="range"> is unreliable in WP admin due to stylesheet overrides.
-// This custom implementation gives pixel-perfect control over track and thumb styling.
-
 const HueSlider = ( {
 	value,
 	onChange,
@@ -90,8 +87,8 @@ const HueSlider = ( {
 	value:    number;
 	onChange: ( h: number ) => void;
 } ) => {
-	const trackRef  = useRef<HTMLDivElement>( null );
-	const dragging  = useRef( false );
+	const trackRef = useRef<HTMLDivElement>( null );
+	const dragging = useRef( false );
 
 	const moveTo = useCallback( ( clientX: number ) => {
 		const el = trackRef.current;
@@ -122,7 +119,6 @@ const HueSlider = ( {
 			}}
 			onMouseDown={ ( e ) => { dragging.current = true; moveTo( e.clientX ); } }
 		>
-			{/* Thumb — centred on the track, 20 px diameter */}
 			<div
 				className="pointer-events-none absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white"
 				style={{
@@ -136,8 +132,6 @@ const HueSlider = ( {
 	);
 };
 
-// ────────────────────────────────────────────────────────────────────────────
-
 interface ColorPickerProps {
 	value:      string;
 	onChange:   ( v: string ) => void;
@@ -148,6 +142,7 @@ export const ColorPicker = ( { value, onChange, className }: ColorPickerProps ) 
 	const [ format, setFormat ] = useState<ColorFormat>( 'HEX' );
 	const [ draft,  setDraft  ] = useState( () => formatValue( value, 'HEX' ) );
 	const [ open,   setOpen   ] = useState( false );
+	const preventCloseRef       = useRef( false );
 
 	useEffect( () => {
 		setDraft( formatValue( value, format ) );
@@ -162,14 +157,12 @@ export const ColorPicker = ( { value, onChange, className }: ColorPickerProps ) 
 	};
 
 	const cycleFormat = () => {
-		const order: ColorFormat[] = [ 'HEX', 'RGB', 'HSL' ];
-		setFormat( order[ ( order.indexOf( format ) + 1 ) % order.length ] );
+		setFormat( ( f ) => FORMAT_ORDER[ ( FORMAT_ORDER.indexOf( f ) + 1 ) % FORMAT_ORDER.length ] );
 	};
 
 	return (
 		<div className={ cn( 'inline-flex items-center gap-2', className ) }>
-			{/* ── Swatch trigger (standalone) ──────────────────────────── */}
-			<Popover open={ open } onOpenChange={ setOpen }>
+			<Popover open={ open } onOpenChange={ ( next ) => { if ( ! preventCloseRef.current ) setOpen( next ); } }>
 				<PopoverTrigger asChild>
 					<button
 						type="button"
@@ -195,12 +188,17 @@ export const ColorPicker = ( { value, onChange, className }: ColorPickerProps ) 
 						/>
 					</button>
 				</PopoverTrigger>
-				<PopoverContent className="w-auto p-0" align="start" sideOffset={ 6 }>
-					<SaturationPicker hex={ value } onChange={ commit } />
+				<PopoverContent
+					className="w-auto p-0"
+					align="start"
+					sideOffset={ 6 }
+					onFocusOutside={ ( e ) => { if ( preventCloseRef.current ) e.preventDefault(); } }
+					onInteractOutside={ ( e ) => { if ( preventCloseRef.current ) e.preventDefault(); } }
+				>
+					<SaturationPicker hex={ value } onChange={ commit } preventCloseRef={ preventCloseRef } />
 				</PopoverContent>
 			</Popover>
 
-			{/* ── Input wrapper — styled like global Input ──────────────── */}
 			<div className="relative flex min-w-0 flex-1 items-center border border-border bg-muted/60 transition-colors focus-within:bg-white" style={{ height: 40, borderRadius: '0.5rem', overflow: 'hidden' }}>
 				<input
 					value={ draft }
@@ -216,7 +214,6 @@ export const ColorPicker = ( { value, onChange, className }: ColorPickerProps ) 
 					className="h-full w-full bg-transparent font-mono text-[13px] text-foreground outline-none placeholder:text-muted-foreground"
 					style={{ paddingLeft: 12, paddingRight: 64, boxSizing: 'border-box', margin: 0, border: 'none' }}
 				/>
-				{/* Format badge — inside the input, right side */}
 				<button
 					type="button"
 					onClick={ cycleFormat }
@@ -230,24 +227,35 @@ export const ColorPicker = ( { value, onChange, className }: ColorPickerProps ) 
 	);
 };
 
-// ── 2-D gradient canvas + hue slider ────────────────────────────────────────
+const PRESET_SWATCHES = [
+	{ hex: '#6366f1', label: 'Brand'  },
+	{ hex: '#1e293b', label: 'Dark'   },
+	{ hex: '#ef4444', label: 'Red'    },
+	{ hex: '#f97316', label: 'Orange' },
+	{ hex: '#eab308', label: 'Yellow' },
+	{ hex: '#22c55e', label: 'Green'  },
+	{ hex: '#3b82f6', label: 'Blue'   },
+	{ hex: '#a855f7', label: 'Purple' },
+] as const;
 
 const SaturationPicker = ( {
 	hex,
 	onChange,
+	preventCloseRef,
 }: {
-	hex:      string;
-	onChange: ( hex: string ) => void;
+	hex:             string;
+	onChange:        ( hex: string ) => void;
+	preventCloseRef: React.MutableRefObject<boolean>;
 } ) => {
-	const [ copied, setCopied ] = useState( false );
+	const [ innerFormat, setInnerFormat ] = useState<ColorFormat>( 'HEX' );
+	const [ draft,       setDraft       ] = useState( () => formatValue( hex, 'HEX' ) );
+
 	const rgb0 = hexToRgb( hex ) ?? { r: 99, g: 102, b: 241 };
 	const hsl0 = rgbToHsl( rgb0.r, rgb0.g, rgb0.b );
 
 	const [ h, setH ] = useState( hsl0.h );
 	const [ s, setS ] = useState( hsl0.s );
 	const [ l, setL ] = useState( hsl0.l );
-
-	const [ hexDraft, setHexDraft ] = useState( hex.replace( '#', '' ).toUpperCase() );
 
 	const areaRef     = useRef<HTMLDivElement>( null );
 	const draggingRef = useRef( false );
@@ -259,8 +267,14 @@ const SaturationPicker = ( {
 		setH( next.h );
 		setS( next.s );
 		setL( next.l );
-		setHexDraft( hex.replace( '#', '' ).toUpperCase() );
+		setDraft( formatValue( hex, innerFormat ) );
+	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [ hex ] );
+
+	useEffect( () => {
+		setDraft( formatValue( hex, innerFormat ) );
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [ innerFormat ] );
 
 	const emit = ( nh: number, ns: number, nl: number ) => {
 		const { r, g, b } = hslToRgb( nh, ns, nl );
@@ -294,17 +308,74 @@ const SaturationPicker = ( {
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [ h ] );
 
-	// Convert HSL → HSV for correct 2-D marker position
 	const vv      = l / 100 + ( s / 100 ) * Math.min( l / 100, 1 - l / 100 );
 	const sv      = vv === 0 ? 0 : 2 * ( 1 - ( l / 100 ) / vv );
 	const markerX = clamp( sv, 0, 1 ) * 100;
 	const markerY = ( 1 - vv ) * 100;
 
-	return (
-		<div className="select-none overflow-hidden rounded-xl" style={{ width: 220 }}>
+	const cycleInnerFormat = () => {
+		setInnerFormat( ( f ) => FORMAT_ORDER[ ( FORMAT_ORDER.indexOf( f ) + 1 ) % FORMAT_ORDER.length ] );
+	};
 
-			{/* ── Gradient canvas ──────────────────────────────────────────── */}
-			<div className="p-3 pb-0 bg-white">
+	const copyHex = () => {
+		const text = formatValue( hex, innerFormat );
+		const done = () => toast.success( __( 'Copied!', 'allfeedback' ), { description: text } );
+		preventCloseRef.current = true;
+		const release = () => { setTimeout( () => { preventCloseRef.current = false; }, 300 ); };
+		if ( navigator.clipboard && window.isSecureContext ) {
+			void navigator.clipboard.writeText( text ).then( () => { done(); release(); } );
+		} else {
+			const el = document.createElement( 'textarea' );
+			el.value = text;
+			el.style.cssText = 'position:fixed;left:-9999px;top:-9999px';
+			document.body.appendChild( el );
+			el.focus();
+			el.select();
+			try { document.execCommand( 'copy' ); done(); } finally { document.body.removeChild( el ); release(); }
+		}
+	};
+
+	const prefix = innerFormat === 'HEX' ? '#' : null;
+
+	return (
+		<div className="select-none overflow-hidden rounded-xl" style={{ width: 280 }}>
+
+			<div className="flex items-center gap-1.5 bg-white px-4 pt-3.5 pb-3">
+				{ PRESET_SWATCHES.map( ( swatch ) => {
+					const isActive = hex.toLowerCase() === swatch.hex.toLowerCase();
+					return (
+						<button
+							key={ swatch.hex }
+							type="button"
+							aria-label={ swatch.label }
+							onClick={ () => onChange( swatch.hex ) }
+							className="relative shrink-0 cursor-pointer rounded-full transition-transform hover:scale-110 focus-visible:outline-none"
+							style={{
+								width:           20,
+								height:          20,
+								backgroundColor: swatch.hex,
+								boxShadow: isActive
+									? '0 0 0 2px white, 0 0 0 3.5px var(--color-primary)'
+									: '0 0 0 1px rgba(0,0,0,0.14), inset 0 0 0 1px rgba(255,255,255,0.15)',
+							}}
+						>
+							{ isActive && (
+								<Check
+									className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+									style={{
+										width:  9,
+										height: 9,
+										color:  'white',
+										filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.25))',
+									}}
+								/>
+							) }
+						</button>
+					);
+				} ) }
+			</div>
+
+			<div className="px-4 pb-0 bg-white">
 				<div
 					ref={ areaRef }
 					onMouseDown={ ( e ) => { draggingRef.current = true; handleCanvasMove( e ); } }
@@ -315,13 +386,10 @@ const SaturationPicker = ( {
 						boxShadow:  'inset 0 0 0 1px rgba(0,0,0,0.10)',
 					}}
 				>
-					{/* Subtle top highlight for depth */}
 					<div
 						className="pointer-events-none absolute inset-x-0 top-0"
 						style={{ height: 48, background: 'linear-gradient(to bottom, rgba(255,255,255,0.07) 0%, transparent 100%)' }}
 					/>
-
-					{/* Marker */}
 					<div
 						className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-full"
 						style={{
@@ -337,7 +405,6 @@ const SaturationPicker = ( {
 				</div>
 			</div>
 
-			{/* ── Hue slider ───────────────────────────────────────────────── */}
 			<div className="bg-white px-4 pt-3.5 pb-3">
 				<HueSlider
 					value={ h }
@@ -345,71 +412,59 @@ const SaturationPicker = ( {
 				/>
 			</div>
 
-			{/* ── Value row ────────────────────────────────────────────────── */}
-			<div className="flex items-center gap-2.5 border-t border-border/[0.12] bg-white px-4 pb-4 pt-3">
-
-				{/* Live swatch */}
+			<div className="flex items-center gap-2 border-t border-border/[0.12] bg-white px-4 pb-3.5 pt-3">
 				<div
 					className="shrink-0 rounded-md"
 					style={{
-						width:           32,
-						height:          32,
+						width:           28,
+						height:          28,
 						backgroundColor: hex,
 						boxShadow:       'inset 0 0 0 1px rgba(0,0,0,0.12)',
 					}}
 				/>
 
-				{/* Editable hex input with '#' prefix */}
-				<div className="relative min-w-0 flex-1">
-					<span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 select-none font-mono text-[11px] text-foreground/30">
-						#
-					</span>
+				<div className="relative min-w-0 flex-1 overflow-hidden rounded-md border border-border/40 bg-muted/30 transition-colors focus-within:bg-white" style={{ height: 28 }}>
+					{ prefix && (
+						<span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 select-none font-mono text-[11px] text-foreground/30">
+							{ prefix }
+						</span>
+					) }
 					<input
 						type="text"
-						value={ hexDraft }
+						value={ draft }
 						onChange={ ( e ) => {
-							const val = e.target.value.replace( '#', '' ).toUpperCase();
-							setHexDraft( val );
-							const parsed = parseValue( '#' + val, 'HEX' );
+							const raw = e.target.value;
+							setDraft( raw );
+							const parsed = parseValue( innerFormat === 'HEX' ? '#' + raw.replace( '#', '' ) : raw, innerFormat );
 							if ( parsed ) onChange( parsed );
 						} }
-						onBlur={ () => setHexDraft( hex.replace( '#', '' ).toUpperCase() ) }
+						onBlur={ () => setDraft( formatValue( hex, innerFormat ) ) }
 						onKeyDown={ ( e ) => { if ( e.key === 'Enter' ) ( e.target as HTMLInputElement ).blur(); } }
-						maxLength={ 6 }
 						spellCheck={ false }
-						className="w-full rounded-md border border-border/40 bg-muted/30 font-mono text-[11px] uppercase text-foreground/70 outline-none transition-colors focus:border-primary/50 focus:bg-white"
-						style={{ height: 32, paddingLeft: 20, paddingRight: 8, boxSizing: 'border-box' }}
+						className="h-full w-full bg-transparent font-mono text-[11px] uppercase text-foreground/70 outline-none"
+						style={{ paddingLeft: prefix ? 18 : 8, paddingRight: 40, boxSizing: 'border-box', border: 'none' }}
 					/>
+					<button
+						type="button"
+						onClick={ cycleInnerFormat }
+						className="absolute right-0 top-1/2 -translate-y-1/2 cursor-pointer px-2 font-bold uppercase tracking-widest text-foreground transition-colors hover:bg-border/70 focus-visible:outline-none bg-border/40 h-full flex items-center"
+						style={{ fontSize: 10 }}
+					>
+						{ innerFormat }
+					</button>
 				</div>
 
-				{/* Copy hex */}
 				<button
 					type="button"
-					aria-label={ __( 'Copy hex value', 'allfeedback' ) }
-					onClick={ () => {
-						const text = hex.toUpperCase();
-						const done = () => { setCopied( true ); setTimeout( () => setCopied( false ), 1500 ); };
-						if ( navigator.clipboard && window.isSecureContext ) {
-							void navigator.clipboard.writeText( text ).then( done );
-						} else {
-							const el = document.createElement( 'textarea' );
-							el.value = text;
-							el.style.cssText = 'position:fixed;left:-9999px;top:-9999px';
-							document.body.appendChild( el );
-							el.focus();
-							el.select();
-							try { document.execCommand( 'copy' ); done(); } finally { document.body.removeChild( el ); }
-						}
-					} }
-					className="shrink-0 cursor-pointer rounded-md border border-border/50 transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-none"
-					style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+					aria-label={ __( 'Copy value', 'allfeedback' ) }
+					onClick={ copyHex }
+					className="shrink-0 cursor-pointer rounded-md border border-border/50 bg-muted/30 transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-none"
+					style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
 				>
-					{ copied
-						? <Check style={{ width: 13, height: 13, color: 'var(--color-primary)' }} />
-						: <Copy style={{ width: 13, height: 13, color: 'var(--color-foreground)', opacity: 0.55 }} />
-					}
+					<Copy style={{ width: 12, height: 12, color: 'var(--color-foreground)', opacity: 0.50 }} />
 				</button>
 			</div>
+
 		</div>
 	);
 };
