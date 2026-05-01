@@ -6,6 +6,7 @@ namespace AllFeedback\Tests\Unit\Domain\Response;
 
 use AllFeedback\Domain\Response\ResponseScore;
 use AllFeedback\Tests\BrainMonkeyTestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 class ResponseScoreTest extends BrainMonkeyTestCase {
 
@@ -20,7 +21,7 @@ class ResponseScoreTest extends BrainMonkeyTestCase {
 		new ResponseScore( 5.0, 'csat' );
 	}
 
-	/** @dataProvider npsCategories */
+	#[DataProvider( 'npsCategories' )]
 	public function test_nps_category( float $value, string $expected ): void {
 		$score = new ResponseScore( $value, 'nps' );
 		$this->assertSame( $expected, $score->getNpsCategory() );

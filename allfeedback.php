@@ -46,6 +46,7 @@ if ( ! file_exists( $af_autoloader ) ) {
 }
 
 require_once $af_autoloader;
+require_once __DIR__ . '/src/Support/helpers.php';
 
 // ------------------------------------------------------------------
 // Bootstrap

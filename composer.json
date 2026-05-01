@@ -6,10 +6,12 @@
   "autoload": {
     "psr-4": {
       "AllFeedback\\": "src/"
-    },
-    "files": [
-      "src/Support/helpers.php"
-    ]
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "AllFeedback\\Tests\\": "tests/php/"
+    }
   },
   "require": {
     "php": ">=8.2",

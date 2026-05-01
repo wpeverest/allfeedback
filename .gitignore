@@ -3,8 +3,7 @@ node_modules/
 vendor/
 release/
 
-# Package manager lockfiles (regenerated on install)
-pnpm-lock.yaml
+# Package manager lockfiles
 package-lock.json
 yarn.lock
 
@@ -40,6 +39,7 @@ Thumbs.db
 # PHP compiled container cache
 cache/
 tmp/
+.phpunit.result.cache
 
 # Logs
 *.log

@@ -84,6 +84,8 @@ class SubmitResponseServiceTest extends BrainMonkeyTestCase {
 	}
 
 	public function test_action_not_fired_on_validation_failure(): void {
+		$this->expectException( ValidationException::class );
+
 		Actions\expectDone( 'allfeedback:response:submitted' )->never();
 
 		$survey    = $this->makePublishedSurvey();
@@ -94,10 +96,6 @@ class SubmitResponseServiceTest extends BrainMonkeyTestCase {
 
 		$service = new SubmitResponseService( $surveys, $responses );
 
-		try {
-			$service->execute( $this->makeDto( [ 'responseData' => [] ] ), 'hash' );
-		} catch ( ValidationException ) {
-			// expected
-		}
+		$service->execute( $this->makeDto( [ 'responseData' => [] ] ), 'hash' );
 	}
 }
