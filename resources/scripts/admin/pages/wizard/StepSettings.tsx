@@ -63,7 +63,7 @@ export function StepSettings({
 						</div>
 						<Input
 							type="text"
-							placeholder="AllFeedback"
+							placeholder={__('e.g. AllFeedback', 'allfeedback')}
 							value={state.from_name}
 							onChange={(e) => set({ from_name: e.target.value })}
 							className="bg-muted/40 border-border/50 focus:border-primary/40 h-10 focus:bg-white"
@@ -82,7 +82,7 @@ export function StepSettings({
 						<div className="space-y-2">
 							<Input
 								type="email"
-								placeholder="noreply@yoursite.com"
+								placeholder={__('e.g. noreply@yoursite.com', 'allfeedback')}
 								value={state.from_email}
 								onChange={(e) => set({ from_email: e.target.value })}
 								className={inputCls(fromEmailOk)}
