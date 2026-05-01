@@ -188,34 +188,48 @@ const buildWeeklyDigestHtml = ( fromName: string ): string => {
         <tr>
           <td style="padding:32px;color:#374151;font-size:14px;line-height:1.6;">
             <p style="margin:0 0 2px 0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#9ca3af;">Weekly Report</p>
-            <p style="margin:0 0 24px 0;font-size:12px;color:#9ca3af;">${dateRange}</p>
+            <p style="margin:0 0 28px 0;font-size:12px;color:#9ca3af;">${dateRange}</p>
 
-            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;"><tr>
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;"><tr>
               <td style="vertical-align:middle;">
-                <span style="display:block;font-size:36px;font-weight:700;color:#111827;line-height:1;">47</span>
-                <span style="display:block;margin-top:4px;font-size:13px;color:#6b7280;">responses this week</span>
+                <span style="display:block;font-size:40px;font-weight:700;color:#111827;line-height:1;">47</span>
+                <span style="display:block;margin-top:6px;font-size:13px;color:#6b7280;">responses this week</span>
               </td>
               <td style="vertical-align:middle;text-align:right;">
-                <span style="display:inline-block;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600;background:#dcfce7;color:#16a34a;">+31% vs last week</span>
+                <span style="display:inline-block;padding:4px 12px;border-radius:99px;font-size:12px;font-weight:600;background:#dcfce7;color:#16a34a;">+31% vs last week</span>
               </td>
             </tr></table>
 
-            <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e5e7eb;margin-bottom:24px;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e5e7eb;margin-bottom:28px;">
               <tr>
-                <td style="padding:11px 0;font-size:13px;color:#374151;">Completion rate this week</td>
-                <td style="padding:11px 0;font-size:13px;font-weight:600;color:#111827;text-align:right;">64% <span style="font-size:11px;font-weight:500;color:#16a34a;">&#x2191; vs 61%</span></td>
+                <td style="padding:11px 0;font-size:13px;color:#374151;border-bottom:1px solid #f3f4f6;">Avg score this week</td>
+                <td style="padding:11px 0;font-size:13px;font-weight:600;color:#111827;text-align:right;border-bottom:1px solid #f3f4f6;">7.4 / 10 <span style="font-size:11px;color:#16a34a;">&#x2191; 6.8</span></td>
+              </tr>
+              <tr>
+                <td style="padding:11px 0;font-size:13px;color:#374151;">Completion rate</td>
+                <td style="padding:11px 0;font-size:13px;font-weight:600;color:#111827;text-align:right;">64% <span style="font-size:11px;color:#16a34a;">&#x2191; 61%</span></td>
               </tr>
             </table>
 
-            <p style="margin:0 0 10px 0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#9ca3af;">Survey Breakdown</p>
-            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+            <p style="margin:0 0 12px 0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#9ca3af;">Survey Breakdown</p>
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
               <tr>
-                <td style="padding:8px 0;font-size:13px;color:#374151;border-bottom:1px solid #f3f4f6;">Product Feedback Survey</td>
-                <td style="padding:8px 0;font-size:13px;color:#6b7280;text-align:right;border-bottom:1px solid #f3f4f6;">32 responses</td>
+                <td style="padding:10px 0;font-size:13px;color:#374151;border-bottom:1px solid #f3f4f6;">
+                  Product Feedback Survey
+                  <span style="margin-left:8px;font-size:12px;color:#9ca3af;">32 responses</span>
+                </td>
+                <td style="padding:10px 0;font-size:13px;text-align:right;border-bottom:1px solid #f3f4f6;">
+                  <span style="font-weight:600;color:#111827;">8.2 / 10</span>&nbsp;<span style="font-size:11px;padding:2px 8px;border-radius:99px;font-weight:600;background:#dcfce7;color:#16a34a;">Promoter</span>
+                </td>
               </tr>
               <tr>
-                <td style="padding:8px 0;font-size:13px;color:#374151;">Customer Feedback</td>
-                <td style="padding:8px 0;font-size:13px;color:#6b7280;text-align:right;">15 responses</td>
+                <td style="padding:10px 0;font-size:13px;color:#374151;">
+                  Customer Feedback
+                  <span style="margin-left:8px;font-size:12px;color:#9ca3af;">15 responses</span>
+                </td>
+                <td style="padding:10px 0;font-size:13px;text-align:right;">
+                  <span style="color:#6b7280;font-size:13px;">15 this week</span>
+                </td>
               </tr>
             </table>
 
@@ -268,7 +282,7 @@ const PreviewModal = ( {
 			onClick={onClose}
 		>
 			<div
-				className="relative flex h-[80vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+				className="relative flex h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
 				onClick={( e ) => e.stopPropagation()}
 			>
 				{/* Header */}
