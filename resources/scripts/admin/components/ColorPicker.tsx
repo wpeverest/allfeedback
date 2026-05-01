@@ -167,36 +167,30 @@ export const ColorPicker = ( { value, onChange, className }: ColorPickerProps ) 
 	};
 
 	return (
-		<div
-			className={ cn(
-				'inline-flex items-stretch overflow-hidden rounded-lg border border-border/50 bg-background shadow-sm transition-colors focus-within:border-primary/40 focus-within:ring-1 focus-within:ring-primary/10',
-				className,
-			) }
-			style={{ height: 30 }}
-		>
-			{/* Swatch trigger */}
+		<div className={ cn( 'inline-flex items-center gap-2', className ) }>
+			{/* ── Swatch trigger (standalone) ──────────────────────────── */}
 			<Popover open={ open } onOpenChange={ setOpen }>
 				<PopoverTrigger asChild>
 					<button
 						type="button"
 						aria-label={ __( 'Open color picker', 'allfeedback' ) }
-						className="relative shrink-0 overflow-hidden focus-visible:outline-none"
+						className="relative m-0 shrink-0 overflow-hidden rounded-lg border-0 p-0 shadow-sm focus-visible:outline-none"
 						style={{
-							width:           36,
-							height:          30,
+							width:           40,
+							height:          40,
 							backgroundColor: value,
-							borderRight:     '1px solid rgba(0,0,0,0.10)',
-							boxShadow:       'inset 0 0 0 1px rgba(255,255,255,0.15)',
+							boxShadow:       '0 0 0 1px rgba(0,0,0,0.10), inset 0 0 0 1px rgba(255,255,255,0.15)',
+							borderRadius:    '0.5rem',
+							overflow:        'hidden',
 						}}
 					>
-						{/* Palette icon */}
 						<Palette
 							className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white"
 							style={{
-								width:      14,
-								height:     14,
-								opacity:    0.85,
-								filter:     'drop-shadow(0 1px 2px rgba(0,0,0,0.55))',
+								width:   16,
+								height:  16,
+								opacity: 0.85,
+								filter:  'drop-shadow(0 1px 2px rgba(0,0,0,0.55))',
 							}}
 						/>
 					</button>
@@ -206,31 +200,32 @@ export const ColorPicker = ( { value, onChange, className }: ColorPickerProps ) 
 				</PopoverContent>
 			</Popover>
 
-			{/* Format value input */}
-			<input
-				value={ draft }
-				onChange={ ( e ) => {
-					const v = e.target.value;
-					setDraft( v );
-					const parsed = parseValue( v, format );
-					if ( parsed ) commit( parsed );
-				} }
-				onBlur={ handleBlur }
-				onKeyDown={ ( e ) => { if ( e.key === 'Enter' ) ( e.target as HTMLInputElement ).blur(); } }
-				spellCheck={ false }
-				className="bg-transparent font-mono text-[11px] tracking-tight text-foreground/80 outline-none"
-				style={{ width: 124, height: 30, padding: '0 8px', boxSizing: 'border-box' }}
-			/>
-
-			{/* Format cycle button */}
-			<button
-				type="button"
-				onClick={ cycleFormat }
-				className="shrink-0 bg-muted/40 font-bold uppercase tracking-widest transition-colors hover:bg-muted/70 focus-visible:outline-none"
-				style={{ height: 30, padding: '0 9px', fontSize: 'var(--text-xs)', color: 'var(--color-foreground)' }}
-			>
-				{ format }
-			</button>
+			{/* ── Input wrapper — styled like global Input ──────────────── */}
+			<div className="relative flex min-w-0 flex-1 items-center border border-border bg-muted/60 transition-colors focus-within:bg-white" style={{ height: 40, borderRadius: '0.5rem', overflow: 'hidden' }}>
+				<input
+					value={ draft }
+					onChange={ ( e ) => {
+						const v = e.target.value;
+						setDraft( v );
+						const parsed = parseValue( v, format );
+						if ( parsed ) commit( parsed );
+					} }
+					onBlur={ handleBlur }
+					onKeyDown={ ( e ) => { if ( e.key === 'Enter' ) ( e.target as HTMLInputElement ).blur(); } }
+					spellCheck={ false }
+					className="h-full w-full bg-transparent font-mono text-[13px] text-foreground outline-none placeholder:text-muted-foreground"
+					style={{ paddingLeft: 12, paddingRight: 64, boxSizing: 'border-box', margin: 0, border: 'none' }}
+				/>
+				{/* Format badge — inside the input, right side */}
+				<button
+					type="button"
+					onClick={ cycleFormat }
+					className="absolute right-2 top-1/2 -translate-y-1/2 flex cursor-pointer items-center rounded-none px-3 py-1.5 font-bold uppercase tracking-widest text-foreground transition-colors hover:bg-border/70 focus-visible:outline-none bg-border/40"
+					style={{ fontSize: 12 }}
+				>
+					{ format }
+				</button>
+			</div>
 		</div>
 	);
 };

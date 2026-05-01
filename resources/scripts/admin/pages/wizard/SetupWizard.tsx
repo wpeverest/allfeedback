@@ -1,4 +1,4 @@
-import {
+﻿import {
 	WIZARD_STATUS_QUERY_KEY,
 	wizardApi,
 	type WizardCompletePayload,
@@ -18,9 +18,7 @@ import {
 	Bell,
 	Box,
 	Bug,
-	Calendar,
 	Check,
-	Clock,
 	Edit2,
 	Gauge,
 	Globe,
@@ -34,7 +32,6 @@ import {
 	Rocket,
 	Users,
 	Wand2,
-	Zap,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -65,7 +62,7 @@ const STEP_HEADERS: Record<StepId, { title: string; desc: string }> = {
 	settings: {
 		title: __('Stay in the loop', 'allfeedback'),
 		desc: __(
-			"Configure where you'd like to receive new response notifications.",
+			'Set up where your weekly digest email gets delivered.',
 			'allfeedback',
 		),
 	},
@@ -74,21 +71,24 @@ const STEP_HEADERS: Record<StepId, { title: string; desc: string }> = {
 
 function getInitialState(): WizardCompletePayload {
 	return {
-		template: 'nps',
-		brand_color: '#6366F1',
-		position: 'bottom-right',
-		admin_email:
-			typeof __ALLFB_ADMIN__ !== 'undefined' ? __ALLFB_ADMIN__.adminEmail : '',
-		notif_frequency: 'instant',
-		consent: true,
+		template:     'nps',
+		brand_color:  '#6366F1',
+		position:     'bottom-right',
+		shape:        'circle',
+		admin_email:  typeof __ALLFB_ADMIN__ !== 'undefined' ? __ALLFB_ADMIN__.adminEmail : '',
+		from_name:    '',
+		from_email:   '',
+		consent:      true,
 		anonymize_ip: true,
-		retention: '12m',
+		retention:    '12m',
 	};
 }
 
 function canAdvance(state: WizardCompletePayload, step: number): boolean {
-	if (step === 2 && state.admin_email) {
-		return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.admin_email);
+	if (step === 2) {
+		const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+		if (state.admin_email && !emailRe.test(state.admin_email)) return false;
+		if (state.from_email  && !emailRe.test(state.from_email))  return false;
 	}
 	return true;
 }
@@ -227,12 +227,50 @@ const ALL_POSITIONS: { value: PositionValue; label: string }[] = [
 
 const BOTTOM_POSITIONS = ALL_POSITIONS.filter((p) => p.value !== 'side-tab');
 
+const POSITION_SUB: Record<string, string> = {
+	'bottom-left':  __('Floating bubble', 'allfeedback'),
+	'bottom-right': __('Floating bubble', 'allfeedback'),
+	'side-tab':     __('Vertical anchor', 'allfeedback'),
+};
+
+function PositionThumbnail({ value, selected }: { value: PositionValue; selected: boolean }) {
+	return (
+		<div className="relative h-9 w-[52px] shrink-0 overflow-hidden rounded-md border border-border/30 bg-muted/20">
+			<div className="absolute inset-1 flex flex-col gap-[3px]">
+				<div className="h-[3px] w-full rounded-full bg-foreground/10" />
+				<div className="h-[3px] w-3/4 rounded-full bg-foreground/[0.07]" />
+				<div className="h-[3px] w-1/2 rounded-full bg-foreground/[0.05]" />
+			</div>
+			{value === 'bottom-left' && (
+				<div
+					className="absolute bottom-1 left-1 size-2.5 rounded-full transition-colors"
+					style={{ backgroundColor: selected ? 'var(--color-primary)' : 'var(--color-foreground)', opacity: selected ? 1 : 0.15 }}
+				/>
+			)}
+			{value === 'bottom-right' && (
+				<div
+					className="absolute bottom-1 right-1 size-2.5 rounded-full transition-colors"
+					style={{ backgroundColor: selected ? 'var(--color-primary)' : 'var(--color-foreground)', opacity: selected ? 1 : 0.15 }}
+				/>
+			)}
+			{value === 'side-tab' && (
+				<div
+					className="absolute right-0 top-1/2 h-5 w-1.5 -translate-y-1/2 rounded-l-sm transition-colors"
+					style={{ backgroundColor: selected ? 'var(--color-primary)' : 'var(--color-foreground)', opacity: selected ? 1 : 0.15 }}
+				/>
+			)}
+		</div>
+	);
+}
+
 function BrowserPreview({
 	color,
 	position,
+	sideTabLabel = 'Feedback',
 }: {
 	color: string;
 	position: PositionValue;
+	sideTabLabel?: string;
 }) {
 	return (
 		<div
@@ -242,9 +280,9 @@ function BrowserPreview({
 			<div className="shrink-0 bg-[#dee1e6] select-none">
 				<div className="flex items-end px-2.5 pt-1.5">
 					<div className="flex shrink-0 items-center gap-[5px] pr-2.5 pb-[5px]">
-						<span className="size-[9px] rounded-full bg-[#ff5f57] shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.12)]" />
-						<span className="size-[9px] rounded-full bg-[#ffbd2e] shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.12)]" />
-						<span className="size-[9px] rounded-full bg-[#28c840] shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.12)]" />
+						<span className="size-[9px] rounded-full bg-[#FF5F57] shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.12)]" />
+						<span className="size-[9px] rounded-full bg-[#FFBD2E] shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.12)]" />
+						<span className="size-[9px] rounded-full bg-[#28C840] shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.12)]" />
 					</div>
 					<div className="flex items-center gap-1 rounded-t-[5px] bg-white px-2 pt-[4px] pb-[5px]">
 						<Globe className="text-muted-foreground/50 size-2.5 shrink-0" />
@@ -312,7 +350,7 @@ function BrowserPreview({
 						className="text-[8px] font-semibold tracking-widest select-none"
 						style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
 					>
-						{__('Feedback', 'allfeedback')}
+						{sideTabLabel}
 					</span>
 				</div>
 			</div>
@@ -328,64 +366,87 @@ function StepStyle({
 	set: (u: Partial<WizardCompletePayload>) => void;
 }) {
 	return (
-		<div className="grid grid-cols-1 items-stretch gap-8 lg:grid-cols-[1fr_1.3fr]">
+		<div className="grid grid-cols-1 items-stretch gap-8 lg:grid-cols-[2fr_3fr]">
+
+			{/* ── Left panel ─────────────────────────────────────────────── */}
 			<div className="flex flex-col">
-				<div className="border-border/50 bg-card shadow-card flex h-full flex-col rounded-2xl border p-6 md:p-8">
-					<div className="space-y-6">
-						<div className="space-y-3">
-							<label className="text-foreground block text-base font-medium">
+				<div className="border-border/50 bg-card shadow-card flex h-full flex-col rounded-2xl border p-5 md:p-6">
+					<div className="flex flex-col gap-5">
+
+						{/* Brand color */}
+						<div className="space-y-2.5">
+							<label className="text-foreground block text-[13px] font-semibold">
 								{__('Brand color', 'allfeedback')}
 							</label>
 							<ColorPicker
 								value={state.brand_color}
 								onChange={(v) => set({ brand_color: v })}
+								className="w-full"
 							/>
 						</div>
-						<div className="bg-border/50 h-px" />
-						<div className="space-y-4">
-							<label className="text-foreground block text-base font-medium">
+
+						{/* Widget position */}
+						<div className="space-y-2.5">
+							<label className="text-foreground block text-[13px] font-semibold">
 								{__('Widget position', 'allfeedback')}
 							</label>
 							<div className="flex flex-col gap-2">
-								{ALL_POSITIONS.map((pos) => (
-									<button
-										key={pos.value}
-										type="button"
-										onClick={() => set({ position: pos.value })}
-										className={cn(
-											'flex items-center justify-between rounded-xl border px-5 py-4 transition-all duration-300',
-											state.position === pos.value
-												? 'border-primary bg-primary/[0.03] text-primary shadow-sm'
-												: 'border-border/50 bg-muted/20 text-muted-foreground hover:border-border hover:bg-muted/40 hover:text-foreground',
-										)}
-									>
-										<span className="text-[14px] font-semibold">
-											{pos.label}
-										</span>
-										{state.position === pos.value && (
-											<Check className="size-4" strokeWidth={3} />
-										)}
-									</button>
-								))}
+								{ALL_POSITIONS.map((pos) => {
+									const isSelected = state.position === pos.value;
+									return (
+										<button
+											key={pos.value}
+											type="button"
+											onClick={() => set({ position: pos.value })}
+											className={cn(
+												'flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200',
+												isSelected
+													? 'bg-primary/[0.03]'
+													: 'bg-muted/10 hover:bg-muted/30',
+											)}
+											style={{
+												border: `1px solid ${isSelected ? 'var(--color-primary)' : 'var(--color-border)'}`,
+												borderRadius: '0.5rem',
+											}}
+										>
+											<PositionThumbnail value={pos.value as PositionValue} selected={isSelected} />
+											<div className="flex-1 text-left">
+												<div className={cn('text-[13px] font-semibold leading-tight', isSelected ? 'text-primary' : 'text-foreground')}>
+													{pos.label}
+												</div>
+												<div className="text-muted-foreground mt-0.5 text-[11px]">
+													{POSITION_SUB[pos.value]}
+												</div>
+											</div>
+											<div className={cn(
+												'flex size-4 shrink-0 items-center justify-center rounded-full border-2 transition-all',
+												isSelected ? 'border-primary bg-primary' : 'border-border',
+											)}>
+												{isSelected && <Check className="size-2.5 text-white" strokeWidth={3.5} />}
+											</div>
+										</button>
+									);
+								})}
 							</div>
 						</div>
 					</div>
 				</div>
 			</div>
 
+			{/* ── Right panel: preview ────────────────────────────────────── */}
 			<div className="border-border/50 bg-card shadow-card overflow-hidden rounded-2xl border">
-				<div className="border-border/50 bg-muted/10 flex shrink-0 items-center justify-between border-b px-6 py-4">
-					<div className="flex items-center gap-2.5">
-						<div className="flex gap-1.5">
-							<span className="bg-destructive/20 size-2.5 rounded-full" />
-							<span className="size-2.5 rounded-full bg-amber-400/20" />
-							<span className="size-2.5 rounded-full bg-green-500/20" />
-						</div>
-						<span className="text-muted-foreground/90 ml-2 text-xs font-bold tracking-widest uppercase">
+				<div className="border-border/50 bg-muted/10 flex shrink-0 items-center gap-2.5 border-b px-6 py-4">
+					<div className="flex gap-1.5">
+						<span className="size-2.5 rounded-full bg-[#FF5F57]" />
+						<span className="size-2.5 rounded-full bg-[#FFBD2E]" />
+						<span className="size-2.5 rounded-full bg-[#28C840]" />
+					</div>
+					<div className="ml-2 flex items-center gap-1.5">
+						<span className="size-1.5 animate-pulse rounded-full bg-green-500" />
+						<span className="text-muted-foreground/90 text-xs font-bold tracking-widest uppercase">
 							{__('Live Preview', 'allfeedback')}
 						</span>
 					</div>
-					<div className="bg-muted/40 h-2 w-24 rounded-full" />
 				</div>
 				<div className="bg-muted/5 flex items-center justify-center p-6 md:p-12">
 					<BrowserPreview
@@ -398,12 +459,6 @@ function StepStyle({
 	);
 }
 
-const NOTIF_OPTIONS = [
-	{ id: 'instant' as const, label: __('Instant', 'allfeedback'), Icon: Zap },
-	{ id: 'daily' as const, label: __('Daily', 'allfeedback'), Icon: Clock },
-	{ id: 'weekly' as const, label: __('Weekly', 'allfeedback'), Icon: Calendar },
-];
-
 function StepSettings({
 	state,
 	set,
@@ -411,21 +466,29 @@ function StepSettings({
 	state: WizardCompletePayload;
 	set: (u: Partial<WizardCompletePayload>) => void;
 }) {
-	const emailOk =
-		!state.admin_email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.admin_email);
+	const emailRe       = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+	const adminEmailOk  = !state.admin_email || emailRe.test(state.admin_email);
+	const fromEmailOk   = !state.from_email  || emailRe.test(state.from_email);
+
+	const inputCls = (valid: boolean) => cn(
+		'bg-muted/40 border-border/50 focus:border-primary/40 h-12 focus:bg-white',
+		!valid && 'border-destructive/40 bg-destructive/5 focus:border-destructive/60',
+	);
 
 	return (
 		<div className="flex flex-col gap-4">
 			<div className="border-border/50 bg-card shadow-card rounded-2xl border">
-				<div className="space-y-8 p-6 md:space-y-10 md:p-10">
-					<div className="space-y-4">
-						<div className="space-y-1.5">
+				<div className="space-y-5 p-5 md:p-6">
+
+					{/* ── Notification address ─────────────────────────── */}
+					<div className="space-y-3">
+						<div className="space-y-1">
 							<label className="text-foreground text-base font-medium">
-								{__('Where to send new response notifications', 'allfeedback')}
+								{__('Where to send notifications', 'allfeedback')}
 							</label>
 							<p className="text-muted-foreground text-sm leading-relaxed">
 								{__(
-									'This email will receive an alert whenever a new feedback is submitted.',
+									'Your weekly digest summary will be sent to this address.',
 									'allfeedback',
 								)}
 							</p>
@@ -433,64 +496,72 @@ function StepSettings({
 						<div className="space-y-2">
 							<Input
 								type="email"
-								placeholder={__('you@company.com', 'allfeedback')}
+								placeholder="you@company.com"
 								value={state.admin_email}
 								onChange={(e) => set({ admin_email: e.target.value })}
-								className={cn(
-									'bg-muted/40 border-border/50 focus:border-primary/40 h-12 focus:bg-white',
-									!emailOk &&
-										'border-destructive/40 bg-destructive/5 focus:border-destructive/60',
-								)}
+								className={inputCls(adminEmailOk)}
 							/>
-							{!emailOk && (
+							{!adminEmailOk && (
 								<div className="text-destructive flex items-center gap-2 text-[12px] font-medium">
 									<AlertCircle className="size-4" />
-									<span>
-										{__('Enter a valid email address.', 'allfeedback')}
-									</span>
+									<span>{__('Enter a valid email address.', 'allfeedback')}</span>
 								</div>
 							)}
 						</div>
 					</div>
 
-					<div className="space-y-4">
-						<div className="space-y-1.5">
+					{/* ── From name ────────────────────────────────────── */}
+					<div className="space-y-3">
+						<div className="space-y-1">
 							<label className="text-foreground text-base font-medium">
-								{__('Delivery frequency', 'allfeedback')}
+								{__('From name', 'allfeedback')}
 							</label>
 							<p className="text-muted-foreground text-sm leading-relaxed">
 								{__(
-									'Choose how often you want to receive notification digests.',
+									'The sender name shown in the recipient inbox.',
 									'allfeedback',
 								)}
 							</p>
 						</div>
-						<div className="border-border/50 bg-muted/30 inline-flex flex-col rounded-xl border p-1 sm:flex-row sm:items-center">
-							{NOTIF_OPTIONS.map((opt) => (
-								<button
-									key={opt.id}
-									type="button"
-									onClick={() => set({ notif_frequency: opt.id })}
-									className={cn(
-										'flex items-center gap-2 rounded-lg px-5 py-2.5 text-[13px] font-medium transition-all duration-300',
-										state.notif_frequency === opt.id
-											? 'text-primary border-border/20 border bg-white shadow-sm'
-											: 'text-muted-foreground hover:text-foreground hover:bg-white/50',
-									)}
-								>
-									<opt.Icon
-										className={cn(
-											'size-4',
-											state.notif_frequency === opt.id
-												? 'text-primary'
-												: 'text-muted-foreground/60',
-										)}
-									/>
-									{opt.label}
-								</button>
-							))}
+						<Input
+							type="text"
+							placeholder="AllFeedback"
+							value={state.from_name}
+							onChange={(e) => set({ from_name: e.target.value })}
+							className="bg-muted/40 border-border/50 focus:border-primary/40 h-10 focus:bg-white"
+						/>
+					</div>
+
+					{/* ── From email ────────────────────────────────────── */}
+					<div className="space-y-3">
+						<div className="space-y-1">
+							<label className="text-foreground text-base font-medium">
+								{__('From email', 'allfeedback')}
+							</label>
+							<p className="text-muted-foreground text-sm leading-relaxed">
+								{__(
+									'The sender address used when dispatching emails.',
+									'allfeedback',
+								)}
+							</p>
+						</div>
+						<div className="space-y-2">
+							<Input
+								type="email"
+								placeholder="noreply@yoursite.com"
+								value={state.from_email}
+								onChange={(e) => set({ from_email: e.target.value })}
+								className={inputCls(fromEmailOk)}
+							/>
+							{!fromEmailOk && (
+								<div className="text-destructive flex items-center gap-2 text-[12px] font-medium">
+									<AlertCircle className="size-4" />
+									<span>{__('Enter a valid email address.', 'allfeedback')}</span>
+								</div>
+							)}
 						</div>
 					</div>
+
 				</div>
 			</div>
 
@@ -511,44 +582,32 @@ function StepSettings({
 	);
 }
 
-const LAUNCH_HIGHLIGHTS = [
-	{
-		Icon: Check,
-		title: __('Survey ready', 'allfeedback'),
-		desc: __(
-			'A starter form is waiting in the builder — customize questions, copy, and logic.',
-			'allfeedback',
-		),
-		color: 'bg-success-subtle text-success',
-	},
-	{
-		Icon: Zap,
-		title: __('Go live instantly', 'allfeedback'),
-		desc: __(
-			"Publish with one click whenever you're satisfied. Your widget appears on your site immediately.",
-			'allfeedback',
-		),
-		color: 'bg-accent text-accent-foreground',
-	},
-	{
-		Icon: Bell,
-		title: __('Stay notified', 'allfeedback'),
-		desc: __(
-			'Get alerted each time a new response arrives, so you never miss a piece of feedback.',
-			'allfeedback',
-		),
-		color: 'bg-warning-subtle text-warning-foreground',
-	},
-];
+const TEMPLATE_STAT_LABELS: Record<string, string> = {
+	'nps':               'NPS Survey',
+	'general-feedback':  'General Feedback',
+	'bug-report':        'Bug Report',
+	'feature-request':   'Feature Request',
+	'product-feedback':  'Product Feedback',
+	'customer-research': 'Customer Research',
+};
+
+const POSITION_STAT_LABELS: Record<string, string> = {
+	'bottom-right': 'Bottom right',
+	'bottom-left':  'Bottom left',
+	'side-tab':     'Side tab',
+};
 
 function StepFinal({
+	state,
 	onFinish,
 	submitting,
 }: {
+	state: WizardCompletePayload;
 	onFinish: (target: 'editor' | 'forms') => void;
 	submitting: boolean;
 }) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
+	const brandColor = state.brand_color || '#6366F1';
 
 	useEffect(() => {
 		if (!canvasRef.current) return;
@@ -561,125 +620,338 @@ function StepFinal({
 				...opts,
 				origin: { y: 0.55 },
 				particleCount: Math.floor(200 * particleRatio),
-				colors: [
-					'#6366f1',
-					'#818cf8',
-					'#a5b4fc',
-					'#e0e7ff',
-					'#f59e0b',
-					'#34d399',
-				],
+				colors: ['#6366f1', '#818cf8', '#a5b4fc', '#e0e7ff', '#f59e0b', '#34d399'],
 			});
 
 		const t = setTimeout(() => {
 			fire(0.25, { spread: 26, startVelocity: 55 });
-			fire(0.2, { spread: 60 });
+			fire(0.2,  { spread: 60 });
 			fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
-			fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
-			fire(0.1, { spread: 120, startVelocity: 45 });
+			fire(0.1,  { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+			fire(0.1,  { spread: 120, startVelocity: 45 });
 		}, 250);
 
-		return () => {
-			clearTimeout(t);
-			myConfetti.reset();
-		};
+		return () => { clearTimeout(t); myConfetti.reset(); };
 	}, []);
 
 	return (
-		<div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden">
-			<canvas
-				ref={canvasRef}
-				className="pointer-events-none absolute inset-0 size-full"
-			/>
+		<div className="relative flex flex-1 flex-col justify-center overflow-hidden">
+			<canvas ref={canvasRef} className="pointer-events-none absolute inset-0 size-full" />
 
-			<div className="relative z-10 flex w-full flex-col items-center gap-10">
-				<div className="flex flex-col items-center gap-5 text-center">
-					<div
-						className="bg-primary flex size-[68px] items-center justify-center rounded-2xl text-white"
-						style={{ boxShadow: '0 6px 24px oklch(0.580 0.238 277 / 0.35)' }}
+			<style>{`
+				@keyframes wizard-dot-pulse {
+					0%, 100% { box-shadow: 0 0 0 3px rgba(22,163,74,0.18); }
+					50%       { box-shadow: 0 0 0 5px rgba(22,163,74,0.05); }
+				}
+				@keyframes wizard-widget-in {
+					0%   { opacity: 0; transform: translateY(20px) scale(0.92); }
+					100% { opacity: 1; transform: translateY(0)    scale(1); }
+				}
+				@keyframes wizard-shimmer {
+					from { background-position: 200% 0; }
+					to   { background-position: -200% 0; }
+				}
+			`}</style>
+
+			<div
+				className="relative z-10 grid w-full items-center gap-10"
+				style={{ gridTemplateColumns: '1.05fr 1fr' }}
+			>
+				{/* ── Left: hero ─────────────────────────────────────── */}
+				<div>
+					<span
+						className="border-brand-200 bg-brand-50 text-brand-700 mb-[18px] inline-flex items-center gap-2 rounded-full border py-[5px] pr-3 pl-2"
+						style={{ fontSize: '0.8125rem', fontWeight: 600 }}
 					>
-						<Rocket className="size-7" />
-					</div>
-					<div className="space-y-2">
-						<h2
-							className="text-foreground text-2xl font-bold tracking-tight"
-							style={{ margin: 0 }}
-						>
-							{__("You're all set!", 'allfeedback')}
-						</h2>
-						<p
-							className="text-muted-foreground mx-auto max-w-sm text-sm leading-relaxed"
-							style={{ margin: 0 }}
-						>
-							{__(
-								'Your widget is configured and your first survey is ready. Open the editor to fine-tune your questions, then publish when ready.',
-								'allfeedback',
-							)}
-						</p>
-					</div>
-				</div>
-
-				<div className="flex w-full items-center gap-4">
-					<div className="to-border h-px flex-1 bg-gradient-to-r from-transparent" />
-					<span className="text-muted-foreground/90 text-xs font-semibold tracking-widest uppercase">
-						{__("What's next", 'allfeedback')}
+						<span
+							className="bg-success size-2 shrink-0 rounded-full"
+							style={{ animation: 'wizard-dot-pulse 2s ease-in-out infinite' }}
+						/>
+						{__('Setup complete · ready to launch', 'allfeedback')}
 					</span>
-					<div className="to-border h-px flex-1 bg-gradient-to-l from-transparent" />
+
+					<h1
+						className="text-foreground tracking-tight"
+						style={{ fontSize: '2.25rem', fontWeight: 800, lineHeight: 1.1, margin: '0 0 1rem' }}
+					>
+						{__('Your survey is', 'allfeedback')}{' '}
+						<span
+							style={{
+								background: 'linear-gradient(120deg, var(--brand-500), var(--brand-700) 70%)',
+								WebkitBackgroundClip: 'text',
+								backgroundClip: 'text',
+								color: 'transparent',
+							}}
+						>
+							{__('ready to launch.', 'allfeedback')}
+						</span>
+						<br />
+						{__('Open the editor to go live.', 'allfeedback')}
+					</h1>
+
+					<p
+						className="text-muted-foreground max-w-[460px] text-md leading-relaxed"
+						style={{ margin: '0 0 1.75rem', fontSize: '1.125rem', fontWeight: 400 }}
+					>
+						{__(
+							"We've configured everything. Fine-tune your questions in the editor, then publish — your widget appears on your site instantly.",
+							'allfeedback',
+						)}
+					</p>
+
+					<div
+						className="border-border mb-8 border-y"
+						style={{
+							display: 'grid',
+							gridTemplateColumns: 'repeat(3, 1fr)',
+							padding: '18px 0',
+						}}
+					>
+						{[
+							{
+								label: __('Template', 'allfeedback'),
+								value: TEMPLATE_STAT_LABELS[state.template] ?? state.template,
+								icon:  null,
+							},
+							{
+								label: __('Position', 'allfeedback'),
+								value: POSITION_STAT_LABELS[state.position] ?? state.position,
+								icon:  null,
+							},
+							{
+								label: __('Notifications', 'allfeedback'),
+								value: state.admin_email
+									? __('Email set', 'allfeedback')
+									: __('Not set', 'allfeedback'),
+								icon: state.admin_email ? (
+									<Check className="text-success size-3.5" strokeWidth={3} />
+								) : null,
+							},
+						].map((stat, i) => (
+							<div
+								key={stat.label}
+								className={cn(i < 2 && 'border-border border-r')}
+								style={{
+									padding: i === 0 ? '0 18px 0 0' : i === 2 ? '0 0 0 18px' : '0 18px',
+								}}
+							>
+								<div
+									className="text-muted-foreground uppercase tracking-[0.06em]"
+									style={{ fontSize: '0.75rem', fontWeight: 600, marginBottom: '0.375rem' }}
+								>
+									{stat.label}
+								</div>
+								<div
+									className="text-foreground flex items-center gap-1.5 tracking-[-0.01em]"
+									style={{ fontSize: '1.25rem', fontWeight: 700 }}
+								>
+									{stat.icon}
+									{stat.value}
+								</div>
+							</div>
+						))}
+					</div>
+
+					<div className="flex items-center gap-2.5">
+						<Button
+							size="lg"
+							className="h-11 px-6 font-semibold !text-white"
+							onClick={() => onFinish('editor')}
+							disabled={submitting}
+						>
+							{submitting ? (
+								<Loader2 className="size-5 animate-spin" />
+							) : (
+								<Edit2 className="size-5" />
+							)}
+							{__('Open Editor', 'allfeedback')}
+							<ArrowRight className="size-4" />
+						</Button>
+						<Button
+							variant="secondary"
+							size="lg"
+							onClick={() => onFinish('forms')}
+							disabled={submitting}
+						>
+							<LayoutGrid className="size-4" />
+							{__('All Forms', 'allfeedback')}
+						</Button>
+					</div>
 				</div>
 
-				<div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-3">
-					{LAUNCH_HIGHLIGHTS.map((item, i) => (
+				{/* ── Right: browser preview ──────────────────────────── */}
+				<div
+					className="border-brand-100 relative overflow-hidden rounded-[20px] border"
+					style={{
+						height: 480,
+						display: 'grid',
+						placeItems: 'center',
+						background: [
+							'radial-gradient(circle at 30% 20%, rgba(154,145,247,0.25), transparent 50%)',
+							'radial-gradient(circle at 80% 70%, rgba(192,183,251,0.30), transparent 50%)',
+							'linear-gradient(180deg, var(--brand-50), #FFF)',
+						].join(', '),
+					}}
+				>
+					<div
+						className="pointer-events-none absolute inset-0"
+						style={{
+							backgroundImage: [
+								'linear-gradient(rgba(99,102,241,0.06) 1px, transparent 1px)',
+								'linear-gradient(90deg, rgba(99,102,241,0.06) 1px, transparent 1px)',
+							].join(', '),
+							backgroundSize: '24px 24px',
+							maskImage: 'radial-gradient(ellipse at center, #000 35%, transparent 75%)',
+							WebkitMaskImage: 'radial-gradient(ellipse at center, #000 35%, transparent 75%)',
+						}}
+					/>
+
+					<div
+						className="relative overflow-hidden bg-white"
+						style={{
+							width: '88%',
+							maxWidth: 420,
+							borderRadius: 12,
+							boxShadow: '0 0 0 1px rgba(0,0,0,0.06), 0 24px 50px -10px rgba(31,29,57,0.18), 0 8px 20px -8px rgba(99,102,241,0.20)',
+						}}
+					>
+						{/* Chrome bar */}
 						<div
-							key={item.title}
-							className="border-border/50 bg-card shadow-card relative flex flex-col gap-4 overflow-hidden rounded-2xl border p-6"
+							style={{
+								display: 'flex', alignItems: 'center', gap: 6,
+								padding: '10px 12px',
+								borderBottom: '1px solid var(--border)',
+								background: '#FAFBFC',
+							}}
 						>
-							<span className="text-foreground/[0.03] pointer-events-none absolute top-2 right-4 text-[52px] leading-none font-black tabular-nums select-none">
-								{i + 1}
-							</span>
+							<span style={{ width: 9, height: 9, borderRadius: '50%', background: '#FF5F57', flexShrink: 0 }} />
+							<span style={{ width: 9, height: 9, borderRadius: '50%', background: '#FFBD2E', flexShrink: 0 }} />
+							<span style={{ width: 9, height: 9, borderRadius: '50%', background: '#28C840', flexShrink: 0 }} />
 							<div
-								className={cn(
-									'flex size-10 items-center justify-center rounded-xl',
-									item.color,
-								)}
+								style={{
+									flex: 1, marginLeft: 10, height: 22,
+									background: 'white',
+									border: '1px solid var(--border)',
+									borderRadius: 5,
+									display: 'flex', alignItems: 'center',
+									padding: '0 9px',
+									fontSize: 11,
+									color: 'var(--muted-foreground)',
+									fontFamily: 'ui-monospace, monospace',
+									gap: 5,
+								}}
 							>
-								<item.Icon className="size-[18px]" />
-							</div>
-							<div className="space-y-1.5">
-								<p className="text-foreground text-[14px] font-semibold">
-									{item.title}
-								</p>
-								<p className="text-muted-foreground text-[13px] leading-relaxed">
-									{item.desc}
-								</p>
+								<span style={{ fontSize: 9, opacity: 0.5 }}>🔒</span>
+								acme.com/checkout
 							</div>
 						</div>
-					))}
-				</div>
 
-				<div className="flex w-full items-center justify-end gap-3">
-					<Button
-						variant="secondary"
-						className="h-11 bg-transparent px-6"
-						onClick={() => onFinish('forms')}
-						disabled={submitting}
-					>
-						<LayoutGrid className="size-4" />
-						{__('Go to All Forms', 'allfeedback')}
-					</Button>
-					<Button
-						size="lg"
-						className="h-11 font-semibold !text-white"
-						onClick={() => onFinish('editor')}
-						disabled={submitting}
-					>
-						{submitting ? (
-							<Loader2 className="size-5 animate-spin" />
-						) : (
-							<Edit2 className="size-5" />
-						)}
-						{__('Open Editor', 'allfeedback')}
-						<ArrowRight className="size-5" />
-					</Button>
+						{/* Page body */}
+						<div
+							style={{
+								position: 'relative',
+								height: 220,
+								padding: '18px 20px 20px',
+								background: 'linear-gradient(180deg, #fff, #FAFBFC)',
+							}}
+						>
+							{/* Skeleton rows */}
+							<div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+								{([
+									{ w: '30%', h: 14 },
+									{ w: '80%', h: 8  },
+									{ w: '50%', h: 8  },
+									{ w: '80%', h: 8  },
+									{ w: '30%', h: 14 },
+								] as { w: string; h: number }[]).map((row, i) => (
+									<div
+										key={i}
+										style={{
+											height: row.h,
+											width: row.w,
+											borderRadius: 4,
+											background: 'linear-gradient(90deg, #EEF0F4, #F5F6F8, #EEF0F4)',
+											backgroundSize: '200% 100%',
+											animation: 'wizard-shimmer 2.4s linear infinite',
+										}}
+									/>
+								))}
+							</div>
+
+							{/* Floating widget */}
+							<div
+								style={{
+									position: 'absolute',
+									bottom: 22, right: 22,
+									width: 250,
+									background: 'white',
+									borderRadius: 14,
+									border: '1px solid var(--border)',
+									boxShadow: '0 0 0 1px rgba(99,102,241,0.10), 0 20px 40px -8px rgba(31,29,57,0.20), 0 4px 12px -2px rgba(99,102,241,0.18)',
+									overflow: 'hidden',
+									animation: 'wizard-widget-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both',
+								}}
+							>
+								<div
+									style={{
+										padding: '14px 14px 10px',
+										background: `linear-gradient(180deg, ${brandColor}, ${brandColor}cc)`,
+										color: '#fff',
+									}}
+								>
+									<div style={{ fontSize: 13, fontWeight: 600 }}>
+										{__('Quick feedback', 'allfeedback')}
+									</div>
+									<div style={{ fontSize: 11, opacity: 0.85, marginTop: 2 }}>
+										{__('Takes about 30 seconds', 'allfeedback')}
+									</div>
+								</div>
+								<div style={{ padding: 14 }}>
+									<div
+										style={{
+											fontSize: 12, fontWeight: 500, marginBottom: 10,
+											color: 'var(--foreground)',
+										}}
+									>
+										{__('How likely are you to recommend Acme?', 'allfeedback')}
+									</div>
+									<div style={{ display: 'flex', gap: 4, marginBottom: 10 }}>
+										{[1, 2, 3, 4, 5].map((n) => (
+											<span
+												key={n}
+												style={{
+													width: 22, height: 22,
+													borderRadius: 5,
+													display: 'grid', placeItems: 'center',
+													fontSize: 11, fontWeight: 600,
+													border: '1px solid var(--border)',
+													cursor: 'default',
+													...(n >= 4
+														? { background: brandColor, color: '#fff', borderColor: brandColor }
+														: { background: 'var(--brand-50)', color: 'var(--brand-300)' }),
+												}}
+											>
+												{n}
+											</span>
+										))}
+									</div>
+									<div
+										style={{
+											height: 26, borderRadius: 6,
+											background: 'var(--muted)',
+											border: '1px solid var(--border)',
+											display: 'flex', alignItems: 'center',
+											padding: '0 10px',
+											fontSize: 11,
+											color: 'var(--muted-foreground)',
+										}}
+									>
+										{__('Tell us more (optional)…', 'allfeedback')}
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -782,14 +1054,17 @@ export default function SetupWizard() {
 
 			<main className="flex min-h-0 flex-1 flex-col overflow-auto">
 				<div
-					className="mx-auto flex w-full max-w-[1000px] flex-1 flex-col px-4 py-6 md:px-8 md:py-8"
+					className={cn(
+						'mx-auto flex w-full max-w-[1280px] flex-1 flex-col px-4 md:px-8 pt-6 md:pt-8',
+						step === 3 ? 'pb-4' : 'pb-6 md:pb-8',
+					)}
 					key={step}
 				>
 					{!isDone && (
-						<div className="mb-8 flex justify-center md:mb-14">
+						<div className={cn('flex justify-center', step === 3 ? 'mb-4' : 'mb-8 md:mb-14')}>
 							<div className="bg-card border-border/50 relative flex items-center rounded-2xl border p-2 shadow-sm">
 								{STEPS.map((s, i) => {
-									const isActive = i === step;
+									const isActive   = i === step;
 									const isDoneStep = i < step;
 									const isClickable = i < step;
 									return (
@@ -797,14 +1072,13 @@ export default function SetupWizard() {
 											<button
 												type="button"
 												className={cn(
-													'group relative flex items-center gap-3 rounded-xl px-5 py-3 transition-all duration-300',
+													'group relative flex items-center gap-2.5 rounded-xl px-5 py-2.5 transition-all duration-300',
 													isActive
 														? 'bg-primary text-primary-foreground shadow-sm'
 														: isDoneStep
-															? 'text-foreground/90'
-															: 'text-muted-foreground/70',
-													isClickable &&
-														!isActive &&
+															? 'text-foreground/80'
+															: 'text-muted-foreground/60',
+													isClickable && !isActive &&
 														'hover:bg-muted/40 hover:text-foreground',
 												)}
 												style={{ cursor: isClickable ? 'pointer' : 'default' }}
@@ -812,11 +1086,11 @@ export default function SetupWizard() {
 											>
 												<div
 													className={cn(
-														'flex size-6 shrink-0 items-center justify-center rounded-full text-[12px] font-semibold',
+														'flex size-6 shrink-0 items-center justify-center rounded-full text-[12px] font-bold',
 														isActive
-															? 'bg-white/20 text-white'
+															? 'bg-white/25 text-white'
 															: isDoneStep
-																? 'bg-primary/10 text-primary'
+																? 'bg-success/15 text-success'
 																: 'bg-muted text-muted-foreground/50',
 													)}
 												>
@@ -827,18 +1101,22 @@ export default function SetupWizard() {
 													)}
 												</div>
 												<span
-													className={cn(
-														'text-[14px] tracking-tight',
-														isActive || isDoneStep
-															? 'font-semibold'
-															: 'font-medium',
-													)}
+													style={{
+														fontSize:   14,
+														fontWeight: isActive ? 700 : isDoneStep ? 500 : 400,
+														color:      isActive
+															? 'inherit'
+															: isDoneStep
+																? 'var(--color-foreground)'
+																: 'var(--color-muted-foreground)',
+														letterSpacing: '-0.01em',
+													}}
 												>
 													{s.label}
 												</span>
 											</button>
 											{i < STEPS.length - 1 && (
-												<div className="mx-2 flex items-center gap-1 opacity-20">
+												<div className="mx-2 flex items-center gap-1 opacity-25">
 													<div className="bg-foreground size-1 rounded-full" />
 													<div className="bg-foreground size-1 rounded-full" />
 													<div className="bg-foreground size-1 rounded-full" />
@@ -869,7 +1147,7 @@ export default function SetupWizard() {
 						{!isDone && step === 1 && <StepStyle state={state} set={set} />}
 						{!isDone && step === 2 && <StepSettings state={state} set={set} />}
 						{!isDone && step === 3 && (
-							<StepFinal onFinish={(t) => finish(t)} submitting={submitting} />
+							<StepFinal state={state} onFinish={(t) => finish(t)} submitting={submitting} />
 						)}
 					</div>
 				</div>
