@@ -36,7 +36,7 @@ export type DelayUnit         = 'seconds' | 'minutes' | 'hours';
 export type DisplayFrequency  = 'once' | 'until_submit';
 export type DismissUnit       = 'hours' | 'days' | 'weeks';
 export type ProgressIndicator = 'dots' | 'numbers' | 'bar' | 'none';
-export type TriggerIcon       = 'message' | 'chat' | 'typing' | 'comment' | 'mail';
+export type TriggerIcon       = 'message' | 'chat' | 'smile' | 'star' | 'pen';
 export type WidgetPosition = '' | 'bottom-right' | 'bottom-left' | 'side-tab';
 
 export interface FormSettings {

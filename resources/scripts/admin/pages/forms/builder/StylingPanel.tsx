@@ -1,47 +1,12 @@
 import { cn } from '@/lib/utils';
 import { __ } from '@wordpress/i18n';
-import { Mail, MessageCircle, MessageSquare } from 'lucide-react';
+import { MessageCircle, MessageSquare, PenLine, Smile, Star } from 'lucide-react';
 import type {
 	FormSettings,
 	ProgressIndicator,
 	TriggerIcon,
 	WidgetPosition,
 } from './types';
-
-const TypingBubbleIcon = (props: React.SVGProps<SVGSVGElement>) => (
-	<svg
-		viewBox="0 0 24 24"
-		fill="none"
-		stroke="currentColor"
-		strokeWidth="2"
-		strokeLinecap="round"
-		strokeLinejoin="round"
-		aria-hidden="true"
-		{...props}
-	>
-		<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-		<circle cx="9" cy="11" r="1" fill="currentColor" stroke="none" />
-		<circle cx="12" cy="11" r="1" fill="currentColor" stroke="none" />
-		<circle cx="15" cy="11" r="1" fill="currentColor" stroke="none" />
-	</svg>
-);
-
-const CommentBubbleIcon = (props: React.SVGProps<SVGSVGElement>) => (
-	<svg
-		viewBox="0 0 24 24"
-		fill="none"
-		stroke="currentColor"
-		strokeWidth="2"
-		strokeLinecap="round"
-		strokeLinejoin="round"
-		aria-hidden="true"
-		{...props}
-	>
-		<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-		<line x1="9" y1="9" x2="15" y2="9" />
-		<line x1="9" y1="13" x2="13" y2="13" />
-	</svg>
-);
 
 interface StylingPanelProps {
 	settings: FormSettings;
@@ -136,17 +101,9 @@ const ICON_OPTIONS: {
 		Icon: MessageSquare,
 	},
 	{ value: 'chat', label: __('Chat', 'allfeedback'), Icon: MessageCircle },
-	{
-		value: 'typing',
-		label: __('Typing', 'allfeedback'),
-		Icon: TypingBubbleIcon,
-	},
-	{
-		value: 'comment',
-		label: __('Comment', 'allfeedback'),
-		Icon: CommentBubbleIcon,
-	},
-	{ value: 'mail', label: __('Mail', 'allfeedback'), Icon: Mail },
+	{ value: 'smile', label: __('Smile', 'allfeedback'), Icon: Smile },
+	{ value: 'star', label: __('Star', 'allfeedback'), Icon: Star },
+	{ value: 'pen', label: __('Pen', 'allfeedback'), Icon: PenLine },
 ];
 
 const POSITION_OPTIONS: {

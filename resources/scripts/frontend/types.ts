@@ -12,7 +12,7 @@ export interface SurveyConfig {
 	max_impressions?:   number;
 	reshow_after_days?: number;
 	server_state?:      WidgetState;
-	trigger_icon?:      'message' | 'chat' | 'typing' | 'comment' | 'mail';
+	trigger_icon?:      'message' | 'chat' | 'smile' | 'star' | 'pen';
 	widget_position?:   'bottom-right' | 'bottom-left' | 'side-tab';
 	widget_color?:      string;
 	widget_label?:      string;
@@ -75,7 +75,7 @@ export interface SurveySettings {
 	next_label?:          string;
 	back_label?:          string;
 	progressIndicator?:   'dots' | 'numbers' | 'bar' | 'none';
-	triggerIcon?:         'message' | 'chat' | 'typing' | 'comment' | 'mail';
+	triggerIcon?:         'message' | 'chat' | 'smile' | 'star' | 'pen';
 }
 
 export interface Survey {
@@ -93,5 +93,5 @@ export interface NormalizedSettings {
 	thankYouTitle:       string;
 	thankYouDescription: string;
 	progressIndicator:   'dots' | 'numbers' | 'bar' | 'none';
-	triggerIcon:         'message' | 'chat' | 'typing' | 'comment' | 'mail';
+	triggerIcon:         'message' | 'chat' | 'smile' | 'star' | 'pen';
 }
