@@ -17,7 +17,7 @@ export function StepSettings({
 
 	const inputCls = (valid: boolean) =>
 		cn(
-			'bg-muted/40 border-border/50 focus:border-primary/40 h-12 focus:bg-white',
+			'bg-muted/40 border-border/50 focus:border-primary/40 h-10 focus:bg-white',
 			!valid && 'border-destructive/40 bg-destructive/5 focus:border-destructive/60',
 		);
 

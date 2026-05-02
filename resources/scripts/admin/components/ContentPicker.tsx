@@ -163,8 +163,7 @@ export const ContentPicker = ( {
 					<Loader2 className="size-4 animate-spin text-muted-foreground/40" />
 				</div>
 			) : visible.length === 0 ? (
-				<div className="flex flex-col items-center gap-1.5 px-4 py-6 text-center">
-					<FileText className="size-5 text-muted-foreground/25" />
+				<div className="px-4 py-3 text-center">
 					<p className="text-[13px] text-muted-foreground/60">
 						{ results.length > 0
 							? __( 'All results already selected.', 'allfeedback' )
@@ -225,9 +224,8 @@ export const ContentPicker = ( {
 					{ selected.map( ( { id, title } ) => (
 						<span
 							key={ id }
-							className="flex items-center gap-1.5 rounded-lg border border-border/50 bg-muted/40 px-2.5 py-1 text-[13px] text-foreground/80"
+							className="flex items-center gap-1 rounded-lg border border-border/50 bg-muted/40 px-2 py-0.5 text-[13px] text-foreground/80"
 						>
-							<FileText className="size-3.5 shrink-0 text-muted-foreground/50" />
 							<span className="max-w-[150px] truncate">{ title }</span>
 							<button
 								type="button"

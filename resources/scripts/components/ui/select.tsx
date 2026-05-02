@@ -31,7 +31,7 @@ function SelectTrigger({
 				'data-[placeholder]:text-muted-foreground/40',
 				'focus-visible:border-primary/50 focus-visible:ring-1 focus-visible:ring-primary/10',
 				'disabled:cursor-not-allowed disabled:opacity-50',
-				'data-[size=default]:h-9 data-[size=default]:text-[14px] data-[size=sm]:h-8 data-[size=sm]:text-sm',
+				'data-[size=default]:h-10 data-[size=default]:text-[14px] data-[size=sm]:h-9 data-[size=sm]:text-sm',
 				'[&_svg]:pointer-events-none [&_svg]:shrink-0',
 				"[&_svg:not([class*='size-'])]:size-4",
 				'*:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2',
