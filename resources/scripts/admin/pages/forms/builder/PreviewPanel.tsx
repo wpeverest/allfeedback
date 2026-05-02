@@ -714,36 +714,24 @@ const PreviewPanel = ({
 										<span className="text-foreground/70 min-w-0 flex-1 truncate text-[8.5px]">
 											{siteHostname}
 										</span>
-										<X className="text-muted-foreground/35 hover:text-foreground/60 size-2.5 shrink-0" />
+										<X className="text-muted-foreground/35 size-2.5 shrink-0" />
 									</div>
 
-									<button
-										type="button"
-										className="text-foreground/40 hover:text-foreground/60 ml-3 flex size-[18px] items-center justify-center self-center rounded hover:bg-black/8"
-									>
+									<div className="text-foreground/40 ml-3 flex size-[18px] items-center justify-center self-center rounded">
 										<Plus className="size-3" />
-									</button>
+									</div>
 								</div>
 
 								<div className="flex items-center gap-0.5 px-2 pt-2 pb-2">
-									<button
-										type="button"
-										className="text-foreground/20 flex size-[22px] items-center justify-center rounded-full"
-									>
+									<div className="text-foreground/20 flex size-[22px] items-center justify-center rounded-full">
 										<ArrowLeft className="size-3.5" />
-									</button>
-									<button
-										type="button"
-										className="text-foreground/20 flex size-[22px] items-center justify-center rounded-full"
-									>
+									</div>
+									<div className="text-foreground/20 flex size-[22px] items-center justify-center rounded-full">
 										<ArrowRight className="size-3.5" />
-									</button>
-									<button
-										type="button"
-										className="text-foreground/50 flex size-[22px] items-center justify-center rounded-full hover:bg-black/8"
-									>
+									</div>
+									<div className="text-foreground/50 flex size-[22px] items-center justify-center rounded-full">
 										<RotateCw className="size-3" />
-									</button>
+									</div>
 
 									<div className="mx-1.5 flex flex-1 items-center gap-1.5 rounded-full bg-white/95 px-3 py-[3px] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.10),0_1px_2px_rgba(0,0,0,0.06)]">
 										<Lock className="size-2.5 shrink-0 text-[#1e8e3e]" />
@@ -753,12 +741,9 @@ const PreviewPanel = ({
 										<Star className="text-muted-foreground/30 size-2.5 shrink-0" />
 									</div>
 
-									<button
-										type="button"
-										className="text-foreground/50 flex size-[22px] items-center justify-center rounded-full hover:bg-black/8"
-									>
+									<div className="text-foreground/50 flex size-[22px] items-center justify-center rounded-full">
 										<MoreHorizontal className="size-3.5" />
-									</button>
+									</div>
 								</div>
 							</div>
 
