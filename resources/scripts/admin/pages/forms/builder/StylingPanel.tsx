@@ -228,7 +228,7 @@ const SectionCard = ({
 }) => (
 	<div className="border-border/60 overflow-hidden rounded-2xl border bg-white">
 		<div className="border-border/50 border-b p-5">
-			<p className="text-foreground/90 !my-0 text-sm font-semibold">{title}</p>
+			<div className="text-base font-semibold text-foreground/90">{title}</div>
 		</div>
 		<div className="p-5">{children}</div>
 	</div>
@@ -319,33 +319,35 @@ const StylingPanel = ({
 					</SectionCard>
 				)}
 
-				<SectionCard title={__('Trigger Icon', 'allfeedback')}>
-					<div className="grid grid-cols-5 gap-2">
-						{ICON_OPTIONS.map(({ value, label, Icon }) => {
-							const isActive = settings.triggerIcon === value;
-							return (
-								<button
-									key={value}
-									type="button"
-									aria-pressed={isActive}
-									onClick={() => set('triggerIcon', value)}
-									className={optionBase(isActive)}
-								>
-									{isActive && <ActiveBadge />}
-									<Icon className="size-5" />
-									<span
-										className={cn(
-											'text-xs leading-none font-medium',
-											isActive ? 'text-primary' : 'text-foreground/55',
-										)}
+				{settings.widgetPosition !== 'side-tab' && (
+					<SectionCard title={__('Trigger Icon', 'allfeedback')}>
+						<div className="grid grid-cols-5 gap-2">
+							{ICON_OPTIONS.map(({ value, label, Icon }) => {
+								const isActive = settings.triggerIcon === value;
+								return (
+									<button
+										key={value}
+										type="button"
+										aria-pressed={isActive}
+										onClick={() => set('triggerIcon', value)}
+										className={optionBase(isActive)}
 									>
-										{label}
-									</span>
-								</button>
-							);
-						})}
-					</div>
-				</SectionCard>
+										{isActive && <ActiveBadge />}
+										<Icon className="size-5" />
+										<span
+											className={cn(
+												'text-xs leading-none font-medium',
+												isActive ? 'text-primary' : 'text-foreground/55',
+											)}
+										>
+											{label}
+										</span>
+									</button>
+								);
+							})}
+						</div>
+					</SectionCard>
+				)}
 			</div>
 		</div>
 	);

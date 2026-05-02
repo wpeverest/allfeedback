@@ -209,7 +209,7 @@ const Analytics = () => {
 
 	if (isError) {
 		return (
-			<div className="px-4 py-5 sm:px-6 lg:px-8">
+			<div className="p-5 md:p-6">
 				<div style={{ background: 'var(--card)', borderRadius: 'var(--radius-2xl)', boxShadow: 'var(--shadow-card)' }}>
 					<EmptyState
 						icon={AlertCircle}
@@ -223,7 +223,7 @@ const Analytics = () => {
 
 	if (!listLoading && forms.length === 0) {
 		return (
-			<div className="px-4 py-5 sm:px-6 lg:px-8">
+			<div className="p-5 md:p-6">
 				<div style={{ background: 'var(--card)', borderRadius: 'var(--radius-2xl)', boxShadow: 'var(--shadow-card)' }}>
 					<EmptyState
 						icon={BarChart2}
@@ -236,8 +236,8 @@ const Analytics = () => {
 	}
 
 	return (
-		<div className="px-4 pb-8 sm:px-6 lg:px-8">
-			<div style={{ padding: '20px 0 16px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+		<div className="p-5 md:p-6">
+			<div className="mb-4 flex flex-wrap items-center gap-3 py-1">
 				<FormSelector forms={forms} selectedId={selectedFormId} onChange={setSelectedFormId} />
 			</div>
 

@@ -270,7 +270,7 @@ const SectionCard = ({
 						<Tooltip content={__('Click to edit', 'allfeedback')}>
 							<button
 								type="button"
-								className="section-title-btn group text-base text-foreground hover:border-border/50 flex w-[260px] items-center gap-2 rounded-md border border-transparent px-2 py-1 text-left font-semibold transition-colors hover:bg-black/[0.04]"
+								className="section-title-btn group text-base text-foreground/90 hover:border-border/50 flex w-[260px] items-center gap-2 rounded-md border border-transparent px-2 py-1 text-left font-semibold transition-colors hover:bg-black/[0.04]"
 								onClick={(e) => {
 									e.stopPropagation();
 									startEditingTitle();

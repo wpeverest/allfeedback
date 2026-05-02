@@ -411,17 +411,7 @@ return (
 			</div>
 
 			<div className="flex items-center gap-2 border-t border-border/[0.12] bg-white px-4 pb-3.5 pt-3">
-				<div
-					className="shrink-0 rounded-md"
-					style={{
-						width:           28,
-						height:          28,
-						backgroundColor: hex,
-						boxShadow:       'inset 0 0 0 1px rgba(0,0,0,0.12)',
-					}}
-				/>
-
-				<div className="relative min-w-0 flex-1 overflow-hidden rounded-md border border-border/40 bg-muted/30 transition-colors focus-within:bg-white" style={{ height: 28 }}>
+				<div className="relative min-w-0 flex-1 overflow-hidden rounded-md border border-border/40 bg-muted/30 transition-colors focus-within:bg-white" style={{ height: 32 }}>
 					<input
 						type="text"
 						value={ draft }
@@ -435,7 +425,7 @@ return (
 						onKeyDown={ ( e ) => { if ( e.key === 'Enter' ) ( e.target as HTMLInputElement ).blur(); } }
 						spellCheck={ false }
 						className="h-full w-full bg-transparent font-mono text-[11px] uppercase text-foreground/70 outline-none"
-						style={{ paddingLeft: 8, paddingRight: 40, boxSizing: 'border-box', border: 'none' }}
+						style={{ paddingLeft: 10, paddingRight: 44, boxSizing: 'border-box', border: 'none' }}
 					/>
 					<button
 						type="button"
@@ -452,7 +442,7 @@ return (
 					aria-label={ __( 'Copy value', 'allfeedback' ) }
 					onClick={ copyHex }
 					className="shrink-0 cursor-pointer rounded-md border border-border/50 bg-muted/30 transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-none"
-					style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+					style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
 				>
 					<Copy style={{ width: 12, height: 12, color: 'var(--color-foreground)', opacity: 0.50 }} />
 				</button>

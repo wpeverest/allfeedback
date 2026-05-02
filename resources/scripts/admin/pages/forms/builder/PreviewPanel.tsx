@@ -27,7 +27,8 @@ import {
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
-const genId = (): string => Math.random().toString(36).slice(2) + Date.now().toString(36);
+const genId = (): string =>
+	Math.random().toString(36).slice(2) + Date.now().toString(36);
 
 const SmileBubbleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 	<svg
@@ -106,10 +107,10 @@ type PreviewView = 'page' | 'widget';
 
 const TRIGGER_ICON_MAP: Record<string, React.ElementType> = {
 	message: MessageSquare,
-	chat:    MessageCircle,
-	smile:   SmileBubbleIcon,
-	star:    Star,
-	pen:     PenLineIcon,
+	chat: MessageCircle,
+	smile: SmileBubbleIcon,
+	star: Star,
+	pen: PenLineIcon,
 };
 
 const ALLFB_VARS_BASE = {
@@ -289,14 +290,14 @@ const WidgetBody = ({
 					<div className="allfb-form-wrapper">
 						{totalSteps > 1 && settings.progressIndicator !== 'none' && (
 							<div
-								className={`allfb-steps${settings.progressIndicator === 'bar' ? ' allfb-steps--bar' : ''}`}
+								className={`allfb-steps${settings.progressIndicator === 'bar' ? 'allfb-steps--bar' : ''}`}
 							>
 								{settings.progressIndicator === 'dots' && (
 									<div className="allfb-steps__dots">
 										{steps.map((_, i) => (
 											<span
 												key={i}
-												className={`allfb-steps__dot${i === stepIndex ? ' is-active' : i < stepIndex ? ' is-done' : ''}`}
+												className={`allfb-steps__dot${i === stepIndex ? 'is-active' : i < stepIndex ? 'is-done' : ''}`}
 											/>
 										))}
 									</div>
@@ -452,8 +453,7 @@ const PreviewPanel = ({
 				setIsMinimized(true);
 			}
 			setSubmitError('');
-				void queryClient.invalidateQueries({ queryKey: ['responses'] });
-
+			void queryClient.invalidateQueries({ queryKey: ['responses'] });
 
 			toast.success(
 				surveyStatus === 'draft'
@@ -694,9 +694,8 @@ const PreviewPanel = ({
 			</div>
 
 			{viewMode === 'page' ? (
-
-				<div className="flex flex-1 flex-col overflow-hidden bg-background">
-					<div className="flex flex-1 items-start justify-center overflow-hidden px-7 pb-6 pt-7">
+				<div className="bg-background flex flex-1 flex-col overflow-hidden">
+					<div className="flex flex-1 items-start justify-center overflow-hidden p-5">
 						<div
 							className="border-border/60 flex h-full flex-col overflow-hidden rounded-xl border bg-white shadow-md"
 							style={{ width: pageMaxW ? `min(${pageMaxW}, 100%)` : '100%' }}
@@ -860,7 +859,9 @@ const PreviewPanel = ({
 											aria-label={__('Open feedback widget', 'allfeedback')}
 										>
 											{(() => {
-												const TriggerIcon = TRIGGER_ICON_MAP[settings.triggerIcon] ?? MessageSquare;
+												const TriggerIcon =
+													TRIGGER_ICON_MAP[settings.triggerIcon] ??
+													MessageSquare;
 												return <TriggerIcon className="size-5 text-white" />;
 											})()}
 										</button>
@@ -911,8 +912,7 @@ const PreviewPanel = ({
 					</div>
 				</div>
 			) : (
-
-				<div className="flex flex-1 items-center justify-center overflow-hidden bg-background/50 px-7 py-8">
+				<div className="bg-background/50 flex flex-1 items-center justify-center overflow-hidden px-7 py-8">
 					<div style={{ width: `min(${maxW}, 100%)` }}>
 						<WidgetBody
 							{...sharedWidgetProps}
@@ -927,12 +927,14 @@ const PreviewPanel = ({
 				</div>
 			)}
 
-			<div className="flex shrink-0 items-center border-t border-border px-4 py-3">
+			<div className="border-border flex shrink-0 items-center border-t px-4 py-3">
 				<div className="flex flex-1" />
-				<div className={cn(
-					'flex items-center gap-1 transition-opacity',
-					viewMode === 'widget' && 'pointer-events-none opacity-35',
-				)}>
+				<div
+					className={cn(
+						'flex items-center gap-1 transition-opacity',
+						viewMode === 'widget' && 'pointer-events-none opacity-35',
+					)}
+				>
 					{DEVICES.map(({ value, Icon, label }) => (
 						<Tooltip key={value} content={label}>
 							<button

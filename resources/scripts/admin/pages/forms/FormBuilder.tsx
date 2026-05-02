@@ -328,7 +328,12 @@ const FormBuilder = () => {
 				void queryClient.invalidateQueries({ queryKey: ['surveys'] });
 
 				if (published.conflict_reason) {
-					toast.warning(__('Conflict detected — saved as draft instead of publishing.', 'allfeedback'));
+					toast.warning(
+						__(
+							'Conflict detected — saved as draft instead of publishing.',
+							'allfeedback',
+						),
+					);
 					return;
 				}
 
@@ -383,21 +388,22 @@ const FormBuilder = () => {
 	const titleInputRef = useRef<HTMLInputElement>(null);
 
 	const [activeSectionIndex, setActiveSectionIndex] = useState(-1);
-	const [canvasScrolled,    setCanvasScrolled]    = useState(false);
-	const [canvasProgress,    setCanvasProgress]    = useState(0);
-	const [settingsScrolled,  setSettingsScrolled]  = useState(false);
-	const [settingsProgress,  setSettingsProgress]  = useState(0);
-	const [previewDevice,   setPreviewDevice]   = useState<PreviewDevice>('desktop');
-	const [previewWidth,    setPreviewWidth]    = useState(() => {
+	const [canvasScrolled, setCanvasScrolled] = useState(false);
+	const [canvasProgress, setCanvasProgress] = useState(0);
+	const [settingsScrolled, setSettingsScrolled] = useState(false);
+	const [settingsProgress, setSettingsProgress] = useState(0);
+	const [previewDevice, setPreviewDevice] = useState<PreviewDevice>('desktop');
+	const [previewWidth, setPreviewWidth] = useState(() => {
 		const saved = localStorage.getItem('allfb_preview_width');
 		if (saved) {
 			const n = parseInt(saved, 10);
-			if (!isNaN(n) && n >= 280) return Math.min(n, Math.round(window.innerWidth * 0.72));
+			if (!isNaN(n) && n >= 280)
+				return Math.min(n, Math.round(window.innerWidth * 0.72));
 		}
-		return Math.round(window.innerWidth * 0.30);
+		return Math.round(window.innerWidth * 0.3);
 	});
-	const [publishMenuOpen,   setPublishMenuOpen]   = useState(false);
-	const [shortcutsOpen,     setShortcutsOpen]     = useState(false);
+	const [publishMenuOpen, setPublishMenuOpen] = useState(false);
+	const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
 	const historyRef = useRef<FormSection[][]>([[]]);
 	const [historyIdx, setHistoryIdx] = useState(0);
@@ -570,7 +576,10 @@ const FormBuilder = () => {
 
 			const onMove = (ev: MouseEvent) => {
 				const delta = startX - ev.clientX;
-				const next  = Math.max(280, Math.min(Math.round(window.innerWidth * 0.72), startWidth + delta));
+				const next = Math.max(
+					280,
+					Math.min(Math.round(window.innerWidth * 0.72), startWidth + delta),
+				);
 				setPreviewWidth(next);
 				localStorage.setItem('allfb_preview_width', String(next));
 			};
@@ -1020,12 +1029,15 @@ const FormBuilder = () => {
 				</div>
 
 				<div
-					className="group relative flex w-0.5 shrink-0 cursor-col-resize items-center justify-center"
+					className="group relative flex w-1 shrink-0 cursor-col-resize items-center justify-center"
 					onMouseDown={startResize}
 				>
-					<div className="h-full w-0.5 bg-border transition-colors group-hover:bg-primary/50" />
-					<div className="absolute flex h-7 w-5 cursor-col-resize items-center justify-center rounded-full border border-border bg-background shadow-sm transition-colors group-hover:border-primary/40 group-hover:bg-primary/5" onMouseDown={startResize}>
-						<div className="h-3.5 w-0.5 rounded-full bg-foreground/35 transition-colors group-hover:bg-primary/60" />
+					<div className="bg-border group-hover:bg-primary/50 h-full w-0.5 transition-colors" />
+					<div
+						className="border-border bg-background group-hover:border-primary/40 group-hover:bg-primary/5 absolute flex h-7 w-5 cursor-col-resize items-center justify-center rounded-full border shadow-sm transition-colors"
+						onMouseDown={startResize}
+					>
+						<div className="bg-foreground/35 group-hover:bg-primary/60 h-3.5 w-0.5 rounded-full transition-colors" />
 					</div>
 				</div>
 
