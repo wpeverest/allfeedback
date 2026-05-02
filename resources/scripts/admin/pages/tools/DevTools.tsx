@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import apiFetch from '@wordpress/api-fetch';
 import { __, sprintf } from '@wordpress/i18n';
 import { useQueryClient } from '@tanstack/react-query';
@@ -100,7 +101,6 @@ const DevTools = () => {
 
 	return (
 		<div className="p-6 md:p-8">
-			{/* Header */}
 			<div className="mb-6 flex items-center gap-3">
 				<div className="bg-warning/10 flex size-10 shrink-0 items-center justify-center rounded-lg">
 					<AlertTriangle className="text-warning size-5" />
@@ -118,10 +118,8 @@ const DevTools = () => {
 				</div>
 			</div>
 
-			{/* Controls */}
 			<div className="border-border bg-muted/30 mb-6 rounded-xl border p-5">
 				<div className="grid gap-5 sm:grid-cols-2">
-					{/* Survey count */}
 					<div className="flex flex-col gap-1.5">
 						<label className="text-foreground text-sm font-medium">
 							{__('Number of forms', 'allfeedback')}
@@ -129,7 +127,7 @@ const DevTools = () => {
 								(1 – 20)
 							</span>
 						</label>
-						<input
+						<Input
 							type="number"
 							min={1}
 							max={20}
@@ -138,11 +136,9 @@ const DevTools = () => {
 								setSurveys(Math.min(20, Math.max(1, Number(e.target.value))))
 							}
 							disabled={busy}
-							className="border-input bg-background focus:ring-primary h-9 w-full rounded-lg border px-3 text-sm focus:ring-2 focus:outline-none disabled:opacity-50"
 						/>
 					</div>
 
-					{/* Responses per survey */}
 					<div className="flex flex-col gap-1.5">
 						<label className="text-foreground text-sm font-medium">
 							{__('Responses per form', 'allfeedback')}
@@ -150,7 +146,7 @@ const DevTools = () => {
 								(10 – 5 000)
 							</span>
 						</label>
-						<input
+						<Input
 							type="number"
 							min={10}
 							max={5000}
@@ -162,12 +158,10 @@ const DevTools = () => {
 								)
 							}
 							disabled={busy}
-							className="border-input bg-background focus:ring-primary h-9 w-full rounded-lg border px-3 text-sm focus:ring-2 focus:outline-none disabled:opacity-50"
 						/>
 					</div>
 				</div>
 
-				{/* Total estimate */}
 				<p className="text-muted-foreground mt-3 text-xs">
 					{sprintf(
 						__(
@@ -181,7 +175,6 @@ const DevTools = () => {
 				</p>
 			</div>
 
-			{/* Actions */}
 			<div className="flex flex-wrap items-center gap-3">
 				<Button onClick={seed} disabled={busy} className="gap-2">
 					{status === 'seeding' ? (
@@ -235,7 +228,6 @@ const DevTools = () => {
 				)}
 			</div>
 
-			{/* Status message */}
 			{message && (
 				<div
 					className={`mt-5 flex items-start gap-2.5 rounded-lg border p-4 text-sm ${

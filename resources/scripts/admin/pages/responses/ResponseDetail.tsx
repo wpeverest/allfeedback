@@ -18,6 +18,7 @@ import {
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import {
 	Select,
 	SelectContent,
@@ -293,16 +294,10 @@ const EditField = ({
 }) => {
 	const type = field?.type ?? 'short_text';
 
-	const textareaCls = cn(
-		'flex w-full rounded-xl border border-border/50 bg-muted/30 px-3.5 py-2.5 text-base text-foreground',
-		'placeholder:text-muted-foreground/50',
-		'transition-all focus:border-primary/40 focus:bg-white focus:ring-2 focus:ring-primary/8 focus:outline-none',
-	);
-
 	if (type === 'long_text') {
 		return (
-			<textarea
-				className={cn(textareaCls, 'min-h-[120px] resize-y')}
+			<Textarea
+				className="min-h-[120px] resize-y"
 				value={String(value ?? '')}
 				onChange={(e) => onChange(e.target.value)}
 			/>

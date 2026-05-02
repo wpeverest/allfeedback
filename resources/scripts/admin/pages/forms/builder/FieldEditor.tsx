@@ -1,5 +1,6 @@
 import { Tooltip } from '@/admin/components/Tooltip';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { cn, htmlToText } from '@/lib/utils';
 import HighlightExtension from '@tiptap/extension-highlight';
 import PlaceholderExtension from '@tiptap/extension-placeholder';
@@ -410,11 +411,10 @@ const TextFieldConfig = ({
 			<label className="text-foreground/90 block text-base font-normal">
 				{__('Placeholder', 'allfeedback')}
 			</label>
-			<input
+			<Input
 				value={field.placeholder ?? ''}
 				onChange={(e) => onChange({ ...field, placeholder: e.target.value })}
 				placeholder="e.g. Enter your answer…"
-				className="h-10 w-full rounded-lg border border-transparent bg-muted/60 px-3 py-1 text-[14px] text-foreground placeholder:text-muted-foreground/50 transition-colors focus:border-border focus:bg-white focus:outline-none"
 			/>
 		</div>
 	</div>
@@ -556,9 +556,6 @@ const ScaleConfig = ({
 }) => {
 	const min = field.scaleMin ?? 0;
 	const max = field.scaleMax ?? 10;
-	const labelCls = 'block text-base font-normal text-foreground/90';
-	const inputCls =
-		'h-10 w-full rounded-lg border border-transparent bg-muted/60 px-3 py-1 text-[14px] text-foreground placeholder:text-muted-foreground/50 transition-colors focus:border-border focus:bg-white focus:outline-none';
 
 	return (
 		<div className="space-y-4">
@@ -569,13 +566,13 @@ const ScaleConfig = ({
 				focusTrigger={focusTrigger}
 			/>
 			<div className="space-y-2">
-				<label className={labelCls}>{__('Scale endpoints', 'allfeedback')}</label>
+				<label className="block text-base font-normal text-foreground/90">{__('Scale endpoints', 'allfeedback')}</label>
 				<div className="flex items-center gap-2">
-					<input type="number" value={min} onChange={(e) => { const v = parseInt(e.target.value, 10); if (!isNaN(v) && v >= 0 && v < max) onChange({ ...field, scaleMin: v }); }} className={cn(inputCls, '!w-16 text-center')} />
-					<input value={field.scaleLowLabel ?? ''} onChange={(e) => onChange({ ...field, scaleLowLabel: e.target.value })} placeholder={__('e.g. Not likely', 'allfeedback')} className={inputCls} />
+					<Input type="number" value={min} onChange={(e) => { const v = parseInt(e.target.value, 10); if (!isNaN(v) && v >= 0 && v < max) onChange({ ...field, scaleMin: v }); }} className="!w-16 text-center" />
+					<Input value={field.scaleLowLabel ?? ''} onChange={(e) => onChange({ ...field, scaleLowLabel: e.target.value })} placeholder={__('e.g. Not likely', 'allfeedback')} />
 					<span className="text-muted-foreground/40 shrink-0">—</span>
-					<input value={field.scaleHighLabel ?? ''} onChange={(e) => onChange({ ...field, scaleHighLabel: e.target.value })} placeholder={__('e.g. Very likely', 'allfeedback')} className={inputCls} />
-					<input type="number" value={max} onChange={(e) => { const v = parseInt(e.target.value, 10); if (!isNaN(v) && v > min) onChange({ ...field, scaleMax: v }); }} className={cn(inputCls, '!w-16 text-center')} />
+					<Input value={field.scaleHighLabel ?? ''} onChange={(e) => onChange({ ...field, scaleHighLabel: e.target.value })} placeholder={__('e.g. Very likely', 'allfeedback')} />
+					<Input type="number" value={max} onChange={(e) => { const v = parseInt(e.target.value, 10); if (!isNaN(v) && v > min) onChange({ ...field, scaleMax: v }); }} className="!w-16 text-center" />
 				</div>
 			</div>
 		</div>

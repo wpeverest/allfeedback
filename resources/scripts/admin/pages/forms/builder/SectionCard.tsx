@@ -1,5 +1,6 @@
 import { Tooltip } from '@/admin/components/Tooltip';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { __ } from '@wordpress/i18n';
 import {
@@ -232,7 +233,7 @@ const SectionCard = ({
 									commitTitle();
 							}}
 						>
-							<input
+							<Input
 								ref={titleInputRef}
 								type="text"
 								value={section.title}
@@ -244,7 +245,7 @@ const SectionCard = ({
 									if (e.key === 'Escape') cancelTitle();
 								}}
 								onMouseDown={(e) => e.stopPropagation()}
-								className="section-title-input border-border/70 text-base text-foreground focus:border-primary/50 focus:ring-primary/10 w-[260px] rounded-md border bg-transparent px-2 py-1 font-semibold outline-none focus:ring-1"
+								className="section-title-input w-[260px] bg-transparent font-semibold"
 							/>
 							<Button
 								variant="ghost"

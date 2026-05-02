@@ -1,4 +1,5 @@
 import { ContentPicker } from '@/admin/components/ContentPicker';
+import { Input } from '@/components/ui/input';
 import {
 	Select,
 	SelectContent,
@@ -7,6 +8,7 @@ import {
 	SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { __ } from '@wordpress/i18n';
 import type {
@@ -26,20 +28,6 @@ interface SettingsPanelProps {
 }
 
 const labelCls = 'text-base font-normal text-foreground/90';
-
-const inputCls = [
-	'flex h-10 w-full rounded-lg border border-transparent bg-muted/60 px-3 py-1 text-[14px] text-foreground placeholder:text-muted-foreground/50 transition-colors focus:border-border focus:bg-white focus:outline-none',
-	'text-base text-foreground placeholder:text-muted-foreground/40',
-	'transition-colors focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/10',
-	'disabled:cursor-not-allowed disabled:opacity-50',
-].join(' ');
-
-const textareaCls = [
-	'flex w-full resize-none rounded-lg border border-transparent bg-muted/60 px-3 py-2 text-[14px] text-foreground placeholder:text-muted-foreground/50 transition-colors focus:border-border focus:bg-white focus:outline-none',
-	'text-base text-foreground placeholder:text-muted-foreground/40',
-	'transition-colors focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/10',
-	'disabled:cursor-not-allowed disabled:opacity-50',
-].join(' ');
 
 const Row = ({
 	label,
@@ -134,12 +122,12 @@ const NumberWithUnit = <U extends string>({
 	min?: number;
 }) => (
 	<div className="flex items-center gap-2">
-		<input
+		<Input
 			type="number"
 			min={min}
 			value={numberValue}
 			onChange={(e) => onNumberChange(Math.max(min, Number(e.target.value)))}
-			className={cn(inputCls, 'w-24')}
+			className="w-24"
 		/>
 		<Select value={unit} onValueChange={(v) => onUnitChange(v as U)}>
 			<SelectTrigger className="flex-1">
@@ -200,9 +188,8 @@ const SettingsPanel = ({
 			<div className="w-full space-y-4">
 				<Card title={__('Widget Label', 'allfeedback')}>
 					<Row label={__('Widget label', 'allfeedback')}>
-						<input
+						<Input
 							type="text"
-							className={inputCls}
 							value={settings.widgetLabel}
 							placeholder={__('Feedback', 'allfeedback')}
 							onChange={(e) => update({ widgetLabel: e.target.value })}
@@ -320,7 +307,7 @@ const SettingsPanel = ({
 					<Collapse open={settings.displayFrequency === 'until_submit'}>
 						<div className="space-y-4">
 							<Row label={__('Max impressions', 'allfeedback')}>
-								<input
+								<Input
 									type="number"
 									min={0}
 									value={settings.maxImpressions}
@@ -329,7 +316,7 @@ const SettingsPanel = ({
 											maxImpressions: Math.max(0, Number(e.target.value)),
 										})
 									}
-									className={cn(inputCls, 'w-24')}
+									className="w-24"
 								/>
 							</Row>
 							<Row label={__('Re-show after dismissal', 'allfeedback')}>
@@ -355,15 +342,14 @@ const SettingsPanel = ({
 					<Collapse open={settings.thankYouEnabled}>
 						<div className="space-y-4">
 							<Row label={__('Title', 'allfeedback')}>
-								<input
+								<Input
 									value={settings.thankYouTitle}
 									onChange={(e) => update({ thankYouTitle: e.target.value })}
 									placeholder={__('Thank you!', 'allfeedback')}
-									className={inputCls}
 								/>
 							</Row>
 							<Row label={__('Description', 'allfeedback')}>
-								<textarea
+								<Textarea
 									value={settings.thankYouDescription}
 									onChange={(e) =>
 										update({ thankYouDescription: e.target.value })
@@ -373,7 +359,6 @@ const SettingsPanel = ({
 										'allfeedback',
 									)}
 									rows={3}
-									className={textareaCls}
 								/>
 							</Row>
 						</div>
@@ -382,27 +367,24 @@ const SettingsPanel = ({
 
 				<Card title={__('Submit Buttons', 'allfeedback')}>
 					<Row label={__('Submit label', 'allfeedback')}>
-						<input
+						<Input
 							value={settings.submitLabel}
 							onChange={(e) => update({ submitLabel: e.target.value })}
 							placeholder="Submit"
-							className={inputCls}
 						/>
 					</Row>
 					<Row label={__('Next label', 'allfeedback')}>
-						<input
+						<Input
 							value={settings.nextLabel}
 							onChange={(e) => update({ nextLabel: e.target.value })}
 							placeholder="Next"
-							className={inputCls}
 						/>
 					</Row>
 					<Row label={__('Back label', 'allfeedback')}>
-						<input
+						<Input
 							value={settings.backLabel}
 							onChange={(e) => update({ backLabel: e.target.value })}
 							placeholder="Back"
-							className={inputCls}
 						/>
 					</Row>
 				</Card>

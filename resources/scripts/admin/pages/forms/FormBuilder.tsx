@@ -4,6 +4,7 @@ import { Tooltip } from '@/admin/components/Tooltip';
 import { surveyQuery } from '@/admin/queries/surveys';
 import { Route } from '@/admin/routes/builder.index';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import ShortcodeChip from '@/components/ui/shortcode-chip';
 import UnsavedChangesBadge from '@/components/ui/unsaved-changes-badge';
 import { cn } from '@/lib/utils';
@@ -690,7 +691,7 @@ const FormBuilder = () => {
 									commitTitle();
 							}}
 						>
-							<input
+							<Input
 								ref={titleInputRef}
 								type="text"
 								value={title}
@@ -704,7 +705,7 @@ const FormBuilder = () => {
 									if (e.key === 'Enter') commitTitle();
 									if (e.key === 'Escape') cancelTitle();
 								}}
-								className="builder-title border-border/70 text-foreground focus:border-primary/50 focus:ring-primary/10 w-[520px] rounded-lg border bg-transparent outline-none focus:ring-1"
+								className="builder-title w-[520px] bg-transparent"
 							/>
 							<Button
 								variant="ghost"
