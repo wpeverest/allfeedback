@@ -1574,15 +1574,25 @@ function RecentResponsesCard({
 						</p>
 					)}
 				</div>
-				<Link
-					to="/responses"
-					search={{ surveyId: surveyId ?? undefined }}
-					className="inline-flex items-center gap-1.5 rounded-lg bg-transparent px-3 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-primary/5"
-					style={{ border: '1.5px solid color-mix(in oklch, var(--primary) 60%, transparent)', color: 'var(--primary)' }}
-				>
-					{__('View all', 'allfeedback')}
-					<ArrowRight className="size-3.5" />
-				</Link>
+				{!loading && responses.length === 0 ? (
+					<span
+						className="inline-flex items-center gap-1.5 rounded-lg bg-transparent px-3 py-1.5 text-sm font-medium cursor-not-allowed opacity-40"
+						style={{ border: '1.5px solid var(--border)', color: 'var(--muted-foreground)' }}
+					>
+						{__('View all', 'allfeedback')}
+						<ArrowRight className="size-3.5" />
+					</span>
+				) : (
+					<Link
+						to="/responses"
+						search={{ surveyId: surveyId ?? undefined }}
+						className="inline-flex items-center gap-1.5 rounded-lg bg-transparent px-3 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-primary/5"
+						style={{ border: '1.5px solid color-mix(in oklch, var(--primary) 60%, transparent)', color: 'var(--primary)' }}
+					>
+						{__('View all', 'allfeedback')}
+						<ArrowRight className="size-3.5" />
+					</Link>
+				)}
 			</div>
 
 			{loading ? (

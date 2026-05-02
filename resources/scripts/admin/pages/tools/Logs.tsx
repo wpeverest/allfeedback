@@ -3,6 +3,7 @@ import { logsApi } from '@/admin/api/logs';
 import { Tooltip } from '@/admin/components/Tooltip';
 import { logQuery, logsQuery } from '@/admin/queries/logs';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 import { cn } from '@/lib/utils';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
@@ -17,8 +18,6 @@ import {
 import { useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-// ── types ──────────────────────────────────────────────────────────────────
-
 type LogLevel = 'FATAL' | 'ERROR' | 'WARNING' | 'INFO' | 'DEBUG';
 
 interface ParsedLine {
@@ -27,11 +26,8 @@ interface ParsedLine {
 	level: LogLevel | null;
 }
 
-// ── constants ──────────────────────────────────────────────────────────────
-
 const ENTRY_RE = /^\[([^\]]+)\] \[([A-Z]+)\] (.+)$/;
 
-// Soft cap before showing "Show all" — avoids rendering thousands of DOM nodes.
 const RENDER_THRESHOLD = 1000;
 
 const SKELETON_WIDTHS = [
@@ -43,7 +39,6 @@ const SKELETON_WIDTHS = [
 	'w-3/5',
 ];
 
-// Per-level text color (Tailwind classes applied to each code row).
 const LINE_TEXT: Record<string, string> = {
 	FATAL: 'text-red-600',
 	ERROR: 'text-red-500',
@@ -52,7 +47,6 @@ const LINE_TEXT: Record<string, string> = {
 	DEBUG: 'text-muted-foreground',
 };
 
-// Subtle background tint for high-severity lines.
 const LINE_BG: Partial<Record<LogLevel, string>> = {
 	FATAL: 'bg-red-500/[0.06]',
 	ERROR: 'bg-red-500/[0.03]',
@@ -67,8 +61,6 @@ const FILTERS: { key: LogLevel | 'ALL'; label: string }[] = [
 	{ key: 'INFO', label: __('Info', 'allfeedback') },
 	{ key: 'DEBUG', label: __('Debug', 'allfeedback') },
 ];
-
-// ── helpers ────────────────────────────────────────────────────────────────
 
 function parseLines(lines: string[]): ParsedLine[] {
 	return lines
@@ -96,8 +88,6 @@ function triggerDownload(filename: string, content: string): void {
 	URL.revokeObjectURL(url);
 }
 
-// ── filter tab ─────────────────────────────────────────────────────────────
-
 const FilterTab = ({
 	label,
 	active,
@@ -120,8 +110,6 @@ const FilterTab = ({
 		{label}
 	</button>
 );
-
-// ── code viewer ────────────────────────────────────────────────────────────
 
 const LogCodeViewer = ({
 	lines,
@@ -152,8 +140,10 @@ const LogCodeViewer = ({
 
 	return (
 		<div className="flex flex-col">
-			{/* Scrollable code table */}
-			<div className="bg-muted/40 max-h-[520px] overflow-auto" style={{ scrollbarGutter: 'stable' }}>
+			<div
+				className="bg-muted/40 max-h-[520px] overflow-auto"
+				style={{ scrollbarGutter: 'stable' }}
+			>
 				<table className="w-full min-w-full border-collapse">
 					<tbody>
 						{visible.map((line) => (
@@ -164,11 +154,9 @@ const LogCodeViewer = ({
 									line.level && LINE_BG[line.level],
 								)}
 							>
-								{/* Gutter — sticky so it stays visible on horizontal scroll */}
 								<td className="border-border/50 bg-muted/60 text-2xs text-muted-foreground/40 group-hover:text-muted-foreground/60 sticky left-0 z-10 w-[3.5rem] min-w-[3.5rem] border-r py-1.5 pr-4 text-right align-top font-mono leading-5 select-none">
 									{line.lineNumber}
 								</td>
-								{/* Log line content */}
 								<td
 									className={cn(
 										'py-1.5 pr-8 pl-5 align-top font-mono text-xs leading-5 whitespace-pre',
@@ -183,7 +171,6 @@ const LogCodeViewer = ({
 				</table>
 			</div>
 
-			{/* Show-all prompt when file exceeds render threshold */}
 			{truncated && (
 				<div className="border-border/50 bg-muted/40 flex items-center justify-between border-t px-5 py-2.5">
 					<span className="text-2xs text-muted-foreground/50 font-mono">
@@ -205,8 +192,6 @@ const LogCodeViewer = ({
 	);
 };
 
-// ── loading skeleton ───────────────────────────────────────────────────────
-
 const CodeViewerSkeleton = () => (
 	<div className="bg-muted/40 px-5 py-4">
 		<div className="space-y-2">
@@ -224,8 +209,6 @@ const CodeViewerSkeleton = () => (
 		</div>
 	</div>
 );
-
-// ── log file accordion ─────────────────────────────────────────────────────
 
 const LogFileSection = ({
 	file,
@@ -260,7 +243,9 @@ const LogFileSection = ({
 		}
 		logsApi
 			.get(file.id)
-			.then((d: LogFileDetail) => triggerDownload(file.name, d.lines.join('\n')))
+			.then((d: LogFileDetail) =>
+				triggerDownload(file.name, d.lines.join('\n')),
+			)
 			.catch(() =>
 				toast.error(__('Failed to download log file.', 'allfeedback')),
 			);
@@ -273,7 +258,6 @@ const LogFileSection = ({
 				isDeleting && 'opacity-50',
 			)}
 		>
-			{/* accordion header */}
 			<div
 				className="hover:bg-muted/40 flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors select-none"
 				onClick={() => setOpen((o) => !o)}
@@ -288,7 +272,8 @@ const LogFileSection = ({
 					{file.name}
 				</span>
 				<span className="text-muted-foreground/60 text-sm">
-					{detail?.total_lines ?? '—'} {__('entries', 'allfeedback')} · {file.size}
+					{detail?.total_lines ?? '—'} {__('entries', 'allfeedback')} ·{' '}
+					{file.size}
 				</span>
 
 				<div
@@ -317,7 +302,6 @@ const LogFileSection = ({
 				</div>
 			</div>
 
-			{/* code viewer */}
 			{open && (
 				<div className="border-border/50 border-t">
 					{isFetching && !detail ? (
@@ -331,31 +315,6 @@ const LogFileSection = ({
 	);
 };
 
-// ── empty state ────────────────────────────────────────────────────────────
-
-const EmptyState = () => (
-	<div className="flex flex-col items-center justify-center gap-2 py-14 text-center">
-		<div className="bg-muted/60 flex size-12 items-center justify-center rounded-xl">
-			<ScrollText className="text-muted-foreground/40 size-5" />
-		</div>
-		<p className="text-foreground/70 mt-1 text-sm font-medium">
-			{__('No logs yet', 'allfeedback')}
-		</p>
-		<p className="text-muted-foreground/80 max-w-xs text-sm">
-			{__('Logs will appear here once logging is enabled in ', 'allfeedback')}
-			<Link
-				to="/settings/advanced"
-				className="!text-primary font-medium underline underline-offset-2 hover:!opacity-80"
-			>
-				{__('Settings → Advanced', 'allfeedback')}
-			</Link>
-			{'.'}
-		</p>
-	</div>
-);
-
-// ── main component ─────────────────────────────────────────────────────────
-
 const Logs = () => {
 	const queryClient = useQueryClient();
 
@@ -365,7 +324,11 @@ const Logs = () => {
 	const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
 	const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-	const { data: listData, isPending: isListPending, isFetching: isListFetching } = useQuery(logsQuery());
+	const {
+		data: listData,
+		isPending: isListPending,
+		isFetching: isListFetching,
+	} = useQuery(logsQuery());
 
 	const files = listData?.logs ?? [];
 
@@ -437,7 +400,6 @@ const Logs = () => {
 
 	return (
 		<div>
-			{/* card header */}
 			<div className="border-border/50 flex items-center gap-3 border-b px-6 py-4">
 				<div className="bg-primary/10 flex size-9 items-center justify-center rounded-xl">
 					<ScrollText className="text-primary size-[18px]" />
@@ -460,7 +422,10 @@ const Logs = () => {
 						size="sm"
 						disabled={isDeletingAll || isListPending || files.length === 0}
 						onClick={handleDeleteAll}
-						style={{ border: '1.5px solid color-mix(in oklch, var(--destructive) 60%, transparent)' }}
+						style={{
+							border:
+								'1.5px solid color-mix(in oklch, var(--destructive) 60%, transparent)',
+						}}
 						className={cn(
 							'text-destructive hover:bg-destructive/10 hover:text-destructive',
 							confirmDeleteAll && 'bg-destructive/10',
@@ -478,7 +443,10 @@ const Logs = () => {
 						onClick={() =>
 							queryClient.invalidateQueries({ queryKey: ['logs'] })
 						}
-						style={{ border: '1.5px solid color-mix(in oklch, var(--primary) 60%, transparent)' }}
+						style={{
+							border:
+								'1.5px solid color-mix(in oklch, var(--primary) 60%, transparent)',
+						}}
 					>
 						<RefreshCw
 							className={cn('size-3.5', isListFetching && 'animate-spin')}
@@ -488,7 +456,6 @@ const Logs = () => {
 				</div>
 			</div>
 
-			{/* filter tabs */}
 			{files.length > 0 && (
 				<div className="border-border/50 flex flex-wrap items-center gap-2 border-b px-6 py-3.5">
 					{FILTERS.map((f) => (
@@ -502,10 +469,24 @@ const Logs = () => {
 				</div>
 			)}
 
-			{/* file accordions */}
 			<div className="px-6 pt-4 pb-4">
 				{files.length === 0 ? (
-					<EmptyState />
+					<EmptyState
+						icon={ScrollText}
+						title={__('No logs yet', 'allfeedback')}
+						description={
+							<>
+								{__('Logs will appear here once logging is enabled in ', 'allfeedback')}
+								<Link
+									to="/settings/advanced"
+									className="!text-primary font-medium underline underline-offset-2 hover:!opacity-80"
+								>
+									{__('Settings → Advanced', 'allfeedback')}
+								</Link>
+								{'.'}
+							</>
+						}
+					/>
 				) : (
 					<div className="space-y-3">
 						{files.map((file, i) => (
@@ -521,7 +502,6 @@ const Logs = () => {
 					</div>
 				)}
 			</div>
-
 		</div>
 	);
 };
