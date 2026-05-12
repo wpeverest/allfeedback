@@ -88,7 +88,6 @@ class AdminServiceProvider implements ServiceProvider {
 	public function boot(): void {
 		$this->addAction( 'admin_menu', [ $this, 'registerMenus' ] );
 		$this->addAction( 'allfeedback:enqueue-assets:admin', [ $this, 'enqueueAssets' ] );
-		$this->addAction( 'admin_footer', [ $this, 'inlineMenuHighlight' ] );
 		$this->addAction( 'in_admin_header', [ $this, 'suppressAdminNotices' ] );
 		$this->addAction( 'admin_init', [ $this, 'maybeRedirectToWizard' ] );
 	}
@@ -228,58 +227,6 @@ class AdminServiceProvider implements ServiceProvider {
 	}
 
 	/**
-	 * Output a small inline script that keeps the WP admin sidebar active
-	 * class in sync with the current hash route.
-	 *
-	 * WordPress sets the active class on page load based on the query-string
-	 * slug, but since all SPA pages share the same `?page=` slug the sidebar
-	 * would always highlight the same item. This script reads the hash and
-	 * compares it against each submenu link's `href`.
-	 *
-	 * @return void
-	 * @since  1.0.0
-	 */
-	public function inlineMenuHighlight(): void {
-		$screen = get_current_screen();
-		if ( ! $screen || ! str_contains( $screen->id, 'allfeedback' ) ) {
-			return;
-		}
-		?>
-		<script>
-		(function () {
-			var MENU_ROOT = '#toplevel_page_allfeedback';
-
-			function syncHighlight() {
-				var rawHash  = window.location.hash || '#/analytics';
-				var hashPath = rawHash.split('?')[0];
-				var current  = hashPath.replace(/\/$/, '');
-
-				var submenu = document.querySelector(MENU_ROOT + ' .wp-submenu');
-				if ( ! submenu ) return;
-
-				submenu.querySelectorAll('li').forEach(function (li) {
-					var a = li.querySelector('a');
-					if ( ! a ) return;
-					var href         = a.getAttribute('href') || '';
-					var linkHash     = href.includes('#') ? '#' + href.split('#')[1] : '';
-					var linkNormised = linkHash.replace(/\/$/, '');
-
-					if ( linkNormised && current.startsWith(linkNormised) ) {
-						li.classList.add('current');
-					} else {
-						li.classList.remove('current');
-					}
-				});
-			}
-
-			syncHighlight();
-			window.addEventListener('allfeedback:navigate', syncHighlight);
-		})();
-		</script>
-		<?php
-	}
-
-	/**
 	 * Enqueue admin-only scripts and styles.
 	 *
 	 * @param  string $hook Current admin page hook suffix.
@@ -363,5 +310,34 @@ class AdminServiceProvider implements ServiceProvider {
 		}
 
 		$this->doAction( 'allfeedback:admin:enqueue_assets', $hook );
+
+		wp_add_inline_script(
+			'allfb-admin',
+			'(function () {
+				var MENU_ROOT = "#toplevel_page_allfeedback";
+				function syncHighlight() {
+					var rawHash  = window.location.hash || "#/analytics";
+					var hashPath = rawHash.split("?")[0];
+					var current  = hashPath.replace(/\/$/, "");
+					var submenu = document.querySelector(MENU_ROOT + " .wp-submenu");
+					if ( ! submenu ) return;
+					submenu.querySelectorAll("li").forEach(function (li) {
+						var a = li.querySelector("a");
+						if ( ! a ) return;
+						var href         = a.getAttribute("href") || "";
+						var linkHash     = href.includes("#") ? "#" + href.split("#")[1] : "";
+						var linkNormised = linkHash.replace(/\/$/, "");
+						if ( linkNormised && current.startsWith(linkNormised) ) {
+							li.classList.add("current");
+						} else {
+							li.classList.remove("current");
+						}
+					});
+				}
+				syncHighlight();
+				window.addEventListener("allfeedback:navigate", syncHighlight);
+			})();'
+		);
 	}
+
 }

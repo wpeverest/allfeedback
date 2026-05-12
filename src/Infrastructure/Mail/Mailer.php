@@ -149,7 +149,6 @@ class Mailer {
 			. '<tr><td style="padding:16px 32px;border-top:1px solid #e5e7eb;">'
 			. '<table width="100%" cellpadding="0" cellspacing="0"><tr>'
 			. '<td style="color:#9ca3af;font-size:12px;">&copy; ' . $site_name . '</td>'
-			. '<td align="right" style="color:#9ca3af;font-size:11px;">Powered by <a href="https://allfeedback.io" style="color:#9ca3af;text-decoration:underline;">AllFeedback</a></td>'
 			. '</tr></table>'
 			. '</td></tr>'
 			. '</table>'
