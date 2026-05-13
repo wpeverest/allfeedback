@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: All Feedback
+ * Plugin Name: AllFeedback
  * Plugin URI:  https://allfeedback.com
  * Description: Collect customer feedback with customizable feedback forms. All responses are stored in your own WordPress database — no external accounts required.
  * Author:      Themegrill
