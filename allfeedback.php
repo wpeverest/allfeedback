@@ -27,12 +27,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 
-// Absolute path to the main plugin file — mirrors EVF_PLUGIN_FILE convention.
-define( 'AF_PLUGIN_FILE', __FILE__ ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- intentional short prefix
+// Absolute path to the main plugin file.
+define( 'ALLFEEDBACK_PLUGIN_FILE', __FILE__ );
 
-$af_autoloader = __DIR__ . '/vendor/autoload.php'; // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- intentional short prefix
+$allfeedback_autoloader = __DIR__ . '/vendor/autoload.php';
 
-if ( ! file_exists( $af_autoloader ) ) {
+if ( ! file_exists( $allfeedback_autoloader ) ) {
 	add_action(
 		'admin_notices',
 		function () {
@@ -45,7 +45,7 @@ if ( ! file_exists( $af_autoloader ) ) {
 	return;
 }
 
-require_once $af_autoloader;
+require_once $allfeedback_autoloader;
 
 // ------------------------------------------------------------------
 // Bootstrap

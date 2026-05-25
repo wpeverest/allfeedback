@@ -11,7 +11,7 @@ function getDeviceType(): 'desktop' | 'tablet' | 'mobile' {
 }
 
 function getOrCreateVisitorId(): string {
-	const KEY = 'allfb_visitor_id';
+	const KEY = 'allfeedback_visitor_id';
 	let id = localStorage.getItem( KEY );
 	if ( ! id ) {
 		id = Math.random().toString( 36 ).slice( 2 ) + Date.now().toString( 36 );

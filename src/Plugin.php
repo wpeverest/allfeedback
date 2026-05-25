@@ -219,7 +219,7 @@ final class Plugin {
 		if (
 			( $hook_extra['action'] ?? '' ) === 'update' &&
 			( $hook_extra['type'] ?? '' ) === 'plugin' &&
-			in_array( plugin_basename( AF_PLUGIN_FILE ), (array) ( $hook_extra['plugins'] ?? [] ), true )
+			in_array( plugin_basename( ALLFEEDBACK_PLUGIN_FILE ), (array) ( $hook_extra['plugins'] ?? [] ), true )
 		) {
 			Container::purgeCache();
 		}
@@ -265,7 +265,7 @@ final class Plugin {
 	 * @since  1.0.0
 	 */
 	private function maybeFlushRewriteRules(): void {
-		$option_key = 'allfb_rewrite_version';
+		$option_key = 'allfeedback_rewrite_version';
 
 		$expected = $this->applyFilters( 'allfeedback:rewrite:expected_version', '1' );
 

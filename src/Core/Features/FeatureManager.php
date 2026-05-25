@@ -38,7 +38,7 @@ class FeatureManager {
 	 *
 	 * @since 1.0.0
 	 */
-	private const OPTION_KEY = '_allfb_features';
+	private const OPTION_KEY = '_allfeedback_features';
 
 	/**
 	 * Persisted feature configuration array.

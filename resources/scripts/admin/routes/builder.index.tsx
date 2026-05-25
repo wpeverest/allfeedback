@@ -3,7 +3,7 @@ import { surveyQuery } from '@/admin/queries/surveys';
 import { createFileRoute, lazyRouteComponent, notFound } from '@tanstack/react-router';
 
 const getInitialPreviewWidth = () => {
-	const saved = localStorage.getItem('allfb_preview_width');
+	const saved = localStorage.getItem('allfeedback_preview_width');
 	if (saved) {
 		const n = parseInt(saved, 10);
 		if (!isNaN(n) && n >= 280) return Math.min(n, Math.round(window.innerWidth * 0.72));

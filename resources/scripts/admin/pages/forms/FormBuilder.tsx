@@ -394,7 +394,7 @@ const FormBuilder = () => {
 	const [settingsProgress, setSettingsProgress] = useState(0);
 	const [previewDevice, setPreviewDevice] = useState<PreviewDevice>('desktop');
 	const [previewWidth, setPreviewWidth] = useState(() => {
-		const saved = localStorage.getItem('allfb_preview_width');
+		const saved = localStorage.getItem('allfeedback_preview_width');
 		if (saved) {
 			const n = parseInt(saved, 10);
 			if (!isNaN(n) && n >= 280)
@@ -581,7 +581,7 @@ const FormBuilder = () => {
 					Math.min(Math.round(window.innerWidth * 0.72), startWidth + delta),
 				);
 				setPreviewWidth(next);
-				localStorage.setItem('allfb_preview_width', String(next));
+				localStorage.setItem('allfeedback_preview_width', String(next));
 			};
 			const onUp = () => {
 				document.removeEventListener('mousemove', onMove);
@@ -783,7 +783,7 @@ const FormBuilder = () => {
 
 					{formId && (
 						<ShortcodeChip
-							shortcode={`[allfb_survey id="${formId}"]`}
+							shortcode={`[allfeedback_survey id="${formId}"]`}
 							size="md"
 						/>
 					)}

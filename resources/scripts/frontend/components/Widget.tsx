@@ -80,7 +80,7 @@ export const Widget = ( { cfg, surveyConfig, stateManager }: WidgetProps ) => {
 	const sessionIdRef          = useRef( '' );
 	const hasSubmittedRef       = useRef( false );
 
-	const getGuestId = () => localStorage.getItem( 'allfb_visitor_id' ) ?? undefined;
+	const getGuestId = () => localStorage.getItem( 'allfeedback_visitor_id' ) ?? undefined;
 
 	const initSession = useCallback( () => {
 		if ( sessionIdRef.current !== '' ) return;

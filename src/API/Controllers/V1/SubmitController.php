@@ -298,7 +298,7 @@ class SubmitController extends RestController {
 	 */
 	private function checkRateLimit( string $ip_hash ): bool {
 		$limit = max( 1, (int) apply_filters( 'allfeedback_submit_rate_limit', 10 ) );
-		$key   = 'allfb_rl_' . substr( $ip_hash, 0, 16 );
+		$key   = 'allfeedback_rl_' . substr( $ip_hash, 0, 16 );
 		$count = (int) get_transient( $key );
 
 		if ( $count >= $limit ) {

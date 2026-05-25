@@ -53,6 +53,20 @@ class Container {
 	}
 
 	/**
+	 * Return the versioned directory used for the PHP-DI compiled container.
+	 *
+	 * Stored inside the uploads folder (always writable) rather than a hardcoded
+	 * wp-content path so it works with custom content directory configurations.
+	 *
+	 * @return string Absolute filesystem path, no trailing slash.
+	 * @since  1.0.0
+	 */
+	private static function getCacheDir(): string {
+		$upload_dir = wp_upload_dir();
+		return $upload_dir['basedir'] . '/allfeedback/di-cache/' . Constants::VERSION;
+	}
+
+	/**
 	 * Construct the PHP-DI ContainerBuilder, enable optional compilation,
 	 * load service definitions, and finalise the container.
 	 *
@@ -66,7 +80,7 @@ class Container {
 		$builder->useAttributes( true );
 
 		if ( $this->isProduction() ) {
-			$cache_dir = WP_CONTENT_DIR . '/cache/allfeedback/' . Constants::VERSION;
+			$cache_dir = self::getCacheDir();
 			$builder->enableCompilation( $cache_dir );
 			$builder->writeProxiesToFile( true, $cache_dir . '/proxies' );
 			$this->compiled = true;
@@ -184,7 +198,9 @@ class Container {
 	 * @since  1.0.0
 	 */
 	public static function purgeCache(): void {
-		$dir = WP_CONTENT_DIR . '/cache/allfeedback/';
+		$upload_dir = wp_upload_dir();
+		$dir        = $upload_dir['basedir'] . '/allfeedback/di-cache/';
+		// Note: we delete the entire di-cache/ tree (all versions) so stale compiled containers are always removed.
 
 		if ( ! is_dir( $dir ) ) {
 			return;

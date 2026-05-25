@@ -22,7 +22,7 @@ defined( 'ABSPATH' ) || exit;
  *   submitted    — true once the user submits a response
  *   dismissed_at — Unix timestamp (ms) of the last explicit close, or null
  *
- * Meta key: _allfb_survey_state_{surveyId}
+ * Meta key: _allfeedback_survey_state_{surveyId}
  *
  * Only used for logged-in users. Guest state is managed client-side in
  * localStorage by the JS StateManager.
@@ -38,7 +38,7 @@ class SurveyStateService {
 	 * @var string
 	 * @since 1.0.0
 	 */
-	private const META_PREFIX = '_allfb_survey_state_';
+	private const META_PREFIX = '_allfeedback_survey_state_';
 
 	/**
 	 * Return the display state for a given user + survey combination.

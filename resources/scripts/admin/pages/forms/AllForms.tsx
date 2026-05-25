@@ -950,7 +950,7 @@ const AllForms = () => {
 
 												<td className="w-[200px] px-4 py-3">
 													<ShortcodeChip
-														shortcode={`[allfb_survey id="${survey.id}"]`}
+														shortcode={`[allfeedback_survey id="${survey.id}"]`}
 														size="sm"
 													/>
 												</td>

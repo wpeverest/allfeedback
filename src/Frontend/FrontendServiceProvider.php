@@ -128,18 +128,18 @@ class FrontendServiceProvider implements ServiceProvider {
 	 * @since  1.0.0
 	 */
 	public function registerShortcodes(): void {
-		add_shortcode( 'allfb_survey', [ $this, 'renderSurveyShortcode' ] );
+		add_shortcode( 'allfeedback_survey', [ $this, 'renderSurveyShortcode' ] );
 	}
 
 	/**
-	 * Render the `[allfb_survey id="X"]` shortcode.
+	 * Render the `[allfeedback_survey id="X"]` shortcode.
 	 *
 	 * @param  array<string, string>|string $atts Shortcode attributes.
 	 * @return string                             HTML output or empty string.
 	 * @since  1.0.0
 	 */
 	public function renderSurveyShortcode( array|string $atts ): string {
-		$atts      = shortcode_atts( [ 'id' => 0 ], (array) $atts, 'allfb_survey' );
+		$atts      = shortcode_atts( [ 'id' => 0 ], (array) $atts, 'allfeedback_survey' );
 		$survey_id = (int) $atts['id'];
 
 		if ( $survey_id <= 0 ) {
@@ -358,7 +358,7 @@ class FrontendServiceProvider implements ServiceProvider {
 	}
 
 	/**
-	 * Return true if the current post contains the `[allfb_survey]` shortcode
+	 * Return true if the current post contains the `[allfeedback_survey]` shortcode
 	 * or the `allfeedback/survey` block, so frontend assets are loaded.
 	 *
 	 * @return bool
@@ -375,7 +375,7 @@ class FrontendServiceProvider implements ServiceProvider {
 			return false;
 		}
 
-		return has_shortcode( $post->post_content, 'allfb_survey' )
+		return has_shortcode( $post->post_content, 'allfeedback_survey' )
 			|| has_block( 'allfeedback/survey', $post );
 	}
 }

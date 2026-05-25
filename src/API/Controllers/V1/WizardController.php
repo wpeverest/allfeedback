@@ -21,7 +21,7 @@ use AllFeedback\Support\Logger;
 /**
  * REST controller for the one-time Setup Wizard flow.
  *
- * Raw wizard submission data is persisted to `_allfb_wizard_data` so that
+ * Raw wizard submission data is persisted to `_allfeedback_wizard_data` so that
  * pro add-ons can act on it after the fact via the `allfeedback_wizard_completed`
  * action hook.
  *
@@ -52,7 +52,7 @@ class WizardController extends RestController {
 	 * @var string
 	 * @since 1.0.0
 	 */
-	private const OPTION_DATA = '_allfb_wizard_data';
+	private const OPTION_DATA = '_allfeedback_wizard_data';
 
 	/**
 	 * Constructor.

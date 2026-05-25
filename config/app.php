@@ -46,7 +46,7 @@ return [
 	'cache'       => [
 		'enabled' => true,
 		'ttl'     => 3600,            // seconds.
-		'prefix'  => 'allfb_',          // option/transient prefix.
+		'prefix'  => 'allfeedback_',     // option/transient prefix.
 	],
 
 ];

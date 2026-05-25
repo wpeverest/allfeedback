@@ -163,7 +163,7 @@ class Logger {
 	 * @since  1.0.0
 	 */
 	public function registerShutdownHandler(): void {
-		$plugin_dir_raw = defined( 'AF_PLUGIN_FILE' ) ? realpath( plugin_dir_path( AF_PLUGIN_FILE ) ) : false;
+		$plugin_dir_raw = defined( 'ALLFEEDBACK_PLUGIN_FILE' ) ? realpath( plugin_dir_path( ALLFEEDBACK_PLUGIN_FILE ) ) : false;
 		$plugin_dir     = $plugin_dir_raw !== false ? $plugin_dir_raw : '';
 
 		register_shutdown_function(

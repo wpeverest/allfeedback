@@ -14,7 +14,7 @@ export class StateManager {
 		this.restUrl    = restUrl;
 		this.nonce      = nonce;
 		this.isLoggedIn = surveyConfig.is_logged_in ?? false;
-		this.localKey   = `allfb_w_${ surveyConfig.id }`;
+		this.localKey   = `allfeedback_w_${ surveyConfig.id }`;
 
 		if ( this.isLoggedIn && surveyConfig.server_state ) {
 			this.state = this.mergeWithLocal( surveyConfig.server_state );

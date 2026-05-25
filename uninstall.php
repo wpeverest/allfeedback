@@ -13,7 +13,7 @@ require_once ABSPATH . 'wp-admin/includes/file.php';
 // Guard: only wipe data when the admin explicitly opted in.
 // Read directly from wp_options — no plugin classes are available here.
 // ------------------------------------------------------------------
-$allfeedback_settings = get_option( '_allfb_settings', [] );
+$allfeedback_settings = get_option( '_allfeedback_settings', [] );
 $allfeedback_delete   = isset( $allfeedback_settings['advanced']['plugin']['delete_on_uninstall'] )
 	? (bool) $allfeedback_settings['advanced']['plugin']['delete_on_uninstall']
 	: false;
@@ -38,11 +38,13 @@ foreach ( $allfeedback_tables as $allfeedback_table ) {
 
 
 $allfeedback_options = [
-	'_allfb_migrations',
-	'_allfb_settings',
-	'_allfb_features',
-	'_allfb_enabled_modules',
-	'allfb_rewrite_version',
+	'_allfeedback_migrations',
+	'_allfeedback_settings',
+	'_allfeedback_features',
+	'_allfeedback_enabled_modules',
+	'_allfeedback_wizard_data',
+	'allfeedback_rewrite_version',
+	'allfeedback_wizard_status',
 ];
 
 foreach ( $allfeedback_options as $allfeedback_option ) {
@@ -52,12 +54,7 @@ foreach ( $allfeedback_options as $allfeedback_option ) {
 
 $allfeedback_uploads_dir = wp_upload_dir()['basedir'] . '/allfeedback';
 
-allfb_delete_directory( $allfeedback_uploads_dir );
-
-
-$allfeedback_cache_dir = WP_CONTENT_DIR . '/cache/allfeedback';
-
-allfb_delete_directory( $allfeedback_cache_dir );
+allfeedback_delete_directory( $allfeedback_uploads_dir );
 
 
 
@@ -66,7 +63,7 @@ allfb_delete_directory( $allfeedback_cache_dir );
  *
  * @param string $dir Absolute path to the directory.
  */
-function allfb_delete_directory( string $dir ): void { // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedFunctionFound -- allfb_ is the plugin prefix
+function allfeedback_delete_directory( string $dir ): void {
 	global $wp_filesystem;
 
 	if ( ! is_dir( $dir ) ) {

@@ -77,7 +77,7 @@ class SettingsManager {
 	 * @var string
 	 * @since 1.0.0
 	 */
-	private const OPTION_KEY = '_allfb_settings';
+	private const OPTION_KEY = '_allfeedback_settings';
 
 	/**
 	 * Default values, organised as page → section → field.

@@ -120,7 +120,7 @@ class AnalyticsController extends RestController {
 	 */
 	private function checkAnalyticsRateLimit( string $session_id ): bool {
 		$limit = max( 1, (int) apply_filters( 'allfeedback_analytics_rate_limit', 60 ) );
-		$key   = 'allfb_al_' . substr( hash( 'sha256', $session_id ), 0, 16 );
+		$key   = 'allfeedback_al_' . substr( hash( 'sha256', $session_id ), 0, 16 );
 		$count = (int) get_transient( $key );
 
 		if ( $count >= $limit ) {

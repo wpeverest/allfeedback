@@ -37,7 +37,7 @@ class DevToolsController extends RestController {
 	 */
 	protected string $rest_base = 'dev-tools';
 
-	private const SEEDED_META_KEY = '_allfb_seeded';
+	private const SEEDED_META_KEY = '_allfeedback_seeded';
 
 	private const COMMENTS = [
 		'Great product, really love it!',
@@ -670,55 +670,52 @@ class DevToolsController extends RestController {
 			$survey_id    = (int) $wpdb->insert_id;
 			$survey_ids[] = $survey_id;
 
-			// Responses.
-			$batch = 500;
-			for ( $start = 0; $start < $per_survey; $start += $batch ) {
-				$count = min( $batch, $per_survey - $start );
-				$rows  = [];
+			// Responses — build placeholder templates and a flat values array, then
+			// pass everything through a single $wpdb->prepare() call per batch.
+			$batch              = 500;
+			$resp_placeholders  = [];
+			$resp_values        = [];
 
-				for ( $j = 0; $j < $count; $j++ ) {
-					[ $data, $score ] = self::fakeResponseData( $config );
-					$device           = self::DEVICES[ array_rand( self::DEVICES ) ];
-					$is_read          = wp_rand( 0, 1 );
-					$days_ago         = wp_rand( 0, 730 );
-					$created          = gmdate( 'Y-m-d H:i:s', strtotime( "-{$days_ago} days" ) );
-					$ip               = wp_rand( 1, 255 ) . '.' . wp_rand( 0, 255 ) . '.' . wp_rand( 0, 255 ) . '.' . wp_rand( 0, 255 );
-					$ip_hash          = hash( 'sha256', $ip );
+			$flush_responses = static function () use ( &$resp_placeholders, &$resp_values, &$total_responses, $wpdb ) {
+				if ( empty( $resp_placeholders ) ) {
+					return;
+				}
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$wpdb->query(
+					$wpdb->prepare(
+						"INSERT INTO {$wpdb->prefix}af_responses
+							(survey_id, response_data, score, device_type, ip_hash, ip_address, is_read, created_at)
+						 VALUES " . implode( ',', $resp_placeholders ), // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+						...$resp_values
+					)
+				);
+				$total_responses   += count( $resp_placeholders );
+				$resp_placeholders  = [];
+				$resp_values        = [];
+			};
 
-					if ( $score !== null ) {
-						$rows[] = $wpdb->prepare(
-							'(%d, %s, %d, %s, %s, %s, %d, %s)',
-							$survey_id,
-							$data,
-							$score,
-							$device,
-							$ip_hash,
-							$ip,
-							$is_read,
-							$created
-						);
-					} else {
-						$rows[] = $wpdb->prepare(
-							'(%d, %s, NULL, %s, %s, %s, %d, %s)',
-							$survey_id,
-							$data,
-							$device,
-							$ip_hash,
-							$ip,
-							$is_read,
-							$created
-						);
-					}
+			for ( $j = 0; $j < $per_survey; $j++ ) {
+				[ $data, $score ] = self::fakeResponseData( $config );
+				$device    = self::DEVICES[ array_rand( self::DEVICES ) ];
+				$is_read   = wp_rand( 0, 1 );
+				$days_ago  = wp_rand( 0, 730 );
+				$created   = gmdate( 'Y-m-d H:i:s', strtotime( "-{$days_ago} days" ) );
+				$ip        = wp_rand( 1, 255 ) . '.' . wp_rand( 0, 255 ) . '.' . wp_rand( 0, 255 ) . '.' . wp_rand( 0, 255 );
+				$ip_hash   = hash( 'sha256', $ip );
+
+				if ( $score !== null ) {
+					$resp_placeholders[] = '(%d,%s,%d,%s,%s,%s,%d,%s)';
+					array_push( $resp_values, $survey_id, $data, $score, $device, $ip_hash, $ip, $is_read, $created );
+				} else {
+					$resp_placeholders[] = '(%d,%s,NULL,%s,%s,%s,%d,%s)';
+					array_push( $resp_values, $survey_id, $data, $device, $ip_hash, $ip, $is_read, $created );
 				}
 
-				$wpdb->query( // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-					"INSERT INTO {$wpdb->prefix}af_responses
-						(survey_id, response_data, score, device_type, ip_hash, ip_address, is_read, created_at)
-					 VALUES " . implode( ',', $rows ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-				);
-
-				$total_responses += $count;
+				if ( count( $resp_placeholders ) >= $batch ) {
+					$flush_responses();
+				}
 			}
+			$flush_responses();
 
 			// Sync response_count cache.
 			$actual_count = (int) $wpdb->get_var(
@@ -741,79 +738,65 @@ class DevToolsController extends RestController {
 			$n_abandoned = (int) round( $per_survey * 0.30 );
 			$n_viewed    = (int) round( $per_survey * 0.40 );
 
-			$session_rows   = [];
-			$flush_sessions = static function () use ( &$session_rows, &$total_sessions, $wpdb ) {
-				if ( empty( $session_rows ) ) {
+			// Sessions — same placeholder + flat-values pattern as responses above.
+			$sess_placeholders = [];
+			$sess_values       = [];
+
+			$flush_sessions = static function () use ( &$sess_placeholders, &$sess_values, &$total_sessions, $wpdb ) {
+				if ( empty( $sess_placeholders ) ) {
 					return;
 				}
-				$wpdb->query( // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-					"INSERT INTO {$wpdb->prefix}af_survey_sessions
-						(survey_id, session_id, guest_id, status, started_at, submitted_at, abandoned_at, last_active_at, created_at)
-					 VALUES " . implode( ',', $session_rows ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$wpdb->query(
+					$wpdb->prepare(
+						"INSERT INTO {$wpdb->prefix}af_survey_sessions
+							(survey_id, session_id, guest_id, status, started_at, submitted_at, abandoned_at, last_active_at, created_at)
+						 VALUES " . implode( ',', $sess_placeholders ), // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+						...$sess_values
+					)
 				);
-				$total_sessions += count( $session_rows );
-				$session_rows    = [];
+				$total_sessions    += count( $sess_placeholders );
+				$sess_placeholders  = [];
+				$sess_values        = [];
 			};
 
 			// Submitted sessions.
 			for ( $j = 0; $j < $n_submitted; $j++ ) {
-				$days_ago       = wp_rand( 0, 730 );
-				$ts             = strtotime( "-{$days_ago} days" );
-				$created        = gmdate( 'Y-m-d H:i:s', $ts );
-				$started        = gmdate( 'Y-m-d H:i:s', $ts + wp_rand( 5, 60 ) );
-				$submitted      = gmdate( 'Y-m-d H:i:s', $ts + wp_rand( 90, 600 ) );
-				$session_rows[] = $wpdb->prepare(
-					"(%d, %s, %s, 'submitted', %s, %s, NULL, %s, %s)",
-					$survey_id,
-					self::uuid(),
-					self::uuid(),
-					$started,
-					$submitted,
-					$submitted,
-					$created
-				);
-				if ( count( $session_rows ) >= $batch ) {
+				$days_ago          = wp_rand( 0, 730 );
+				$ts                = strtotime( "-{$days_ago} days" );
+				$created           = gmdate( 'Y-m-d H:i:s', $ts );
+				$started           = gmdate( 'Y-m-d H:i:s', $ts + wp_rand( 5, 60 ) );
+				$submitted         = gmdate( 'Y-m-d H:i:s', $ts + wp_rand( 90, 600 ) );
+				$sess_placeholders[] = "(%d,%s,%s,'submitted',%s,%s,NULL,%s,%s)";
+				array_push( $sess_values, $survey_id, self::uuid(), self::uuid(), $started, $submitted, $submitted, $created );
+				if ( count( $sess_placeholders ) >= $batch ) {
 					$flush_sessions();
 				}
 			}
 
 			// Abandoned sessions.
 			for ( $j = 0; $j < $n_abandoned; $j++ ) {
-				$days_ago       = wp_rand( 0, 730 );
-				$ts             = strtotime( "-{$days_ago} days" );
-				$created        = gmdate( 'Y-m-d H:i:s', $ts );
-				$started        = gmdate( 'Y-m-d H:i:s', $ts + wp_rand( 5, 60 ) );
-				$abandoned      = gmdate( 'Y-m-d H:i:s', $ts + wp_rand( 15, 120 ) );
-				$session_rows[] = $wpdb->prepare(
-					"(%d, %s, %s, 'started', %s, NULL, %s, %s, %s)",
-					$survey_id,
-					self::uuid(),
-					self::uuid(),
-					$started,
-					$abandoned,
-					$abandoned,
-					$created
-				);
-				if ( count( $session_rows ) >= $batch ) {
+				$days_ago          = wp_rand( 0, 730 );
+				$ts                = strtotime( "-{$days_ago} days" );
+				$created           = gmdate( 'Y-m-d H:i:s', $ts );
+				$started           = gmdate( 'Y-m-d H:i:s', $ts + wp_rand( 5, 60 ) );
+				$abandoned         = gmdate( 'Y-m-d H:i:s', $ts + wp_rand( 15, 120 ) );
+				$sess_placeholders[] = "(%d,%s,%s,'started',%s,NULL,%s,%s,%s)";
+				array_push( $sess_values, $survey_id, self::uuid(), self::uuid(), $started, $abandoned, $abandoned, $created );
+				if ( count( $sess_placeholders ) >= $batch ) {
 					$flush_sessions();
 				}
 			}
 
 			// Viewed-only sessions.
 			for ( $j = 0; $j < $n_viewed; $j++ ) {
-				$days_ago       = wp_rand( 0, 730 );
-				$ts             = strtotime( "-{$days_ago} days" );
-				$created        = gmdate( 'Y-m-d H:i:s', $ts );
-				$last_active    = gmdate( 'Y-m-d H:i:s', $ts + wp_rand( 3, 30 ) );
-				$session_rows[] = $wpdb->prepare(
-					"(%d, %s, %s, 'viewed', NULL, NULL, NULL, %s, %s)",
-					$survey_id,
-					self::uuid(),
-					self::uuid(),
-					$last_active,
-					$created
-				);
-				if ( count( $session_rows ) >= $batch ) {
+				$days_ago          = wp_rand( 0, 730 );
+				$ts                = strtotime( "-{$days_ago} days" );
+				$created           = gmdate( 'Y-m-d H:i:s', $ts );
+				$last_active       = gmdate( 'Y-m-d H:i:s', $ts + wp_rand( 3, 30 ) );
+				$sess_placeholders[] = "(%d,%s,%s,'viewed',NULL,NULL,NULL,%s,%s)";
+				array_push( $sess_values, $survey_id, self::uuid(), self::uuid(), $last_active, $created );
+				if ( count( $sess_placeholders ) >= $batch ) {
 					$flush_sessions();
 				}
 			}
@@ -894,7 +877,7 @@ class DevToolsController extends RestController {
 	 */
 	public function resetWizard(): \WP_REST_Response {
 		\update_option( 'allfeedback_wizard_status', 'not_started' );
-		\delete_option( '_allfb_wizard_data' );
+		\delete_option( '_allfeedback_wizard_data' );
 		return $this->successResponse( [ 'reset' => true ] );
 	}
 
@@ -911,7 +894,7 @@ class DevToolsController extends RestController {
 	 * Reset plugin settings to defaults.
 	 */
 	public function resetSettings(): \WP_REST_Response {
-		\delete_option( 'allfeedback_settings' );
+		\delete_option( '_allfeedback_settings' );
 		return $this->successResponse( [ 'reset' => true ] );
 	}
 }

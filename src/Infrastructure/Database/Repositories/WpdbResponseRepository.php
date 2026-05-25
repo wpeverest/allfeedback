@@ -190,11 +190,7 @@ class WpdbResponseRepository implements ResponseRepository {
 		$where_clause = 'WHERE ' . implode( ' AND ', $where );
 		$sql          = "SELECT COUNT(*) FROM {$this->table} {$where_clause}"; // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
-		if ( $params !== [] ) {
-			return (int) $wpdb->get_var( $wpdb->prepare( $sql, ...$params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		}
-
-		return (int) $wpdb->get_var( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		return (int) $wpdb->get_var( $wpdb->prepare( $sql, ...$params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 	}
 
 	/**
@@ -238,14 +234,14 @@ class WpdbResponseRepository implements ResponseRepository {
 
 		[ $where, $params ] = $this->buildGlobalFilterQuery( $filter );
 
-		$where_clause = $where !== [] ? 'WHERE ' . implode( ' AND ', $where ) : '';
-		$sql          = "SELECT COUNT(*) FROM {$this->table} {$where_clause}"; // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-
-		if ( $params !== [] ) {
-			return (int) $wpdb->get_var( $wpdb->prepare( $sql, ...$params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		if ( empty( $where ) ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$this->table}" );
 		}
 
-		return (int) $wpdb->get_var( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$where_clause = 'WHERE ' . implode( ' AND ', $where );
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		return (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$this->table} {$where_clause}", ...$params ) );
 	}
 
 	/**
@@ -888,20 +884,23 @@ class WpdbResponseRepository implements ResponseRepository {
 			$params[] = $date_to;
 		}
 
-		$where_clause = $where !== [] ? 'WHERE ' . implode( ' AND ', $where ) : '';
-
-		$sql = "SELECT
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$base_sql = "SELECT
 					COUNT(*)                                                                         AS total,
 					COUNT(score)                                                                     AS score_count,
 					COALESCE(SUM(score), 0)                                                          AS score_sum,
 					SUM(CASE WHEN score >= 9              THEN 1 ELSE 0 END)                         AS promoters,
 					SUM(CASE WHEN score >= 7 AND score < 9 THEN 1 ELSE 0 END)                        AS passives,
 					SUM(CASE WHEN score < 7 AND score IS NOT NULL THEN 1 ELSE 0 END)                 AS detractors
-				FROM {$this->table} {$where_clause}"; // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				FROM {$this->table}";
 
-		$row = $params !== []
-			? $wpdb->get_row( $wpdb->prepare( $sql, ...$params ), ARRAY_A ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-			: $wpdb->get_row( $sql, ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		if ( empty( $where ) ) {
+			$row = $wpdb->get_row( $base_sql, ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		} else {
+			$where_clause = 'WHERE ' . implode( ' AND ', $where );
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$row = $wpdb->get_row( $wpdb->prepare( "{$base_sql} {$where_clause}", ...$params ), ARRAY_A );
+		}
 
 		$total       = (int) ( $row['total'] ?? 0 );
 		$score_count = (int) ( $row['score_count'] ?? 0 );

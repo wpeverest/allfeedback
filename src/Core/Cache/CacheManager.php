@@ -26,6 +26,12 @@ defined( 'ABSPATH' ) || exit;
 class CacheManager {
 
 	/**
+	 * Prefix used for tag-index transients — must include the plugin slug so the
+	 * key is always unique and properly namespaced in the wp_options table.
+	 */
+	private const ALLFEEDBACK_TAG_PREFIX = 'allfeedback_tag_';
+
+	/**
 	 * Key prefix prepended to every transient name.
 	 *
 	 * @var string
@@ -131,8 +137,7 @@ class CacheManager {
 	 * @since  1.0.0
 	 */
 	public function flushTag( string $tag ): void {
-		$tag_key = $this->prefix . 'tag_' . $tag;
-		$keys    = get_transient( $tag_key );
+		$keys = get_transient( self::ALLFEEDBACK_TAG_PREFIX . $tag );
 
 		if ( is_array( $keys ) ) {
 			foreach ( $keys as $key ) {
@@ -140,7 +145,7 @@ class CacheManager {
 			}
 		}
 
-		delete_transient( $tag_key );
+		delete_transient( self::ALLFEEDBACK_TAG_PREFIX . $tag );
 	}
 
 	/**
@@ -153,13 +158,12 @@ class CacheManager {
 	 */
 	public function tag( string $key, array $tags ): void {
 		foreach ( $tags as $tag ) {
-			$tag_key  = $this->prefix . 'tag_' . $tag;
-			$keys_raw = get_transient( $tag_key );
+			$keys_raw = get_transient( self::ALLFEEDBACK_TAG_PREFIX . $tag );
 			$keys     = $keys_raw !== false ? $keys_raw : [];
 
 			if ( ! in_array( $key, $keys, true ) ) {
 				$keys[] = $key;
-				set_transient( $tag_key, $keys, $this->default_ttl );
+				set_transient( self::ALLFEEDBACK_TAG_PREFIX . $tag, $keys, $this->default_ttl );
 			}
 		}
 	}

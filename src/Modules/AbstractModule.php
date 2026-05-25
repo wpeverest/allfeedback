@@ -255,7 +255,7 @@ abstract class AbstractModule implements ModuleInterface {
 	 * @since  1.0.0
 	 */
 	private function loadModuleState(): void {
-		$enabled_modules = (array) get_option( '_allfb_enabled_modules', [] );
+		$enabled_modules = (array) get_option( '_allfeedback_enabled_modules', [] );
 		$this->enabled   = in_array( $this->id, $enabled_modules, true );
 	}
 
@@ -266,7 +266,7 @@ abstract class AbstractModule implements ModuleInterface {
 	 * @since  1.0.0
 	 */
 	private function saveModuleState(): void {
-		$enabled_modules = (array) get_option( '_allfb_enabled_modules', [] );
+		$enabled_modules = (array) get_option( '_allfeedback_enabled_modules', [] );
 
 		if ( $this->enabled ) {
 			if ( ! in_array( $this->id, $enabled_modules, true ) ) {
@@ -276,6 +276,6 @@ abstract class AbstractModule implements ModuleInterface {
 			$enabled_modules = array_diff( $enabled_modules, [ $this->id ] );
 		}
 
-		update_option( '_allfb_enabled_modules', array_values( $enabled_modules ) );
+		update_option( '_allfeedback_enabled_modules', array_values( $enabled_modules ) );
 	}
 }

@@ -140,14 +140,14 @@ class WpdbSurveyRepository implements SurveyRepository {
 
 		[ $where, $params ] = $this->buildFilterQuery( $filter );
 
-		$where_clause = $where !== [] ? 'WHERE ' . implode( ' AND ', $where ) : '';
-		$sql          = "SELECT COUNT(*) FROM {$this->table} {$where_clause}"; // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-
-		if ( $params !== [] ) {
-			return (int) $wpdb->get_var( $wpdb->prepare( $sql, ...$params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		if ( empty( $where ) ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$this->table}" );
 		}
 
-		return (int) $wpdb->get_var( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$where_clause = 'WHERE ' . implode( ' AND ', $where );
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		return (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$this->table} {$where_clause}", ...$params ) );
 	}
 
 	/**

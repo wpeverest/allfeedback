@@ -34,6 +34,23 @@ Features include:
 3. Run `pnpm install && pnpm build` to compile assets.
 4. Activate the plugin through **Plugins → Installed Plugins**.
 
+== Source Code ==
+
+This plugin's JavaScript and CSS assets are compiled from source. The unminified source code is publicly available at:
+
+https://github.com/wpeverest/allfeedback
+
+**Build requirements:** Node.js >= 20, pnpm 10.x
+
+**Build steps:**
+
+1. Clone the repository: `git clone https://github.com/wpeverest/allfeedback.git`
+2. Install dependencies: `pnpm install`
+3. Build assets: `pnpm build`
+4. Install PHP dependencies: `composer install`
+
+The `resources/scripts/` directory contains all uncompiled TypeScript/JavaScript source files. The `resources/styles/` directory contains all uncompiled CSS (PostCSS/Tailwind) source files.
+
 == Frequently Asked Questions ==
 
 = Is the data collected within the website? =
@@ -42,7 +59,7 @@ Yes, all the feedback data you collect, remains safe within your own website.
 
 = Where can I contribute to the plugin? =
 
-The plugin is open source and the code is available here: https://github.com/wpeverest/allfeedback. Feel free to contribute :)
+The plugin is open source and the unminified source code is available at: https://github.com/wpeverest/allfeedback. Feel free to contribute :)
 
 = Where do I report bugs? =
 

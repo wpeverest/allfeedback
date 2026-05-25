@@ -96,13 +96,13 @@ if ( ! function_exists( 'allfeedback_get_survey_embed_url' ) ) {
 	 * The URL is built from the WordPress home URL so it works in both
 	 * sub-directory and sub-domain WordPress installations.
 	 *
-	 * Example output: https://example.com/?allfb_survey=42
+	 * Example output: https://example.com/?allfeedback_survey=42
 	 *
 	 * @param  int $survey_id The survey's primary-key ID.
 	 * @return string           Fully-qualified embed URL.
 	 * @since  1.0.0
 	 */
 	function allfeedback_get_survey_embed_url( int $survey_id ): string {
-		return add_query_arg( 'allfb_survey', $survey_id, home_url( '/' ) );
+		return add_query_arg( 'allfeedback_survey', $survey_id, home_url( '/' ) );
 	}
 }
