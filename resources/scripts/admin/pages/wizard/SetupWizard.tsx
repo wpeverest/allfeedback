@@ -5,12 +5,13 @@ import {
 	type WizardCompletePayload,
 } from '@/admin/api/wizard';
 import { settingsQuery } from '@/admin/queries/settings';
+import AllFeedbackLogo from '@/admin/components/AllFeedbackLogo';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { __ } from '@wordpress/i18n';
-import { ArrowLeft, ArrowRight, Bell, Check, MessageSquare, Palette, Rocket, Wand2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Bell, Check, Palette, Rocket, Wand2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { StepFinal } from './StepFinal';
 import { StepSettings } from './StepSettings';
@@ -142,9 +143,7 @@ export default function SetupWizard() {
 			{!isDone && (
 				<header className="border-border/50 bg-card flex h-[72px] shrink-0 items-center justify-between border-b px-4 md:px-10">
 					<div className="flex shrink-0 items-center gap-2">
-						<div className="bg-primary flex size-[30px] items-center justify-center rounded-md">
-							<MessageSquare className="size-[15px] text-white" />
-						</div>
+						<AllFeedbackLogo className="size-[30px]" />
 						<span className="text-md text-foreground tracking-tight">
 							<strong className="font-bold">All</strong>
 							<span className="font-normal">Feedback</span>

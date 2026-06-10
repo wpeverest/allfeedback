@@ -4,8 +4,9 @@ import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { __ } from '@wordpress/i18n';
-import { Menu, MessageSquare, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import AllFeedbackLogo from '@/admin/components/AllFeedbackLogo';
 
 type ActiveNavItem = { label: string; to: string };
 type DisabledNavItem = { label: string; disabled: true };
@@ -81,9 +82,7 @@ const GlobalHeader = () => {
 		<header className="border-border z-50 border-b bg-white">
 			<div className="flex h-[60px] items-center px-5">
 				<div className="flex shrink-0 items-center gap-2">
-					<div className="bg-primary flex size-[30px] items-center justify-center rounded-md">
-						<MessageSquare className="size-[15px] text-white" />
-					</div>
+					<AllFeedbackLogo className="size-[30px]" />
 					<span className="text-md text-foreground tracking-tight">
 						<strong className="font-bold">All</strong>
 						<span className="font-normal">Feedback</span>
