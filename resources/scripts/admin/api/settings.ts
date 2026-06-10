@@ -26,6 +26,9 @@ export type Settings = {
 	advanced: {
 		privacy: {
 			disable_user_details: boolean;
+			require_consent:      boolean;
+			consent_text:         string;
+			privacy_policy_url:   string;
 		};
 		logging: {
 			enabled:         boolean;

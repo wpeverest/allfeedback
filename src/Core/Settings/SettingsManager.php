@@ -116,6 +116,9 @@ class SettingsManager {
 		'advanced' => [
 			'privacy' => [
 				'disable_user_details' => false,
+				'require_consent'      => false,
+				'consent_text'         => 'I agree to the storage and handling of my data.',
+				'privacy_policy_url'   => '',
 			],
 			'logging' => [
 				'enabled'        => false,
@@ -534,6 +537,21 @@ class SettingsManager {
 								'default'     => self::DEFAULTS['advanced']['privacy']['disable_user_details'],
 								'description' => \__( 'Disable storing the visitor IP address and User-Agent on all surveys. Also disables duplicate-submission detection.', 'allfeedback' ),
 							],
+							'require_consent'      => [
+								'type'        => 'boolean',
+								'default'     => self::DEFAULTS['advanced']['privacy']['require_consent'],
+								'description' => \__( 'Require visitors to give explicit consent before their response is recorded, on all surveys.', 'allfeedback' ),
+							],
+							'consent_text'         => [
+								'type'        => 'string',
+								'default'     => self::DEFAULTS['advanced']['privacy']['consent_text'],
+								'description' => \__( 'Label shown next to the consent checkbox.', 'allfeedback' ),
+							],
+							'privacy_policy_url'   => [
+								'type'        => 'string',
+								'default'     => self::DEFAULTS['advanced']['privacy']['privacy_policy_url'],
+								'description' => \__( 'URL of your privacy policy. Linked from the consent text. Leave blank to use the site privacy policy page.', 'allfeedback' ),
+							],
 						],
 					],
 					'logging' => [
@@ -649,6 +667,10 @@ class SettingsManager {
 
 			if ( str_ends_with( $field, '_email' ) ) {
 				return \sanitize_email( $sanitised );
+			}
+
+			if ( str_ends_with( $field, '_url' ) ) {
+				return \esc_url_raw( $sanitised );
 			}
 
 			return $sanitised;

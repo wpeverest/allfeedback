@@ -67,6 +67,9 @@ export interface FormSettings {
 	widgetLabel: string;
 }
 
+export const DEFAULT_CONSENT_TEXT =
+	'I agree to the storage and handling of my data.';
+
 export const DEFAULT_FORM_SETTINGS: FormSettings = {
 	thankYouEnabled: true,
 	thankYouTitle: 'Thank you!',

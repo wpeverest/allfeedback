@@ -13,9 +13,10 @@ namespace AllFeedback\Application\Response\Pipes;
 defined( 'ABSPATH' ) || exit;
 
 use AllFeedback\Core\Exceptions\ValidationException;
+use AllFeedback\Core\Settings\SettingsManager;
 
 /**
- * Pipeline stage: enforce consent when the survey settings require it.
+ * Pipeline stage: enforce consent when the global privacy settings require it.
  *
  * @package AllFeedback\Application\Response\Pipes
  * @since   1.0.0
@@ -23,7 +24,17 @@ use AllFeedback\Core\Exceptions\ValidationException;
 class ValidateConsentIfRequired implements PipeInterface {
 
 	/**
-	 * Reject the submission when the survey requires consent and the respondent
+	 * Constructor.
+	 *
+	 * @param  SettingsManager $settings_manager Plugin-wide settings store.
+	 * @since  1.0.0
+	 */
+	public function __construct(
+		private readonly SettingsManager $settings_manager,
+	) {}
+
+	/**
+	 * Reject the submission when consent is globally required and the respondent
 	 * has not provided it.
 	 *
 	 * @param  ResponseContext $context Shared pipeline context.
@@ -33,8 +44,7 @@ class ValidateConsentIfRequired implements PipeInterface {
 	 * @since  1.0.0
 	 */
 	public function execute( ResponseContext $context, \Closure $next ): mixed {
-		$settings         = $context->survey->getSettings();
-		$consent_required = ! empty( $settings['require_consent'] );
+		$consent_required = (bool) $this->settings_manager->get( 'advanced.privacy.require_consent' );
 
 		if ( $consent_required && ! $context->dto->consent_given ) {
 			throw ValidationException::withErrors(

@@ -18,6 +18,7 @@ use AllFeedback\Application\Response\Pipes\ValidateResponseData;
 use AllFeedback\Application\Response\Pipes\ValidateSurveyIsActive;
 use AllFeedback\Application\Response\Pipes\PipeInterface;
 use AllFeedback\Core\Exceptions\NotFoundException;
+use AllFeedback\Core\Settings\SettingsManager;
 use AllFeedback\Domain\Response\Response;
 use AllFeedback\Domain\Response\ResponseRepository;
 use AllFeedback\Domain\Survey\SurveyRepository;
@@ -40,6 +41,7 @@ class SubmitResponseService {
 	public function __construct(
 		private readonly SurveyRepository $survey_repository,
 		private readonly ResponseRepository $response_repository,
+		private readonly SettingsManager $settings_manager,
 	) {}
 
 	/**
@@ -64,7 +66,7 @@ class SubmitResponseService {
 		$pipeline = [
 			new ValidateSurveyIsActive(),
 			new ValidateResponseData(),
-			new ValidateConsentIfRequired(),
+			new ValidateConsentIfRequired( $this->settings_manager ),
 		];
 
 		$this->runPipeline( $pipeline, $context );

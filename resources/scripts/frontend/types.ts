@@ -27,6 +27,9 @@ export interface AllfbSettings {
 	show_on_mobile:     boolean;
 	survey_id?:         number;
 	survey_configs?:    SurveyConfig[];
+	require_consent?:    boolean;
+	consent_text?:       string;
+	privacy_policy_url?: string;
 }
 
 export interface AllfbConfig {

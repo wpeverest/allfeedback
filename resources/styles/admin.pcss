@@ -46,6 +46,13 @@
 	box-shadow:      none;
 }
 
+/* Consent privacy-policy link in the preview keeps the widget accent colour. */
+#ALLFB-Admin-Root .allfb-consent__text a {
+	color:           var(--allfb-color, #6366f1);
+	font-weight:     500;
+	text-decoration: underline;
+}
+
 /* ── Focused inputs always use primary colour as border ──────────────────── */
 /* Exclude allfb-* widget inputs so preview focus styles apply unmodified.   */
 #ALLFB-Admin-Root input:not([type='checkbox']):not([type='radio']):not(.allfb-input):not([class*='wz-']):focus,

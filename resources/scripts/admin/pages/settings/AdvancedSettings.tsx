@@ -1,8 +1,10 @@
 import type { Settings } from '@/admin/api/settings';
 import { useSettingsDirty } from '@/admin/pages/settings/Settings';
 import { settingsQuery } from '@/admin/queries/settings';
+import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import UnsavedChangesBadge from '@/components/ui/unsaved-changes-badge';
 import { cn } from '@/lib/utils';
 import { useForm, useStore } from '@tanstack/react-form';
@@ -43,6 +45,27 @@ const Row = ({
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
 	<div className="mt-5 mb-4">
 		<span className="text-sm font-semibold tracking-widest uppercase text-foreground/60">{children}</span>
+	</div>
+);
+
+const Collapse = ({
+	open,
+	children,
+}: {
+	open: boolean;
+	children: React.ReactNode;
+}) => (
+	<div
+		className={cn(
+			'grid transition-[grid-template-rows] duration-200 ease-in-out',
+			open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
+		)}
+	>
+		<div className="overflow-hidden">
+			<div className="border-primary/20 ml-1 space-y-4 border-l-2 pt-4 pl-4">
+				{children}
+			</div>
+		</div>
 	</div>
 );
 
@@ -92,8 +115,13 @@ const AdvancedSettingsSkeleton = () => (
 	</div>
 );
 
+const DEFAULT_CONSENT_TEXT = 'I agree to the storage and handling of my data.';
+
 const DEFAULT_VALUES = {
 	disable_user_details: false,
+	require_consent: false,
+	consent_text: DEFAULT_CONSENT_TEXT,
+	privacy_policy_url: '',
 	logging_enabled: false,
 	delete_on_uninstall: false,
 };
@@ -124,6 +152,13 @@ const AdvancedSettings = () => {
 				disable_user_details:
 					stagedAdv.privacy?.disable_user_details ??
 					DEFAULT_VALUES.disable_user_details,
+				require_consent:
+					stagedAdv.privacy?.require_consent ?? DEFAULT_VALUES.require_consent,
+				consent_text:
+					stagedAdv.privacy?.consent_text ?? DEFAULT_VALUES.consent_text,
+				privacy_policy_url:
+					stagedAdv.privacy?.privacy_policy_url ??
+					DEFAULT_VALUES.privacy_policy_url,
 				logging_enabled:
 					stagedAdv.logging?.enabled ?? DEFAULT_VALUES.logging_enabled,
 				delete_on_uninstall:
@@ -133,12 +168,21 @@ const AdvancedSettings = () => {
 		: data
 			? {
 					disable_user_details:
-						data.advanced.privacy.disable_user_details ??
+						data.advanced?.privacy?.disable_user_details ??
 						DEFAULT_VALUES.disable_user_details,
+					require_consent:
+						data.advanced?.privacy?.require_consent ??
+						DEFAULT_VALUES.require_consent,
+					consent_text:
+						data.advanced?.privacy?.consent_text ??
+						DEFAULT_VALUES.consent_text,
+					privacy_policy_url:
+						data.advanced?.privacy?.privacy_policy_url ??
+						DEFAULT_VALUES.privacy_policy_url,
 					logging_enabled:
-						data.advanced.logging.enabled ?? DEFAULT_VALUES.logging_enabled,
+						data.advanced?.logging?.enabled ?? DEFAULT_VALUES.logging_enabled,
 					delete_on_uninstall:
-						data.advanced.plugin.delete_on_uninstall ??
+						data.advanced?.plugin?.delete_on_uninstall ??
 						DEFAULT_VALUES.delete_on_uninstall,
 				}
 			: DEFAULT_VALUES;
@@ -164,12 +208,20 @@ const AdvancedSettings = () => {
 		form.reset(
 			{
 				disable_user_details:
-					data.advanced.privacy.disable_user_details ??
+					data.advanced?.privacy?.disable_user_details ??
 					DEFAULT_VALUES.disable_user_details,
+				require_consent:
+					data.advanced?.privacy?.require_consent ??
+					DEFAULT_VALUES.require_consent,
+				consent_text:
+					data.advanced?.privacy?.consent_text ?? DEFAULT_VALUES.consent_text,
+				privacy_policy_url:
+					data.advanced?.privacy?.privacy_policy_url ??
+					DEFAULT_VALUES.privacy_policy_url,
 				logging_enabled:
-					data.advanced.logging.enabled ?? DEFAULT_VALUES.logging_enabled,
+					data.advanced?.logging?.enabled ?? DEFAULT_VALUES.logging_enabled,
 				delete_on_uninstall:
-					data.advanced.plugin.delete_on_uninstall ??
+					data.advanced?.plugin?.delete_on_uninstall ??
 					DEFAULT_VALUES.delete_on_uninstall,
 			},
 			{ keepDefaultValues: true },
@@ -185,18 +237,30 @@ const AdvancedSettings = () => {
 		const srv = data?.advanced;
 		if (
 			values.disable_user_details ===
-				(srv?.privacy.disable_user_details ??
+				(srv?.privacy?.disable_user_details ??
 					DEFAULT_VALUES.disable_user_details) &&
+			values.require_consent ===
+				(srv?.privacy?.require_consent ?? DEFAULT_VALUES.require_consent) &&
+			values.consent_text ===
+				(srv?.privacy?.consent_text ?? DEFAULT_VALUES.consent_text) &&
+			values.privacy_policy_url ===
+				(srv?.privacy?.privacy_policy_url ??
+					DEFAULT_VALUES.privacy_policy_url) &&
 			values.logging_enabled ===
-				(srv?.logging.enabled ?? DEFAULT_VALUES.logging_enabled) &&
+				(srv?.logging?.enabled ?? DEFAULT_VALUES.logging_enabled) &&
 			values.delete_on_uninstall ===
-				(srv?.plugin.delete_on_uninstall ?? DEFAULT_VALUES.delete_on_uninstall)
+				(srv?.plugin?.delete_on_uninstall ?? DEFAULT_VALUES.delete_on_uninstall)
 		)
 			return;
 		setDirty(FORM_KEY, true);
 		setPatch(FORM_KEY, {
 			advanced: {
-				privacy: { disable_user_details: values.disable_user_details },
+				privacy: {
+					disable_user_details: values.disable_user_details,
+					require_consent: values.require_consent,
+					consent_text: values.consent_text,
+					privacy_policy_url: values.privacy_policy_url,
+				},
 				logging: { enabled: values.logging_enabled },
 				plugin: { delete_on_uninstall: values.delete_on_uninstall },
 			},
@@ -239,6 +303,55 @@ const AdvancedSettings = () => {
 							}
 						/>
 					</Row>
+
+					<Row
+						label={__('Require consent', 'allfeedback')}
+						description={__(
+							'Show a consent checkbox that visitors must tick before submitting any form.',
+							'allfeedback',
+						)}
+					>
+						<Switch
+							checked={values.require_consent}
+							onCheckedChange={(v) => form.setFieldValue('require_consent', v)}
+						/>
+					</Row>
+
+					<Collapse open={values.require_consent}>
+						<Row
+							label={__('Consent text', 'allfeedback')}
+							description={__(
+								'Label shown next to the consent checkbox.',
+								'allfeedback',
+							)}
+						>
+							<Textarea
+								value={values.consent_text}
+								onChange={(e) =>
+									form.setFieldValue('consent_text', e.target.value)
+								}
+								placeholder={DEFAULT_CONSENT_TEXT}
+								rows={3}
+							/>
+						</Row>
+
+						<Row
+							label={__('Privacy policy URL', 'allfeedback')}
+							description={__(
+								'Linked from the consent text. Leave blank to use your site privacy policy page.',
+								'allfeedback',
+							)}
+						>
+							<Input
+								type="url"
+								value={values.privacy_policy_url}
+								onChange={(e) =>
+									form.setFieldValue('privacy_policy_url', e.target.value)
+								}
+								placeholder="https://example.com/privacy-policy"
+							/>
+						</Row>
+					</Collapse>
 				</div>
 
 				<div className="border-border/50 my-6 border-t" />

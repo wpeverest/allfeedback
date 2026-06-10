@@ -137,6 +137,7 @@ export type SubmitFormData = {
 	page_url?:     string;
 	device_type?:  string;
 	session_id?:   string;
+	consent_given?: boolean;
 };
 
 export type SubmitFormResult = {

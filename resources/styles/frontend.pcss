@@ -448,6 +448,39 @@
   line-height: 1.4;
 }
 
+/* ── Consent (GDPR) ───────────────────────────────────────────────────────── */
+.allfb-consent-wrap {
+  padding-top: 12px;
+}
+
+.allfb-consent {
+  display:     flex;
+  align-items: flex-start;
+  gap:         8px;
+  cursor:      pointer;
+}
+
+.allfb-consent .allfb-option__checkbox {
+  margin-top: 2px;
+}
+
+.allfb-consent__text {
+  font-size:   12px;
+  font-weight: 400;
+  color:       var(--allfb-muted);
+  line-height: 1.5;
+}
+
+.allfb-consent__text a {
+  color:           var(--allfb-color);
+  font-weight:     500;
+  text-decoration: underline;
+}
+
+.allfb-consent__text a:hover {
+  opacity: 0.85;
+}
+
 /* ── Star rating ──────────────────────────────────────────────────────────── */
 .allfb-stars {
   display: flex;
@@ -587,39 +620,55 @@
 /* ── Buttons ──────────────────────────────────────────────────────────────── */
 .allfb-widget, .allfb-embed, .allfb-preview-panel {
   .allfb-btn {
+    /* `appearance` + explicit visual props with !important keep the widget's
+       buttons rendering consistently inside arbitrary host themes that style
+       `button` (often with !important of their own). */
+    appearance:      none;
+    -webkit-appearance: none;
     display:         inline-flex;
     align-items:     center;
     justify-content: center;
     flex:            1;
     min-width:       0;
+    width:           auto;
+    height:          auto;
     padding:         9px 18px;
     font-size:       13px;
     font-weight:     600;
+    line-height:     1.4;
     font-family:     var(--allfb-font);
-    border:          1px solid var(--allfb-border);
-    border-radius:   8px;
+    text-transform:  none;
+    letter-spacing:  normal;
+    border:          1px solid var(--allfb-border) !important;
+    border-radius:   8px !important;
     cursor:          pointer;
     transition:      background 0.15s, border-color 0.15s, color 0.15s;
-    background:      transparent;
-    color:           var(--allfb-muted);
+    background:      transparent !important;
+    color:           var(--allfb-muted) !important;
+    box-shadow:      none !important;
+    text-shadow:     none;
 
-    &:hover:not(:disabled) { background: color-mix(in srgb, var(--allfb-border) 25%, transparent); }
+    &:hover:not(:disabled) { background: color-mix(in srgb, var(--allfb-border) 25%, transparent) !important; }
     &:focus-visible { outline: 2px solid var(--allfb-color); outline-offset: 2px; }
     &:disabled      { opacity: 0.55; cursor: not-allowed; }
+  }
 
-    &--primary {
-      background:   var(--allfb-color);
-      border-color: var(--allfb-color);
-      color:        #fff;
-      &:hover:not(:disabled) { background: var(--allfb-color-dark); border-color: var(--allfb-color-dark); }
-    }
+  /* Modifiers are written as full class selectors — NOT `&--primary` — because
+     the PostCSS nesting plugin silently drops a `&--suffix` when the parent
+     expands to a complex/`:is()` selector, which previously stripped these
+     rules from the build entirely. */
+  .allfb-btn--primary {
+    background:   var(--allfb-color) !important;
+    border-color: var(--allfb-color) !important;
+    color:        #fff !important;
+    &:hover:not(:disabled) { background: var(--allfb-color-dark) !important; border-color: var(--allfb-color-dark) !important; }
+  }
 
-    &--secondary {
-      background:   transparent;
-      border-color: var(--allfb-border);
-      color:        var(--allfb-muted);
-      &:hover { background: color-mix(in srgb, var(--allfb-border) 30%, transparent); }
-    }
+  .allfb-btn--secondary {
+    background:   transparent !important;
+    border-color: var(--allfb-border) !important;
+    color:        var(--allfb-muted) !important;
+    &:hover { background: color-mix(in srgb, var(--allfb-border) 30%, transparent) !important; }
   }
 }
 

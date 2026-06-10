@@ -254,6 +254,12 @@ class FrontendServiceProvider implements ServiceProvider {
 
 		$primary_survey_id = $survey_ids[0] ?? null;
 
+		/** @var array<string, mixed> $privacy */ // phpcs:ignore Generic.Commenting.DocComment.MissingShort -- inline type hint
+		$privacy    = (array) $this->settings_manager->get( 'advanced.privacy' );
+		$policy_url = ! empty( $privacy['privacy_policy_url'] )
+			? (string) $privacy['privacy_policy_url']
+			: (string) get_privacy_policy_url();
+
 		$frontend_data = $this->applyFilters(
 			'allfeedback:frontend:script_data',
 			[
@@ -265,8 +271,11 @@ class FrontendServiceProvider implements ServiceProvider {
 				'settings'    => array_merge(
 					$widget_settings,
 					[
-						'survey_id'      => $primary_survey_id,
-						'survey_configs' => $survey_configs,
+						'survey_id'          => $primary_survey_id,
+						'survey_configs'     => $survey_configs,
+						'require_consent'    => ! empty( $privacy['require_consent'] ),
+						'consent_text'       => (string) ( $privacy['consent_text'] ?? '' ),
+						'privacy_policy_url' => $policy_url,
 					]
 				),
 			]

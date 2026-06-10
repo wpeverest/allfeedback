@@ -3,7 +3,7 @@ import { surveysApi } from '@/admin/api/surveys';
 import { Tooltip } from '@/admin/components/Tooltip';
 import { cn } from '@/lib/utils';
 import { FieldPreview } from '@/shared/FieldPreview';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { __ } from '@wordpress/i18n';
 import {
 	ArrowLeft,
@@ -73,6 +73,7 @@ import type {
 	PreviewDevice,
 	WidgetPosition,
 } from './types';
+import { DEFAULT_CONSENT_TEXT } from './types';
 
 interface PreviewPanelProps {
 	sections: FormSection[];
@@ -143,6 +144,12 @@ interface WidgetBodyProps {
 	fieldValues: Record<string, string | string[]>;
 	fieldErrors: Record<string, string>;
 	submitError: string;
+	requireConsent: boolean;
+	consentText: string;
+	privacyPolicyUrl: string;
+	consentChecked: boolean;
+	consentError: string;
+	onConsentChange: (checked: boolean) => void;
 	isMinimized: boolean;
 	isClosed: boolean;
 	showControls: boolean;
@@ -173,6 +180,12 @@ const WidgetBody = ({
 	fieldValues,
 	fieldErrors,
 	submitError,
+	requireConsent,
+	consentText,
+	privacyPolicyUrl,
+	consentChecked,
+	consentError,
+	onConsentChange,
 	isMinimized,
 	isClosed,
 	showControls,
@@ -338,6 +351,40 @@ const WidgetBody = ({
 							})()}
 						</div>
 
+						{isLastStep && requireConsent && (
+							<div className="allfb-consent-wrap">
+								<label className="allfb-consent">
+									<span
+										className={`allfb-option__checkbox${consentChecked ? ' is-checked' : ''}`}
+									/>
+									<input
+										type="checkbox"
+										className="sr-only"
+										checked={consentChecked}
+										onChange={(e) => onConsentChange(e.target.checked)}
+									/>
+									<span className="allfb-consent__text">
+										{consentText}
+										{privacyPolicyUrl && (
+											<>
+												{' '}
+												<a
+													href={privacyPolicyUrl}
+													target="_blank"
+													rel="noopener noreferrer"
+												>
+													{__('Privacy Policy', 'allfeedback')}
+												</a>
+											</>
+										)}
+									</span>
+								</label>
+								{consentError && (
+									<p className="allfb-field__error">{consentError}</p>
+								)}
+							</div>
+						)}
+
 						<div className="allfb-form__footer">
 							{submitError && (
 								<p className="allfb-form__submit-error">{submitError}</p>
@@ -355,7 +402,11 @@ const WidgetBody = ({
 								<button
 									type="button"
 									className="allfb-btn allfb-btn--primary"
-									disabled={isSubmitting || hasSubmitted}
+									disabled={
+										isSubmitting ||
+										hasSubmitted ||
+										(requireConsent && !consentChecked)
+									}
 									onClick={onSubmit}
 								>
 									{hasSubmitted
@@ -413,9 +464,14 @@ const PreviewPanel = ({
 	const siteHostname = getSiteHostname();
 	const queryClient = useQueryClient();
 
-	const cachedWidget = (
-		queryClient.getQueryData(settingsQuery().queryKey) as any
-	)?.general?.widget;
+	const { data: globalSettings } = useQuery(settingsQuery());
+	const cachedWidget = globalSettings?.general?.widget;
+
+	const privacy = globalSettings?.advanced?.privacy;
+	const requireConsent = !!privacy?.require_consent;
+	const consentText =
+		privacy?.consent_text?.trim() || DEFAULT_CONSENT_TEXT;
+	const privacyPolicyUrl = privacy?.privacy_policy_url ?? '';
 	const globalColor =
 		cachedWidget?.color ?? __ALLFB_ADMIN__.widgetColor ?? '#6366f1';
 	const globalPosition = (cachedWidget?.position ??
@@ -435,6 +491,8 @@ const PreviewPanel = ({
 	>({});
 	const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 	const [submitError, setSubmitError] = useState('');
+	const [consentChecked, setConsentChecked] = useState(false);
+	const [consentError, setConsentError] = useState('');
 	const [currentStep, setCurrentStep] = useState(0);
 	const [isSubmitted, setIsSubmitted] = useState(false);
 	const [hasSubmitted, setHasSubmitted] = useState(false);
@@ -470,6 +528,8 @@ const PreviewPanel = ({
 		setFieldValues({});
 		setFieldErrors({});
 		setSubmitError('');
+		setConsentChecked(false);
+		setConsentError('');
 		setCurrentStep(0);
 		setIsSubmitted(false);
 	}, [
@@ -522,6 +582,11 @@ const PreviewPanel = ({
 		setCurrentStep((s) => s + 1);
 	};
 
+	const handleConsentChange = (checked: boolean) => {
+		setConsentChecked(checked);
+		if (checked) setConsentError('');
+	};
+
 	const handleSubmit = () => {
 		const errors = validateStep(currentFields);
 		if (Object.keys(errors).length) {
@@ -529,6 +594,14 @@ const PreviewPanel = ({
 			return;
 		}
 		setFieldErrors({});
+
+		if (requireConsent && !consentChecked) {
+			setConsentError(
+				__('You must provide consent to submit.', 'allfeedback'),
+			);
+			return;
+		}
+		setConsentError('');
 
 		if (surveyId) {
 			const allFormFields = allFields(sections);
@@ -553,6 +626,7 @@ const PreviewPanel = ({
 				page_url: window.location.href,
 				device_type: device,
 				session_id: sessionIdRef.current,
+				...(requireConsent && { consent_given: consentChecked }),
 			});
 		} else {
 			if (settings.thankYouEnabled) {
@@ -575,6 +649,8 @@ const PreviewPanel = ({
 		setFieldValues({});
 		setFieldErrors({});
 		setSubmitError('');
+		setConsentChecked(false);
+		setConsentError('');
 		setCurrentStep(0);
 	};
 
@@ -590,6 +666,12 @@ const PreviewPanel = ({
 		fieldValues,
 		fieldErrors,
 		submitError,
+		requireConsent,
+		consentText,
+		privacyPolicyUrl,
+		consentChecked,
+		consentError,
+		onConsentChange: handleConsentChange,
 		isMinimized,
 		isClosed,
 		settings,
@@ -611,6 +693,8 @@ const PreviewPanel = ({
 			setFieldValues({});
 			setFieldErrors({});
 			setSubmitError('');
+			setConsentChecked(false);
+			setConsentError('');
 			setCurrentStep(0);
 		},
 	};

@@ -34,11 +34,18 @@ export const SurveyForm = ( { cfg, survey, submitNonce, sessionId, onSuccess, al
 	const ss          = normalizeSettings( survey.settings );
 	const totalSteps  = sections.length;
 
+	const requireConsent  = cfg.settings.require_consent ?? false;
+	const consentText      = ( cfg.settings.consent_text || '' ).trim() ||
+		'I agree to the storage and handling of my data.';
+	const privacyPolicyUrl = cfg.settings.privacy_policy_url ?? '';
+
 	const [ stepIndex,    setStepIndex    ] = useState( 0 );
 	const [ fieldValues,  setFieldValues  ] = useState<Record<string, string | string[]>>( {} );
 	const [ fieldErrors,  setFieldErrors  ] = useState<Record<string, string>>( {} );
 	const [ isSubmitting, setIsSubmitting ] = useState( false );
 	const [ submitError,  setSubmitError  ] = useState( '' );
+	const [ consent,      setConsent      ] = useState( false );
+	const [ consentError, setConsentError ] = useState( '' );
 
 	const hasStartedRef = useRef( false );
 
@@ -78,6 +85,7 @@ export const SurveyForm = ( { cfg, survey, submitNonce, sessionId, onSuccess, al
 
 	const handleBack = () => {
 		setFieldErrors( {} );
+		setConsentError( '' );
 		setStepIndex( ( s ) => s - 1 );
 	};
 
@@ -93,6 +101,13 @@ export const SurveyForm = ( { cfg, survey, submitNonce, sessionId, onSuccess, al
 		const errors = validateStep();
 		if ( Object.keys( errors ).length ) { setFieldErrors( errors ); return; }
 		setFieldErrors( {} );
+
+		if ( requireConsent && ! consent ) {
+			setConsentError( 'You must provide consent to submit.' );
+			return;
+		}
+		setConsentError( '' );
+
 		setIsSubmitting( true );
 		setSubmitError( '' );
 
@@ -120,6 +135,7 @@ export const SurveyForm = ( { cfg, survey, submitNonce, sessionId, onSuccess, al
 					device_type:   getDeviceType(),
 					...( score !== undefined && ! Number.isNaN( score ) ? { score } : {} ),
 					...( sessionId ? { session_id: sessionId } : {} ),
+					...( requireConsent ? { consent_given: consent } : {} ),
 				} ),
 			} );
 			if ( ! res.ok ) throw new Error( `HTTP ${ res.status }` );
@@ -174,6 +190,29 @@ export const SurveyForm = ( { cfg, survey, submitNonce, sessionId, onSuccess, al
 				} )() }
 			</div>
 
+			{ isLastStep && requireConsent && (
+				<div className="allfb-consent-wrap">
+					<label className="allfb-consent">
+						<span className={ `allfb-option__checkbox${ consent ? ' is-checked' : '' }` } />
+						<input
+							type="checkbox"
+							className="sr-only"
+							checked={ consent }
+							onChange={ ( e ) => { setConsent( e.target.checked ); if ( e.target.checked ) setConsentError( '' ); } }
+						/>
+						<span className="allfb-consent__text">
+							{ consentText }
+							{ privacyPolicyUrl && (
+								<> { ' ' }
+									<a href={ privacyPolicyUrl } target="_blank" rel="noopener noreferrer">Privacy Policy</a>
+								</>
+							) }
+						</span>
+					</label>
+					{ consentError && <p className="allfb-field__error">{ consentError }</p> }
+				</div>
+			) }
+
 			<div className="allfb-form__footer">
 				{ submitError && <p className="allfb-form__submit-error">{ submitError }</p> }
 				{ stepIndex > 0 && (
@@ -185,7 +224,7 @@ export const SurveyForm = ( { cfg, survey, submitNonce, sessionId, onSuccess, al
 					<button
 						type="button"
 						className="allfb-btn allfb-btn--primary"
-						disabled={ isSubmitting || alreadySubmitted }
+						disabled={ isSubmitting || alreadySubmitted || ( requireConsent && ! consent ) }
 						onClick={ handleSubmit }
 					>
 						{ alreadySubmitted ? 'Already submitted' : isSubmitting ? 'Submitting…' : ss.submitLabel }
