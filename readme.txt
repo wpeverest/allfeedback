@@ -65,6 +65,15 @@ The plugin is open source and the unminified source code is available at: https:
 
 You may reach out to us within the Forums here or can reach out to us via the live chat at: https://themegrill.com/support
 
+== Screenshots ==
+
+1. Analytics dashboard — NPS distribution, response trends over time, completion rate, and device breakdown.
+2. All Forms — manage every feedback form from one list, with status, responses, and shortcodes.
+3. Template library — start a new form from ready-made templates (NPS, General Feedback, Bug Report, and more).
+4. Form Builder — build multi-step forms with a drag-and-drop editor and a live widget preview.
+5. All Responses — browse, filter, and manage submitted responses across all forms.
+6. Global Settings — configure the widget colour, position, and display behaviour.
+
 == Changelog ==
 
 = 1.0.0 =
