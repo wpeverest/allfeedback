@@ -17,6 +17,7 @@ const NAV_ITEMS: NavItem[] = [
 	{ label: __('Responses', 'allfeedback'), to: '/responses/' },
 	{ label: __('Settings', 'allfeedback'), to: '/settings/' },
 	{ label: __('Tools', 'allfeedback'), to: '/tools/' },
+	{ label: __('About', 'allfeedback'), to: '/about/' },
 ];
 
 const getCurrentPath = (): string => {
