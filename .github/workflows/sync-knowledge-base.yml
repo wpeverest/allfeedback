@@ -1,0 +1,78 @@
+name: Update Knowledge Base
+
+on:
+  push:
+    branches:
+      - knowledge-base
+  workflow_dispatch:
+
+jobs:
+  update-kb:
+    runs-on: ubuntu-latest
+    if: github.event_name != 'release' || github.release.target_commitish == 'knowledge-base'
+
+    steps:
+      - name: Checkout Plugin Repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Checkout KB Repository
+        uses: actions/checkout@v3
+        with:
+          repository: themegrill/knowledge-base
+          token: ${{ secrets.PAT_TOKEN }}
+          path: themegrill-knowledge-base
+          ref: main
+
+      - name: Setup Pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Install Dependencies
+        run: pnpm install
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Generate Knowledge Base
+        env:
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+          PLUGIN_NAME: ${{ github.event.repository.name }}
+          GIT_DIFF_BASE: ${{ github.event.before }}
+        run: node scripts/knowledge-base-generator.js
+
+      - name: Commit and Push Knowledge Base
+        if: always()
+        working-directory: themegrill-knowledge-base
+        env:
+          PLUGIN_NAME: ${{ github.event.repository.name }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if ! git diff --quiet || ! git diff --cached --quiet; then
+            git stash push -u -m "pre-rebase knowledge base changes"
+            STASHED=true
+          else
+            STASHED=false
+          fi
+
+          git pull --rebase origin main
+
+          if [ "$STASHED" = "true" ]; then
+            git stash pop
+          fi
+
+          git add plugins/${PLUGIN_NAME}/knowledge_base.json
+          git add plugins/${PLUGIN_NAME}/failed_or_errored_files.json 2>/dev/null || true
+
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update knowledge base for ${PLUGIN_NAME} [automated]"
+            git push origin main
+          fi
