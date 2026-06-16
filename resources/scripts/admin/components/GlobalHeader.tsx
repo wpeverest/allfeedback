@@ -108,6 +108,7 @@ const GlobalHeader = () => {
 								to={item.to}
 								className={cn(
 									'rounded-full border-[1.5px] px-3.5 py-1.5 text-base font-medium transition-colors',
+									'outline-none focus:!rounded-full focus:shadow-none focus-visible:ring-2 focus-visible:ring-brand-400/60',
 									active
 										? 'border-brand-400 bg-primary/[0.06] text-primary border-[1.5px]'
 										: 'text-muted-foreground hover:text-foreground border-transparent',
