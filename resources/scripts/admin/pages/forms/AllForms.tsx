@@ -958,7 +958,12 @@ const AllForms = () => {
 												<td className="w-24 px-4 py-5">
 													{survey.status === 'draft' &&
 													survey.conflict_reason ? (
-														<Tooltip content={survey.conflict_reason}>
+														<Tooltip
+															content={__(
+																'Saved as draft — its target pages are already used by other forms. Open the form to see details.',
+																'allfeedback',
+															)}
+														>
 															<span className="border-destructive/20 bg-destructive/10 text-destructive inline-flex cursor-default items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium">
 																<span className="bg-destructive size-1.5 rounded-full" />
 																{statusCfg.label}

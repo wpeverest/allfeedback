@@ -29,7 +29,7 @@ function SelectTrigger({
 			className={cn(
 				'flex w-fit cursor-pointer items-center justify-between gap-2 whitespace-nowrap rounded-lg border border-border/70 bg-white px-3 py-2 text-[14px] text-foreground shadow-none outline-none transition-colors',
 				'data-[placeholder]:text-muted-foreground/40',
-				'focus-visible:border-primary/50 focus-visible:ring-1 focus-visible:ring-primary/10',
+				'data-[state=open]:border-primary',
 				'disabled:cursor-not-allowed disabled:opacity-50',
 				'data-[size=default]:h-10 data-[size=default]:text-[14px] data-[size=sm]:h-9 data-[size=sm]:text-sm',
 				'[&_svg]:pointer-events-none [&_svg]:shrink-0',
