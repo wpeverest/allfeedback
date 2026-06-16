@@ -249,7 +249,7 @@ export default function SetupWizard() {
 						{!isDone && step === 1 && <StepStyle    state={state} set={set} />}
 						{!isDone && step === 2 && <StepSettings state={state} set={set} />}
 						{!isDone && step === 3 && (
-							<StepFinal state={state} onFinish={(t) => finish(t)} submitting={submitting} />
+							<StepFinal onFinish={(t) => finish(t)} submitting={submitting} />
 						)}
 					</div>
 				</div>
