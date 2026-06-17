@@ -56,6 +56,10 @@ function SelectContent({
 }: React.ComponentProps<typeof SelectPrimitive.Content> & { container?: HTMLElement | null }) {
 	const scrollRef = useRef<HTMLDivElement | null>(null);
 	const rafRef = useRef<number | null>(null);
+	// Set when the dropdown is dismissed by an outside pointer click, so we can
+	// stop Radix from returning focus to the trigger — otherwise the trigger
+	// stays focused (and primary-bordered) until a second click blurs it.
+	const pointerOutsideRef = useRef(false);
 	const [canScrollUp, setCanScrollUp] = useState(false);
 	const [canScrollDown, setCanScrollDown] = useState(false);
 
@@ -108,6 +112,20 @@ function SelectContent({
 					className,
 				)}
 				{...props}
+				onPointerDownOutside={(e) => {
+					pointerOutsideRef.current = true;
+					props.onPointerDownOutside?.(e);
+				}}
+				onCloseAutoFocus={(e) => {
+					// Keep the trigger blurred after an outside-click dismissal so its
+					// border returns to normal in a single click. Focus still returns
+					// to the trigger for keyboard / Escape / selection closes.
+					if (pointerOutsideRef.current) {
+						e.preventDefault();
+						pointerOutsideRef.current = false;
+					}
+					props.onCloseAutoFocus?.(e);
+				}}
 			>
 				<div
 					className={cn(

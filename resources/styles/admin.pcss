@@ -59,7 +59,8 @@
 #ALLFB-Admin-Root select:not([class*='wz-']):focus,
 #ALLFB-Admin-Root textarea:not(.allfb-textarea):not([class*='wz-']):focus,
 #ALLFB-Admin-Root [data-slot='select-trigger']:focus,
-#ALLFB-Admin-Root [data-slot='select-trigger']:focus-visible {
+#ALLFB-Admin-Root [data-slot='select-trigger']:focus-visible,
+#ALLFB-Admin-Root [data-slot='select-trigger'][data-state='open'] {
 	border-color: var(--primary);
 	outline:      none;
 }
@@ -129,16 +130,6 @@
 /* ── Pointer cursor on select options ────────────────────────────────────── */
 #ALLFB-Admin-Root select option {
 	cursor: pointer;
-}
-
-/* ── Radix SelectTrigger focus styles ─────────────────────────────────────── */
-/* SelectTrigger is excluded from the button reset above, so Tailwind's       */
-/* border classes apply. Only focus-visible needs a non-layered override to   */
-/* beat any WP admin :focus rules.                                            */
-#ALLFB-Admin-Root [data-slot='select-trigger']:focus-visible {
-	border-color: var(--primary);
-	box-shadow:   0 0 0 1px var(--primary);
-	outline:      none;
 }
 
 /* ── Builder root: establish 14 px font baseline ─────────────────────────── */
