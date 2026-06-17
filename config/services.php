@@ -74,6 +74,7 @@ use AllFeedback\Infrastructure\Mail\SendWeeklyDigestJob;
 // ── API ───────────────────────────────────────────────────────────────────────
 use AllFeedback\Admin\AdminServiceProvider;
 use AllFeedback\API\ApiServiceProvider;
+use AllFeedback\API\Controllers\V1\AboutController;
 use AllFeedback\API\Controllers\V1\AnalyticsController;
 use AllFeedback\API\Controllers\V1\DevToolsController;
 use AllFeedback\API\Controllers\V1\ContentSearchController;
@@ -209,6 +210,7 @@ return [
 	// ------------------------------------------------------------------
 	// REST API controllers
 	// ------------------------------------------------------------------
+	AboutController::class           => autowire(),
 	AnalyticsController::class       => autowire(),
 	FormAnalyticsController::class   => autowire(),
 	SurveysController::class         => autowire(),
