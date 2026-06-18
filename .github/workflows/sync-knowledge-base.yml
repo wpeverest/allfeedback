@@ -28,7 +28,7 @@ jobs:
       - name: Setup Pnpm
         uses: pnpm/action-setup@v3
         with:
-          version: 9
+          version: 10
 
       - name: Install Dependencies
         run: pnpm install
@@ -67,7 +67,7 @@ jobs:
             git stash pop
           fi
 
-          git add plugins/${PLUGIN_NAME}/knowledge_base.json
+          git add plugins/${PLUGIN_NAME}/knowledge_base.json 2>/dev/null || true
           git add plugins/${PLUGIN_NAME}/failed_or_errored_files.json 2>/dev/null || true
 
           if git diff --staged --quiet; then

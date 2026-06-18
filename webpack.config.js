@@ -4,6 +4,7 @@ const ForkTsCheckerPlugin    = require('fork-ts-checker-webpack-plugin');
 const ReactRefreshPlugin     = require('@pmmmwh/react-refresh-webpack-plugin');
 const { TanStackRouterWebpack } = require('@tanstack/router-plugin/webpack');
 const WebpackBar             = require('webpackbar');
+const Dotenv                 = require('dotenv-webpack');
 
 const isReactRefreshPlugin = ( p ) =>
     p && p.constructor &&
@@ -87,6 +88,7 @@ module.exports = {
             exclude: /\.json$/,
         } ),
         new WebpackBar({ name: 'All Feedback' }),
+        new Dotenv({ safe: false }),
     ].filter(Boolean),
 
     devServer: isProd ? undefined : {
