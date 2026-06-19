@@ -58,7 +58,7 @@ import {
 	MessageSquare,
 	Monitor,
 	MoreHorizontal,
-	Pencil,
+	// Pencil,
 	Shield,
 	Smartphone,
 	Star,
@@ -898,10 +898,12 @@ const ResponseDetail = () => {
 									? __('Mark as unread', 'allfeedback')
 									: __('Mark as read', 'allfeedback')}
 							</Button>
+							{/* Edit button disabled
 							<Button size="sm" onClick={() => setIsEditing(true)}>
 								<Pencil className="size-3.5" />
 								{__('Edit', 'allfeedback')}
 							</Button>
+							*/}
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
 									<Button variant="ghost" size="icon-sm">
