@@ -496,7 +496,7 @@ class FormAnalyticsController extends RestController {
 	 * @since  1.0.0
 	 */
 	private function weekOverWeekChange( int|float|null $current, int|float|null $previous ): ?float {
-		if ( $current === null || $previous === null || $previous === 0 ) {
+		if ( $current === null || $previous === null || (float) $previous === 0.0 ) {
 			return null;
 		}
 
