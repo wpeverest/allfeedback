@@ -58,7 +58,6 @@ import {
 	MessageSquare,
 	Monitor,
 	MoreHorizontal,
-	// Pencil,
 	Shield,
 	Smartphone,
 	Star,
@@ -697,18 +696,9 @@ const ResponseDetail = () => {
 		return () => window.removeEventListener('keydown', handler);
 	}, [isEditing]); // eslint-disable-line react-hooks/exhaustive-deps
 
-	useEffect(() => {
-		const handler = (e: BeforeUnloadEvent) => {
-			if (!isEditing || !isDirty) return;
-			e.preventDefault();
-			e.returnValue = '';
-		};
-		window.addEventListener('beforeunload', handler);
-		return () => window.removeEventListener('beforeunload', handler);
-	}, [isEditing, isDirty]);
-
 	const blocker = useBlocker({
 		shouldBlockFn: () => isEditing && isDirty,
+		enableBeforeUnload: () => isEditing && isDirty,
 	});
 
 	const handleBack = () => {
@@ -898,12 +888,6 @@ const ResponseDetail = () => {
 									? __('Mark as unread', 'allfeedback')
 									: __('Mark as read', 'allfeedback')}
 							</Button>
-							{/* Edit button disabled
-							<Button size="sm" onClick={() => setIsEditing(true)}>
-								<Pencil className="size-3.5" />
-								{__('Edit', 'allfeedback')}
-							</Button>
-							*/}
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
 									<Button variant="ghost" size="icon-sm">
@@ -1283,12 +1267,12 @@ const ResponseDetail = () => {
 					</Button>
 					<div className="flex flex-col items-center gap-0.5">
 						{currentNavIndex >= 0 && sortedForNav.length > 0 && (
-							<span className="text-muted-foreground/70 text-xs tabular-nums">
+							<span className="text-muted-foreground text-sm font-medium tabular-nums">
 								{currentNavIndex + 1} / {sortedForNav.length}
 							</span>
 						)}
 						{sortedForNav.length === 100 && (
-							<span className="text-2xs text-muted-foreground/40">
+							<span className="text-sm text-foreground/70">
 								{__('Showing most recent 100 responses', 'allfeedback')}
 							</span>
 						)}
