@@ -82,8 +82,7 @@ const VideoPanel = () => {
 const DOCS_LINKS = [
 	{ label: __('Getting Started Guide', 'allfeedback'), href: 'https://docs.allfeedback.net/getting-started/' },
 	{ label: __('Developer Reference', 'allfeedback'), href: 'https://docs.allfeedback.net/developers/' },
-	{ label: __('Field Reference', 'allfeedback'), href: 'https://docs.allfeedback.net/fields/' },
-	{ label: __('REST API', 'allfeedback'), href: 'https://docs.allfeedback.net/rest-api/' },
+	{ label: __('Field Reference', 'allfeedback'), href: 'https://docs.allfeedback.net/building-forms/field-types' },
 ];
 
 const SUPPORT_LINKS = [
@@ -93,9 +92,8 @@ const SUPPORT_LINKS = [
 
 const COMMUNITY_LINKS = [
 	{ label: __('Facebook', 'allfeedback'), href: 'https://www.facebook.com/themegrill/' },
-	{ label: __('YouTube', 'allfeedback'), href: 'https://www.youtube.com/@themegrill' },
+	{ label: __('YouTube', 'allfeedback'), href: 'https://www.youtube.com/@ThemeGrillOfficial' },
 	{ label: __('X / Twitter', 'allfeedback'), href: 'https://x.com/themegrill' },
-	{ label: __('Changelog', 'allfeedback'), href: 'https://allfeedback.net/' },
 ];
 
 const About = () => {

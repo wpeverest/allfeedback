@@ -1,6 +1,6 @@
 === AllFeedback ===
 Contributors:      themegrill
-Tags:              feedback, surveys, nps, csat, ces
+Tags:              feedback, surveys, nps, customer-feedback, survey-form
 Requires at least: 6.5
 Tested up to:      7.0
 Requires PHP:      8.2
@@ -8,62 +8,79 @@ Stable tag:        1.0.0
 License:           GPLv3 or later
 License URI:       https://www.gnu.org/licenses/gpl-3.0.html
 
-WordPress-native feedback survey plugin. Collect customer feedback without sending data to an external service.
+Collect customer feedback and NPS scores with a customizable survey widget — every response stored in your own WordPress database.
 
 == Description ==
 
-Build beautiful feedback surveys with various question types, collect NPS scores, and better understand your audience — no external services required.
+AllFeedback is a WordPress-native feedback and survey plugin that helps you listen to your visitors and customers, measure satisfaction, and act on real insights — without sending any feedback data to an external service. Build on-brand surveys in minutes with a drag-and-drop builder, show them with a polished widget, and review the results in a clean analytics dashboard.
 
-Features include:
+Whether you want to track your Net Promoter Score, gather product feedback, run a bug-report form, or simply ask visitors what they think, AllFeedback gives you everything you need right inside your WordPress admin.
 
-* WordPress-native feedback survey management.
-* Beautiful feedback widget.
-* Custom trigger & targeting settings.
-* Feedback email notifications.
-* Detailed analytics.
-* 7+ question types.
-* NPS survey.
-* CES survey. _(coming soon)_
-* CSAT survey. _(coming soon)_
+= Why AllFeedback? =
 
+* **Privacy-first by design.** Every response lives in your own WordPress database. No external accounts, no data shipped to a third-party service, no per-response pricing.
+* **Beautiful out of the box.** A modern, responsive feedback widget that matches your brand with configurable colour, position, and behaviour.
+* **Built for insight.** Turn raw responses into decisions with NPS scoring, response trends, completion rates, and device breakdowns.
+
+= Powerful form builder =
+
+* Drag-and-drop, multi-step form builder with a live widget preview.
+* 7+ question types covering ratings, NPS (0–10), multiple choice, and free-text answers.
+* Ready-made templates to start fast — NPS, General Feedback, Bug Report, and more.
+* Rich-text field labels and descriptions for clear, friendly questions.
+
+= Smart display & targeting =
+
+* Customizable feedback widget — set the colour, screen position, and display behaviour.
+* Trigger and targeting settings to control when and where a survey appears.
+* Shortcode support to embed a form anywhere on your site.
+
+= Analytics & response management =
+
+* Analytics dashboard with NPS distribution, response trends over time, completion rate, and device breakdown.
+* Browse, filter, search, and manage every response from one place.
+* Mark responses as read so you always know what's new.
+* Email notifications so you never miss a fresh submission.
+
+= Your data stays yours =
+
+AllFeedback does not require an account and does not send your feedback data to any third-party service. Everything you collect is stored locally in your WordPress database, so you stay in full control and remain privacy-friendly by default.
 
 == Installation ==
 
-1. Upload the plugin folder to `/wp-content/plugins/`.
-2. Run `composer install` inside the plugin folder.
-3. Run `pnpm install && pnpm build` to compile assets.
-4. Activate the plugin through **Plugins → Installed Plugins**.
-
-== Source Code ==
-
-This plugin's JavaScript and CSS assets are compiled from source. The unminified source code is publicly available at:
-
-https://github.com/wpeverest/allfeedback
-
-**Build requirements:** Node.js >= 20, pnpm 10.x
-
-**Build steps:**
-
-1. Clone the repository: `git clone https://github.com/wpeverest/allfeedback.git`
-2. Install dependencies: `pnpm install`
-3. Build assets: `pnpm build`
-4. Install PHP dependencies: `composer install`
-
-The `resources/scripts/` directory contains all uncompiled TypeScript/JavaScript source files. The `resources/styles/` directory contains all uncompiled CSS (PostCSS/Tailwind) source files.
+1. Upload the plugin through **Plugins → Add New → Upload Plugin**, or extract it to `/wp-content/plugins/allfeedback`.
+2. Activate the plugin through the **Plugins** screen in WordPress.
+3. Open **All Feedback** in the admin menu to create your first feedback form.
 
 == Frequently Asked Questions ==
 
-= Is the data collected within the website? =
+= Where is my feedback data stored? =
 
-Yes, all the feedback data you collect, remains safe within your own website.
+All feedback you collect stays in your own WordPress database. AllFeedback does not use any external account or third-party service to store responses.
 
-= Where can I contribute to the plugin? =
+= What is NPS? =
 
-The plugin is open source and the unminified source code is available at: https://github.com/wpeverest/allfeedback. Feel free to contribute :)
+NPS (Net Promoter Score) measures customer loyalty by asking how likely someone is to recommend you on a scale of 0–10. AllFeedback calculates the score automatically and visualises the distribution of promoters, passives, and detractors.
 
-= Where do I report bugs? =
+= Can I customize how the widget looks? =
 
-You may reach out to us within the Forums here or can reach out to us via the live chat at: https://themegrill.com/support
+Yes. You can configure the widget colour, screen position, and display behaviour from the global settings, and design multi-step forms with the drag-and-drop builder and live preview.
+
+= Can I add a survey to a specific page? =
+
+Yes. Use the trigger and targeting settings to control where surveys appear, or place a form anywhere on your site using its shortcode.
+
+= Where can I report bugs or request features? =
+
+Please use the support forum on WordPress.org, or reach our team via live chat at https://themegrill.com/support.
+
+= Is the source code available? =
+
+Yes. AllFeedback is open source. The complete, unminified JavaScript and CSS source code is available at https://github.com/wpeverest/allfeedback.
+
+== Source Code ==
+
+This plugin ships compiled JavaScript and CSS. The complete, unminified source code is publicly available at https://github.com/wpeverest/allfeedback. The `resources/scripts/` directory contains the TypeScript/JavaScript sources and `resources/styles/` contains the PostCSS/Tailwind sources. Build with Node.js >= 20 and pnpm 10.x (`pnpm install && pnpm build`), then install PHP dependencies with `composer install`.
 
 == Screenshots ==
 
