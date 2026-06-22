@@ -48,9 +48,12 @@ AllFeedback does not require an account and does not send your feedback data to 
 
 == Installation ==
 
-1. Upload the plugin through **Plugins → Add New → Upload Plugin**, or extract it to `/wp-content/plugins/allfeedback`.
+1. Upload the plugin files to the `/wp-content/plugins/allfeedback` directory, or install the plugin through the WordPress plugins screen.
 2. Activate the plugin through the **Plugins** screen in WordPress.
-3. Open **All Feedback** in the admin menu to create your first feedback form.
+3. Go to **All Feedback** in your WordPress admin dashboard.
+4. Create your first feedback form from a ready-made template or build one from scratch.
+5. Customize your feedback widget's colour, position, and display behaviour.
+6. Set up targeting and trigger rules to control where and when your survey appears.
 
 == Frequently Asked Questions ==
 
@@ -74,14 +77,6 @@ Yes. Use the trigger and targeting settings to control where surveys appear, or 
 
 Please use the support forum on WordPress.org, or reach our team via live chat at https://themegrill.com/support.
 
-= Is the source code available? =
-
-Yes. AllFeedback is open source. The complete, unminified JavaScript and CSS source code is available at https://github.com/wpeverest/allfeedback.
-
-== Source Code ==
-
-This plugin ships compiled JavaScript and CSS. The complete, unminified source code is publicly available at https://github.com/wpeverest/allfeedback. The `resources/scripts/` directory contains the TypeScript/JavaScript sources and `resources/styles/` contains the PostCSS/Tailwind sources. Build with Node.js >= 20 and pnpm 10.x (`pnpm install && pnpm build`), then install PHP dependencies with `composer install`.
-
 == Screenshots ==
 
 1. Analytics dashboard — NPS distribution, response trends over time, completion rate, and device breakdown.
@@ -93,5 +88,5 @@ This plugin ships compiled JavaScript and CSS. The complete, unminified source c
 
 == Changelog ==
 
-= 1.0.0 =
+= 1.0.0 - 2026-06-22 =
 * Initial release.
